@@ -1,0 +1,22 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package Abyss.event.invoker;
+
+import Abyss.event.EventInvoker;
+import Abyss.event.events.SendPacketEvent;
+import Abyss.module.impl.movement.InvMove;
+import java.io.UnsupportedEncodingException;
+
+public final class InvMoveSendPacketInvoker
+implements EventInvoker {
+    final InvMove t;
+
+    @Override
+    public void c(long var1, Object var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        this.t.onSendPacket((SendPacketEvent)var3);
+}
+    public InvMoveSendPacketInvoker(InvMove var1) {
+        this.t = var1;
+}
+}

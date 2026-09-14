@@ -1,0 +1,115 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.client.Minecraft
+ *  net.minecraft.client.network.NetworkPlayerInfo
+ *  net.minecraft.scoreboard.ScorePlayerTeam
+ *  net.minecraft.scoreboard.Team
+ *  net.minecraft.util.StringUtils
+ */
+package Abyss.util;
+
+import Abyss.enums.MegaWallsClass;
+import Abyss.util.HypixelGameState;
+import Abyss.util.MinecraftRef;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.regex.Pattern;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.scoreboard.ScorePlayerTeam;
+import net.minecraft.scoreboard.Team;
+import net.minecraft.util.StringUtils;
+
+public class TeamPrefixUtil {
+    private static Pattern j;
+        private static Minecraft A;
+
+    private static String g(String var0) {
+        return var0 == null ? "" : j.matcher(var0).replaceAll("");
+}
+                if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 0x1F) << 6);
+                byte var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var3[var1++] = var6;
+                continue;
+}
+            if (var4 >= var2 - 2) continue;
+            char var12 = (char)((char)(var5 & 0xF) << 12);
+            byte var9 = var0[++var4];
+            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
+            var9 = var0[++var4];
+            var12 = (char)(var12 | (char)(var9 & 0x3F));
+            var3[var1++] = var12;
+}
+        return new String(var3, 0, var1);
+}
+    public static MegaWallsClass F(long var0, String var2) {
+        return MegaWallsClass.s(var2, 126433336288858L);
+}
+    public static boolean e() {
+        return HypixelGameState.F();
+}
+    public static String n(String var0) {
+        if (A != null && A.func_147114_u() != null) {
+            NetworkPlayerInfo var1 = A.func_147114_u().func_175104_a(var0);
+            return var1 == null ? var0 : TeamPrefixUtil.s((Team)var1.func_178850_i(), var1.func_178845_a().getName());
+}
+        return var0;
+}
+    public static boolean J() {
+        return HypixelGameState.P();
+}
+    public static boolean i() {
+        return HypixelGameState.p();
+}
+    private static String s(Team var0, String var1) {
+        if (var0 == null) {
+            return var1;
+}
+        return var0 instanceof ScorePlayerTeam ? TeamPrefixUtil.g(((ScorePlayerTeam)var0).func_96668_e()) + var1 + ((ScorePlayerTeam)var0).func_96663_f() : TeamPrefixUtil.g(var0.func_142053_d(var1));
+}
+    private TeamPrefixUtil() {
+}
+    public static boolean z() {
+        return HypixelGameState.L().O();
+}
+    public static String u(String var0) {
+        return var0 == null ? "" : StringUtils.func_76338_a((String)var0);
+}
+    static {
+        try {
+            long var4 = a ^ 0x442AFED65A64L;
+            int var6 = (int)((var4 ^ 0x131E9D109275L) >>> 56);
+            long var7 = (var4 ^ 0x131E9D109275L) << 8 >>> 8;
+            byte[] var10003 = new byte[]{(byte)(var4 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var2 = 1; var2 < 8; ++var2) {
+                var10003[var2] = (byte)(var4 << var2 * 8 >>> 56);
+}
+            Cipher var1 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+            var1.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+            byte[] var3 = var1.doFinal("\u001f\u00b5\u0016\u00b0\u00ca\u0090\u00f0j\u0097>7\u00c9\u00ff\u0012\u00b4\u00b8".getBytes("ISO-8859-1"));
+            String var10 = TeamPrefixUtil.a(var3).intern();
+            int var10001 = -1;
+            String var0 = var10;
+            A = MinecraftRef.c((byte)var6, 0L);
+            j = Pattern.compile(var0);
+}
+        catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var9) {
+            throw new RuntimeException(var9);
+}
+}
+}

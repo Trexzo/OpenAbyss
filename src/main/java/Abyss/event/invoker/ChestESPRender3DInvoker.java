@@ -1,0 +1,23 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package Abyss.event.invoker;
+
+import Abyss.event.EventInvoker;
+import Abyss.event.events.Render3DEvent;
+import Abyss.module.impl.visual_utility.ChestESP;
+import java.io.UnsupportedEncodingException;
+
+public final class ChestESPRender3DInvoker
+implements EventInvoker {
+    final ChestESP j;
+
+    public ChestESPRender3DInvoker(ChestESP var1) {
+        this.j = var1;
+}
+    @Override
+    public void c(long var1, Object var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        long var4 = var1 ^ 0x749785F54348L;
+        this.j.onRender3D(var4, (Render3DEvent)var3);
+}
+}

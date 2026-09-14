@@ -1,0 +1,19 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package Abyss.command;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+
+public class Command {
+    public native boolean J();
+
+    public native List g(String[] var1, int var2, long var3);
+
+    public native String[] e(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException;
+
+    public native void h(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException;
+
+    public native void j(String[] var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException;
+}
