@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: openabyss-recovery-ci
+  cancel-in-progress: true
+
 jobs:
   recovery-build:
     name: JDK8 / Gradle 2.14.1 / ForgeGradle 2.1
@@ -66,8 +70,86 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Validate JAR contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $jars = @(Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File)
+          if ($jars.Count -ne 1) { throw "Expected exactly one OpenAbyss JAR, found $($jars.Count)." }
+          $jar = $jars[0]
+          $jarHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            $entries = @($zip.Entries)
+            $names = @($entries | ForEach-Object { $_.FullName })
+            $classCount = @($names | Where-Object { $_ -like '*.class' }).Count
+            $javaCount = @($names | Where-Object { $_ -like '*.java' }).Count
+            if ($classCount -lt 1300) { throw "Unexpectedly low class count: $classCount" }
+            if ($javaCount -ne 0) { throw "Source .java files leaked into JAR: $javaCount" }
+            foreach ($required in @(
+              'META-INF/MANIFEST.MF',
+              'Abyss/ASM/CoreMod.class',
+              'mcmod.info',
+              'assets/abyss/asm/mcp-notch.srg',
+              'assets/abyss/asm/mcp-srg.srg',
+              'ssl.jks',
+              'accountmanager-ssl.jks'
+            )) {
+              if ($names -notcontains $required) { throw "Missing required JAR entry: $required" }
+            }
+            function Read-ZipText([string]$name) {
+              $entry = $zip.GetEntry($name)
+              $reader = New-Object System.IO.StreamReader($entry.Open())
+              try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+            $manifest = Read-ZipText 'META-INF/MANIFEST.MF'
+            foreach ($line in @(
+              'ModSide: CLIENT',
+              'FMLCorePluginContainsFMLMod: true',
+              'ForceLoadAsMod: true',
+              'FMLCorePlugin: Abyss.ASM.CoreMod'
+            )) {
+              if ($manifest.IndexOf($line, [System.StringComparison]::Ordinal) -lt 0) {
+                throw "Manifest contract missing: $line"
+              }
+            }
+            $mcmod = (Read-ZipText 'mcmod.info') | ConvertFrom-Json
+            if ($mcmod[0].modid -ne 'abyss') { throw "Unexpected mcmod modid: $($mcmod[0].modid)" }
+            if ($mcmod[0].mcversion -ne '1.8.9') { throw "Unexpected mcmod mcversion: $($mcmod[0].mcversion)" }
+            $notch = $zip.GetEntry('assets/abyss/asm/mcp-notch.srg')
+            $srg = $zip.GetEntry('assets/abyss/asm/mcp-srg.srg')
+            if ($notch.Length -lt 1000000) { throw "mcp-notch.srg unexpectedly small: $($notch.Length)" }
+            if ($srg.Length -lt 2000000) { throw "mcp-srg.srg unexpectedly small: $($srg.Length)" }
+            Write-Host "JAR_CONTRACT_PASS classes=$classCount entries=$($entries.Count) sha256=$jarHash"
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+          $ksDir = Join-Path $env:RUNNER_TEMP 'openabyss-keystores'
+          New-Item -ItemType Directory -Force -Path $ksDir | Out-Null
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            foreach ($name in @('ssl.jks','accountmanager-ssl.jks')) {
+              $entry = $zip.GetEntry($name)
+              $out = Join-Path $ksDir $name
+              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $out, $true)
+            }
+          }
+          finally { $zip.Dispose() }
+          $sslHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'ssl.jks')).Hash
+          $acctHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'accountmanager-ssl.jks')).Hash
+          if ($sslHash -ne $acctHash) { throw 'Bundled truststores differ unexpectedly.' }
+          $keytoolOut = @(& keytool -list -v -keystore (Join-Path $ksDir 'ssl.jks') -storepass changeit 2>&1)
+          if ($LASTEXITCODE -ne 0) { throw 'keytool could not read bundled truststore.' }
+          $trusted = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: trustedCertEntry' }).Count
+          $private = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: PrivateKeyEntry' }).Count
+          if ($trusted -ne 152) { throw "Unexpected truststore certificate count: $trusted" }
+          if ($private -ne 0) { throw "Private-key entries found in bundled truststore: $private" }
+          Write-Host "TRUSTSTORE_CONTRACT_PASS trustedCertEntry=$trusted privateKeyEntry=$private sha256=$sslHash"
+
       - name: Inspect built JARs
-        if: success()
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -85,7 +167,6 @@ jobs:
           [System.IO.File]::WriteAllLines($report, $lines)
 
       - name: Upload build artifacts
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: OpenAbyss-R38-build
