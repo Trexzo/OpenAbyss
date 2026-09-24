@@ -38,12 +38,12 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-bin.zip'
-          $home = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
+          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
           $userHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
           & curl.exe -L --fail --silent --show-error 'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' -o $zip
           if ($LASTEXITCODE -ne 0) { throw "curl failed: $LASTEXITCODE" }
           Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
-          $gradle = Join-Path $home 'bin\gradle.bat'
+          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
           if (-not (Test-Path -LiteralPath $gradle)) { throw "Gradle missing: $gradle" }
           "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "GRADLE_USER_HOME=$userHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
