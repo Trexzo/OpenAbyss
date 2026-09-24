@@ -7,6 +7,9 @@ on:
       - recovery/r38-compile-pass
     paths:
       - .github/workflows/runtime-smoke.yml
+      - src/main/java/Abyss/ASM/**
+      - src/main/java/Abyss/internal/**
+      - build.gradle
 
 permissions:
   contents: read
@@ -140,17 +143,20 @@ jobs:
           $injectReady = $combined -match '\[abyss-inject\].*client ready'
           $censusReady = (Test-Path -LiteralPath $census) -or (Test-Path -LiteralPath $runCensus)
           $bootstrapFailed = $combined -match '\[abyss-inject\].*client failed to start'
+          $fatalJvm = $combined -match 'ExceptionInInitializerError|Exception in thread "main"|:runClient FAILED|BUILD FAILED'
 
           Write-Host "FORGE_LAUNCH_EVIDENCE=$forgeLaunch"
           Write-Host "TRANSFORMER_EVIDENCE=$transformer"
           Write-Host "INJECT_CLIENT_READY=$injectReady"
           Write-Host "CENSUS_BOOTSTRAP_EVIDENCE=$censusReady"
           Write-Host "BOOTSTRAP_FAILURE_MARKER=$bootstrapFailed"
+          Write-Host "FATAL_JVM_MARKER=$fatalJvm"
 
           if ($bootstrapFailed) { throw 'Abyss bootstrap emitted an explicit failure marker.' }
+          if ($fatalJvm) { throw 'The runtime emitted a fatal JVM/Gradle failure marker.' }
           if (-not $forgeLaunch) { throw 'No Forge/Minecraft launch evidence was observed.' }
-          if (-not ($transformer -or $injectReady -or $censusReady)) {
-            throw 'Minecraft launched, but no Abyss coremod/bootstrap evidence was observed.'
+          if (-not $censusReady -and -not $injectReady) {
+            throw 'Minecraft/coremod launched, but Abyss client bootstrap did not reach ready/census state.'
           }
 
           Write-Host 'OFFLINE_RUNTIME_SMOKE_PASS'
