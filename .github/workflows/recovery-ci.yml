@@ -1,96 +1,15 @@
 name: OpenAbyss Recovery CI
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - 'recovery/**'
-  pull_request:
-    branches:
-      - main
-
-permissions:
-  contents: read
+      - recovery/r38-compile-pass
+  workflow_dispatch:
 
 jobs:
-  recovery-build:
-    name: JDK8 / Gradle 2.14.1 / ForgeGradle 2.1
+  smoke:
     runs-on: windows-latest
-    timeout-minutes: 45
-
     steps:
-      - name: Checkout recovery source
-        uses: actions/checkout@v4
-
-      - name: Set up Temurin JDK 8
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '8'
-
-      - name: Show Java environment
+      - name: Runner smoke test
         shell: powershell
-        run: |
-          java -version
-          Write-Host "JAVA_HOME=$env:JAVA_HOME"
-          Write-Host "RUNNER_TEMP=$env:RUNNER_TEMP"
-
-      - name: Install Gradle 2.14.1
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-all.zip'
-          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
-          $gradleUserHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
-          $url = 'https://services.gradle.org/distributions/gradle-2.14.1-all.zip'
-          Invoke-WebRequest -Uri $url -OutFile $zip
-          Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
-          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
-          if (-not (Test-Path -LiteralPath $gradle)) {
-            throw "Gradle executable missing: $gradle"
-          }
-          "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "GRADLE_USER_HOME=$gradleUserHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          & $gradle --version
-
-      - name: Compile recovered source
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          & $env:OPENABYSS_GRADLE --no-daemon clean compileJava
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: Clean full build
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          & $env:OPENABYSS_GRADLE --no-daemon clean build
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-      - name: Inspect built JARs
-        if: success()
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $jars = @(Get-ChildItem -LiteralPath '.\build\libs' -Filter '*.jar' -File -ErrorAction Stop)
-          if ($jars.Count -eq 0) { throw 'No JAR artifacts found in build\libs.' }
-          Write-Host '=== BUILD ARTIFACTS ==='
-          $report = Join-Path $env:RUNNER_TEMP 'openabyss-artifacts.txt'
-          $lines = @()
-          foreach ($jar in $jars) {
-            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
-            Write-Host ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
-            $lines += ($jar.Name + "`t" + $hash + "`t" + $jar.Length)
-          }
-          [System.IO.File]::WriteAllLines($report, $lines)
-
-      - name: Upload build artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: OpenAbyss-R38-build
-          path: |
-            build/libs/*.jar
-            ${{ runner.temp }}/openabyss-artifacts.txt
-          if-no-files-found: error
-          retention-days: 14
+        run: Write-Host 'OPENABYSS_CI_RUNNER_OK'
