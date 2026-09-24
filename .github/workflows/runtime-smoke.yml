@@ -167,6 +167,49 @@ jobs:
             throw 'Minecraft/coremod launched, but Abyss client bootstrap did not reach ready/census state.'
           }
 
+          if ($censusReady) {
+            $censusPath = if (Test-Path -LiteralPath $census) { $census } else { $runCensus }
+            $censusLines = @(Get-Content -LiteralPath $censusPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            $censusCount = $censusLines.Count
+            Write-Host "MODULE_CENSUS_COUNT=$censusCount"
+            if ($censusCount -ne 92) {
+              throw "Unexpected OpenAbyss module census count: $censusCount (expected 92)."
+            }
+
+            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD')
+            foreach ($module in $requiredModules) {
+              if (-not ($censusLines -match ("\t" + [regex]::Escape($module) + "\t"))) {
+                throw "Required module missing from census: $module"
+              }
+            }
+            Write-Host 'MODULE_CENSUS_CONTRACT=PASS'
+          }
+
+          $transformTargets = @([regex]::Matches($combined, 'ASM transformed: ([^\r\n]+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+          $transformCount = $transformTargets.Count
+          Write-Host "ASM_TRANSFORM_COUNT=$transformCount"
+          if ($combined -match 'ASM transform failed') {
+            throw 'At least one ASM target emitted an explicit transform failure.'
+          }
+          if ($transformCount -lt 30) {
+            throw "Insufficient successful ASM transform coverage: $transformCount"
+          }
+
+          $requiredTransforms = @(
+            'net/minecraft/client/Minecraft',
+            'net/minecraft/client/gui/GuiScreen',
+            'net/minecraft/client/renderer/ItemRenderer',
+            'net/minecraft/client/renderer/EntityRenderer',
+            'net/minecraft/client/network/NetHandlerPlayClient',
+            'net/minecraft/client/LoadingScreenRenderer'
+          )
+          foreach ($target in $requiredTransforms) {
+            if ($transformTargets -notcontains $target) {
+              throw "Required ASM transform was not observed: $target"
+            }
+          }
+          Write-Host 'ASM_TRANSFORM_CONTRACT=PASS'
+
           if ($graphicsLimited -and $censusReady) {
             Write-Host 'OFFLINE_RUNTIME_BOOTSTRAP_PASS_GRAPHICS_LIMITED'
             Write-Host 'OpenAbyss reached module census successfully; hosted runner is limited to Microsoft GDI Generic OpenGL 1.1.'
