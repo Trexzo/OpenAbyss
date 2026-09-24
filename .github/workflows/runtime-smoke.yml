@@ -56,15 +56,14 @@ jobs:
           & $env:OPENABYSS_GRADLE --no-daemon clean build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          $tasks = @(& $env:OPENABYSS_GRADLE --no-daemon tasks --all 2>&1)
-          $taskText = ($tasks | Out-String)
-          if ($taskText -match '(?m)^getAssets\b') {
-            Write-Host 'Preparing Minecraft assets with getAssets...'
-            & $env:OPENABYSS_GRADLE --no-daemon getAssets
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } else {
-            Write-Host 'No getAssets task exposed; runClient will use the prepared Forge cache.'
+          Write-Host 'Preparing Minecraft 1.8 asset index/assets with getAssets...'
+          & $env:OPENABYSS_GRADLE --no-daemon getAssets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $assetIndex = Join-Path $env:GRADLE_USER_HOME 'caches\minecraft\assets\indexes\1.8.json'
+          if (-not (Test-Path -LiteralPath $assetIndex)) {
+            throw "getAssets completed but asset index is still missing: $assetIndex"
           }
+          Write-Host "ASSET_INDEX_READY=$assetIndex"
 
       - name: Block Java outbound traffic for runtime
         shell: powershell
@@ -108,6 +107,8 @@ jobs:
             & taskkill.exe /PID $p.Id /T /F | Out-Host
             Start-Sleep -Seconds 2
           } else {
+            $p.WaitForExit()
+            $p.Refresh()
             Write-Host "RUNCLIENT_EXIT=$($p.ExitCode)"
           }
 
@@ -134,7 +135,7 @@ jobs:
             }
           }
 
-          $forgeLaunch = $combined -match 'Launching wrapped minecraft|Forge Mod Loader|MinecraftForge|LWJGL|Setting user'
+          $forgeLaunch = $combined -match 'Launching wrapped minecraft|Setting user:|LWJGL Version|Forge Mod Loader version|MinecraftForge v'
           $transformer = $combined -match 'Class Transformer initialized|Abyss Class Transformer'
           $injectReady = $combined -match '\[abyss-inject\].*client ready'
           $censusReady = (Test-Path -LiteralPath $census) -or (Test-Path -LiteralPath $runCensus)
