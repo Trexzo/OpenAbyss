@@ -91,6 +91,10 @@ jobs:
           $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
           $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
           $env:ABYSS_PAYLOAD_KEY = $null
+          # GitHub-hosted Windows runners have no accelerated WGL pixel format.
+          # LWJGL 2 exposes this documented switch to permit a software-only context.
+          $env:JAVA_TOOL_OPTIONS = '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true'
+          Write-Host "JAVA_TOOL_OPTIONS=$env:JAVA_TOOL_OPTIONS"
 
           $stdout = Join-Path $env:RUNNER_TEMP 'openabyss-runClient.stdout.log'
           $stderr = Join-Path $env:RUNNER_TEMP 'openabyss-runClient.stderr.log'
