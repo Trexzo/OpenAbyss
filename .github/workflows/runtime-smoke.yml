@@ -182,6 +182,31 @@ jobs:
                 throw "Required module missing from census: $module"
               }
             }
+
+            $expectedSettingCounts = @{
+              Scaffold   = 30
+              AutoBlock  = 26
+              KillAura   = 35
+              InvManager = 34
+              Velocity   = 24
+              ESP        = 16
+              TargetHUD  = 26
+              BlockHit   = 26
+              BedNuker   = 21
+              BlocksESP  = 17
+              BedPlates  = 6
+              BlockIn    = 5
+            }
+            foreach ($entry in $expectedSettingCounts.GetEnumerator()) {
+              $parts = @($censusLines | ForEach-Object { $_ -split "\t" } | Where-Object { $_.Count -ge 4 -and $_[1] -eq $entry.Key })
+              if ($parts.Count -ne 1) {
+                throw "Expected exactly one census row for $($entry.Key), found $($parts.Count)."
+              }
+              $actualCount = [int]$parts[0][3]
+              if ($actualCount -ne [int]$entry.Value) {
+                throw "Unexpected setting count for $($entry.Key): $actualCount (expected $($entry.Value))."
+              }
+            }
             Write-Host 'MODULE_CENSUS_CONTRACT=PASS'
           }
 
