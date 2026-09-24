@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 \
+            xvfb mesa-utils x11-xserver-utils libgl1-mesa-dri libglx-mesa0 \
             libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
             libxrandr2 libxinerama1 libxcursor1 libxxf86vm1
           glxinfo --version || true
@@ -111,6 +111,22 @@ jobs:
             fi
           '
           echo 'RUNTIME_NETWORK_NAMESPACE=PASS'
+
+      - name: Verify Xvfb RandR and Mesa
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v xrandr
+          xvfb-run -a -s "-screen 0 1280x720x24" bash -c '
+            echo "DISPLAY=$DISPLAY"
+            xrandr -q
+            glxinfo -B
+            if ! xrandr -q | grep -q " connected "; then
+              echo "Xvfb exposes no connected RandR screen."
+              exit 1
+            fi
+          '
+          echo 'XVFB_RANDR_MESA=PASS'
 
       - name: Run headless offline client for up to 120 seconds
         shell: bash
