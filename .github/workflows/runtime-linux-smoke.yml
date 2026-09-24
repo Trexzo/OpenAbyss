@@ -91,12 +91,22 @@ jobs:
         run: |
           set -euo pipefail
           sudo unshare --net -- bash -c '
+            ip link set lo up
+            ip link add abyss-dummy type dummy
+            ip addr add 192.0.2.1/32 dev abyss-dummy
+            ip link set abyss-dummy up
+
             echo "=== isolated network interfaces ==="
-            ip -o link show
+            ip -o addr show
             echo "=== isolated routes ==="
             ip route show
+
             if ip route show default | grep -q .; then
               echo "Unexpected default route inside runtime network namespace."
+              exit 1
+            fi
+            if ! ip -4 addr show dev abyss-dummy | grep -q "192.0.2.1/32"; then
+              echo "Gradle-local dummy address was not configured."
               exit 1
             fi
           '
@@ -114,6 +124,14 @@ jobs:
           RUNNER_GID="$(id -g)"
           timeout --signal=TERM --kill-after=10s 120s \
             sudo unshare --net -- \
+              bash -c ' \
+                ip link set lo up
+                ip link add abyss-dummy type dummy
+                ip addr add 192.0.2.1/32 dev abyss-dummy
+                ip link set abyss-dummy up
+                test -z "$(ip route show default)"
+                exec "$@"
+              ' _ \
               setpriv --reuid="$RUNNER_UID" --regid="$RUNNER_GID" --init-groups \
               env \
                 HOME="$HOME" \
