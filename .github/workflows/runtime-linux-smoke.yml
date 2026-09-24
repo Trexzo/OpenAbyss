@@ -86,23 +86,21 @@ jobs:
           fi
           echo "ASSET_INDEX_READY=$ASSET_INDEX"
 
-      - name: Create isolated runtime user and block its outbound network
+      - name: Verify isolated runtime network namespace
         shell: bash
         run: |
           set -euo pipefail
-          if ! id abyssci >/dev/null 2>&1; then
-            sudo useradd --create-home --shell /bin/bash abyssci
-          fi
-          # The hosted runner's temp directory is not traversable by a secondary user by default.
-          # Keep the runtime isolated as abyssci, but allow traversal to the prepared Gradle/cache paths.
-          sudo chmod a+rx /home/runner /home/runner/work "$RUNNER_TEMP"
-          sudo chmod -R a+rwX "$GITHUB_WORKSPACE" "$GRADLE_USER_HOME" "$RUNNER_TEMP/gradle-2.14.1"
-          sudo chmod a+rx "$RUNNER_TEMP/gradle-2.14.1/bin/gradle"
-          UID_ABYSS="$(id -u abyssci)"
-          echo "ABYSS_CI_UID=$UID_ABYSS" >> "$GITHUB_ENV"
-          sudo iptables -I OUTPUT 1 -m owner --uid-owner "$UID_ABYSS" -j REJECT
-          sudo iptables -C OUTPUT -m owner --uid-owner "$UID_ABYSS" -j REJECT
-          echo "BLOCKED_OUTBOUND_UID=$UID_ABYSS"
+          sudo unshare --net -- bash -c '
+            echo "=== isolated network interfaces ==="
+            ip -o link show
+            echo "=== isolated routes ==="
+            ip route show
+            if ip route show default | grep -q .; then
+              echo "Unexpected default route inside runtime network namespace."
+              exit 1
+            fi
+          '
+          echo 'RUNTIME_NETWORK_NAMESPACE=PASS'
 
       - name: Run headless offline client for up to 120 seconds
         shell: bash
@@ -112,20 +110,25 @@ jobs:
           STDERR="$RUNNER_TEMP/openabyss-linux-runClient.stderr.log"
 
           set +e
+          RUNNER_UID="$(id -u)"
+          RUNNER_GID="$(id -g)"
           timeout --signal=TERM --kill-after=10s 120s \
-            sudo -u abyssci -H env \
-              JAVA_HOME="$JAVA_HOME" \
-              PATH="$JAVA_HOME/bin:$PATH" \
-              GRADLE_USER_HOME="$GRADLE_USER_HOME" \
-              LIBGL_ALWAYS_SOFTWARE=1 \
-              GITHUB_TOKEN= \
-              ACTIONS_RUNTIME_TOKEN= \
-              ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
-              ACTIONS_ID_TOKEN_REQUEST_URL= \
-              ABYSS_PAYLOAD_KEY= \
-              xvfb-run -a -s "-screen 0 1280x720x24" \
-              "$OPENABYSS_GRADLE" --offline --no-daemon runClient \
-              >"$STDOUT" 2>"$STDERR"
+            sudo unshare --net -- \
+              setpriv --reuid="$RUNNER_UID" --regid="$RUNNER_GID" --init-groups \
+              env \
+                HOME="$HOME" \
+                JAVA_HOME="$JAVA_HOME" \
+                PATH="$JAVA_HOME/bin:$PATH" \
+                GRADLE_USER_HOME="$GRADLE_USER_HOME" \
+                LIBGL_ALWAYS_SOFTWARE=1 \
+                GITHUB_TOKEN= \
+                ACTIONS_RUNTIME_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_URL= \
+                ABYSS_PAYLOAD_KEY= \
+                xvfb-run -a -s "-screen 0 1280x720x24" \
+                "$OPENABYSS_GRADLE" --offline --no-daemon runClient \
+                >"$STDOUT" 2>"$STDERR"
           EXIT_CODE=$?
           set -e
 
@@ -250,14 +253,6 @@ jobs:
           fi
 
           echo 'LINUX_HEADLESS_RUNTIME_SMOKE_PASS'
-
-      - name: Remove runtime network block
-        if: always()
-        shell: bash
-        run: |
-          if [ -n "${ABYSS_CI_UID:-}" ]; then
-            sudo iptables -D OUTPUT -m owner --uid-owner "$ABYSS_CI_UID" -j REJECT || true
-          fi
 
       - name: Upload Linux runtime evidence
         if: always()
