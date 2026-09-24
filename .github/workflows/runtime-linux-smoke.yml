@@ -1,0 +1,262 @@
+name: OpenAbyss Linux Headless Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-linux-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/resources/**
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-linux-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  linux-headless-runtime:
+    name: Linux Xvfb / Mesa / offline runClient
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install headless OpenGL runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 \
+            libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libxrandr2 libxinerama1 libxcursor1 libxxf86vm1
+          glxinfo --version || true
+
+      - name: Install Gradle 2.14.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
+          HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
+          USER_HOME="$RUNNER_TEMP/gradle-user-home-linux"
+          curl -L --fail --silent --show-error \
+            'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
+            -o "$ZIP"
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
+          GRADLE="$HOME_DIR/bin/gradle"
+          test -x "$GRADLE"
+          echo "OPENABYSS_GRADLE=$GRADLE" >> "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=$USER_HOME" >> "$GITHUB_ENV"
+          "$GRADLE" --version
+
+      - name: Prepare Forge runtime while network is available
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$OPENABYSS_GRADLE" --no-daemon clean build
+          "$OPENABYSS_GRADLE" --no-daemon getAssets
+          ASSET_INDEX="$GRADLE_USER_HOME/caches/minecraft/assets/indexes/1.8.json"
+          test -f "$ASSET_INDEX"
+          echo "ASSET_INDEX_READY=$ASSET_INDEX"
+
+      - name: Create isolated runtime user and block its outbound network
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! id abyssci >/dev/null 2>&1; then
+            sudo useradd --create-home --shell /bin/bash abyssci
+          fi
+          sudo chmod -R a+rwX "$GITHUB_WORKSPACE" "$GRADLE_USER_HOME" "$RUNNER_TEMP/gradle-2.14.1"
+          UID_ABYSS="$(id -u abyssci)"
+          echo "ABYSS_CI_UID=$UID_ABYSS" >> "$GITHUB_ENV"
+          sudo iptables -I OUTPUT 1 -m owner --uid-owner "$UID_ABYSS" -j REJECT
+          sudo iptables -C OUTPUT -m owner --uid-owner "$UID_ABYSS" -j REJECT
+          echo "BLOCKED_OUTBOUND_UID=$UID_ABYSS"
+
+      - name: Run headless offline client for up to 120 seconds
+        shell: bash
+        run: |
+          set -uo pipefail
+          STDOUT="$RUNNER_TEMP/openabyss-linux-runClient.stdout.log"
+          STDERR="$RUNNER_TEMP/openabyss-linux-runClient.stderr.log"
+
+          set +e
+          timeout --signal=TERM --kill-after=10s 120s \
+            sudo -u abyssci -H env \
+              JAVA_HOME="$JAVA_HOME" \
+              PATH="$JAVA_HOME/bin:$PATH" \
+              GRADLE_USER_HOME="$GRADLE_USER_HOME" \
+              LIBGL_ALWAYS_SOFTWARE=1 \
+              GITHUB_TOKEN= \
+              ACTIONS_RUNTIME_TOKEN= \
+              ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+              ACTIONS_ID_TOKEN_REQUEST_URL= \
+              ABYSS_PAYLOAD_KEY= \
+              xvfb-run -a -s "-screen 0 1280x720x24" \
+              "$OPENABYSS_GRADLE" --offline --no-daemon runClient \
+              >"$STDOUT" 2>"$STDERR"
+          EXIT_CODE=$?
+          set -e
+
+          echo "RUNCLIENT_EXIT=$EXIT_CODE"
+          if [ "$EXIT_CODE" -eq 124 ] || [ "$EXIT_CODE" -eq 137 ]; then
+            echo "RUNCLIENT_TIMEOUT_EXPECTED=1"
+          fi
+
+          echo '=== runClient stdout tail ==='
+          tail -n 300 "$STDOUT" || true
+          echo '=== runClient stderr tail ==='
+          tail -n 300 "$STDERR" || true
+
+          LATEST="$GITHUB_WORKSPACE/run/logs/latest.log"
+          INJECT="/tmp/abyss-inject.log"
+          CENSUS_ROOT="$GITHUB_WORKSPACE/abyss-census.tsv"
+          CENSUS_RUN="$GITHUB_WORKSPACE/run/abyss-census.tsv"
+
+          echo "LATEST_LOG=$([ -f "$LATEST" ] && echo true || echo false)"
+          echo "INJECT_LOG=$([ -f "$INJECT" ] && echo true || echo false)"
+          echo "ROOT_CENSUS=$([ -f "$CENSUS_ROOT" ] && echo true || echo false)"
+          echo "RUN_CENSUS=$([ -f "$CENSUS_RUN" ] && echo true || echo false)"
+
+          COMBINED="$RUNNER_TEMP/openabyss-linux-combined.log"
+          : > "$COMBINED"
+          for F in "$STDOUT" "$STDERR" "$LATEST" "$INJECT"; do
+            if [ -f "$F" ]; then
+              cat "$F" >> "$COMBINED"
+              printf '\n' >> "$COMBINED"
+            fi
+          done
+
+          if grep -q '\[abyss-inject\].*client failed to start' "$COMBINED"; then
+            echo 'Explicit Abyss bootstrap failure marker detected.'
+            exit 1
+          fi
+          if grep -q 'ExceptionInInitializerError' "$COMBINED"; then
+            echo 'Static initializer failure detected.'
+            exit 1
+          fi
+          if grep -q 'ASM transform failed' "$COMBINED"; then
+            echo 'Explicit ASM transform failure detected.'
+            exit 1
+          fi
+
+          CENSUS=''
+          if [ -f "$CENSUS_ROOT" ]; then CENSUS="$CENSUS_ROOT"; fi
+          if [ -z "$CENSUS" ] && [ -f "$CENSUS_RUN" ]; then CENSUS="$CENSUS_RUN"; fi
+          if [ -z "$CENSUS" ]; then
+            echo 'Module census was not produced.'
+            exit 1
+          fi
+
+          CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
+          echo "MODULE_CENSUS_COUNT=$CENSUS_COUNT"
+          if [ "$CENSUS_COUNT" -ne 92 ]; then
+            echo "Unexpected module census count: $CENSUS_COUNT (expected 92)."
+            exit 1
+          fi
+
+          require_setting_count() {
+            NAME="$1"
+            EXPECTED="$2"
+            ROW="$(awk -F '\t' -v name="$NAME" '$2 == name {print $4}' "$CENSUS")"
+            ROWS="$(awk -F '\t' -v name="$NAME" '$2 == name {n++} END {print n+0}' "$CENSUS")"
+            if [ "$ROWS" -ne 1 ]; then
+              echo "Expected exactly one census row for $NAME, found $ROWS."
+              exit 1
+            fi
+            if [ "$ROW" != "$EXPECTED" ]; then
+              echo "Unexpected setting count for $NAME: $ROW (expected $EXPECTED)."
+              exit 1
+            fi
+          }
+
+          require_setting_count Scaffold 30
+          require_setting_count AutoBlock 26
+          require_setting_count KillAura 35
+          require_setting_count InvManager 34
+          require_setting_count Velocity 24
+          require_setting_count ESP 16
+          require_setting_count TargetHUD 26
+          require_setting_count BlockHit 26
+          require_setting_count BedNuker 21
+          require_setting_count BlocksESP 17
+          require_setting_count BedPlates 6
+          require_setting_count BlockIn 5
+          echo 'MODULE_CENSUS_CONTRACT=PASS'
+
+          TRANSFORMS="$RUNNER_TEMP/openabyss-linux-transforms.txt"
+          grep -o 'ASM transformed: .*' "$COMBINED" | sed 's/^ASM transformed: //' | sort -u > "$TRANSFORMS" || true
+          TRANSFORM_COUNT="$(grep -cv '^[[:space:]]*$' "$TRANSFORMS" || true)"
+          echo "ASM_TRANSFORM_COUNT=$TRANSFORM_COUNT"
+          if [ "$TRANSFORM_COUNT" -lt 30 ]; then
+            echo "Insufficient successful ASM transform coverage: $TRANSFORM_COUNT"
+            exit 1
+          fi
+
+          for TARGET in \
+            net/minecraft/client/Minecraft \
+            net/minecraft/client/gui/GuiScreen \
+            net/minecraft/client/renderer/ItemRenderer \
+            net/minecraft/client/renderer/EntityRenderer \
+            net/minecraft/client/network/NetHandlerPlayClient \
+            net/minecraft/client/LoadingScreenRenderer
+          do
+            if ! grep -Fxq "$TARGET" "$TRANSFORMS"; then
+              echo "Required ASM transform was not observed: $TARGET"
+              exit 1
+            fi
+          done
+          echo 'ASM_TRANSFORM_CONTRACT=PASS'
+
+          GL_LINE="$(grep -m1 'OpenGL:' "$COMBINED" || true)"
+          echo "OPENGL_EVIDENCE=$GL_LINE"
+
+          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 124 ] && [ "$EXIT_CODE" -ne 137 ]; then
+            if grep -Eq 'Exception in thread|:runClient FAILED|BUILD FAILED|Reported exception' "$COMBINED"; then
+              echo "Headless runtime exited with fatal process evidence: $EXIT_CODE"
+              exit 1
+            fi
+          fi
+
+          echo 'LINUX_HEADLESS_RUNTIME_SMOKE_PASS'
+
+      - name: Remove runtime network block
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${ABYSS_CI_UID:-}" ]; then
+            sudo iptables -D OUTPUT -m owner --uid-owner "$ABYSS_CI_UID" -j REJECT || true
+          fi
+
+      - name: Upload Linux runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-linux-headless-runtime-smoke
+          path: |
+            run/logs/**
+            run/crash-reports/**
+            run/abyss-census.tsv
+            abyss-census.tsv
+            ${{ runner.temp }}/openabyss-linux-runClient.stdout.log
+            ${{ runner.temp }}/openabyss-linux-runClient.stderr.log
+            ${{ runner.temp }}/openabyss-linux-combined.log
+            ${{ runner.temp }}/openabyss-linux-transforms.txt
+            /tmp/abyss-inject.log
+          if-no-files-found: warn
+          retention-days: 7
