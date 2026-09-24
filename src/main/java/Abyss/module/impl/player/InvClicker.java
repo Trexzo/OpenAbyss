@@ -26,7 +26,11 @@ import net.minecraft.client.gui.inventory.GuiInventory;
 public class InvClicker
 extends Module
 implements EventSubscriber {
-    private static long private int p;
+    private static Map d;
+
+    private static long a = 104942853302490L;
+
+    private int p;
     private static Object[] e;
     private static String[] g;
     private static long[] b;
@@ -37,17 +41,17 @@ implements EventSubscriber {
         if (this.p > 0) {
             this.p -= 50;
 }
-        if (KeyBindUtil.V(InvClicker.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L) && KeyBindUtil.V(42, 64165991731362L) && (InvClicker.f.field_71462_r instanceof GuiInventory || InvClicker.f.field_71462_r instanceof GuiContainer) && !this.isGetItemStack()) {
+        if (KeyBindUtil.V(InvClicker.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L) && KeyBindUtil.V(42, 64165991731362L) && (InvClicker.f.currentScreen instanceof GuiInventory || InvClicker.f.currentScreen instanceof GuiContainer) && !this.isGetItemStack()) {
             if (alwaysClick.c()) {
-                ItemUtil.e(InvClicker.f.field_71462_r);
+                ItemUtil.e(InvClicker.f.currentScreen);
             } else if (this.p <= 0) {
-                ItemUtil.e(InvClicker.f.field_71462_r);
+                ItemUtil.e(InvClicker.f.currentScreen);
                 this.p = (int)(1000.0 / (double)cps.L());
 }
 }
 }
     private boolean isGetItemStack() {
-        return InvClicker.f.field_71439_g.field_71071_by.func_70445_o() != null;
+        return InvClicker.f.thePlayer.inventory.getItemStack() != null;
 }
     @Override
     public final void x(long var1, EventBus var3) {

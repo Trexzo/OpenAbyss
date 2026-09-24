@@ -32,9 +32,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class RavenModuleRow
 implements RavenElement {
+    private static long a;
+
     public ArrayList<AbstractRavenSettingRow> H;
     private static String b;
     private static int Z;
@@ -253,6 +260,7 @@ implements RavenElement {
 }
 }
     static {
+        a = 10119902289976L;
         J = new Color(154, 2, 255).getRGB();
         o = new Color(0, 0, 0, 110).getRGB();
         W = new Color(24, 154, 255).getRGB();

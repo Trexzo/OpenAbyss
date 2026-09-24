@@ -18,15 +18,22 @@ import java.awt.Color;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class StudioNotification {
+    private static long a = 21794833908318L;
+
     private final Animation h;
     private static final float W = 3.0f;
     private static final float D = 4.0f;
     private float P;
     private final List<StudioModuleFrame> J;
     private final Category s;
-    private static long private static final float O = 136.0f;
+    private static final float O = 136.0f;
     private boolean R;
     private float t;
     private final StudioClickGuiScreen I;

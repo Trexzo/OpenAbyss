@@ -21,7 +21,7 @@ import Abyss.event.invoker.SprintResetReceivePacketInvoker;
 import Abyss.module.impl.combat.SprintReset;
 
 public final class SprintResetBinder {
-    private static final long private SprintResetBinder() {
+    private SprintResetBinder() {
 }
     public static void G(EventBus var0, SprintReset var1) {
         var0.R(var1, PreUpdateEvent.class, 3, new SprintResetPreUpdateInvoker(var1));

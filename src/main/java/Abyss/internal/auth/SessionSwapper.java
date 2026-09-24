@@ -16,7 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Session;
 
 public class SessionSwapper {
-    private static long private static String E(String var2) {
+    private static String E(String var2) {
         String var3 = "offlinePlayer:" + var2;
         return UUID.nameUUIDFromBytes(var3.getBytes()).toString().replace("-", "");
 }

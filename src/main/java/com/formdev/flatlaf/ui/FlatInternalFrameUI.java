@@ -110,9 +110,6 @@ implements FlatStylingSupport.StyleableUI {
 }
     protected class FlatBorderListener
     extends BasicInternalFrameUI.BorderListener {
-        protected FlatBorderListener() {
-            super(FlatInternalFrameUI.this);
-}
         @Override
         public void mouseClicked(MouseEvent e) {
             Rectangle iconBounds;

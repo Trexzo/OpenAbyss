@@ -34,6 +34,11 @@ import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.renderer.GlStateManager;
 import org.apache.commons.lang3.StringUtils;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ReconnectHandler
 implements EventSubscriber {
@@ -47,10 +52,10 @@ implements EventSubscriber {
 
     public void onPreDrawScreen(PreDrawScreenEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (ReconnectHandler.c(var1.Q)) {
-            String var9 = ChatFormatting.y(String.format("&7Username: &3%s&r", SessionAccessor.d().func_111285_a()));
-            GlStateManager.func_179140_f();
-            var1.Q.func_73731_b(ReconnectHandler.T.field_71466_p, var9, 3, 3, -1);
-            GlStateManager.func_179145_e();
+            String var9 = ChatFormatting.y(String.format("&7Username: &3%s&r", SessionAccessor.d().getUsername()));
+            GlStateManager.disableLighting();
+            var1.Q.drawString(ReconnectHandler.T.fontRendererObj, var9, 3, 3, -1);
+            GlStateManager.enableLighting();
 }
 }
     private static long t(String var0) {
@@ -82,14 +87,14 @@ implements EventSubscriber {
     private static void z(long var0, long var2) {
         AltManager.Q(17200, (short)3883, (short)-9723);
         for (Account var10 : AltManager.Q) {
-            if (!SessionAccessor.d().func_111285_a().equals(var10.h())) continue;
+            if (!SessionAccessor.d().getUsername().equals(var10.h())) continue;
             var10.G(var0);
 }
         AltManager.O(101554584226764L);
 }
     public void onDisconnectedInit(long var1, DisconnectedInitEvent var3) {
         if (var3.O instanceof GuiDisconnected && var3.X != null) {
-            String var8 = var3.X.func_150254_d().split("\n\n")[0];
+            String var8 = var3.X.getFormattedText().split("\n\n")[0];
             if (!var8.equals("\u00a7r\u00a7cYou are permanently banned from this server!") && !var8.equals("\u00a7r\u00a7cYour account has been blocked.")) {
                 String var9;
                 if ((var8.matches("\u00a7r\u00a7cYou are temporarily banned for \u00a7r\u00a7f.*\u00a7r\u00a7c from this server!") || var8.matches("\u00a7r\u00a7cYour account is temporarily blocked for \u00a7r\u00a7f.*\u00a7r\u00a7c from this server!")) && (var9 = StringUtils.substringBetween((String)var8, (String)"\u00a7r\u00a7f", (String)"\u00a7r\u00a7c")) != null) {
@@ -122,7 +127,7 @@ implements EventSubscriber {
     public void onServerJoin(long var1, ServerJoinEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         String var7;
         ServerData var6 = var3.u;
-        if (var6 != null && (var7 = var6.field_78845_b) != null && (var7.endsWith("hypixel.net") || var7.endsWith("hypixel.io"))) {
+        if (var6 != null && (var7 = var6.serverIP) != null && (var7.endsWith("hypixel.net") || var7.endsWith("hypixel.io"))) {
             ReconnectHandler.z(0L, 60323149919382L);
 }
 }

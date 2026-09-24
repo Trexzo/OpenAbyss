@@ -8,7 +8,7 @@ import Abyss.event.Event;
 public class JumpEvent
 extends Event {
     private float r;
-    private static final long private float V;
+    private float V;
 
     public void y(float var1) {
         this.V = var1;

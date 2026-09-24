@@ -181,7 +181,7 @@ extends Command {
         int var5 = 0;
         int var6 = 0;
         int var12 = 0;
-        for (Module var8 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var8 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var8 == null || !AbyssModuleRegistry.isConfigPersistable(var8)) {
                 ++var6;
                 continue;
@@ -236,7 +236,7 @@ extends Command {
         int var6 = 0;
         int var13 = 0;
         boolean var7 = AbyssCommandConfig.gate();
-        for (Module var9 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var9 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var9 == null || !AbyssModuleRegistry.isConfigPersistable(var9)) continue;
             JsonElement var10 = var4.get(var9.b());
             if (var10 == null || !var10.isJsonObject()) {
@@ -280,7 +280,7 @@ extends Command {
 }
         try {
             File var4;
-            File var3 = Minecraft.func_71410_x().field_71412_D;
+            File var3 = Minecraft.getMinecraft().mcDataDir;
             if (var3 != null && (var4 = new File(var3, "Abyss")).isDirectory()) {
                 return var4;
 }
@@ -350,50 +350,35 @@ extends Command {
      * Enabled aggressive exception aggregation
      */
     private static boolean write(File var0, JsonObject var1) {
-        boolean var4222;
         File var2 = new File(var0.getParentFile(), var0.getName() + ".tmp");
         Writer var3 = null;
+
         try {
-            var3 = new OutputStreamWriter((OutputStream)new FileOutputStream(var2), "UTF-8");
-            new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)var1, (Appendable)var3);
+            var3 = new OutputStreamWriter(new FileOutputStream(var2), "UTF-8");
+            new GsonBuilder().setPrettyPrinting().create().toJson(var1, var3);
             var3.close();
             var3 = null;
+
             if (var0.isFile()) {
-                File var4222 = new File(var0.getParentFile(), var0.getName() + ".bak");
-                if (var4222.isFile()) {
-                    var4222.delete();
-}
-                var0.renameTo(var4222);
-}
-            var4222 = var2.renameTo(var0);
-            if (var3 == null) return var4222;
-}
-        catch (Throwable var5) {
-            try {
-                boolean bl = false;
-                return bl;
-}
-            catch (Throwable throwable) {
-                throw throwable;
-}
-            finally {
-                if (var3 != null) {
-                    try {
-                        var3.close();
-}
-                    catch (Throwable throwable) {}
-}
-}
-}
-        try {
-            var3.close();
-            return var4222;
-}
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return var4222;
-}
+                File var4 = new File(var0.getParentFile(), var0.getName() + ".bak");
+                if (var4.isFile()) {
+                    var4.delete();
+                }
+                var0.renameTo(var4);
+            }
+
+            return var2.renameTo(var0);
+        } catch (Throwable var5) {
+            return false;
+        } finally {
+            if (var3 != null) {
+                try {
+                    var3.close();
+                } catch (Throwable var6) {
+                }
+            }
+        }
+    }
     private static boolean gate() {
         return AbyssCommandBind.gateOk();
 }

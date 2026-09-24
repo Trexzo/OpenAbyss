@@ -9,7 +9,7 @@ import Abyss.event.invoker.AttackTrackerAttackEntityInvoker;
 import Abyss.util.AttackTracker;
 
 public final class AttackTrackerBinder {
-    private static final long private AttackTrackerBinder() {
+    private AttackTrackerBinder() {
 }
     public static void D(EventBus var0, AttackTracker var1) {
         var0.R(var1, AttackEntityEvent.class, 1, new AttackTrackerAttackEntityInvoker(var1));

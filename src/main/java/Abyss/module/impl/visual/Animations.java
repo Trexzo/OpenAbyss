@@ -37,6 +37,11 @@ import org.lwjgl.opengl.GL11;
 public class Animations
 extends Module
 implements EventSubscriber {
+    private static long a;
+    private static String[] d;
+    static {
+        a = 90915734307650L;
+    }
     private static Map n;
     public static HeaderSetting offsetSettings;
     
@@ -64,30 +69,30 @@ implements EventSubscriber {
         var1.t((int)((float)var1.N() * (-this.d(swingSpeed.L()) / 100.0f + 1.0f)));
 }
     public static void J() {
-        GlStateManager.func_179109_b((float)(offsetX.L() / 100.0f), (float)(offsetY.L() / 100.0f), (float)(offsetZ.L() / 100.0f));
+        GlStateManager.translate((float)(offsetX.L() / 100.0f), (float)(offsetY.L() / 100.0f), (float)(offsetZ.L() / 100.0f));
 }
     private float d(float var1) {
         return var1 / 2.0f * 400.0f - 200.0f;
 }
     public static void C() {
-        GlStateManager.func_179114_b((float)rotationX.L(), (float)1.0f, (float)0.0f, (float)0.0f);
-        GlStateManager.func_179114_b((float)rotationY.L(), (float)0.0f, (float)1.0f, (float)0.0f);
-        GlStateManager.func_179114_b((float)rotationZ.L(), (float)0.0f, (float)0.0f, (float)1.0f);
+        GlStateManager.rotate((float)rotationX.L(), (float)1.0f, (float)0.0f, (float)0.0f);
+        GlStateManager.rotate((float)rotationY.L(), (float)0.0f, (float)1.0f, (float)0.0f);
+        GlStateManager.rotate((float)rotationZ.L(), (float)0.0f, (float)0.0f, (float)1.0f);
 }
     public static void U() {
-        GlStateManager.func_179152_a((float)scaleX.L(), (float)scaleY.L(), (float)scaleZ.L());
+        GlStateManager.scale((float)scaleX.L(), (float)scaleY.L(), (float)scaleZ.L());
 }
     @Override
     public final void x(long var1, EventBus var3) {
         AnimationsBinder.A(var3, this);
 }
     public void onRenderItemInFirstPerson(long var1, RenderItemInFirstPersonEvent var3) {
-        if (!(var3.e.func_77973_b() instanceof ItemMap) && var3.d.equals((Object)EnumAction.BLOCK) && !mode.R("1.7")) {
+        if (!(var3.e.getItem() instanceof ItemMap) && var3.d.equals((Object)EnumAction.BLOCK) && !mode.R("1.7")) {
             EnumAction var7 = var3.d;
-            ItemRenderer var8 = f.func_175597_ag();
+            ItemRenderer var8 = f.getItemRenderer();
             float var9 = var3.J;
             float var10 = var3.C;
-            float var11 = MathHelper.func_76126_a((float)(MathHelper.func_76129_c((float)var10) * (float)Math.PI));
+            float var11 = MathHelper.sin((float)(MathHelper.sqrt_float((float)var10) * (float)Math.PI));
             block0 : switch (AnimationsSwitchMapEnumAction.j[var7.ordinal()]) {
                 case 1: {
                     switch (mode.Y()) {
@@ -95,26 +100,26 @@ implements EventSubscriber {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
                             float var14 = -var11 * 2.0f;
                             Animations.f(0.0, var14 / 10.0f + 0.1f, 0.0);
-                            GlStateManager.func_179114_b((float)(var14 * 10.0f), (float)0.0f, (float)1.0f, (float)0.0f);
-                            GlStateManager.func_179114_b((float)250.0f, (float)0.2f, (float)1.0f, (float)-0.6f);
-                            GlStateManager.func_179114_b((float)-10.0f, (float)1.0f, (float)0.5f, (float)1.0f);
-                            GlStateManager.func_179114_b((float)(-var14 * 20.0f), (float)1.0f, (float)0.5f, (float)1.0f);
+                            GlStateManager.rotate((float)(var14 * 10.0f), (float)0.0f, (float)1.0f, (float)0.0f);
+                            GlStateManager.rotate((float)250.0f, (float)0.2f, (float)1.0f, (float)-0.6f);
+                            GlStateManager.rotate((float)-10.0f, (float)1.0f, (float)0.5f, (float)1.0f);
+                            GlStateManager.rotate((float)(-var14 * 20.0f), (float)1.0f, (float)0.5f, (float)1.0f);
                             break block0;
 }
                         case "EXHIBITION": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, 0.0f);
                             Animations.f(0.0, 0.3f, -0.0);
-                            GlStateManager.func_179114_b((float)(-var11 * 31.0f), (float)1.0f, (float)0.0f, (float)2.0f);
-                            GlStateManager.func_179114_b((float)(-var11 * 33.0f), (float)1.5f, (float)(var11 / 1.1f), (float)0.0f);
+                            GlStateManager.rotate((float)(-var11 * 31.0f), (float)1.0f, (float)0.0f, (float)2.0f);
+                            GlStateManager.rotate((float)(-var11 * 33.0f), (float)1.5f, (float)(var11 / 1.1f), (float)0.0f);
                             ItemRendererAccessor.e(var8);
                             break block0;
 }
                         case "STAB": {
-                            float var15 = MathHelper.func_76126_a((float)(MathHelper.func_76129_c((float)var10) * (float)Math.PI));
+                            float var15 = MathHelper.sin((float)(MathHelper.sqrt_float((float)var10) * (float)Math.PI));
                             Animations.f(0.6f, 0.3f, (double)-0.6f + (double)(-var15) * 0.7);
-                            GlStateManager.func_179114_b((float)6090.0f, (float)0.0f, (float)0.0f, (float)0.1f);
-                            GlStateManager.func_179114_b((float)6085.0f, (float)0.0f, (float)0.1f, (float)0.0f);
-                            GlStateManager.func_179114_b((float)6110.0f, (float)0.1f, (float)0.0f, (float)0.0f);
+                            GlStateManager.rotate((float)6090.0f, (float)0.0f, (float)0.0f, (float)0.1f);
+                            GlStateManager.rotate((float)6085.0f, (float)0.0f, (float)0.1f, (float)0.0f);
+                            GlStateManager.rotate((float)6110.0f, (float)0.1f, (float)0.0f, (float)0.0f);
                             ItemRendererAccessor.s(var8, 0.0f, 0.0f);
                             ItemRendererAccessor.e(var8);
                             break block0;
@@ -122,31 +127,31 @@ implements EventSubscriber {
                         case "SPIN": {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
                             Animations.f(0.0, 0.2f, -1.0);
-                            GlStateManager.func_179114_b((float)-59.0f, (float)-1.0f, (float)0.0f, (float)3.0f);
-                            GlStateManager.func_179114_b((float)(-(System.currentTimeMillis() / 2L % 360L)), (float)1.0f, (float)0.0f, (float)0.0f);
-                            GlStateManager.func_179114_b((float)60.0f, (float)0.0f, (float)1.0f, (float)0.0f);
+                            GlStateManager.rotate((float)-59.0f, (float)-1.0f, (float)0.0f, (float)3.0f);
+                            GlStateManager.rotate((float)(-(System.currentTimeMillis() / 2L % 360L)), (float)1.0f, (float)0.0f, (float)0.0f);
+                            GlStateManager.rotate((float)60.0f, (float)0.0f, (float)1.0f, (float)0.0f);
                             break block0;
 }
                         case "SIGMA": {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
                             Animations.f(0.0, 0.1f, 0.0);
                             ItemRendererAccessor.e(var8);
-                            GlStateManager.func_179114_b((float)(var11 * 35.0f / 2.0f), (float)0.0f, (float)1.0f, (float)1.5f);
-                            GlStateManager.func_179114_b((float)(-var11 * 135.0f / 4.0f), (float)1.0f, (float)1.0f, (float)0.0f);
+                            GlStateManager.rotate((float)(var11 * 35.0f / 2.0f), (float)0.0f, (float)1.0f, (float)1.5f);
+                            GlStateManager.rotate((float)(-var11 * 135.0f / 4.0f), (float)1.0f, (float)1.0f, (float)0.0f);
                             break block0;
 }
                         case "WOOD": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, 0.0f);
                             Animations.f(0.0, 0.3f, -0.0);
-                            GlStateManager.func_179114_b((float)(-var11 * 30.0f), (float)1.0f, (float)0.0f, (float)2.0f);
-                            GlStateManager.func_179114_b((float)(-var11 * 44.0f), (float)1.5f, (float)(var11 / 1.2f), (float)0.0f);
+                            GlStateManager.rotate((float)(-var11 * 30.0f), (float)1.0f, (float)0.0f, (float)2.0f);
+                            GlStateManager.rotate((float)(-var11 * 44.0f), (float)1.5f, (float)(var11 / 1.2f), (float)0.0f);
                             ItemRendererAccessor.e(var8);
                             break block0;
 }
                         case "SWONG": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, var10);
-                            GlStateManager.func_179114_b((float)(var11 * 30.0f / 2.0f), (float)(-var11), (float)-0.0f, (float)9.0f);
-                            GlStateManager.func_179114_b((float)(var11 * 40.0f), (float)1.0f, (float)(-var11 / 2.0f), (float)-0.0f);
+                            GlStateManager.rotate((float)(var11 * 30.0f / 2.0f), (float)(-var11), (float)-0.0f, (float)9.0f);
+                            GlStateManager.rotate((float)(var11 * 40.0f), (float)1.0f, (float)(-var11 / 2.0f), (float)-0.0f);
                             Animations.f(0.0, 0.2f, 0.0);
                             ItemRendererAccessor.e(var8);
                             break block0;
@@ -160,11 +165,11 @@ implements EventSubscriber {
                         case "KOMOREBI": {
                             Animations.f(0.41f, -0.25, -0.5555557012557983);
                             Animations.f(0.0, 0.0, 0.0);
-                            GlStateManager.func_179114_b((float)35.0f, (float)0.0f, (float)1.5f, (float)0.0f);
-                            float var16 = MathHelper.func_76126_a((float)(var10 * var10 / 64.0f * (float)Math.PI));
-                            GlStateManager.func_179114_b((float)(var16 * -5.0f), (float)0.0f, (float)0.0f, (float)0.0f);
-                            GlStateManager.func_179114_b((float)(var11 * -12.0f), (float)0.0f, (float)0.0f, (float)1.0f);
-                            GlStateManager.func_179114_b((float)(var11 * -65.0f), (float)1.0f, (float)0.0f, (float)0.0f);
+                            GlStateManager.rotate((float)35.0f, (float)0.0f, (float)1.5f, (float)0.0f);
+                            float var16 = MathHelper.sin((float)(var10 * var10 / 64.0f * (float)Math.PI));
+                            GlStateManager.rotate((float)(var16 * -5.0f), (float)0.0f, (float)0.0f, (float)0.0f);
+                            GlStateManager.rotate((float)(var11 * -12.0f), (float)0.0f, (float)0.0f, (float)1.0f);
+                            GlStateManager.rotate((float)(var11 * -65.0f), (float)1.0f, (float)0.0f, (float)0.0f);
                             ItemRendererAccessor.e(var8);
                             break block0;
 }
@@ -191,7 +196,7 @@ implements EventSubscriber {
         var1 = a ^ var1;
 }
     public static void f(double var0, double var2, double var4) {
-        GlStateManager.func_179137_b((double)(var0 + (double)(offsetX.L() / 100.0f)), (double)(var2 + (double)(offsetY.L() / 100.0f)), (double)(var4 + (double)(offsetZ.L() / 100.0f)));
+        GlStateManager.translate((double)(var0 + (double)(offsetX.L() / 100.0f)), (double)(var2 + (double)(offsetY.L() / 100.0f)), (double)(var4 + (double)(offsetZ.L() / 100.0f)));
 }
     @Override
     public String g(long var1) {

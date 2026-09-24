@@ -58,6 +58,7 @@ public enum MegaWallsClass {
     ZOMBIE("ZOM", 0);
 
     
+    private static long a = 10052156246884L;
     public final int healthPotionAmount;
     private static final Minecraft K;
     public final String tag;
@@ -80,11 +81,11 @@ public enum MegaWallsClass {
         var1 = a ^ var1;
         int var3 = (int)((var1 ^ 0x6979613563B1L) >>> 48);
         int var4 = (int)((var1 ^ 0x6979613563B1L) << 16 >>> 48);
-        if (MegaWallsClass.K.field_71441_e == null) {
+        if (MegaWallsClass.K.theWorld == null) {
             return null;
 }
-        ScorePlayerTeam var6 = MegaWallsClass.K.field_71441_e.func_96441_U().func_96509_i(var0);
-        return var6 == null ? null : MegaWallsClass.q((char)var3, (char)var4, var6.func_96663_f());
+        ScorePlayerTeam var6 = MegaWallsClass.K.theWorld.getScoreboard().getPlayersTeam(var0);
+        return var6 == null ? null : MegaWallsClass.q((char)var3, (char)var4, var6.getColorSuffix());
 }
     public static MegaWallsClass o(String var0) {
         return v.get(var0);
@@ -96,36 +97,8 @@ public enum MegaWallsClass {
         this.healthPotionAmount = var4;
 }
     static {
-        K = MinecraftRef.c((byte)MegaWallsClass.zkm$g22(), MegaWallsClass.zkm$g23());
+        K = MinecraftRef.c((byte)0, 80752427616716L);
         v = new HashMap<String, MegaWallsClass>();
-        MegaWallsClass[] var10000 = new MegaWallsClass[0];
-        var10000[0] = ANGEL;
-        var10000[1] = ARCANIST;
-        var10000[2] = ASSASSIN;
-        var10000[3] = AUTOMATON;
-        var10000[4] = BLAZE;
-        var10000[5] = COW;
-        var10000[0] = CREEPER;
-        var10000[0] = DRAGON;
-        var10000[0] = DREADLORD;
-        var10000[0] = ENDERMAN;
-        var10000[0] = GOLEM;
-        var10000[0] = HEROBRINE;
-        var10000[0] = HUNTER;
-        var10000[0] = MOLEMAN;
-        var10000[0] = PHOENIX;
-        var10000[0] = PIGMAN;
-        var10000[0] = PIRATE;
-        var10000[0] = RENEGADE;
-        var10000[0] = SHAMAN;
-        var10000[0] = SHARK;
-        var10000[0] = SHEEP;
-        var10000[0] = SKELETON;
-        var10000[0] = SNOWMAN;
-        var10000[0] = SPIDER;
-        var10000[0] = SQUID;
-        var10000[0] = WEREWOLF;
-        var10000[0] = ZOMBIE;
         for (MegaWallsClass var28 : MegaWallsClass.values()) {
             v.put(var28.tag, var28);
 }

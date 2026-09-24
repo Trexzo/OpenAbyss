@@ -84,6 +84,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class TargetHUD
 extends Module
@@ -160,7 +165,7 @@ implements EventSubscriber {
             GL11.glVertex2f((float)var3, (float)var4);
             GL11.glVertex2f((float)var3, (float)var2);
             GL11.glEnd();
-            GlStateManager.func_179117_G();
+            GlStateManager.resetColor();
 }
 }
     private void q(float var1, float var2, float var3, float var4, int var5, float var6, int var7, long var8) {
@@ -183,13 +188,13 @@ implements EventSubscriber {
             GL11.glEnd();
             GL11.glDisable((int)2848);
             GL11.glLineWidth((float)2.0f);
-            GlStateManager.func_179117_G();
+            GlStateManager.resetColor();
 }
 }
     private ResourceLocation j(EntityLivingBase var1) {
         NetworkPlayerInfo var2;
-        if (var1 instanceof EntityPlayer && (var2 = f.func_147114_u().func_175104_a(var1.func_70005_c_())) != null) {
-            return var2.func_178837_g();
+        if (var1 instanceof EntityPlayer && (var2 = f.getNetHandler().getPlayerInfo(var1.getName())) != null) {
+            return var2.getLocationSkin();
 }
         return null;
 }
@@ -230,25 +235,25 @@ implements EventSubscriber {
         this.G = 0.0f;
 }
     private String T(Entity var1) {
-        return var1.func_145748_c_().func_150254_d().replaceAll("\u00a7\\S$", "").replaceAll("(?i)\u00a7r", "\u00a7f").trim();
+        return var1.getDisplayName().getFormattedText().replaceAll("\u00a7\\S$", "").replaceAll("(?i)\u00a7r", "\u00a7f").trim();
 }
     private void L(EntityPlayer var1, float var2, float var3) {
         ArrayList<ItemStack> var4 = new ArrayList<ItemStack>();
         for (int var5 = 3; var5 >= 0; --var5) {
-            ItemStack var6 = var1.field_71071_by.field_70460_b[var5];
+            ItemStack var6 = var1.inventory.armorInventory[var5];
             if (var6 == null) continue;
             var4.add(var6);
 }
-        ItemStack var7 = var1.func_70694_bm();
+        ItemStack var7 = var1.getHeldItem();
         if (var7 != null) {
             var4.add(var7);
 }
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)0.55f, (float)0.55f, (float)1.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)0.55f, (float)0.55f, (float)1.0f);
         for (int var8 = 0; var8 < var4.size(); ++var8) {
             RenderUtil.m((ItemStack)var4.get(var8), (int)((var2 + (float)var8 * 10.0f) / 0.55f), (int)(var3 / 0.55f));
 }
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private void O(CustomFont var1, String var2, float var3, float var4, float var5, float var6, int var7, long var8) {
         var8 = c ^ var8;
@@ -286,9 +291,9 @@ implements EventSubscriber {
         float var24 = y.L() / scale.L();
         float var25 = 124.0f;
         float var26 = 48.0f;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)scale.L(), (float)scale.L(), (float)1.0f);
-        GlStateManager.func_179109_b((float)var23, (float)var24, (float)-450.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)scale.L(), (float)scale.L(), (float)1.0f);
+        GlStateManager.translate((float)var23, (float)var24, (float)-450.0f);
         this.Y(0.0f, 0.0f, var5, var25, var26, var4);
         this.G(7, 8, 32);
         this.W(var3, (char)var7, TargetHUDSnapshot.k(var22), 44.0f, 5.0f, 75.0f, var8, (short)var9, 1.25f, 0.78f, -1);
@@ -297,17 +302,17 @@ implements EventSubscriber {
         this.O(var3, "HTK", 44.0f, 35.0f, 0.68f, -1, var10);
         this.O(var3, "\u00a7b" + TargetHUDSnapshot.H(var22), 59.0f, 35.0f, 0.68f, new Color(0, 210, 220, 230).getRGB(), var10);
         this.O(var3, CombatUtil.s(var18, this.K) ? " \u00a7aW" : " \u00a7c\u00a7lL", 108.0f, 33.0f, 1.0f, this.k(TargetHUDSnapshot.B(var22), 220).getRGB(), var10);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private TargetHUDSnapshot H(int var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         ResourceLocation var15;
         var2 = c ^ var2;
         long var4 = var2 ^ 0x31D3B0A5CB52L;
         long var10 = var2 ^ 0xF10CAD3D288L;
-        float var12 = TargetHUD.f.field_71439_g.func_110143_aJ() + TargetHUD.f.field_71439_g.func_110139_bj();
-        float var13 = this.K.func_110139_bj();
-        float var14 = this.K.func_110143_aJ() + var13;
-        this.G = Math.max(this.K.func_110138_aP() + var13, 1.0f);
+        float var12 = TargetHUD.f.thePlayer.getHealth() + TargetHUD.f.thePlayer.getAbsorptionAmount();
+        float var13 = this.K.getAbsorptionAmount();
+        float var14 = this.K.getHealth() + var13;
+        this.G = Math.max(this.K.getMaxHealth() + var13, 1.0f);
         if (this.K != this.E) {
             this.n = null;
             this.x.W();
@@ -326,16 +331,16 @@ implements EventSubscriber {
 }
         float var16 = Math.min(Math.max(this.x.s(), 0L), 150L);
         float var17 = Math.min(Math.max(MathUtil.k(this.d, this.U, var16 / 150.0f) / this.G, 0.0f), 1.0f);
-        double var18 = this.K.func_110143_aJ() / this.K.func_110138_aP();
+        double var18 = this.K.getHealth() / this.K.getMaxHealth();
         Color var20 = var18 < 0.3 ? Color.RED : (var18 < 0.5 ? Color.ORANGE : (var18 < 0.7 ? Color.YELLOW : Color.GREEN));
         Color var21 = customHealthColor.c() ? new Color(var1) : var20;
         float var22 = Math.min(Math.max((var12 - var14 + 1.0f) / 2.0f, 0.0f), 1.0f);
         return new TargetHUDSnapshot(MinecraftColor.C(String.format("&r%s&r", this.T((Entity)this.K))), var14, var17, var21, CombatUtil.s(var10, this.K) ? Color.GREEN : Color.RED, CombatUtil.G(var4, this.K), MinecraftColor.C(String.format("&r&f%s%s\u2764&r", L.format(var14), var13 > 0.0f ? "&6" : "&c")), null);
 }
     private void M(int var1, int var2, int var3) {
-        GlStateManager.func_179126_j();
-        GuiInventory.func_147046_a((int)var1, (int)var2, (int)var3, (float)18.0f, (float)4.0f, (EntityLivingBase)this.K);
-        GlStateManager.func_179097_i();
+        GlStateManager.enableDepth();
+        GuiInventory.drawEntityOnScreen((int)var1, (int)var2, (int)var3, (float)18.0f, (float)4.0f, (EntityLivingBase)this.K);
+        GlStateManager.disableDepth();
 }
     private Color n(float var1, Color var2, Color var3) {
         var1 = Math.min(Math.max(var1, 0.0f), 1.0f);
@@ -396,11 +401,11 @@ implements EventSubscriber {
 }
     private void G(int var1, int var4, int var5) {
         if (this.n != null) {
-            GlStateManager.func_179124_c((float)1.0f, (float)1.0f, (float)1.0f);
-            f.func_110434_K().func_110577_a(this.n);
-            Gui.func_152125_a((int)var1, (int)var4, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)var5, (int)var5, (float)64.0f, (float)64.0f);
-            Gui.func_152125_a((int)var1, (int)var4, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)var5, (int)var5, (float)64.0f, (float)64.0f);
-            GlStateManager.func_179124_c((float)1.0f, (float)1.0f, (float)1.0f);
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f);
+            f.getTextureManager().bindTexture(this.n);
+            Gui.drawScaledCustomSizeModalRect((int)var1, (int)var4, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)var5, (int)var5, (float)64.0f, (float)64.0f);
+            Gui.drawScaledCustomSizeModalRect((int)var1, (int)var4, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)var5, (int)var5, (float)64.0f, (float)64.0f);
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f);
 }
 }
     private void Y(float var1, float var2, long var3, float var5, float var6, int var7) {
@@ -425,9 +430,9 @@ implements EventSubscriber {
         float var18 = y.L() / scale.L();
         float var19 = 122.0f;
         float var20 = 46.0f;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)scale.L(), (float)scale.L(), (float)1.0f);
-        GlStateManager.func_179109_b((float)var17, (float)var18, (float)-450.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)scale.L(), (float)scale.L(), (float)1.0f);
+        GlStateManager.translate((float)var17, (float)var18, (float)-450.0f);
         this.Y(0.0f, 0.0f, var5, var19, var20, var4);
         this.W(var3, (char)var7, TargetHUDSnapshot.k(var16), 43.0f, 6.0f, 74.0f, var8, (short)var9, 1.25f, 0.78f, -1);
         this.getRGB(43.0f, var10, 33.0f, 74.0f, 8.0f, TargetHUDSnapshot.j(var16), TargetHUDSnapshot.C(var16));
@@ -436,7 +441,7 @@ implements EventSubscriber {
             this.L((EntityPlayer)this.K, 44.0f, 19.0f);
 }
         this.M(22, 39, 18);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private String j(TargetHUDSnapshot var1) {
         return L.format(TargetHUDSnapshot.m(var1)) + "/" + L.format(this.G);
@@ -453,9 +458,9 @@ implements EventSubscriber {
                 this.v.W();
 }
         } else {
-            if (chatPreview.c() && TargetHUD.f.field_71462_r instanceof GuiChat) {
+            if (chatPreview.c() && TargetHUD.f.currentScreen instanceof GuiChat) {
                 this.E = this.K;
-                this.K = TargetHUD.f.field_71439_g;
+                this.K = TargetHUD.f.thePlayer;
                 return;
 }
             if (onlyWhenUsingKillaura.c() && !KillAura.a && this.v.A(stayTime.L() * 1000.0f)) {
@@ -481,10 +486,10 @@ implements EventSubscriber {
 }
     private void O(CustomFont var1, String var2, float var3, float var4, float var5, int var6, long var7) {
         long var9 = var7 ^ 0x89F76550721L;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)var5, (float)var5, (float)1.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)var5, (float)var5, (float)1.0f);
         var1.v(var2, var3 / var5, var4 / var5, var6, var9, textShadow.c());
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     /*
      * WARNING - Removed try catching itself - possible behaviour change.
@@ -498,13 +503,13 @@ implements EventSubscriber {
             return;
 }
         FontRenderer fr = FontManager.getSmall();
-        float health = t2.func_110143_aJ();
-        float max = Math.max(t2.func_110138_aP(), 1.0f);
+        float health = t2.getHealth();
+        float max = Math.max(t2.getMaxHealth(), 1.0f);
         float pct = Math.max(0.0f, Math.min(1.0f, health / max));
         this.G += (pct - this.G) * 0.18f;
         float animated = Math.max(0.0f, Math.min(1.0f, this.G));
-        String name = t2.func_70005_c_();
-        float dist = TargetHUD.f.field_71439_g.func_70032_d((Entity)t2);
+        String name = t2.getName();
+        float dist = TargetHUD.f.thePlayer.getDistanceToEntity((Entity)t2);
         int accent = Theme.S(0.0, 35338930340239L);
         int alphaVal = Math.max(70, 255 * backgroundOpacity.k() / 100);
         int bg = new Color(8, 10, 12, alphaVal).getRGB();
@@ -513,51 +518,51 @@ implements EventSubscriber {
         ResourceLocation skin = this.j(t2);
         String hpText = L.format(health) + " HP";
         String pctText = Math.round(pct * 100.0f) + "%";
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179109_b((float)x2.L(), (float)y.L(), (float)0.0f);
-        GlStateManager.func_179152_a((float)scale.L(), (float)scale.L(), (float)1.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float)x2.L(), (float)y.L(), (float)0.0f);
+        GlStateManager.scale((float)scale.L(), (float)scale.L(), (float)1.0f);
         try {
-            GlStateManager.func_179097_i();
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-            GlStateManager.func_179141_d();
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            GlStateManager.disableDepth();
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+            GlStateManager.enableAlpha();
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
             if (mode.equals("AUTUMN")) {
-                Gui.func_73734_a((int)0, (int)0, (int)140, (int)40, (int)bg);
-                Gui.func_73734_a((int)40, (int)15, (int)((int)(40.0f + 92.0f * animated)), (int)25, (int)accent);
+                Gui.drawRect((int)0, (int)0, (int)140, (int)40, (int)bg);
+                Gui.drawRect((int)40, (int)15, (int)((int)(40.0f + 92.0f * animated)), (int)25, (int)accent);
                 String hp = L.format(health / 2.0f);
                 fr.drawStringWithShadow(hp, 86.0f - fr.getWidth(hp) / 2.0f, 16.0f, -1);
                 fr.drawStringWithShadow(name, 40.0f, 2.0f, -1);
-                GuiInventory.func_147046_a((int)13, (int)40, (int)20, (float)t2.field_70177_z, (float)t2.field_70125_A, (EntityLivingBase)t2);
+                GuiInventory.drawEntityOnScreen((int)13, (int)40, (int)20, (float)t2.rotationYaw, (float)t2.rotationPitch, (EntityLivingBase)t2);
             } else if (mode.equals("EXHIBITION")) {
-                net.minecraft.client.gui.FontRenderer mcFont = TargetHUD.f.field_71466_p;
-                double boxWidth = 40 + mcFont.func_78256_a(name);
+                net.minecraft.client.gui.FontRenderer mcFont = TargetHUD.f.fontRendererObj;
+                double boxWidth = 40 + mcFont.getStringWidth(name);
                 double renderWidth = Math.max(boxWidth, 120.0);
                 RenderingUtils.rectangleBordered(-2.5, -2.5, renderWidth + 2.5, 42.5, 0.5, new Color(60, 60, 60).getRGB(), new Color(10, 10, 10).getRGB());
                 RenderingUtils.rectangleBordered(-1.5, -1.5, renderWidth + 1.5, 41.5, 1.5, new Color(60, 60, 60).getRGB(), new Color(40, 40, 40).getRGB());
                 RenderingUtils.rectangleBordered(0.0, 0.0, renderWidth, 40.0, 0.5, new Color(22, 22, 22).getRGB(), new Color(60, 60, 60).getRGB());
                 RenderingUtils.rectangleBordered(2.0, 2.0, 38.0, 38.0, 0.5, new Color(0, 0, 0, 0).getRGB(), new Color(10, 10, 10).getRGB());
                 RenderingUtils.rectangleBordered(2.5, 2.5, 37.5, 37.5, 0.5, new Color(17, 17, 17).getRGB(), new Color(48, 48, 48).getRGB());
-                GlStateManager.func_179094_E();
+                GlStateManager.pushMatrix();
                 ScaledResolution exhScale = new ScaledResolution(f);
-                int exhFactor = exhScale.func_78325_e();
+                int exhFactor = exhScale.getScaleFactor();
                 float exhTransX = x2.L();
                 float exhTransY = y.L();
                 float sv = scale.L();
-                GL11.glScissor((int)((int)((exhTransX + 3.0f * sv) * (float)exhFactor)), (int)((int)(((float)exhScale.func_78328_b() - (exhTransY + 37.0f * sv)) * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)));
+                GL11.glScissor((int)((int)((exhTransX + 3.0f * sv) * (float)exhFactor)), (int)((int)(((float)exhScale.getScaledHeight() - (exhTransY + 37.0f * sv)) * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)));
                 GL11.glEnable((int)3089);
                 this.drawEntityOnScreenExhibition(t2);
                 GL11.glDisable((int)3089);
-                GlStateManager.func_179121_F();
-                GlStateManager.func_179109_b((float)2.0f, (float)0.0f, (float)0.0f);
-                mcFont.func_175063_a(name, 37.0f, 3.0f, -1);
+                GlStateManager.popMatrix();
+                GlStateManager.translate((float)2.0f, (float)0.0f, (float)0.0f);
+                mcFont.drawStringWithShadow(name, 37.0f, 3.0f, -1);
                 float[] exhFractions = new float[]{0.0f, 0.5f, 1.0f};
                 Color[] exhColors = new Color[]{Color.RED, Color.YELLOW, Color.GREEN};
-                float exhAbsorption = t2.func_110139_bj();
+                float exhAbsorption = t2.getAbsorptionAmount();
                 float exhProgress = health / (max + exhAbsorption);
                 float exhRealProgress = health / max;
                 Color exhCustomColor = health >= 0.0f ? ColorBlendUtil.blendColors(exhFractions, exhColors, exhRealProgress).brighter() : Color.RED;
-                double exhWidth = Math.min(mcFont.func_78256_a(name), 60);
+                double exhWidth = Math.min(mcFont.getStringWidth(name), 60);
                 exhWidth = (int)(exhWidth / 10.0) * 10;
                 if (exhWidth < 60.0) {
                     exhWidth = 60.0;
@@ -574,26 +579,26 @@ implements EventSubscriber {
                     double dThing = exhWidth / 10.0 * (double)i;
                     RenderingUtils.drawRect(38.0f + (float)dThing, 12.0f, 38.0f + (float)dThing + 0.5f, 16.0f, new Color(0, 0, 0).getRGB());
 }
-                mcFont.func_175063_a("HP: " + (int)health + " | Dist: " + (int)dist, 37.0f, 18.0f, -1);
+                mcFont.drawStringWithShadow("HP: " + (int)health + " | Dist: " + (int)dist, 37.0f, 18.0f, -1);
                 if (t2 instanceof EntityPlayer) {
                     this.L((EntityPlayer)t2, 37.0f, 28.0f);
 }
-                GlStateManager.func_179109_b((float)-2.0f, (float)0.0f, (float)0.0f);
+                GlStateManager.translate((float)-2.0f, (float)0.0f, (float)0.0f);
             } else if (mode.equals("NOVOLINE")) {
                 int w2 = Math.max(110, 74 + (int)fr.getWidth(name));
-                Gui.func_73734_a((int)0, (int)0, (int)w2, (int)42, (int)RenderingUtils.withAlpha(-14145496, alphaVal));
+                Gui.drawRect((int)0, (int)0, (int)w2, (int)42, (int)RenderingUtils.withAlpha(-14145496, alphaVal));
                 RenderingUtils.drawRoundedHead(1, 1, 40, 2.0f, skin);
-                net.minecraft.client.gui.FontRenderer mcFont2 = TargetHUD.f.field_71466_p;
-                mcFont2.func_175063_a(name, 44.0f, 9.0f, -1);
-                Gui.func_73734_a((int)44, (int)22, (int)(w2 - 4), (int)33, (int)-1777003243);
-                Gui.func_73734_a((int)44, (int)22, (int)((int)(44.0f + (float)(w2 - 48) * animated)), (int)33, (int)accent);
+                net.minecraft.client.gui.FontRenderer mcFont2 = TargetHUD.f.fontRendererObj;
+                mcFont2.drawStringWithShadow(name, 44.0f, 9.0f, -1);
+                Gui.drawRect((int)44, (int)22, (int)(w2 - 4), (int)33, (int)-1777003243);
+                Gui.drawRect((int)44, (int)22, (int)((int)(44.0f + (float)(w2 - 48) * animated)), (int)33, (int)accent);
                 fr.drawString(pctText, 44.0f + ((float)(w2 - 48) - fr.getWidth(pctText)) / 2.0f, 24.0f, -1);
             } else if (mode.equals("AKRIEN")) {
                 double akArmor;
                 FontRenderer boldFr = FontManager.get();
                 int akW = (int)Math.max(100.0f, boldFr.getWidth(name) + 45.0f);
                 float akH = 39.5f;
-                float akHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.func_110139_bj()) / (max + t2.func_110139_bj())));
+                float akHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.getAbsorptionAmount()) / (max + t2.getAbsorptionAmount())));
                 int akBg = new Color(0, 0, 0, 102).getRGB();
                 RenderingUtils.drawRect(0.0f, 0.0f, akW, akH, akBg);
                 RenderingUtils.drawRect(2.5f, 31.0f, akW - 2, 33.5f, akBg);
@@ -604,30 +609,30 @@ implements EventSubscriber {
                 if (akAnimOut > 0.0f) {
                     RenderingUtils.drawGradientRectBordered(2.5, 31.0, 1.5 + (double)akAnimOut, 33.5, 0.74, -16737215, -7405631, akBg, akBg);
 }
-                if ((akArmor = (double)t2.func_70658_aO() / 20.0) > 0.0) {
+                if ((akArmor = (double)t2.getTotalArmorValue() / 20.0) > 0.0) {
                     RenderingUtils.drawGradientRectBordered(2.5, 34.5, 1.5 + ((double)akW - 3.5) * akArmor, 37.0, 0.74, -16750672, -12986881, akBg, akBg);
 }
-                GlStateManager.func_179094_E();
+                GlStateManager.pushMatrix();
                 if (t2 instanceof AbstractClientPlayer) {
-                    GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                    GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                     float akFScale = 0.8125f;
-                    GlStateManager.func_179152_a((float)akFScale, (float)akFScale, (float)akFScale);
-                    f.func_110434_K().func_110577_a(skin != null ? skin : new ResourceLocation("textures/entity/steve.png"));
-                    Gui.func_152125_a((int)((int)(3.0f / akFScale)), (int)((int)(3.0f / akFScale)), (float)8.0f, (float)8.0f, (int)8, (int)8, (int)32, (int)32, (float)64.0f, (float)64.0f);
-                    Gui.func_152125_a((int)((int)(3.0f / akFScale)), (int)((int)(3.0f / akFScale)), (float)40.0f, (float)8.0f, (int)8, (int)8, (int)32, (int)32, (float)64.0f, (float)64.0f);
+                    GlStateManager.scale((float)akFScale, (float)akFScale, (float)akFScale);
+                    f.getTextureManager().bindTexture(skin != null ? skin : new ResourceLocation("textures/entity/steve.png"));
+                    Gui.drawScaledCustomSizeModalRect((int)((int)(3.0f / akFScale)), (int)((int)(3.0f / akFScale)), (float)8.0f, (float)8.0f, (int)8, (int)8, (int)32, (int)32, (float)64.0f, (float)64.0f);
+                    Gui.drawScaledCustomSizeModalRect((int)((int)(3.0f / akFScale)), (int)((int)(3.0f / akFScale)), (float)40.0f, (float)8.0f, (int)8, (int)8, (int)32, (int)32, (float)64.0f, (float)64.0f);
                 } else {
                     RenderingUtils.drawRect(3.0f, 3.0f, 28.0f, 28.0f, akBg);
-                    GlStateManager.func_179152_a((float)2.0f, (float)2.0f, (float)2.0f);
+                    GlStateManager.scale((float)2.0f, (float)2.0f, (float)2.0f);
                     boldFr.drawStringWithShadow("?", 5.5f, 5.5f, -1);
 }
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
                 boldFr.drawString(name, 31.0f, 5.0f, -1);
                 fr.drawString("Health: " + L.format(health), 31.0f, 15.0f, -1);
                 fr.drawString("Distance: " + L.format(dist) + "m", 31.0f, 22.0f, -1);
             } else if (mode.equals("ASTOLFO")) {
-                net.minecraft.client.gui.FontRenderer mcFr = TargetHUD.f.field_71466_p;
-                int asW = Math.max(110, mcFr.func_78256_a(name) + 70);
-                float asHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.func_110139_bj()) / (max + t2.func_110139_bj())));
+                net.minecraft.client.gui.FontRenderer mcFr = TargetHUD.f.fontRendererObj;
+                int asW = Math.max(110, mcFr.getStringWidth(name) + 70);
+                float asHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.getAbsorptionAmount()) / (max + t2.getAbsorptionAmount())));
                 int asC1 = Theme.S(0.0, 35338930340239L);
                 int asC2 = Theme.S(3.0, 35338930340239L);
                 RenderingUtils.drawRect(0.0f, 0.0f, asW, 45.0f, new Color(0, 0, 0, 153).getRGB());
@@ -639,24 +644,24 @@ implements EventSubscriber {
                 float asHealthW = this.astolfoHealthAnim.H();
                 RenderingUtils.drawGradientRect(34.0, 33.0, 30.0f + asHealthW, 40.0, true, asColor1.darker().darker().getRGB(), asColor2.darker().darker().getRGB());
                 RenderingUtils.drawGradientRect(34.0, 33.0, 30.0f + Math.min(asEndWidth, asHealthW), 40.0, true, asC1, asC2);
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-                GuiInventory.func_147046_a((int)17, (int)40, (int)18, (float)t2.field_70177_z, (float)t2.field_70125_A, (EntityLivingBase)t2);
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-                mcFr.func_175063_a(name, 34.0f, 4.0f, -1);
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                GuiInventory.drawEntityOnScreen((int)17, (int)40, (int)18, (float)t2.rotationYaw, (float)t2.rotationPitch, (EntityLivingBase)t2);
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                mcFr.drawStringWithShadow(name, 34.0f, 4.0f, -1);
                 float asScale = 1.75f;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179152_a((float)asScale, (float)asScale, (float)asScale);
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                GlStateManager.pushMatrix();
+                GlStateManager.scale((float)asScale, (float)asScale, (float)asScale);
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                 String asHpStr = L.format(health) + " \u2764";
-                mcFr.func_175063_a(asHpStr, 34.0f / asScale, 16.0f / asScale, asC1);
-                GlStateManager.func_179121_F();
+                mcFr.drawStringWithShadow(asHpStr, 34.0f / asScale, 16.0f / asScale, asC1);
+                GlStateManager.popMatrix();
             } else if (mode.equals("RISE")) {
                 long rsNow;
                 FontRenderer riseFr20 = FontManager.getMedium();
                 FontRenderer riseFr18 = FontManager.getSmall();
                 int rsW = (int)Math.max(128.0f, riseFr20.getWidth("Name: " + name) + 60.0f);
                 int rsH = 50;
-                float rsHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.func_110139_bj()) / (max + t2.func_110139_bj())));
+                float rsHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.getAbsorptionAmount()) / (max + t2.getAbsorptionAmount())));
                 ShaderRenderer.F(0.0f, 0.0f, rsW, 2001336113403L, rsH, 6.0f, new Color(0, 0, 0, 110).getRGB(), true, true, true, true);
                 int rsC1 = Theme.S(0.0, 35338930340239L);
                 int rsC2 = Theme.S(3.0, 35338930340239L);
@@ -667,20 +672,20 @@ implements EventSubscriber {
                     RiseParticle rp = this.riseParticles.get(pi);
                     rp.baseX = 20.0f;
                     rp.baseY = 20.0f;
-                    GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                    GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                     if (!(rp.opacity > 4.0f)) continue;
                     ShaderRenderer.F(rp.baseX + rp.adjustedX, rp.baseY + rp.adjustedY, rp.size, 2001336113403L, rp.size, rp.size / 2.0f - 0.5f, RenderingUtils.applyOpacity(rp.color, rp.opacity / 255.0f), true, true, true, true);
 }
                 if (t2 instanceof AbstractClientPlayer) {
-                    int rsHurtOffset = (int)((float)t2.field_70737_aN * 0.35f);
-                    int rsRedOffset = -(t2.field_70737_aN * 23);
+                    int rsHurtOffset = (int)((float)t2.hurtTime * 0.35f);
+                    int rsRedOffset = -(t2.hurtTime * 23);
                     int rsFaceColor = new Color(255, Math.max(0, Math.min(255, 255 + rsRedOffset)), Math.max(0, Math.min(255, 255 + rsRedOffset))).getRGB();
-                    GlStateManager.func_179098_w();
-                    f.func_110434_K().func_110577_a(skin != null ? skin : new ResourceLocation("textures/entity/steve.png"));
-                    GlStateManager.func_179131_c((float)((float)(rsFaceColor >> 16 & 0xFF) / 255.0f), (float)((float)(rsFaceColor >> 8 & 0xFF) / 255.0f), (float)((float)(rsFaceColor & 0xFF) / 255.0f), (float)1.0f);
-                    Gui.func_152125_a((int)(5 + rsHurtOffset / 2), (int)(5 + rsHurtOffset / 2), (float)8.0f, (float)8.0f, (int)8, (int)8, (int)(30 - rsHurtOffset), (int)(30 - rsHurtOffset), (float)64.0f, (float)64.0f);
-                    Gui.func_152125_a((int)(5 + rsHurtOffset / 2), (int)(5 + rsHurtOffset / 2), (float)40.0f, (float)8.0f, (int)8, (int)8, (int)(30 - rsHurtOffset), (int)(30 - rsHurtOffset), (float)64.0f, (float)64.0f);
-                    GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                    GlStateManager.enableTexture2D();
+                    f.getTextureManager().bindTexture(skin != null ? skin : new ResourceLocation("textures/entity/steve.png"));
+                    GlStateManager.color((float)((float)(rsFaceColor >> 16 & 0xFF) / 255.0f), (float)((float)(rsFaceColor >> 8 & 0xFF) / 255.0f), (float)((float)(rsFaceColor & 0xFF) / 255.0f), (float)1.0f);
+                    Gui.drawScaledCustomSizeModalRect((int)(5 + rsHurtOffset / 2), (int)(5 + rsHurtOffset / 2), (float)8.0f, (float)8.0f, (int)8, (int)8, (int)(30 - rsHurtOffset), (int)(30 - rsHurtOffset), (float)64.0f, (float)64.0f);
+                    Gui.drawScaledCustomSizeModalRect((int)(5 + rsHurtOffset / 2), (int)(5 + rsHurtOffset / 2), (float)40.0f, (float)8.0f, (int)8, (int)8, (int)(30 - rsHurtOffset), (int)(30 - rsHurtOffset), (float)64.0f, (float)64.0f);
+                    GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
                 if ((rsNow = System.currentTimeMillis()) - this.riseLastParticleMs > 16L) {
                     this.riseLastParticleMs = rsNow;
@@ -691,15 +696,15 @@ implements EventSubscriber {
                         this.riseParticles.remove(pi);
 }
 }
-                double rsHealthNum = (double)Math.round((double)(health + t2.func_110139_bj()) * 10.0) / 10.0;
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                double rsHealthNum = (double)Math.round((double)(health + t2.getAbsorptionAmount()) * 10.0) / 10.0;
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                 riseFr18.drawString(String.valueOf(rsHealthNum), 8.0f + this.riseHealthAnim.H(), 38.0f, -1);
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                 riseFr20.drawString("Name: " + name, 40.0f, 10.0f, -1);
-                GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+                GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
                 double rsDist = (double)Math.round((double)dist * 10.0) / 10.0;
-                riseFr20.drawString("Distance: " + rsDist + " Hurt: " + t2.field_70737_aN, 40.0f, 22.0f, -1);
-                if (t2.field_70737_aN == 9 && !this.riseSentParticles) {
+                riseFr20.drawString("Distance: " + rsDist + " Hurt: " + t2.hurtTime, 40.0f, 22.0f, -1);
+                if (t2.hurtTime == 9 && !this.riseSentParticles) {
                     for (int i = 0; i <= 15; ++i) {
                         RiseParticle rp = new RiseParticle();
                         rp.baseX = 20.0f;
@@ -713,7 +718,7 @@ implements EventSubscriber {
 }
                     this.riseSentParticles = true;
 }
-                if (t2.field_70737_aN == 8) {
+                if (t2.hurtTime == 8) {
                     this.riseSentParticles = false;
 }
             } else if (mode.equals("OLD_TENACITY")) {
@@ -730,7 +735,7 @@ implements EventSubscriber {
                     otBoldFr.drawStringWithShadow("?", 20.0f - otBoldFr.getWidth("?") / 2.0f, 12.0f, -1);
 }
                 otBoldFr.drawStringWithShadow(name, 39.0f, 5.0f, -1);
-                float otHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.func_110139_bj()) / (max + t2.func_110139_bj())));
+                float otHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.getAbsorptionAmount()) / (max + t2.getAbsorptionAmount())));
                 float otRealHealthW = otW - 44;
                 this.oldTenacityHealthAnim.j(otRealHealthW * otHealthPct, 18);
                 float otHealthW = this.oldTenacityHealthAnim.H();
@@ -756,7 +761,7 @@ implements EventSubscriber {
 }
                 float tNameX = 10.0f + tSize + ((float)tW - (10.0f + tSize)) / 2.0f;
                 tBoldFr.drawString(name, tNameX - tBoldFr.getWidth(name) / 2.0f, 10.0f, -1);
-                float tHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.func_110139_bj()) / (max + t2.func_110139_bj())));
+                float tHealthPct = Math.max(0.0f, Math.min(1.0f, (health + t2.getAbsorptionAmount()) / (max + t2.getAbsorptionAmount())));
                 float tBarW = (float)tW - (tSize + 30.0f);
                 this.tenacityHealthAnim.j(tBarW * tHealthPct, 18);
                 ShaderRenderer.F(20.0f + tSize, 25.0f, tBarW, 2001336113403L, 4.0f, 2.0f, new Color(0, 0, 0, 76).getRGB(), true, true, true, true);
@@ -767,48 +772,48 @@ implements EventSubscriber {
 }
 }
         finally {
-            GlStateManager.func_179126_j();
-            GlStateManager.func_179117_G();
-            GlStateManager.func_179098_w();
-            GlStateManager.func_179141_d();
-            GlStateManager.func_179121_F();
+            GlStateManager.enableDepth();
+            GlStateManager.resetColor();
+            GlStateManager.enableTexture2D();
+            GlStateManager.enableAlpha();
+            GlStateManager.popMatrix();
 }
 }
     private void drawEntityOnScreenExhibition(EntityLivingBase ent) {
-        GlStateManager.func_179142_g();
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179109_b((float)20.0f, (float)36.0f, (float)50.0f);
-        float largestSize = Math.max(ent.field_70131_O, ent.field_70130_N);
+        GlStateManager.enableColorMaterial();
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float)20.0f, (float)36.0f, (float)50.0f);
+        float largestSize = Math.max(ent.height, ent.width);
         float relativeScale = Math.max(largestSize / 1.8f, 1.0f);
-        GlStateManager.func_179152_a((float)(-16.0f / relativeScale), (float)(16.0f / relativeScale), (float)(16.0f / relativeScale));
-        GlStateManager.func_179114_b((float)180.0f, (float)0.0f, (float)0.0f, (float)1.0f);
-        GlStateManager.func_179114_b((float)135.0f, (float)0.0f, (float)1.0f, (float)0.0f);
-        RenderHelper.func_74519_b();
-        GlStateManager.func_179114_b((float)-135.0f, (float)0.0f, (float)1.0f, (float)0.0f);
-        GlStateManager.func_179114_b((float)(-((float)Math.atan(0.425)) * 20.0f), (float)1.0f, (float)0.0f, (float)0.0f);
-        GlStateManager.func_179109_b((float)0.0f, (float)0.0f, (float)0.0f);
-        RenderManager rm = Minecraft.func_71410_x().func_175598_ae();
-        rm.func_178631_a(180.0f);
-        rm.func_178633_a(false);
-        rm.func_147940_a((Entity)ent, 0.0, 0.0, 0.0, 0.0f, 1.0f);
-        rm.func_178633_a(true);
-        GlStateManager.func_179121_F();
-        RenderHelper.func_74518_a();
-        GlStateManager.func_179101_C();
-        GlStateManager.func_179138_g((int)OpenGlHelper.field_77476_b);
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179138_g((int)OpenGlHelper.field_77478_a);
+        GlStateManager.scale((float)(-16.0f / relativeScale), (float)(16.0f / relativeScale), (float)(16.0f / relativeScale));
+        GlStateManager.rotate((float)180.0f, (float)0.0f, (float)0.0f, (float)1.0f);
+        GlStateManager.rotate((float)135.0f, (float)0.0f, (float)1.0f, (float)0.0f);
+        RenderHelper.enableStandardItemLighting();
+        GlStateManager.rotate((float)-135.0f, (float)0.0f, (float)1.0f, (float)0.0f);
+        GlStateManager.rotate((float)(-((float)Math.atan(0.425)) * 20.0f), (float)1.0f, (float)0.0f, (float)0.0f);
+        GlStateManager.translate((float)0.0f, (float)0.0f, (float)0.0f);
+        RenderManager rm = Minecraft.getMinecraft().getRenderManager();
+        rm.setPlayerViewY(180.0f);
+        rm.setRenderShadow(false);
+        rm.renderEntityWithPosYaw((Entity)ent, 0.0, 0.0, 0.0, 0.0f, 1.0f);
+        rm.setRenderShadow(true);
+        GlStateManager.popMatrix();
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.disableRescaleNormal();
+        GlStateManager.setActiveTexture((int)OpenGlHelper.lightmapTexUnit);
+        GlStateManager.disableTexture2D();
+        GlStateManager.setActiveTexture((int)OpenGlHelper.defaultTexUnit);
 }
     private void handleDrag() {
-        if (f == null || TargetHUD.f.field_71462_r == null || TargetHUD.f.field_71443_c <= 0 || TargetHUD.f.field_71440_d <= 0) {
+        if (f == null || TargetHUD.f.currentScreen == null || TargetHUD.f.displayWidth <= 0 || TargetHUD.f.displayHeight <= 0) {
             this.thudDragging = false;
             return;
 }
         ScaledResolution sr = new ScaledResolution(f);
-        int sw = sr.func_78326_a();
-        int sh = sr.func_78328_b();
-        int mx = Mouse.getX() * sw / TargetHUD.f.field_71443_c;
-        int my = sh - Mouse.getY() * sh / TargetHUD.f.field_71440_d - 1;
+        int sw = sr.getScaledWidth();
+        int sh = sr.getScaledHeight();
+        int mx = Mouse.getX() * sw / TargetHUD.f.displayWidth;
+        int my = sh - Mouse.getY() * sh / TargetHUD.f.displayHeight - 1;
         float s = Math.max(0.1f, scale.L());
         float boxW = 190.0f * s;
         float boxH = 52.0f * s;

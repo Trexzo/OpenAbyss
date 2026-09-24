@@ -7,6 +7,6 @@ import Abyss.event.Event;
 
 public class PostMoveInputEvent
 extends Event {
-    private static final long public PostMoveInputEvent(int var1, int var2) {
+    public PostMoveInputEvent(int var1, int var2) {
 }
 }

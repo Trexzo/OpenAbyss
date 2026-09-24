@@ -34,8 +34,15 @@ import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.util.StringUtils;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ScoreboardUtil {
+    private static long a;
+
         
     
     private static Minecraft f;
@@ -58,30 +65,30 @@ public class ScoreboardUtil {
 }
     private static List v(long var0) {
         ArrayList<String> var2 = new ArrayList<String>();
-        if (ScoreboardUtil.f.field_71441_e == null) {
+        if (ScoreboardUtil.f.theWorld == null) {
             return var2;
 }
-        Scoreboard var3 = ScoreboardUtil.f.field_71441_e.func_96441_U();
+        Scoreboard var3 = ScoreboardUtil.f.theWorld.getScoreboard();
         if (var3 == null) {
             return var2;
 }
-        ScoreObjective var4 = var3.func_96539_a(1);
+        ScoreObjective var4 = var3.getObjectiveInDisplaySlot(1);
         if (var4 == null) {
             return var2;
 }
-        ArrayList<Object> var5 = (ArrayList<Score>)var3.func_96534_i(var4);
+        ArrayList<Score> var5 = (ArrayList<Score>)var3.getSortedScores(var4);
         ArrayList<Score> var6 = new ArrayList<Score>();
         for (Score var8 : var5) {
-            if (var8 == null || var8.func_96653_e() == null || var8.func_96653_e().startsWith("#")) continue;
+            if (var8 == null || var8.getPlayerName() == null || var8.getPlayerName().startsWith("#")) continue;
             var6.add(var8);
 }
-        var5 = var6.size() > 15 ? new ArrayList(Lists.newArrayList((Iterable)Iterables.skip(var6, (int)(var6.size() - 15)))) : var6;
+        var5 = var6.size() > 15 ? new ArrayList<Score>(Lists.newArrayList(Iterables.skip(var6, var6.size() - 15))) : var6;
         int var13 = 0;
         for (Score var9 : var5) {
-            ScorePlayerTeam var10 = var3.func_96509_i(var9.func_96653_e());
-            var2.add(ScorePlayerTeam.func_96667_a((Team)var10, (String)var9.func_96653_e()));
+            ScorePlayerTeam var10 = var3.getPlayersTeam(var9.getPlayerName());
+            var2.add(ScorePlayerTeam.formatPlayerName((Team)var10, (String)var9.getPlayerName()));
             if (++var13 != var5.size()) continue;
-            var2.add(var4.func_96678_d());
+            var2.add(var4.getDisplayName());
 }
         Collections.reverse(var2);
         return var2;
@@ -93,7 +100,7 @@ public class ScoreboardUtil {
         if (var2.isEmpty()) {
             return var2;
 }
-        char[] var3 = StringUtils.func_76338_a((String)var2).toCharArray();
+        char[] var3 = StringUtils.stripControlCodes((String)var2).toCharArray();
         StringBuilder var4 = new StringBuilder();
         for (char var8 : var3) {
             if (var8 >= '\u007f' || var8 <= '\u0014') continue;
@@ -103,24 +110,24 @@ public class ScoreboardUtil {
 }
     public static List b(long var0) {
         ArrayList var4 = new ArrayList();
-        if (ScoreboardUtil.f.field_71441_e == null) {
+        if (ScoreboardUtil.f.theWorld == null) {
             return var4;
 }
-        Scoreboard var5 = ScoreboardUtil.f.field_71441_e.func_96441_U();
+        Scoreboard var5 = ScoreboardUtil.f.theWorld.getScoreboard();
         return var5 == null ? var4 : ScoreboardUtil.b(var5);
 }
     public static String w(Scoreboard var0) {
         if (var0 == null) {
             return "";
 }
-        ScoreObjective var1 = var0.func_96539_a(1);
-        return var1 == null ? "" : var1.func_96678_d();
+        ScoreObjective var1 = var0.getObjectiveInDisplaySlot(1);
+        return var1 == null ? "" : var1.getDisplayName();
 }
     public static String E(Scoreboard var0) {
         return ScoreboardUtil.r(ScoreboardUtil.w(var0));
 }
     public static String r(String var0) {
-        return var0 == null ? null : StringUtils.func_76338_a((String)var0);
+        return var0 == null ? null : StringUtils.stripControlCodes((String)var0);
 }
     public static List<String> L(List<String> var0) {
         ArrayList<String> var1 = new ArrayList<String>(var0.size());
@@ -137,13 +144,13 @@ public class ScoreboardUtil {
         if (!ClientUtil.I()) {
             return false;
 }
-        Scoreboard var6 = ScoreboardUtil.f.field_71441_e.func_96441_U();
+        Scoreboard var6 = ScoreboardUtil.f.theWorld.getScoreboard();
         if (var6 == null) {
             return false;
 }
-        ScoreObjective var7 = var6.func_96539_a(1);
-        if (var7 != null && ScoreboardUtil.v(0L, var7.func_96678_d()).contains("BED WARS")) {
-            for (String var9 : ScoreboardUtil.v(0L)) {
+        ScoreObjective var7 = var6.getObjectiveInDisplaySlot(1);
+        if (var7 != null && ScoreboardUtil.v(0L, var7.getDisplayName()).contains("BED WARS")) {
+            for (String var9 : (Iterable<String>)(ScoreboardUtil.v(0L))) {
                 String[] var10 = (var9 = ScoreboardUtil.v(0L, var9)).split("  ");
                 if (var10.length <= 1) {
                     if (!var9.equals("Waiting...") && !var9.startsWith("Starting in")) {
@@ -163,14 +170,14 @@ public class ScoreboardUtil {
         return ScoreboardUtil.L(ScoreboardUtil.b(0L));
 }
     public static List b(Scoreboard var2) {
-        ScoreObjective var3 = var2.func_96539_a(1);
+        ScoreObjective var3 = var2.getObjectiveInDisplaySlot(1);
         if (var3 == null) {
             return new ArrayList();
 }
-        Collection var4 = var2.func_96534_i(var3);
+        Collection var4 = var2.getSortedScores(var3);
         ArrayList var5 = new ArrayList();
-        for (Score var7 : var4) {
-            if (var7 == null || var7.func_96653_e() == null || var7.func_96653_e().startsWith("#")) continue;
+        for (Score var7 : (Iterable<Score>)(var4)) {
+            if (var7 == null || var7.getPlayerName() == null || var7.getPlayerName().startsWith("#")) continue;
             var5.add(var7);
 }
         if (var5.size() > 15) {
@@ -180,13 +187,13 @@ public class ScoreboardUtil {
         int var8 = var5.size();
         for (int var12 = 0; var12 < var8; ++var12) {
             Score var9 = (Score)var5.get(var12);
-            var11.add(ScorePlayerTeam.func_96667_a((Team)var2.func_96509_i(var9.func_96653_e()), (String)""));
+            var11.add(ScorePlayerTeam.formatPlayerName((Team)var2.getPlayersTeam(var9.getPlayerName()), (String)""));
 }
         Collections.reverse(var11);
         return var11;
 }
     public static String D() {
-        return ScoreboardUtil.f.field_71441_e == null ? null : ScoreboardUtil.E(ScoreboardUtil.f.field_71441_e.func_96441_U());
+        return ScoreboardUtil.f.theWorld == null ? null : ScoreboardUtil.E(ScoreboardUtil.f.theWorld.getScoreboard());
 }
     public static boolean x(long var0) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         String[] var9;
@@ -201,7 +208,7 @@ public class ScoreboardUtil {
         if (!ScoreboardUtil.u((String)var6.get(0)).startsWith("SKYWARS")) {
             return -1;
 }
-        for (String var8 : var6) {
+        for (String var8 : (Iterable<String>)(var6)) {
             if ((var8 = ScoreboardUtil.u(var8)).equals("Waiting...") || var8.startsWith("Starting in ")) {
                 return 1;
 }
@@ -226,7 +233,7 @@ public class ScoreboardUtil {
         return null;
 }
     private static String v(long var0, String var2) {
-        char[] var3 = StringUtils.func_76338_a((String)var2).toCharArray();
+        char[] var3 = StringUtils.stripControlCodes((String)var2).toCharArray();
         StringBuilder var4 = new StringBuilder();
         for (char var8 : var3) {
             if (var8 >= '\u007f' || var8 <= '\u0014') continue;
@@ -235,6 +242,7 @@ public class ScoreboardUtil {
         return var4.toString();
 }
     static {
+        a = 23291616283485L;
         f = MinecraftRef.c((byte)0, 0L);
 }
 }

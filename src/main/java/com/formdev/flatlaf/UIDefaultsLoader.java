@@ -116,21 +116,20 @@ class UIDefaultsLoader {
             List<Object> list = FlatLaf.getCustomDefaultsSources();
             int size = list != null ? list.size() : 0;
             for (int i = 0; i < size; ++i) {
-                Iterator<Object> source = list.get(i);
+                Object source = list.get(i);
                 if (source instanceof String && i + 1 < size) {
                     ClassLoader classLoader;
-                    String string = (String)((Object)source);
+                    String string = (String)source;
                     if ((classLoader = (ClassLoader)list.get(++i)) != null && !addonClassLoaders.contains(classLoader)) {
                         addonClassLoaders.add(classLoader);
 }
                     String string2 = string.replace('.', '/');
                     if (classLoader == null) {
-                        ClassLoader classLoader2 = FlatLaf.class.getClassLoader();
+                        classLoader = FlatLaf.class.getClassLoader();
 }
                     for (Class<?> lafClass2 : lafClasses) {
-                        void var12_37;
                         String propertiesName = string2 + '/' + lafClass2.getSimpleName() + ".properties";
-                        InputStream in2 = var12_37.getResourceAsStream(propertiesName);
+                        InputStream in2 = classLoader.getResourceAsStream(propertiesName);
                         try {
                             if (in2 == null) continue;
                             properties.load(in2);
@@ -209,7 +208,7 @@ class UIDefaultsLoader {
                 properties.put(key2, wildcardValue);
 }
             Function<String, String> function = key -> properties.getProperty((String)key);
-            Function<String, String> resolver = value -> UIDefaultsLoader.resolveValue(value, propertiesGetter);
+            Function<String, String> resolver = value -> UIDefaultsLoader.resolveValue(value, function);
             HashMap<String, String> variables = new HashMap<String, String>(50);
             for (Map.Entry<Object, Object> e : properties.entrySet()) {
                 String key4 = (String)e.getKey();
@@ -356,7 +355,7 @@ class UIDefaultsLoader {
             if (value.startsWith("lazy(") && value.endsWith(")")) {
                 resultValueType[0] = ValueType.LAZY;
                 String uiKey = StringUtils.substringTrimmed(value, 5, value.length() - 1);
-                return t2 -> UIDefaultsLoader.lazyUIManagerGet(uiKey);
+                return (UIDefaults.LazyValue)t2 -> UIDefaultsLoader.lazyUIManagerGet(uiKey);
 }
             if (value.startsWith("#")) {
                 valueType = ValueType.COLOR;
@@ -519,12 +518,12 @@ class UIDefaultsLoader {
             ColorUIResource lineColor = parts.size() >= 5 ? (ColorUIResource)UIDefaultsLoader.parseColorOrFunction(resolver.apply(parts.get(4)), resolver) : null;
             float lineThickness = parts.size() >= 6 && !parts.get(5).isEmpty() ? UIDefaultsLoader.parseFloat(parts.get(5)).floatValue() : 1.0f;
             int arc = parts.size() >= 7 ? UIDefaultsLoader.parseInteger(parts.get(6)) : 0;
-            return t2 -> lineColor != null ? new FlatLineBorder(insets, lineColor, lineThickness, arc) : new FlatEmptyBorder(insets);
+            return (UIDefaults.LazyValue)t2 -> lineColor != null ? new FlatLineBorder(insets, lineColor, lineThickness, arc) : new FlatEmptyBorder(insets);
 }
         return UIDefaultsLoader.parseInstance(value, resolver, addonClassLoaders);
 }
     private static Object parseInstance(String value, Function<String, String> resolver, List<ClassLoader> addonClassLoaders) {
-        return t2 -> {
+        return (UIDefaults.LazyValue)t2 -> {
             try {
                 if (value.indexOf(44) >= 0) {
                     List<String> parts = UIDefaultsLoader.splitFunctionParams(value, ',');
@@ -547,7 +546,7 @@ class UIDefaultsLoader {
         };
 }
     private static Object parseClass(String value, List<ClassLoader> addonClassLoaders) {
-        return t2 -> {
+        return (UIDefaults.LazyValue)t2 -> {
             try {
                 return UIDefaultsLoader.findClass(value, addonClassLoaders);
 }
@@ -832,7 +831,7 @@ class UIDefaultsLoader {
 }
         ColorFunctions.HSLIncreaseDecrease function = new ColorFunctions.HSLIncreaseDecrease(hslIndex, increase, amount, relative, autoInverse);
         if (lazy) {
-            return t2 -> {
+            return (UIDefaults.LazyValue)t2 -> {
                 Object color = UIDefaultsLoader.lazyUIManagerGet(colorStr);
                 return color instanceof Color ? new ColorUIResource(ColorFunctions.applyFunctions((Color)color, function)) : null;
             };
@@ -851,7 +850,7 @@ class UIDefaultsLoader {
 }
         ColorFunctions.Fade function = new ColorFunctions.Fade(amount);
         if (lazy) {
-            return t2 -> {
+            return (UIDefaults.LazyValue)t2 -> {
                 Object color = UIDefaultsLoader.lazyUIManagerGet(colorStr);
                 return color instanceof Color ? new ColorUIResource(ColorFunctions.applyFunctions((Color)color, function)) : null;
             };
@@ -1045,7 +1044,7 @@ class UIDefaultsLoader {
             throw new IllegalArgumentException("can not mix absolute style (e.g. 'bold') with derived style (e.g. '+italic') in '" + value + "'");
 }
         if (styleChange != 0) {
-            if (styleChange & true && (styleChange & 0x10000) != 0) {
+            if ((styleChange & 1) != 0 && (styleChange & 0x10000) != 0) {
                 throw new IllegalArgumentException("can not use '+bold' and '-bold' in '" + value + "'");
 }
             if ((styleChange & 2) != 0 && (styleChange & 0x20000) != 0) {
@@ -1151,7 +1150,7 @@ class UIDefaultsLoader {
             int brightness = Integer.parseInt(numbers.get(0));
             int contrast = Integer.parseInt(numbers.get(1));
             int alpha = Integer.parseInt(numbers.get(2));
-            return t2 -> new GrayFilter(brightness, contrast, alpha);
+            return (UIDefaults.LazyValue)t2 -> new GrayFilter(brightness, contrast, alpha);
 }
         catch (NumberFormatException ex) {
             throw new IllegalArgumentException("invalid gray filter '" + value + "'");

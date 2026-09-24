@@ -13,7 +13,7 @@ import Abyss.event.invoker.NukerSendPacketInvoker;
 import Abyss.module.impl.world.Nuker;
 
 public final class NukerBinder {
-    private static final long private NukerBinder() {
+    private NukerBinder() {
 }
     public static void p(EventBus var0, Nuker var3) {
         var0.R(var3, HeldItemChangeEvent.class, 3, new NukerHeldItemChangeInvoker(var3));

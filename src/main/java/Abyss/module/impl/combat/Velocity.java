@@ -124,7 +124,7 @@ implements EventSubscriber {
                 this.v = 0;
 }
 }
-        if (disableWhileHoldingS.c() && KeyBindUtil.V(Velocity.f.field_71474_y.field_74368_y.func_151463_i(), 64165991731362L)) {
+        if (disableWhileHoldingS.c() && KeyBindUtil.V(Velocity.f.gameSettings.keyBindBack.getKeyCode(), 64165991731362L)) {
             this.Q();
 }
         if (this.O.isEmpty()) {
@@ -198,7 +198,7 @@ implements EventSubscriber {
         this.D(0L);
 }
     private void o(long var1) {
-        if (this.g >= this.n || delayReleaseOnGround.c() && Velocity.f.field_71439_g.field_70122_E || delayReleaseOnReduce.c() && this.t || Velocity.f.field_71439_g.func_70090_H() || Velocity.f.field_71439_g.func_180799_ab()) {
+        if (this.g >= this.n || delayReleaseOnGround.c() && Velocity.f.thePlayer.onGround || delayReleaseOnReduce.c() && this.t || Velocity.f.thePlayer.isInWater() || Velocity.f.thePlayer.isInLava()) {
             this.Q();
 }
 }
@@ -210,7 +210,7 @@ implements EventSubscriber {
         long var5 = var1 ^ 0x58F915F8A4B8L;
         long var7 = var1 ^ 0x4FBBB11CAC08L;
         this.y(var5);
-        return !(!MathUtil.Q(chance.k(), 0L) || disableWhileHoldingS.c() && KeyBindUtil.V(Velocity.f.field_71474_y.field_74368_y.func_151463_i(), var7) || this.O.isEmpty() || requireMoving.c() && !MoveUtil.o());
+        return !(!MathUtil.Q(chance.k(), 0L) || disableWhileHoldingS.c() && KeyBindUtil.V(Velocity.f.gameSettings.keyBindBack.getKeyCode(), var7) || this.O.isEmpty() || requireMoving.c() && !MoveUtil.o());
 }
     public void onPreLivingUpdate(long var1, PreLivingUpdateEvent var3) {
         this.y(49587205232658L);
@@ -220,7 +220,7 @@ implements EventSubscriber {
         if (this.I) {
             IncomingPacketHold.p().add((Packet<INetHandlerPlayClient>)var9);
             var3.I(17581, 3624099827L);
-        } else if (!(Modules.J(JumpReset.class).o() && JumpReset.C(132648017398215L) && Velocity.f.field_71439_g.field_70122_E || this.N)) {
+        } else if (!(Modules.J(JumpReset.class).o() && JumpReset.C(132648017398215L) && Velocity.f.thePlayer.onGround || this.N)) {
             if (this.E) {
                 this.E = false;
             } else {
@@ -254,7 +254,7 @@ implements EventSubscriber {
         Packet<?> var12 = var4.d;
         if (var12 instanceof S12PacketEntityVelocity) {
             S12PacketEntityVelocity var13 = (S12PacketEntityVelocity)var12;
-            if (var13.func_149412_c() != Velocity.f.field_71439_g.func_145782_y()) {
+            if (var13.getEntityID() != Velocity.f.thePlayer.getEntityId()) {
                 return;
 }
             if (horizontal.k() == 0 && vertical.k() == 0 && modifyVelocity.c()) {
@@ -265,7 +265,7 @@ implements EventSubscriber {
 }
         } else if (var12 instanceof S19PacketEntityStatus) {
             S19PacketEntityStatus var14 = (S19PacketEntityStatus)var12;
-            if (var14.func_149161_a((World)Velocity.f.field_71441_e) instanceof EntityPlayerSP && var14.func_149160_c() == 2) {
+            if (var14.getEntity((World)Velocity.f.theWorld) instanceof EntityPlayerSP && var14.getOpCode() == 2) {
                 this.N = false;
 }
         } else if (var12 instanceof S27PacketExplosion && ((var15 = (S27PacketExplosion)var12).func_149149_c() != 0.0f || var15.func_149144_d() != 0.0f || var15.func_149147_e() != 0.0f)) {
@@ -303,10 +303,10 @@ implements EventSubscriber {
             var7 = var11;
             break;
 }
-        if (var7 == null || !this.isGetKeyCode(var5) || !Velocity.f.field_71439_g.func_70051_ag()) {
+        if (var7 == null || !this.isGetKeyCode(var5) || !Velocity.f.thePlayer.isSprinting()) {
             return null;
 }
-        if (EntityAccessor.F((Entity)Velocity.f.field_71439_g, var3)) {
+        if (EntityAccessor.F((Entity)Velocity.f.thePlayer, var3)) {
             return null;
 }
         return !OutgoingPacketState.f() ? null : var7;
@@ -319,11 +319,11 @@ implements EventSubscriber {
             if (var9 == null) {
                 return;
 }
-            Velocity.f.field_71439_g.func_71038_i();
+            Velocity.f.thePlayer.swingItem();
             PacketManager.b(new C02PacketUseEntity((Entity)var9, C02PacketUseEntity.Action.ATTACK));
-            Velocity.f.field_71439_g.field_70159_w *= 0.6;
-            Velocity.f.field_71439_g.field_70179_y *= 0.6;
-            Velocity.f.field_71439_g.func_70031_b(false);
+            Velocity.f.thePlayer.motionX *= 0.6;
+            Velocity.f.thePlayer.motionZ *= 0.6;
+            Velocity.f.thePlayer.setSprinting(false);
             this.t = true;
             var2.Q(true);
             var2.G(true);

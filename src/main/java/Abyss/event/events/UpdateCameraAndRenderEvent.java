@@ -19,6 +19,10 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class UpdateCameraAndRenderEvent
 extends Event {
+    private static long a;
+    static {
+        a = 60199098923997L;
+    }
     private boolean K;
     private static long b;
     

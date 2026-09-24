@@ -71,9 +71,9 @@ public class FieldAccessors {
             throw new IllegalStateException("Unable to resolve field " + var0.getName() + " [" + var1 + ", " + var2 + "]");
 }
         if (var3 == null) {
-            return new TypedValueStore(var4, null, 2, null);
+            return new TypedValueStore(var4, null, (byte)2, null);
 }
-        return var4 == null ? new TypedValueStore(var3, null, 1, null) : new TypedValueStore(var3, var4, 0, null);
+        return var4 == null ? new TypedValueStore(var3, null, (byte)1, null) : new TypedValueStore(var3, var4, (byte)0, null);
 }
     static TypedValueStore X(Class var0, String var1, String var2) {
         return FieldAccessors.g(var0, var1, var2);

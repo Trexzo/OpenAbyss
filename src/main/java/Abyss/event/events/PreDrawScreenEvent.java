@@ -12,7 +12,7 @@ import net.minecraft.client.gui.GuiScreen;
 public class PreDrawScreenEvent
 extends Event {
     public final GuiScreen Q;
-    private static final long public PreDrawScreenEvent(GuiScreen var3) {
+    public PreDrawScreenEvent(GuiScreen var3) {
         this.Q = var3;
 }
 }

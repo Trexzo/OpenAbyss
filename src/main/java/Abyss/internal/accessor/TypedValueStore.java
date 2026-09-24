@@ -8,9 +8,14 @@ import Abyss.internal.accessor.FieldReader;
 import Abyss.internal.synthetic.TypedValueStoreCtorMarker;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 final class TypedValueStore {
-    private static long private final Field w;
+    private final Field w;
     private final Field p;
     private byte y;
 

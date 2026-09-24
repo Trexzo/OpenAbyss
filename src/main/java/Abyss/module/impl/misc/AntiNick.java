@@ -20,14 +20,14 @@ import java.util.UUID;
 public class AntiNick
 extends Module
 implements EventSubscriber {
-    private static final long public static TextSetting suffix;
+    public static TextSetting suffix;
 
     @Override
     public final void x(long var1, EventBus var3) {
         AntiNickBinder.I(var3, this);
 }
     public void onPlayerGetName(PlayerGetNameEvent var1) {
-        GameProfile var2 = var1.u.func_178845_a();
+        GameProfile var2 = var1.u.getGameProfile();
         if (AntiNick.isVersion(var2.getId())) {
             var1.N(" " + suffix.X());
 }

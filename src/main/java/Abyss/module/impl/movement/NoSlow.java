@@ -62,10 +62,17 @@ import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class NoSlow
 extends Module
 implements EventSubscriber {
+    private static long a = 44677372933818L;
+
     private static Map k;
     public static ModeSetting mode;
     public static PercentageSetting slowDown;
@@ -95,10 +102,10 @@ implements EventSubscriber {
     private boolean releasedUseKey;
 
     public static boolean c(long var0) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (NoSlow.R.field_71439_g == null) {
+        if (NoSlow.R.thePlayer == null) {
             return false;
 }
-        ItemStack var4 = NoSlow.R.field_71439_g.func_70694_bm();
+        ItemStack var4 = NoSlow.R.thePlayer.getHeldItem();
         if (var4 == null) {
             return false;
 }
@@ -111,7 +118,7 @@ implements EventSubscriber {
 }
             return true;
 }
-        Item var5 = var4.func_77973_b();
+        Item var5 = var4.getItem();
         if (var5 instanceof ItemSword) {
             if (swordMode.R("VANILLA")) {
                 float var6 = 0.2f + (float)(100 - slowDown.k()) / 100.0f * 0.8f;
@@ -120,7 +127,7 @@ implements EventSubscriber {
 }
             return false;
 }
-        return var4.func_77988_m() > 0 ? otherMode.R("VANILLA") : true;
+        return var4.getMaxItemUseDuration() > 0 ? otherMode.R("VANILLA") : true;
 }
     public NoSlow(long var1) {
         super(a ^ var1 ^ 0x4D89FB6BE5FCL);
@@ -142,12 +149,12 @@ implements EventSubscriber {
         if (var0 == null) {
             return false;
 }
-        Item var1 = var0.func_77973_b();
+        Item var1 = var0.getItem();
         if (var1 instanceof ItemFood) {
             return food.c();
 }
         if (var1 instanceof ItemPotion) {
-            return potion.c() && !ItemPotion.func_77831_g((int)var0.func_77960_j());
+            return potion.c() && !ItemPotion.isSplash((int)var0.getMetadata());
 }
         if (var1 instanceof ItemBow) {
             return bow.c();
@@ -155,8 +162,8 @@ implements EventSubscriber {
         return var1 instanceof ItemSword ? sword.c() : false;
 }
     private static boolean holdingSword() {
-        ItemStack var0 = NoSlow.R.field_71439_g == null ? null : NoSlow.R.field_71439_g.func_70694_bm();
-        return var0 != null && var0.func_77973_b() instanceof ItemSword;
+        ItemStack var0 = NoSlow.R.thePlayer == null ? null : NoSlow.R.thePlayer.getHeldItem();
+        return var0 != null && var0.getItem() instanceof ItemSword;
 }
     public static boolean swordNoSlowLive() {
         if (!mode.R("VANILLA")) {
@@ -198,7 +205,7 @@ implements EventSubscriber {
 }
         this.releasedUseKey = false;
         try {
-            KeyBindUtil.o(0L, NoSlow.R.field_71474_y.field_74313_G.func_151463_i());
+            KeyBindUtil.o(0L, NoSlow.R.gameSettings.keyBindUseItem.getKeyCode());
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -225,17 +232,17 @@ implements EventSubscriber {
 }
     public void onUpdateWalkingPlayer(UpdateWalkingPlayerEvent var1, long var2) {
         boolean var6;
-        EntityPlayerSP var4 = NoSlow.R.field_71439_g;
-        if (var4 == null || NoSlow.R.field_71441_e == null) {
+        EntityPlayerSP var4 = NoSlow.R.thePlayer;
+        if (var4 == null || NoSlow.R.theWorld == null) {
             return;
 }
         if (mode.R("VANILLA")) {
             this.reset();
             return;
 }
-        airTicks = var4.field_70122_E ? 0 : airTicks + 1;
-        ItemStack var5 = var4.func_70694_bm();
-        boolean bl = var6 = var4.func_71039_bw() && NoSlow.handles(var5) && !NoSlow.holdingSword();
+        airTicks = var4.onGround ? 0 : airTicks + 1;
+        ItemStack var5 = var4.getHeldItem();
+        boolean bl = var6 = var4.isUsingItem() && NoSlow.handles(var5) && !NoSlow.holdingSword();
         if (mode.R("WATCHDOG_PREDICTION")) {
             this.watchdogPrediction(var4, var6);
         } else if (mode.R("WATCHDOG")) {
@@ -268,7 +275,7 @@ implements EventSubscriber {
 }
         if (usingTicks > (int)whenToFinishEating.L()) {
             try {
-                KeyBindUtil.A(0L, NoSlow.R.field_71474_y.field_74313_G.func_151463_i(), false);
+                KeyBindUtil.A(0L, NoSlow.R.gameSettings.keyBindUseItem.getKeyCode(), false);
                 this.releasedUseKey = true;
 }
             catch (Throwable throwable) {
@@ -278,21 +285,21 @@ implements EventSubscriber {
 }
     private void watchdog(EntityPlayerSP var1, UpdateWalkingPlayerEvent var2, boolean var3) {
         int n2 = usingTicks = var3 ? usingTicks + 1 : 0;
-        if (slowDownOnSlabs.c() && !var1.func_71039_bw() && NoSlow.R.field_71441_e.func_180495_p(new BlockPos(var1.field_70165_t, var1.field_70163_u + var1.field_70181_x, var1.field_70161_v)).func_177230_c() != Blocks.field_150350_a) {
+        if (slowDownOnSlabs.c() && !var1.isUsingItem() && NoSlow.R.theWorld.getBlockState(new BlockPos(var1.posX, var1.posY + var1.motionY, var1.posZ)).getBlock() != Blocks.air) {
             onSlab = false;
 }
-        if (Math.abs(var1.field_70163_u - (double)Math.round(var1.field_70163_u)) > 0.03 && var1.field_70122_E) {
+        if (Math.abs(var1.posY - (double)Math.round(var1.posY)) > 0.03 && var1.onGround) {
             onSlab = true;
 }
         if (var3) {
             if (airTicks >= 2) {
-                var1.field_70122_E = false;
-            } else if (var1.field_70122_E && !onSlab) {
+                var1.onGround = false;
+            } else if (var1.onGround && !onSlab) {
                 var2.O(var2.s() + 0.001);
 }
-            if (onSlab && !var1.field_70122_E) {
-                var1.field_70159_w *= 0.1;
-                var1.field_70179_y *= 0.1;
+            if (onSlab && !var1.onGround) {
+                var1.motionX *= 0.1;
+                var1.motionZ *= 0.1;
 }
 }
 }
@@ -300,12 +307,12 @@ implements EventSubscriber {
         if (!mode.R("WATCHDOG")) {
             return;
 }
-        EntityPlayerSP var4 = NoSlow.R.field_71439_g;
-        if (var4 == null || var4.func_71039_bw()) {
+        EntityPlayerSP var4 = NoSlow.R.thePlayer;
+        if (var4 == null || var4.isUsingItem()) {
             return;
 }
-        ItemStack var5 = var4.func_70694_bm();
-        if (var5 == null || !NoSlow.handles(var5) || var5.func_77973_b() instanceof ItemSword) {
+        ItemStack var5 = var4.getHeldItem();
+        if (var5 == null || !NoSlow.handles(var5) || var5.getItem() instanceof ItemSword) {
             return;
 }
         if (airTicks != 0 && airTicks < 2 && !onSlab) {
@@ -313,8 +320,8 @@ implements EventSubscriber {
             var1.I(0, 0L);
             return;
 }
-        if (var4.field_70122_E) {
-            var4.func_70664_aZ();
+        if (var4.onGround) {
+            var4.jump();
             var1.I(0, 0L);
 }
 }
@@ -324,20 +331,20 @@ implements EventSubscriber {
             this.stopRotating();
             return;
 }
-        EntityPlayerSP var5 = NoSlow.R.field_71439_g;
+        EntityPlayerSP var5 = NoSlow.R.thePlayer;
         if (var5 == null) {
             return;
 }
-        ItemStack var6 = var5.func_70694_bm();
-        boolean bl = var7 = !(!var5.func_71039_bw() || !NoSlow.handles(var6) || var6.func_77973_b() instanceof ItemSword || var6.func_77973_b() instanceof ItemBow || usingTicks <= 5 || var5.field_70122_E && airTicks <= 2 || KillAura.H6 != null || NoSlow.R.field_71474_y.field_74366_z.func_151470_d() || NoSlow.R.field_71474_y.field_74370_x.func_151470_d() || !this.rotating && RotationManager.X);
+        ItemStack var6 = var5.getHeldItem();
+        boolean bl = var7 = !(!var5.isUsingItem() || !NoSlow.handles(var6) || var6.getItem() instanceof ItemSword || var6.getItem() instanceof ItemBow || usingTicks <= 5 || var5.onGround && airTicks <= 2 || KillAura.H6 != null || NoSlow.R.gameSettings.keyBindRight.isKeyDown() || NoSlow.R.gameSettings.keyBindLeft.isKeyDown() || !this.rotating && RotationManager.X);
         if (!var7) {
             this.stopRotating();
             return;
 }
         this.rotating = true;
         RotationManager.n(RotationMode.SILENT);
-        RotationManager.v(var5.field_70177_z + 45.0f, 10.0f, 0L, 0.0f);
-        RotationManager.f(var5.field_70125_A, 39.0f, 0.0f, 0L);
+        RotationManager.v(var5.rotationYaw + 45.0f, 10.0f, 0L, 0.0f);
+        RotationManager.f(var5.rotationPitch, 39.0f, 0.0f, 0L);
 }
     public void onRedirectIsUsingItem(byte var1, int var2, int var3, RedirectIsUsingItemEvent var4) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var5 = ((long)var1 << 56 | (long)var2 << 32 >>> 8 | (long)var3 << 40 >>> 40) ^ a;
@@ -346,7 +353,7 @@ implements EventSubscriber {
             this.predictionSlowDown(var4);
             return;
 }
-        if (NoSlow.R.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSword) {
+        if (NoSlow.R.thePlayer.getHeldItem().getItem() instanceof ItemSword) {
             float var9 = 0.2f + (float)(100 - slowDown.k()) / 100.0f * 0.8f;
             float var10 = onlyEnableWhenAutoblock.c() ? (AutoBlock.G(var7) || BlockHit.noSlowLive() ? var9 : 0.2f) : var9;
             switch (swordMode.Y()) {
@@ -372,15 +379,15 @@ implements EventSubscriber {
 }
 }
     private void predictionSlowDown(RedirectIsUsingItemEvent var1) {
-        EntityPlayerSP var2 = NoSlow.R.field_71439_g;
+        EntityPlayerSP var2 = NoSlow.R.thePlayer;
         if (var2 == null) {
             return;
 }
-        ItemStack var3 = var2.func_70694_bm();
+        ItemStack var3 = var2.getHeldItem();
         if (var3 == null || !NoSlow.handles(var3)) {
             return;
 }
-        if (var3.func_77973_b() instanceof ItemSword) {
+        if (var3.getItem() instanceof ItemSword) {
             this.swordSlowDown(var2, var1);
             return;
 }
@@ -389,10 +396,10 @@ implements EventSubscriber {
                 var1.I(0, 0L);
 }
         } else if (mode.R("WATCHDOG")) {
-            if (!onSlab || var2.field_70122_E) {
+            if (!onSlab || var2.onGround) {
                 var1.I(0, 0L);
 }
-        } else if (var2.field_70173_aa % (int)amount.L() != 0 && var2.field_70122_E) {
+        } else if (var2.ticksExisted % (int)amount.L() != 0 && var2.onGround) {
             var1.I(0, 0L);
 }
 }
@@ -404,9 +411,9 @@ implements EventSubscriber {
             if (!NoSlow.combatOwnsSword()) {
                 boolean[] var3 = NoSlow.combatFlags();
                 try {
-                    PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.field_177992_a, EnumFacing.DOWN));
+                    PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN));
                     this.release();
-                    PacketManager.b(new C08PacketPlayerBlockPlacement(var1.func_70694_bm()));
+                    PacketManager.b(new C08PacketPlayerBlockPlacement(var1.getHeldItem()));
 }
                 finally {
                     NoSlow.combatFlags(var3);
@@ -417,7 +424,7 @@ implements EventSubscriber {
 }
         if (mode.R("WATCHDOG")) {
             if (!NoSlow.combatOwnsSword()) {
-                int var5 = var1.field_71071_by.field_70461_c;
+                int var5 = var1.inventory.currentItem;
                 boolean[] var4 = NoSlow.combatFlags();
                 try {
                     PacketManager.b(new C09PacketHeldItemChange((var5 + 1) % 9));
@@ -430,7 +437,7 @@ implements EventSubscriber {
             var2.I(0, 0L);
             return;
 }
-        if (var1.field_70173_aa % (int)amount.L() != 0 && var1.field_70122_E) {
+        if (var1.ticksExisted % (int)amount.L() != 0 && var1.onGround) {
             var2.I(0, 0L);
 }
 }

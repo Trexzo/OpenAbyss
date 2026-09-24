@@ -40,6 +40,11 @@ import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.GuiModList;
 import org.lwjgl.opengl.Display;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class MainMenuTheme
 implements EventSubscriber {
@@ -86,7 +91,7 @@ implements EventSubscriber {
 }
 }
     public static boolean u(int var0, short var1, short var2) {
-        return MainMenuTheme.I.field_71462_r instanceof GuiMainMenu && MainMenuTheme.b();
+        return MainMenuTheme.I.currentScreen instanceof GuiMainMenu && MainMenuTheme.b();
 }
     private static boolean A(GuiScreen var0, long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var3 = var1 ^ 0x124C02239790L;
@@ -200,7 +205,7 @@ implements EventSubscriber {
 }
     private static boolean W(long var0) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var2 = var0 ^ 0x452EC6029680L;
-        return MainMenuTheme.b() && music.c() && MainMenuTheme.I.field_71441_e == null && MainMenuTheme.I.field_71439_g == null && MainMenuTheme.A(MainMenuTheme.I.field_71462_r, var2);
+        return MainMenuTheme.b() && music.c() && MainMenuTheme.I.theWorld == null && MainMenuTheme.I.thePlayer == null && MainMenuTheme.A(MainMenuTheme.I.currentScreen, var2);
 }
     public static void S(int var0, int var1) {
         if (!"User".equals("Injection")) {
@@ -224,7 +229,7 @@ implements EventSubscriber {
 }
     public void onPreTick(long var1, PreTickEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (MainMenuTheme.W(42846407720032L)) {
-            I.func_147118_V().func_147690_c();
+            I.getSoundHandler().stopSounds();
             MinecraftAccessor.S('\u0000', 1751831693, I).func_181557_a();
 }
 }

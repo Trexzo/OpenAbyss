@@ -35,10 +35,17 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.world.World;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class SprintReset
 extends Module
 implements EventSubscriber {
+    private static long a = 135756777388346L;
+
     private boolean K;
     private final TimerUtil o;
     private boolean u;
@@ -60,7 +67,7 @@ implements EventSubscriber {
         this.C = false;
         this.E = null;
         if (this.H) {
-            KeyBindUtil.o(var3, SprintReset.f.field_71474_y.field_74351_w.func_151463_i());
+            KeyBindUtil.o(var3, SprintReset.f.gameSettings.keyBindForward.getKeyCode());
             this.H = false;
 }
         this.h = false;
@@ -74,7 +81,7 @@ implements EventSubscriber {
 }
     public void onPostTick(PostTickEvent var1) {
         if (this.H && this.o.A(duration.L())) {
-            KeyBindUtil.o(99363263780575L, SprintReset.f.field_71474_y.field_74351_w.func_151463_i());
+            KeyBindUtil.o(99363263780575L, SprintReset.f.gameSettings.keyBindForward.getKeyCode());
             this.H = false;
 }
 }
@@ -84,7 +91,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(short var1, int var2, ReceivePacketEvent var3, char var4) {
         S19PacketEntityStatus var7;
-        if (this.C && this.E != null && var3.d instanceof S19PacketEntityStatus && (var7 = (S19PacketEntityStatus)var3.d).func_149161_a((World)SprintReset.f.field_71441_e) == this.E && var7.func_149160_c() == 2) {
+        if (this.C && this.E != null && var3.d instanceof S19PacketEntityStatus && (var7 = (S19PacketEntityStatus)var3.d).getEntity((World)SprintReset.f.theWorld) == this.E && var7.getOpCode() == 2) {
             this.g = true;
             this.C = false;
 }
@@ -95,7 +102,7 @@ implements EventSubscriber {
             this.E = (EntityLivingBase)var1.O();
             switch (mode.Y()) {
                 case "LEGIT": {
-                    if (this.H || !SprintReset.f.field_71439_g.func_70051_ag()) break;
+                    if (this.H || !SprintReset.f.thePlayer.isSprinting()) break;
                     if (requireTargetDamage.c()) {
                         if (!this.g) {
                             this.C = true;
@@ -106,15 +113,15 @@ implements EventSubscriber {
                         break;
 }
                     this.o.W();
-                    KeyBindUtil.A(82009306480869L, SprintReset.f.field_71474_y.field_74351_w.func_151463_i(), false);
-                    SprintReset.f.field_71439_g.field_71158_b.field_78900_b = 0.0f;
-                    SprintReset.f.field_71439_g.field_71158_b.field_78902_a = 0.0f;
+                    KeyBindUtil.A(82009306480869L, SprintReset.f.gameSettings.keyBindForward.getKeyCode(), false);
+                    SprintReset.f.thePlayer.movementInput.moveForward = 0.0f;
+                    SprintReset.f.thePlayer.movementInput.moveStrafe = 0.0f;
                     this.U.W();
                     this.H = true;
                     break;
 }
                 case "NO_STOP": {
-                    if (!SprintReset.f.field_71439_g.func_70051_ag()) break;
+                    if (!SprintReset.f.thePlayer.isSprinting()) break;
                     if (requireTargetDamage.c()) {
                         if (!this.g) {
                             this.C = true;
@@ -147,7 +154,7 @@ implements EventSubscriber {
     public void onMoveInput(MoveInputEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (mode.R("LEGIT") && this.u) {
             this.o.W();
-            KeyBindUtil.A(82009306480869L, SprintReset.f.field_71474_y.field_74351_w.func_151463_i(), false);
+            KeyBindUtil.A(82009306480869L, SprintReset.f.gameSettings.keyBindForward.getKeyCode(), false);
             var3.i(0.0f);
             var3.A(0.0f);
             this.U.W();
@@ -158,7 +165,7 @@ implements EventSubscriber {
     public void onPreSuperLivingUpdate(short var1, PreSuperLivingUpdateEvent var2, int var3, short var4) {
         if (this.h) {
             this.h = false;
-            SprintReset.f.field_71439_g.func_70031_b(false);
+            SprintReset.f.thePlayer.setSprinting(false);
 }
 }
     public void onAttackTargetEntity(AttackTargetEntityEvent var3) {

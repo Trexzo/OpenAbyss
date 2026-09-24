@@ -276,10 +276,12 @@ implements FlatStylingSupport.StyleableUI {
 }
     @Override
     public void setOrientation(int orientation) {
-        Insets margin;
-        Insets newMargin;
-        if (orientation != this.toolBar.getOrientation() && !(newMargin = new Insets(margin.left, margin.top, margin.right, margin.bottom)).equals(margin = this.toolBar.getMargin())) {
-            this.toolBar.setMargin(newMargin);
+        if (orientation != this.toolBar.getOrientation()) {
+            Insets margin = this.toolBar.getMargin();
+            Insets newMargin = new Insets(margin.left, margin.top, margin.right, margin.bottom);
+            if (!newMargin.equals(margin)) {
+                this.toolBar.setMargin(newMargin);
+}
 }
         super.setOrientation(orientation);
 }

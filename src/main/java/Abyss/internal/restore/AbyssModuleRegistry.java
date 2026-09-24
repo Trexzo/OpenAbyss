@@ -144,18 +144,18 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new HUD(0L), HUD.class, "HUD", true);
         AbyssModuleRegistry.reg(ModuleManager.r, HitBox.class, "HitBox", true);
         AbyssModuleRegistry.reg(new Macro1(0L), Macro1.class, "Macro1", true);
-        AbyssModuleRegistry.reg(new Macro2(0, 0, 0), Macro2.class, "Macro2", true);
+        AbyssModuleRegistry.reg(new Macro2(0, 0, (short)0), Macro2.class, "Macro2", true);
         AbyssModuleRegistry.reg(new AimAssist(0L), AimAssist.class, "AimAssist", true);
-        AbyssModuleRegistry.reg(new AutoProjectiles(0L, 0), AutoProjectiles.class, "AutoProjectiles", true);
+        AbyssModuleRegistry.reg(new AutoProjectiles(0L, (short)0), AutoProjectiles.class, "AutoProjectiles", true);
         AbyssModuleRegistry.reg(new Macro3(0L), Macro3.class, "Macro3", true);
         AbyssModuleRegistry.reg(new Macro4(0L), Macro4.class, "Macro4", true);
         AbyssModuleRegistry.reg(new Macro5(0L), Macro5.class, "Macro5", true);
-        AbyssModuleRegistry.reg(new ItemESP(0, '\u0000', 0), ItemESP.class, "ItemESP", true);
+        AbyssModuleRegistry.reg(new ItemESP((short)0, '\u0000', 0), ItemESP.class, "ItemESP", true);
         AbyssModuleRegistry.reg(new Indicators(0L), Indicators.class, "Indicators", true);
         AbyssModuleRegistry.reg(new ChestESP(0L), ChestESP.class, "ChestESP", true);
         AbyssModuleRegistry.reg(new NameTags(0L), NameTags.class, "NameTags", true);
         AbyssModuleRegistry.reg(new ESP(0L), ESP.class, "ESP", true);
-        AbyssModuleRegistry.reg(new SpeedMine(0, 0L), SpeedMine.class, "SpeedMine", true);
+        AbyssModuleRegistry.reg(new SpeedMine((short)0, 0L), SpeedMine.class, "SpeedMine", true);
         AbyssModuleRegistry.reg(ModuleManager.h, ViewClip.class, "ViewClip", true);
         AbyssModuleRegistry.reg(new BedESP(0L), BedESP.class, "BedESP", true);
         ModuleManager.y = new TeamInvisible('\u0000', 0L);
@@ -171,7 +171,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new FastPlace(0L), FastPlace.class, "FastPlace", true);
         AbyssModuleRegistry.reg(new ClosestPlayerHUD(0L), ClosestPlayerHUD.class, "ClosestPlayerHUD", true);
         AbyssModuleRegistry.reg(new ScoreBoard(0L), ScoreBoard.class, "ScoreBoard", true);
-        AbyssModuleRegistry.reg(new Teams(0L, 0), Teams.class, "Teams", true);
+        AbyssModuleRegistry.reg(new Teams(0L, (short)0), Teams.class, "Teams", true);
         AbyssModuleRegistry.reg(new Ambience(0L), Ambience.class, "Ambience", true);
         AbyssModuleRegistry.reg(ModuleManager.g, NoHurtCam.class, "NoHurtCam", true);
         AbyssModuleRegistry.reg(new FastFall(0L), FastFall.class, "FastFall", true);
@@ -194,19 +194,19 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new Theme(0, '\u0000', 0), Theme.class, "Theme", true);
         ModuleManager.f = new AntiNick(0L);
         AbyssModuleRegistry.reg(ModuleManager.f, AntiNick.class, "AntiNick", true);
-        AbyssModuleRegistry.reg(new InputFix(0, 0, 0), InputFix.class, "InputFix", true);
-        AbyssModuleRegistry.reg(new KeyStrokes(0, 0, 0), KeyStrokes.class, "KeyStrokes", true);
+        AbyssModuleRegistry.reg(new InputFix((short)0, 0, 0), InputFix.class, "InputFix", true);
+        AbyssModuleRegistry.reg(new KeyStrokes((byte)0, 0, 0), KeyStrokes.class, "KeyStrokes", true);
         AbyssModuleRegistry.reg(ModuleManager.q, ChestStealer.class, "ChestStealer", true);
-        AbyssModuleRegistry.reg(new Sprint(0, 0, 0), Sprint.class, "Sprint", true);
+        AbyssModuleRegistry.reg(new Sprint((short)0, 0, (short)0), Sprint.class, "Sprint", true);
         AbyssModuleRegistry.reg(new Denick(0L), Denick.class, "Denick", true);
         AbyssModuleRegistry.reg(new Fly(0L), Fly.class, "Fly", true);
         AbyssModuleRegistry.reg(new FullBright(0L), FullBright.class, "FullBright", true);
-        ModuleManager.c = new AntiBot(0, 0, 0);
+        ModuleManager.c = new AntiBot(0, 0, (short)0);
         AbyssModuleRegistry.reg(ModuleManager.c, AntiBot.class, "AntiBot", true);
         AbyssModuleRegistry.reg(new FreeCam(0L), FreeCam.class, "FreeCam", true);
         AbyssModuleRegistry.reg(new Language('\u0000', 0, 0), Language.class, "Language", true);
         AbyssModuleRegistry.reg(new CommandLine(0L), CommandLine.class, "CommandLine", true);
-        AbyssModuleRegistry.reg(new VisualSpoof(0, 0, 0), VisualSpoof.class, "VisualSpoof", true);
+        AbyssModuleRegistry.reg(new VisualSpoof((short)0, (short)0, 0), VisualSpoof.class, "VisualSpoof", true);
         AbyssModuleRegistry.reg(new NoInteract(0L), NoInteract.class, "NoInteract", true);
         ModuleManager.J = new NameHider(0L);
         AbyssModuleRegistry.reg(ModuleManager.J, NameHider.class, "NameHider", true);
@@ -320,7 +320,7 @@ public final class AbyssModuleRegistry {
 }
         AutoBlock var1 = null;
         try {
-            var1 = new AutoBlock(0, 43254310455398L);
+            var1 = new AutoBlock((byte)0, 43254310455398L);
 }
         catch (Throwable var5) {
             PENDING.add("Abyss.module.impl.combat.AutoBlock  solved carrier (0,43254310455398) threw at publish(): " + var5);
@@ -373,7 +373,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var2, BlockHit.class, "BlockHit", var0);
         AutoClicker var3 = null;
         try {
-            var3 = new AutoClicker(0, '\u3539', 150955398);
+            var3 = new AutoClicker((short)0, '\u3539', 150955398);
 }
         catch (Throwable var10) {
             PENDING.add("Abyss.module.impl.combat.AutoClicker  anchored carrier (0,13625,150955398) threw at publish(): " + var10);
@@ -389,7 +389,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var5, InvManager.class, "InvManager", var0);
         FakeLag var6 = null;
         try {
-            var6 = new FakeLag(0, 0, 0);
+            var6 = new FakeLag(0, 0, (short)0);
 }
         catch (Throwable var13) {
             PENDING.add("Abyss.module.impl.combat.FakeLag  carrier-free constructor threw at publish(): " + var13);
@@ -397,7 +397,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var6, FakeLag.class, "FakeLag", var0);
         BedNuker var4 = null;
         try {
-            var4 = new BedNuker(0, 33171000103266L);
+            var4 = new BedNuker((short)0, 33171000103266L);
 }
         catch (Throwable var11) {
             PENDING.add("Abyss.module.impl.world.BedNuker  anchored carrier (0,33171000103266) threw at publish(): " + var11);

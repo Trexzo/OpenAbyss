@@ -23,10 +23,19 @@ import Abyss.util.render.CustomFont;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Blink
 extends Module
 implements EventSubscriber {
+    private static long a = 30074228456379L;
+    private static Map e;
+    private static String[] d;
+    private static Map r;
     public static NumberSetting pulseTicks;
     private static String[] x;
     
@@ -136,7 +145,7 @@ implements EventSubscriber {
                 this.k = false;
 }
             String var11 = String.format("%.1f", (double)(System.currentTimeMillis() - this.C) / 1000.0);
-            var10.T(37697014677608L, var11, (float)var3.C.func_78326_a() / 2.0f - var10.R(var11, 52019766876817L) / 2.0f, (float)var3.C.func_78328_b() / 2.0f + 75.0f, 0xFFFFFF);
+            var10.T(37697014677608L, var11, (float)var3.C.getScaledWidth() / 2.0f - var10.R(var11, 52019766876817L) / 2.0f, (float)var3.C.getScaledHeight() / 2.0f + 75.0f, 0xFFFFFF);
         } else {
             this.k = true;
 }

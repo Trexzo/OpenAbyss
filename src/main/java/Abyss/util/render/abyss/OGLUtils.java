@@ -22,49 +22,49 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 public final class OGLUtils {
-    private static final FloatBuffer windowPosition = GLAllocation.func_74529_h((int)4);
-    private static final IntBuffer viewport = GLAllocation.func_74527_f((int)16);
-    private static final FloatBuffer modelMatrix = GLAllocation.func_74529_h((int)16);
-    private static final FloatBuffer projectionMatrix = GLAllocation.func_74529_h((int)16);
+    private static final FloatBuffer windowPosition = GLAllocation.createDirectFloatBuffer((int)4);
+    private static final IntBuffer viewport = GLAllocation.createDirectIntBuffer((int)16);
+    private static final FloatBuffer modelMatrix = GLAllocation.createDirectFloatBuffer((int)16);
+    private static final FloatBuffer projectionMatrix = GLAllocation.createDirectFloatBuffer((int)16);
     private static final float[] BUFFER = new float[3];
 
     private OGLUtils() {
 }
     public static void enableBlending() {
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179112_b((int)770, (int)771);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc((int)770, (int)771);
 }
     public static void disableTexture2D() {
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
 }
     public static void enableTexture2D() {
-        GlStateManager.func_179098_w();
+        GlStateManager.enableTexture2D();
 }
     public static void enableDepth() {
-        GlStateManager.func_179132_a((boolean)true);
-        GlStateManager.func_179126_j();
+        GlStateManager.depthMask((boolean)true);
+        GlStateManager.enableDepth();
 }
     public static void disableDepth() {
-        GlStateManager.func_179132_a((boolean)false);
-        GlStateManager.func_179097_i();
+        GlStateManager.depthMask((boolean)false);
+        GlStateManager.disableDepth();
 }
     public static void preDraw(int color, int mode) {
         OGLUtils.enableBlending();
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         OGLUtils.color(color);
         GL11.glBegin((int)mode);
 }
     public static void postDraw() {
         GL11.glEnd();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
 }
     public static void color(int color) {
-        GlStateManager.func_179131_c((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)(color >> 24 & 0xFF) / 255.0f));
+        GlStateManager.color((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)(color >> 24 & 0xFF) / 255.0f));
 }
     public static void startScissorBox(ScaledResolution sr, int x, int y, int width, int height) {
-        int sf = sr.func_78325_e();
-        GL11.glScissor((int)(x * sf), (int)((sr.func_78328_b() - (y + height)) * sf), (int)(width * sf), (int)(height * sf));
+        int sf = sr.getScaleFactor();
+        GL11.glScissor((int)(x * sf), (int)((sr.getScaledHeight() - (y + height)) * sf), (int)(width * sf), (int)(height * sf));
 }
     public static void startScissorBox(LockedResolution lr, int x, int y, int width, int height) {
         GL11.glScissor((int)(x * 2), (int)((lr.getHeight() - (y + height)) * 2), (int)(width * 2), (int)(height * 2));

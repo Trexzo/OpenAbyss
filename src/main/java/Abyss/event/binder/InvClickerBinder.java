@@ -9,7 +9,7 @@ import Abyss.event.invoker.InvClickerPreUpdateInvoker;
 import Abyss.module.impl.player.InvClicker;
 
 public final class InvClickerBinder {
-    private static final long private InvClickerBinder() {
+    private InvClickerBinder() {
 }
     public static void T(EventBus var2, InvClicker var3) {
         var2.R(var3, PreUpdateEvent.class, 3, new InvClickerPreUpdateInvoker(var3));

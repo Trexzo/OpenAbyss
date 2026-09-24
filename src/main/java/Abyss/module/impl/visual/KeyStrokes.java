@@ -49,6 +49,9 @@ import net.minecraft.client.settings.KeyBinding;
 public class KeyStrokes
 extends Module
 implements EventSubscriber {
+    private static Map e;
+    private static String[] d;
+    private static String[] c;
     private static Object[] t;
         public static NumberSetting offsetY;
     private static long[] o;
@@ -71,13 +74,13 @@ implements EventSubscriber {
         long var12 = (0x2EB300000000L | (long)var6 << 32 >>> 32) ^ b;
         long var14 = var12 ^ 0x39BE7FB98F5BL;
         long var16 = var12 ^ 0x6B21FFF9BCF1L;
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         RenderUtil.c(var16, var2, var3, var7, var8, new Color(0, 0, 0, (int)(2.55f * (float)backgroundOpacity.k())).getRGB());
         if (System.currentTimeMillis() - h.get(var1) < 30L) {
             RenderUtil.c(var16, var2, var3, var7, var8, new Color(255, 255, 255, this.f(h.get(var1))).getRGB());
 }
         RenderUtil.J(var14, this.n, var11, var9, var10, 0xFFFFFF, 0);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private float u(String var1, float var2, long var3, float var5) {
         return var2 + (var5 - var2) / 2.0f - this.n.R(var1, 52019766876817L) / 2.0f;
@@ -94,23 +97,23 @@ implements EventSubscriber {
         KeyStrokes.t[6] = "x\nrI\u0001$ \t3*\u0007\u0018(P`@Q~}\u000foEj\"(\u0005cQ\u0005aa\u00111*Ptq\nc\u0012\u0004#|U\t\u0010\u0018qo\u001bd\u0011Pivk";
 }
     private void D(KeyBinding var1, float var2, float var3, float var4, float var5, float var6, long var7, float var9) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        this.a(var1, var2, var3, 11955L, 1464655768, var4, var5, var6, var9, KeyBindUtil.p(1864665317L, '\ufb9b', var1.func_151463_i()));
+        this.a(var1, var2, var3, 11955L, 1464655768, var4, var5, var6, var9, KeyBindUtil.p(1864665317L, '\ufb9b', var1.getKeyCode()));
 }
     @Override
     public final void x(long var1, EventBus var3) {
         KeyStrokesBinder.e(var3, this);
 }
     public static void T() {
-        h.put(KeyStrokes.I.field_71474_y.field_74351_w, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74368_y, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74370_x, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74366_z, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74314_A, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74312_F, System.currentTimeMillis());
-        h.put(KeyStrokes.I.field_71474_y.field_74313_G, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindForward, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindBack, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindLeft, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindRight, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindJump, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindAttack, System.currentTimeMillis());
+        h.put(KeyStrokes.I.gameSettings.keyBindUseItem, System.currentTimeMillis());
 }
     private void n(KeyBinding var1, float var2, long var3, float var5, float var6, float var7) {
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         RenderUtil.c(125644905353792L, var2, var5, var6, var7, new Color(0, 0, 0, (int)(2.55f * (float)backgroundOpacity.k())).getRGB());
         if (System.currentTimeMillis() - h.get(var1) < 40L) {
             RenderUtil.c(125644905353792L, var2, var5, var6, var7, new Color(255, 255, 255, this.f(h.get(var1))).getRGB());
@@ -121,11 +124,11 @@ implements EventSubscriber {
         float var18 = var5 + 5.0f;
         RenderUtil.m(var15, var16, 91446790430251L, var17, var18, 5.0f, Color.BLACK.getRGB());
         RenderUtil.c(125644905353792L, var15, var16, var17, var18, Color.WHITE.getRGB());
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public void onMouse(MouseEvent var1, long var2) {
         for (Map.Entry<KeyBinding, Long> var5 : h.entrySet()) {
-            if (var5.getKey().func_151463_i() + 100 != var1.getButton()) continue;
+            if (var5.getKey().getKeyCode() + 100 != var1.getButton()) continue;
             h.put(var5.getKey(), System.currentTimeMillis());
 }
 }
@@ -174,31 +177,38 @@ implements EventSubscriber {
     public void onIsPressed(IsPressedEvent var1) {
         if (var1.a) {
             for (Map.Entry<KeyBinding, Long> var3 : h.entrySet()) {
-                if (var3.getKey().func_151463_i() != var1.o) continue;
+                if (var3.getKey().getKeyCode() != var1.o) continue;
                 h.put(var3.getKey(), System.currentTimeMillis());
 }
 }
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     public void onSetKeyBindState(SetKeyBindStateEvent var1) {
         for (Map.Entry<KeyBinding, Long> var3 : h.entrySet()) {
-            if (var3.getKey().func_151463_i() != var1.R) continue;
+            if (var3.getKey().getKeyCode() != var1.R) continue;
             h.put(var3.getKey(), System.currentTimeMillis());
 }
 }
@@ -216,26 +226,31 @@ implements EventSubscriber {
         float var23 = var18 + this.T(120224034947841L) * 2.0f + 4.0f;
         float var24 = var23 + 8.0f + 2.0f;
         for (Map.Entry<KeyBinding, Long> var26 : h.entrySet()) {
-            if (!var26.getKey().func_151470_d()) continue;
+            if (!var26.getKey().isKeyDown()) continue;
             h.put(var26.getKey(), System.currentTimeMillis());
 }
-        this.E(KeyStrokes.I.field_71474_y.field_74351_w, 13170027296889L, var17, var21);
-        this.E(KeyStrokes.I.field_71474_y.field_74368_y, 13170027296889L, var17, var22);
-        this.E(KeyStrokes.I.field_71474_y.field_74370_x, 13170027296889L, var19, var22);
-        this.E(KeyStrokes.I.field_71474_y.field_74366_z, 13170027296889L, var19 + this.T(120224034947841L) * 2.0f + 4.0f, var22);
+        this.E(KeyStrokes.I.gameSettings.keyBindForward, 13170027296889L, var17, var21);
+        this.E(KeyStrokes.I.gameSettings.keyBindBack, 13170027296889L, var17, var22);
+        this.E(KeyStrokes.I.gameSettings.keyBindLeft, 13170027296889L, var19, var22);
+        this.E(KeyStrokes.I.gameSettings.keyBindRight, 13170027296889L, var19 + this.T(120224034947841L) * 2.0f + 4.0f, var22);
         float var30 = var20 - var19;
         float var31 = Math.abs(var30);
-        this.n(KeyStrokes.I.field_71474_y.field_74314_A, var19, 92495927115386L, var23, var20, var23 + 8.0f);
+        this.n(KeyStrokes.I.gameSettings.keyBindJump, var19, 92495927115386L, var23, var20, var23 + 8.0f);
         float var27 = var19 + var31 / 2.0f - 2.0f;
-        this.a(KeyStrokes.I.field_71474_y.field_74312_F, var19, var24, 11955L, 1464655768, var27, var24 + this.T(120224034947841L), this.u("LMB", var19, 60932596744412L, var27), var24 + 4.0f, "LMB");
+        this.a(KeyStrokes.I.gameSettings.keyBindAttack, var19, var24, 11955L, 1464655768, var27, var24 + this.T(120224034947841L), this.u("LMB", var19, 60932596744412L, var27), var24 + 4.0f, "LMB");
         float var28 = var19 + var31 / 2.0f + 2.0f;
-        this.a(KeyStrokes.I.field_71474_y.field_74313_G, var28, var24, 11955L, 1464655768, var20, var24 + this.T(120224034947841L), this.u("RMB", var28, 60932596744412L, var20), var24 + 4.0f, "RMB");
+        this.a(KeyStrokes.I.gameSettings.keyBindUseItem, var28, var24, 11955L, 1464655768, var20, var24 + this.T(120224034947841L), this.u("RMB", var28, 60932596744412L, var20), var24 + 4.0f, "RMB");
 }
     private void E(KeyBinding var1, long var2, float var4, float var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         float var15 = this.n.o(60714858652844L);
-        this.D(var1, var4, var5, var4 + 8.0f + var15, var5 + 8.0f + var15, this.u(KeyBindUtil.p(1864665317L, '\ufb9b', var1.func_151463_i()), var4, 60932596744412L, var4 + 8.0f + var15), 46633935861873L, var5 + 4.0f);
+        this.D(var1, var4, var5, var4 + 8.0f + var15, var5 + 8.0f + var15, this.u(KeyBindUtil.p(1864665317L, '\ufb9b', var1.getKeyCode()), var4, 60932596744412L, var4 + 8.0f + var15), 46633935861873L, var5 + 4.0f);
 }
-                Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            long var31 = b ^ 90849720011812L; t = new Object[7]; u = new String[7]; a(); e = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var31 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var23 = 1; var23 < 8; ++var23) { var10003[var23] = (byte)(var31 << var23 * 8 >>> 56); }
+            Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var22.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var29 = new String[4];
             int var27 = 0;
@@ -322,7 +337,6 @@ implements EventSubscriber {
                                         var58 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var62 = 0;
 }
-                                    break;
 }
 }
                             var25 = var26.charAt(var39);
@@ -343,7 +357,6 @@ implements EventSubscriber {
                     var40 = var26.substring(++var39, var39 + var25);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var36) {
@@ -352,6 +365,7 @@ implements EventSubscriber {
 }
     static {
         b = 61397954654505L;
+        zkm$clinit();
         h = new HashMap<KeyBinding, Long>();
         I = MinecraftRef.c((byte)0, 0L);
         offsetX = new NumberSetting("Offset-X", 120.0f, 0.0f, 1000.0f, 1.0f);

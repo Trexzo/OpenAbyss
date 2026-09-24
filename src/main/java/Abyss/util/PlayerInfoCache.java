@@ -31,16 +31,16 @@ public final class PlayerInfoCache {
         lastRefresh = now;
         try {
             Minecraft mc = MinecraftRef.c((byte)0, 0L);
-            if (mc.func_147114_u() == null || mc.field_71439_g == null) {
+            if (mc.getNetHandler() == null || mc.thePlayer == null) {
                 return;
 }
-            Collection infos = mc.func_147114_u().func_175106_d();
+            Collection infos = mc.getNetHandler().getPlayerInfoMap();
             HashMap<String, NetworkPlayerInfo> names = new HashMap<String, NetworkPlayerInfo>(infos.size() * 2);
             HashMap<UUID, NetworkPlayerInfo> uuids = new HashMap<UUID, NetworkPlayerInfo>(infos.size() * 2);
             for (Object o2 : infos) {
                 NetworkPlayerInfo info = (NetworkPlayerInfo)o2;
-                uuids.put(info.func_178845_a().getId(), info);
-                names.put(info.func_178845_a().getName(), info);
+                uuids.put(info.getGameProfile().getId(), info);
+                names.put(info.getGameProfile().getName(), info);
 }
             byName = names;
             byUuid = uuids;

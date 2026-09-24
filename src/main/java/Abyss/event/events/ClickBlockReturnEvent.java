@@ -12,7 +12,7 @@ import net.minecraft.util.BlockPos;
 public class ClickBlockReturnEvent
 extends Event {
     public final BlockPos b;
-    private static final long public ClickBlockReturnEvent(BlockPos var3) {
+    public ClickBlockReturnEvent(BlockPos var3) {
         this.b = var3;
 }
 }

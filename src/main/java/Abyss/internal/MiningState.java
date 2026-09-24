@@ -35,6 +35,10 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition;
 
 public class MiningState {
+    private static Map d;
+
+    private static long a = 1478184032011L;
+
     private static Color r;
     private final Set<BlockPos> p;
     private static long T;
@@ -64,15 +68,15 @@ public class MiningState {
 }
     public void v(long var1) {
         int var5 = (int)MiningConstants.H;
-        int var6 = (int)MiningState.M.field_71439_g.field_70165_t;
-        int var7 = (int)MiningState.M.field_71439_g.field_70163_u;
-        int var8 = (int)MiningState.M.field_71439_g.field_70161_v;
+        int var6 = (int)MiningState.M.thePlayer.posX;
+        int var7 = (int)MiningState.M.thePlayer.posY;
+        int var8 = (int)MiningState.M.thePlayer.posZ;
         for (int var9 = var6 - var5; var9 <= var6 + var5; ++var9) {
             for (int var10 = var7 - 2; var10 <= var7 + 2; ++var10) {
                 for (int var11 = var8 - var5; var11 <= var8 + var5; ++var11) {
                     BlockPos var12 = new BlockPos(var9, var10, var11);
-                    Block var13 = MiningState.M.field_71441_e.func_180495_p(var12).func_177230_c();
-                    if (var13 != Blocks.field_150486_ae && var13 != Blocks.field_150447_bR || this.p.contains(var12)) continue;
+                    Block var13 = MiningState.M.theWorld.getBlockState(var12).getBlock();
+                    if (var13 != Blocks.chest && var13 != Blocks.trapped_chest || this.p.contains(var12)) continue;
                     this.p.add(var12);
                     boolean var14 = false;
                     Block var15 = BrokenBlockTracker.m.x(var12);
@@ -81,7 +85,7 @@ public class MiningState {
                         var14 = true;
                         break;
 }
-                    if (var14 && var15 != null && var15 != Blocks.field_150350_a && var15 != Blocks.field_150486_ae && var15 != Blocks.field_150447_bR) {
+                    if (var14 && var15 != null && var15 != Blocks.air && var15 != Blocks.chest && var15 != Blocks.trapped_chest) {
                         this.P.add(var12);
                         BoxRenderer.p(var12, 99005023413082L, i);
                         continue;
@@ -92,9 +96,9 @@ public class MiningState {
 }
 }
     public void C() {
-        double var1 = MiningState.M.field_71439_g.func_174813_aQ().field_72338_b - 0.01;
-        double var3 = MiningState.M.field_71439_g.field_70165_t;
-        double var5 = MiningState.M.field_71439_g.field_70161_v;
+        double var1 = MiningState.M.thePlayer.getEntityBoundingBox().minY - 0.01;
+        double var3 = MiningState.M.thePlayer.posX;
+        double var5 = MiningState.M.thePlayer.posZ;
         int var7 = (int)Math.floor(var3);
         int var8 = (int)Math.floor(var5);
         int var9 = (int)Math.floor(var3 + 1.0E-4);
@@ -119,16 +123,16 @@ public class MiningState {
 }
     public boolean G() {
         for (BlockPos var4 : this.f) {
-            Block var5 = MiningState.M.field_71441_e.func_180495_p(var4).func_177230_c();
-            if (var5 != Blocks.field_150486_ae && var5 != Blocks.field_150447_bR) continue;
+            Block var5 = MiningState.M.theWorld.getBlockState(var4).getBlock();
+            if (var5 != Blocks.chest && var5 != Blocks.trapped_chest) continue;
             return true;
 }
         return false;
 }
     public void T(long var1) {
-        MovingObjectPosition var5 = MiningState.M.field_71476_x;
-        if (var5 != null && var5.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK) {
-            j = var5.func_178782_a();
+        MovingObjectPosition var5 = MiningState.M.objectMouseOver;
+        if (var5 != null && var5.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+            j = var5.getBlockPos();
             if (this.N()) {
                 BoxRenderer.p(j, 99005023413082L, new Color(255, 255, 255, 40));
 }
@@ -154,8 +158,8 @@ public class MiningState {
             Iterator<BlockPos> var5 = this.p.iterator();
             while (var5.hasNext()) {
                 BlockPos var6 = var5.next();
-                Block var7 = MiningState.M.field_71441_e.func_180495_p(var6).func_177230_c();
-                if (var7 != Blocks.field_150486_ae && var7 != Blocks.field_150447_bR) {
+                Block var7 = MiningState.M.theWorld.getBlockState(var6).getBlock();
+                if (var7 != Blocks.chest && var7 != Blocks.trapped_chest) {
                     var5.remove();
                     this.P.remove(var6);
                     continue;
@@ -172,16 +176,16 @@ public class MiningState {
         return this.d() != null;
 }
     public static boolean K(EntityPlayer var0, BlockPos var1) {
-        AxisAlignedBB var2 = var0.func_174813_aQ();
+        AxisAlignedBB var2 = var0.getEntityBoundingBox();
         double var3 = 0.1;
-        AxisAlignedBB var5 = new AxisAlignedBB((double)var1.func_177958_n() - var3, (double)var1.func_177956_o() - var3, (double)var1.func_177952_p() - var3, (double)(var1.func_177958_n() + 1) + var3, (double)(var1.func_177956_o() + 1) + var3, (double)(var1.func_177952_p() + 1) + var3);
-        return var2.func_72326_a(var5);
+        AxisAlignedBB var5 = new AxisAlignedBB((double)var1.getX() - var3, (double)var1.getY() - var3, (double)var1.getZ() - var3, (double)(var1.getX() + 1) + var3, (double)(var1.getY() + 1) + var3, (double)(var1.getZ() + 1) + var3);
+        return var2.intersectsWith(var5);
 }
     private float r(Minecraft var1) {
-        if (var1 == null || var1.field_71439_g == null) {
+        if (var1 == null || var1.thePlayer == null) {
             return 0.0f;
 }
-        return MiningEngine.uq.h() ? RotationManager.r : var1.field_71439_g.field_70177_z;
+        return MiningEngine.uq.h() ? RotationManager.r : var1.thePlayer.rotationYaw;
 }
     public Set<BlockPos> g() {
         return this.P;
@@ -194,7 +198,7 @@ public class MiningState {
         if (this.N() && this.f.length != 0) {
             Color var5 = new Color(255, 255, 255, 40);
             for (BlockPos var9 : this.f) {
-                if (MiningState.M.field_71441_e.func_180495_p(var9).func_177230_c() == Blocks.field_150350_a) continue;
+                if (MiningState.M.theWorld.getBlockState(var9).getBlock() == Blocks.air) continue;
                 BoxRenderer.p(var9, var3, var5);
 }
 }
@@ -203,7 +207,7 @@ public class MiningState {
         Block var6;
         BlockPos var5;
         long var3 = 99005023413082L;
-        if (this.N() && (var5 = BrokenBlockTracker.m.y()) != null && System.currentTimeMillis() - this.S <= e && ((var6 = MiningState.M.field_71441_e.func_180495_p(var5).func_177230_c()) == Blocks.field_150486_ae || var6 == Blocks.field_150447_bR)) {
+        if (this.N() && (var5 = BrokenBlockTracker.m.y()) != null && System.currentTimeMillis() - this.S <= e && ((var6 = MiningState.M.theWorld.getBlockState(var5).getBlock()) == Blocks.chest || var6 == Blocks.trapped_chest)) {
             BoxRenderer.p(var5, var3, i);
 }
 }
@@ -211,8 +215,8 @@ public class MiningState {
         if (this.E == null) {
             return null;
 }
-        if (MiningState.K((EntityPlayer)MiningState.M.field_71439_g, this.E)) {
-            Block var1 = MiningState.M.field_71441_e.func_180495_p(this.E).func_177230_c();
+        if (MiningState.K((EntityPlayer)MiningState.M.thePlayer, this.E)) {
+            Block var1 = MiningState.M.theWorld.getBlockState(this.E).getBlock();
             long var2 = System.currentTimeMillis();
             return this.E.equals((Object)B) && T > 0L ? new MiningProgress(this.E, var1, T, var2 - T) : new MiningProgress(this.E, var1, var2, 0L);
 }
@@ -227,11 +231,11 @@ public class MiningState {
             if (this.E == null) {
                 B = null;
                 T = 0L;
-            } else if (MiningState.M.field_71441_e.func_180495_p(this.E).func_177230_c() == Blocks.field_150350_a) {
+            } else if (MiningState.M.theWorld.getBlockState(this.E).getBlock() == Blocks.air) {
                 this.E = null;
                 B = null;
                 T = 0L;
-            } else if (MiningState.K((EntityPlayer)MiningState.M.field_71439_g, this.E)) {
+            } else if (MiningState.K((EntityPlayer)MiningState.M.thePlayer, this.E)) {
                 long var5 = System.currentTimeMillis();
                 if (!this.E.equals((Object)B)) {
                     B = this.E;
@@ -249,13 +253,13 @@ public class MiningState {
         double var2 = Math.toRadians(var1);
         int var4 = (int)Math.round(-Math.sin(var2));
         int var5 = (int)Math.round(Math.cos(var2));
-        int var6 = (int)Math.floor(MiningState.M.field_71439_g.field_70165_t);
-        int var7 = (int)Math.floor(MiningState.M.field_71439_g.field_70163_u);
-        int var8 = (int)Math.floor(MiningState.M.field_71439_g.field_70161_v);
+        int var6 = (int)Math.floor(MiningState.M.thePlayer.posX);
+        int var7 = (int)Math.floor(MiningState.M.thePlayer.posY);
+        int var8 = (int)Math.floor(MiningState.M.thePlayer.posZ);
         BlockPos var9 = new BlockPos(var6 + var4, var7, var8 + var5);
         BlockPos var10 = new BlockPos(var6 + var4, var7 + 1, var8 + var5);
         for (BlockPos var14 : new BlockPos[]{var9, var10}) {
-            if (MiningState.M.field_71441_e.func_180495_p(var14).func_177230_c() == Blocks.field_150350_a) continue;
+            if (MiningState.M.theWorld.getBlockState(var14).getBlock() == Blocks.air) continue;
             this.E = var14;
             return;
 }

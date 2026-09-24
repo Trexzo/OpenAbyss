@@ -141,12 +141,13 @@ implements EventSubscriber {
     private BlockPos M;
     private boolean Z;
 
+    // R13_MINING_RECOVERY_MARKER
     public void b(long var1) {
         var1 = ab ^ var1;
         long var3 = var1 ^ 0x65975BCA0406L;
         long var5 = (var1 ^ 0x4499508386D3L) >>> 32;
         int var7 = (int)((var1 ^ 0x4499508386D3L) << 32 >>> 32);
-        if (this.D || MiningEngine.F.field_71439_g != null && MiningEngine.F.field_71441_e != null) {
+        if (this.D || MiningEngine.F.thePlayer != null && MiningEngine.F.theWorld != null) {
             if (this.D) {
                 this.B(var5, var7);
             } else {
@@ -159,9 +160,19 @@ implements EventSubscriber {
             var1.add(var3);
 }
 }
+    private Vec3[] a(long var1, BlockPos var3) {
+        Vec3[] var10000 = new Vec3[6];
+        var10000[0] = new Vec3(var3.getX() + 0.5, var3.getY() + 0.5, var3.getZ() + 0.5);
+        var10000[1] = new Vec3(var3.getX() + 0.5, var3.getY() + 0.15, var3.getZ() + 0.5);
+        var10000[2] = new Vec3(var3.getX() + 0.25, var3.getY() + 0.5, var3.getZ() + 0.5);
+        var10000[3] = new Vec3(var3.getX() + 0.75, var3.getY() + 0.5, var3.getZ() + 0.5);
+        var10000[4] = new Vec3(var3.getX() + 0.5, var3.getY() + 0.5, var3.getZ() + 0.25);
+        var10000[5] = new Vec3(var3.getX() + 0.5, var3.getY() + 0.5, var3.getZ() + 0.75);
+        return var10000;
+    }
     public void z(long var1) {
         long var3 = var1 ^ 0x67AF482D0296L;
-        if (this.D && MiningEngine.F.field_71439_g != null) {
+        if (this.D && MiningEngine.F.thePlayer != null) {
             this.W(var3);
 }
 }
@@ -189,19 +200,19 @@ implements EventSubscriber {
 }
     private boolean m(BlockPos var1, long var2) {
         long var4 = var2 ^ 0xD8B4587964CL;
-        EntityPlayerSP var6 = MiningEngine.F.field_71439_g;
-        Block var7 = MiningEngine.F.field_71441_e.func_180495_p(var1).func_177230_c();
-        if (var7 == Blocks.field_150350_a) {
+        EntityPlayerSP var6 = MiningEngine.F.thePlayer;
+        Block var7 = MiningEngine.F.theWorld.getBlockState(var1).getBlock();
+        if (var7 == Blocks.air) {
             return false;
 }
         if (BrokenBlockTracker.m.k(var1)) {
             return false;
 }
-        return (var7 == Blocks.field_150486_ae || var7 == Blocks.field_150447_bR) && !this.Q(var1) ? false : var7.func_176195_g((World)MiningEngine.F.field_71441_e, var1) >= 0.0f && this.N(var4, F, var6, var1);
+        return (var7 == Blocks.chest || var7 == Blocks.trapped_chest) && !this.Q(var1) ? false : var7.getBlockHardness((World)MiningEngine.F.theWorld, var1) >= 0.0f && this.N(var4, F, var6, var1);
 }
     private boolean c(EntityPlayerSP var1) {
         for (BlockPos var3 : this.u(var1)) {
-            if (MiningEngine.F.field_71441_e.func_180495_p(var3).func_177230_c() == Blocks.field_150350_a) continue;
+            if (MiningEngine.F.theWorld.getBlockState(var3).getBlock() == Blocks.air) continue;
             return false;
 }
         return true;
@@ -226,7 +237,7 @@ implements EventSubscriber {
         this.S = 0L;
         this.J = false;
         this.B = 0.0f;
-        this.this.R = 0L;
+        this.R = 0L;
         this.n = -1;
         this.d = null;
         this.h = Float.NaN;
@@ -284,10 +295,10 @@ implements EventSubscriber {
         double var20 = Math.toRadians(var19);
         double var22 = -Math.sin(var20);
         double var24 = Math.cos(var20);
-        double var26 = MiningEngine.F.field_71439_g.field_70165_t + var22 * 1.2;
-        double var28 = MiningEngine.F.field_71439_g.field_70161_v + var24 * 1.2;
+        double var26 = MiningEngine.F.thePlayer.posX + var22 * 1.2;
+        double var28 = MiningEngine.F.thePlayer.posZ + var24 * 1.2;
         int var30 = (int)Math.floor(var26);
-        int var31 = (int)MiningEngine.F.field_71439_g.field_70163_u;
+        int var31 = (int)MiningEngine.F.thePlayer.posY;
         int var32 = (int)Math.floor(var28);
         BlockPos var33 = new BlockPos(var30, var31, var32);
         BlockPos var34 = new BlockPos(var30, var31 + 1, var32);
@@ -298,18 +309,18 @@ implements EventSubscriber {
             this.L(var6, "dead end detected and auto turn is disabled");
             return true;
 }
-        double var35 = Math.sqrt(Math.pow((double)var33.func_177958_n() + 0.5 - MiningEngine.F.field_71439_g.field_70165_t, 2.0) + Math.pow((double)var33.func_177952_p() + 0.5 - MiningEngine.F.field_71439_g.field_70161_v, 2.0));
+        double var35 = Math.sqrt(Math.pow((double)var33.getX() + 0.5 - MiningEngine.F.thePlayer.posX, 2.0) + Math.pow((double)var33.getZ() + 0.5 - MiningEngine.F.thePlayer.posZ, 2.0));
         if (var35 > 1.0) {
-            KeyBindUtil.A(var13, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), true);
-            KeyBindUtil.A(var13, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-            KeyBindUtil.A(var13, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), false);
+            KeyBindUtil.A(var13, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), true);
+            KeyBindUtil.A(var13, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+            KeyBindUtil.A(var13, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), false);
             return false;
 }
         this.k = var17;
         double var37 = Math.toRadians((var19 - 90.0f) % 360.0f);
         double var39 = Math.toRadians((var19 + 90.0f) % 360.0f);
-        BlockPos var41 = new BlockPos((int)Math.floor(MiningEngine.F.field_71439_g.field_70165_t - Math.sin(var37) * 1.2), var31, (int)Math.floor(MiningEngine.F.field_71439_g.field_70161_v + Math.cos(var37) * 1.2));
-        BlockPos var42 = new BlockPos((int)Math.floor(MiningEngine.F.field_71439_g.field_70165_t - Math.sin(var39) * 1.2), var31, (int)Math.floor(MiningEngine.F.field_71439_g.field_70161_v + Math.cos(var39) * 1.2));
+        BlockPos var41 = new BlockPos((int)Math.floor(MiningEngine.F.thePlayer.posX - Math.sin(var37) * 1.2), var31, (int)Math.floor(MiningEngine.F.thePlayer.posZ + Math.cos(var37) * 1.2));
+        BlockPos var42 = new BlockPos((int)Math.floor(MiningEngine.F.thePlayer.posX - Math.sin(var39) * 1.2), var31, (int)Math.floor(MiningEngine.F.thePlayer.posZ + Math.cos(var39) * 1.2));
         boolean var43 = this.X(var41);
         boolean var44 = this.X(var42);
         if (!var43 && !var44) {
@@ -360,14 +371,14 @@ implements EventSubscriber {
         return this.D;
 }
     private float m(EntityPlayerSP var1) {
-        return !this.D && !this.J ? var1.field_70177_z : RotationManager.r;
+        return !this.D && !this.J ? var1.rotationYaw : RotationManager.r;
 }
     private boolean x(EntityPlayerSP var1, long var2) {
         if (!this.f() || this.j || this.M == null) {
             return false;
 }
         if (this.t(116121547939723L, this.M) && this.R(F, var1, 113596981294470L, this.M)) {
-            double var8 = Math.sqrt(Math.pow((double)this.M.func_177958_n() + 0.5 - var1.field_70165_t, 2.0) + Math.pow((double)this.M.func_177952_p() + 0.5 - var1.field_70161_v, 2.0));
+            double var8 = Math.sqrt(Math.pow((double)this.M.getX() + 0.5 - var1.posX, 2.0) + Math.pow((double)this.M.getZ() + 0.5 - var1.posZ, 2.0));
             float var10 = this.f(var1, this.M, this.w(this.m(var1)));
             return var8 > 2.5 && var10 > 40.0f ? true : var8 > 1.5 && var10 > 25.0f && this.K.I();
 }
@@ -386,12 +397,12 @@ implements EventSubscriber {
         float var20;
         float var18;
         long var4 = var2 ^ 0x4F3D51639FFL;
-        Vec3 var6 = MiningEngine.F.field_71439_g.func_174824_e(1.0f);
-        Vec3 var7 = new Vec3((double)var1.func_177958_n() + 0.5, (double)var1.func_177956_o() + 0.5, (double)var1.func_177952_p() + 0.5);
-        Vec3 var8 = var7.func_178788_d(var6);
-        double var9 = var8.field_72450_a;
-        double var11 = var8.field_72448_b;
-        double var13 = var8.field_72449_c;
+        Vec3 var6 = MiningEngine.F.thePlayer.getPositionEyes(1.0f);
+        Vec3 var7 = new Vec3((double)var1.getX() + 0.5, (double)var1.getY() + 0.5, (double)var1.getZ() + 0.5);
+        Vec3 var8 = var7.subtract(var6);
+        double var9 = var8.xCoord;
+        double var11 = var8.yCoord;
+        double var13 = var8.zCoord;
         double var15 = Math.sqrt(var9 * var9 + var13 * var13);
         float var17 = (float)(-Math.toDegrees(Math.atan2(var11, var15)));
         for (var18 = (float)Math.toDegrees(Math.atan2(var13, var9)) - 90.0f; var18 > 180.0f; var18 -= 360.0f) {
@@ -444,34 +455,34 @@ implements EventSubscriber {
         if (this.M == null) {
             return null;
 }
-        Vec3 var7 = var4.func_174824_e(1.0f);
-        Vec3 var8 = new Vec3((double)this.M.func_177958_n() + 0.5, (double)this.M.func_177956_o() + 0.5, (double)this.M.func_177952_p() + 0.5);
-        Vec3 var9 = var8.func_178788_d(var7);
-        double var10 = var9.func_72433_c();
+        Vec3 var7 = var4.getPositionEyes(1.0f);
+        Vec3 var8 = new Vec3((double)this.M.getX() + 0.5, (double)this.M.getY() + 0.5, (double)this.M.getZ() + 0.5);
+        Vec3 var9 = var8.subtract(var7);
+        double var10 = var9.lengthVector();
         if (var10 <= 0.001) {
             return null;
 }
-        Vec3 var12 = new Vec3(var9.field_72450_a / var10, var9.field_72448_b / var10, var9.field_72449_c / var10);
+        Vec3 var12 = new Vec3(var9.xCoord / var10, var9.yCoord / var10, var9.zCoord / var10);
         double var13 = 0.1;
         int var15 = (int)Math.ceil(var10 / var13);
         for (int var16 = 1; var16 < var15 - 1; ++var16) {
             double var17 = var13 * (double)var16;
-            Vec3 var19 = new Vec3(var7.field_72450_a + var12.field_72450_a * var17, var7.field_72448_b + var12.field_72448_b * var17, var7.field_72449_c + var12.field_72449_c * var17);
-            BlockPos var20 = new BlockPos(var19.field_72450_a, var19.field_72448_b, var19.field_72449_c);
+            Vec3 var19 = new Vec3(var7.xCoord + var12.xCoord * var17, var7.yCoord + var12.yCoord * var17, var7.zCoord + var12.zCoord * var17);
+            BlockPos var20 = new BlockPos(var19.xCoord, var19.yCoord, var19.zCoord);
             if (var20.equals((Object)this.M) || !this.T(var3, var5, var4, var20)) continue;
             return var20;
 }
         return null;
 }
     private BlockPos j(EntityPlayerSP var1) {
-        return this.R(var1).func_177977_b();
+        return this.R(var1).down();
 }
     private String k(long var1) {
         return "player stuck in same position for " + MiningConstants.X + " seconds";
 }
     private BlockPos u$r2(EntityPlayerSP var1) {
         BlockPos var2 = this.R(var1);
-        return new BlockPos(var2.func_177958_n(), var2.func_177956_o() + 1, var2.func_177952_p());
+        return new BlockPos(var2.getX(), var2.getY() + 1, var2.getZ());
 }
     private boolean G() {
         return MiningConstants.J == 2 || this.Z;
@@ -483,16 +494,16 @@ implements EventSubscriber {
         var2 = ab ^ var2;
         long var6 = var2 ^ 0x6D69A89570F9L;
         long var8 = var2 ^ 0x4A01ACE1AA26L;
-        if (var5 != null && var1.field_71441_e != null) {
+        if (var5 != null && var1.theWorld != null) {
             for (BlockPos var13 : this.K.M()) {
                 if (var13 == null || !var13.equals((Object)var5)) continue;
                 return false;
 }
-            Block var15 = var1.field_71441_e.func_180495_p(var5).func_177230_c();
-            if (var15 == Blocks.field_150350_a || BrokenBlockTracker.m.k(var5)) {
+            Block var15 = var1.theWorld.getBlockState(var5).getBlock();
+            if (var15 == Blocks.air || BrokenBlockTracker.m.k(var5)) {
                 return false;
 }
-            return this.t(var8, var5) ? false : var15.func_176195_g((World)var1.field_71441_e, var5) >= 0.0f && this.N(var6, var1, var4, var5);
+            return this.t(var8, var5) ? false : var15.getBlockHardness((World)var1.theWorld, var5) >= 0.0f && this.N(var6, var1, var4, var5);
 }
         return false;
 }
@@ -563,25 +574,93 @@ implements EventSubscriber {
         this.C(9749, '\u5e04', '\u2614');
         switch (this.U) {
             case 0: {
-                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), true);
+                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), true);
                 break;
 }
             case 1: {
-                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), true);
+                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), true);
                 break;
 }
             case 2: {
-                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74370_x.func_151463_i(), true);
+                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindLeft.getKeyCode(), true);
                 break;
 }
             case 3: {
-                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74366_z.func_151463_i(), true);
+                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindRight.getKeyCode(), true);
 }
 }
 }
+    public void a(long var1) {
+        var1 = ab ^ var1;
+        long var3 = var1 ^ 109089883132357L;
+        long var5 = var1 ^ 132928916585055L;
+        int var7 = (int)((var1 ^ 14077531761509L) >>> 32);
+        int var8 = (int)((var1 ^ 14077531761509L) << 32 >>> 48);
+        int var9 = (int)((var1 ^ 14077531761509L) << 48 >>> 48);
+        int var10 = (int)((var1 ^ 47147754540857L) >>> 32);
+        int var11 = (int)((var1 ^ 47147754540857L) << 32 >>> 48);
+        int var12 = (int)((var1 ^ 47147754540857L) << 48 >>> 48);
+        long var13 = var1 ^ 119658807129479L;
+        long var15 = var1 ^ 138266274291867L;
+        if (MiningConstants.J == 0) {
+            MiningRegionScanResult var21 = MiningBlockScanner.b(var15, 4);
+            if (var21.Z == MiningRegionState.EMPTY) {
+                Abyss.util.ClientUtil.t(var13, "AutoTunnel failed to start: front area is fully empty");
+                return;
+            }
+        }
+
+        this.D = true;
+        this.M = null;
+        long var24 = System.currentTimeMillis();
+        this.u7 = var24;
+        this.O = var24;
+        this.J = false;
+        this.k = 0L;
+        this.j(var3);
+        this.U();
+        this.o(0L);
+        this.f(var10, (char)var11, (short)var12);
+        RotationManager.n(RotationMode.STRICT);
+        BrokenBlockTracker.m.N(true);
+        if (MiningConstants.r) {
+            AutoToolService.K.I(var5);
+        } else {
+            AutoToolService.K.p(var7, (char)var8, (char)var9);
+        }
+
+        if (F.thePlayer != null) {
+            this.C = F.thePlayer.posX;
+            this.Q = F.thePlayer.posZ;
+            this.v = RotationManager.r;
+            this.uM = RotationManager.G;
+            this.h = this.w(RotationManager.r);
+        }
+
+        this.S = System.currentTimeMillis();
+        if (this.f()) {
+            if (this.d == null) {
+                this.d = MiningConstants.v;
+            }
+
+            MiningConstants.v = false;
+        }
+
+        if (MiningConstants.v) {
+            this.n = MiningConstants.w;
+            MiningConstants.w = 2;
+            if (this.d == null) {
+                this.d = Boolean.TRUE;
+            }
+        } else if (this.d == null) {
+            this.d = Boolean.FALSE;
+        }
+
+        this.m = true;
+    }
     private boolean Q(BlockPos var1) {
-        Block var2 = MiningEngine.F.field_71441_e.func_180495_p(var1).func_177230_c();
-        return var2 != Blocks.field_150486_ae && var2 != Blocks.field_150447_bR ? false : !MiningConstants.k || this.K.g().contains(var1);
+        Block var2 = MiningEngine.F.theWorld.getBlockState(var1).getBlock();
+        return var2 != Blocks.chest && var2 != Blocks.trapped_chest ? false : !MiningConstants.k || this.K.g().contains(var1);
 }
     private boolean f(int var1, short var2, EntityPlayerSP var3, long var4, char var6) {
         long var7 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var6 << 48 >>> 48) ^ ab;
@@ -595,14 +674,14 @@ implements EventSubscriber {
         long var24 = var7 ^ 0x49D4750E89A4L;
         if (this.f() && !this.j) {
             boolean var26;
-            boolean bl = var26 = var3.field_70123_F || this.K.I();
+            boolean bl = var26 = var3.isCollidedHorizontally || this.K.I();
             if (!var26) {
                 return false;
 }
             BlockPos var27 = this.R(var3);
             BlockPos var28 = this.u$r2(var3);
-            Block var29 = MiningEngine.F.field_71441_e.func_180495_p(var27).func_177230_c();
-            if (var29 == Blocks.field_150350_a) {
+            Block var29 = MiningEngine.F.theWorld.getBlockState(var27).getBlock();
+            if (var29 == Blocks.air) {
                 return false;
 }
             if (!this.t(var18, var27) && !this.t(var18, var28)) {
@@ -619,10 +698,10 @@ implements EventSubscriber {
                     return true;
 }
                 if (this.c(var3)) {
-                    KeyBindUtil.A(var24, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-                    KeyBindUtil.A(var24, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), false);
-                    KeyBindUtil.A(var24, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), true);
-                    KeyBindUtil.A(var24, MiningEngine.F.field_71474_y.field_74314_A.func_151463_i(), true);
+                    KeyBindUtil.A(var24, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+                    KeyBindUtil.A(var24, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), false);
+                    KeyBindUtil.A(var24, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), true);
+                    KeyBindUtil.A(var24, MiningEngine.F.gameSettings.keyBindJump.getKeyCode(), true);
                     this.S = var4;
                     return true;
 }
@@ -645,23 +724,33 @@ implements EventSubscriber {
 }
         return null;
 }
+    private boolean a(char var1, long var2, short var4, int var5) {
+        if (!this.w && !this.N) {
+            this.w = true;
+            this.U = 0;
+            this.s = var2 + 300L;
+            return true;
+        } else {
+            return false;
+        }
+    }
     private List<BlockPos> u(EntityPlayerSP var1) {
         int var7;
         ArrayList<BlockPos> var2 = new ArrayList<BlockPos>();
         HashSet<BlockPos> var3 = new HashSet<BlockPos>();
         BlockPos var4 = this.t(var1);
         BlockPos var5 = this.R(var1);
-        int var6 = var5.func_177958_n() - var4.func_177958_n();
-        int var8 = var7 = var5.func_177952_p() - var4.func_177952_p();
+        int var6 = var5.getX() - var4.getX();
+        int var8 = var7 = var5.getZ() - var4.getZ();
         int var9 = -var6;
-        this.W(var2, var3, new BlockPos(var4.func_177958_n(), var4.func_177956_o() + 2, var4.func_177952_p()));
-        this.W(var2, var3, new BlockPos(var4.func_177958_n() + var6, var4.func_177956_o() + 2, var4.func_177952_p() + var7));
-        this.W(var2, var3, new BlockPos(var4.func_177958_n() + var8, var4.func_177956_o() + 2, var4.func_177952_p() + var9));
-        this.W(var2, var3, new BlockPos(var4.func_177958_n() - var8, var4.func_177956_o() + 2, var4.func_177952_p() - var9));
+        this.W(var2, var3, new BlockPos(var4.getX(), var4.getY() + 2, var4.getZ()));
+        this.W(var2, var3, new BlockPos(var4.getX() + var6, var4.getY() + 2, var4.getZ() + var7));
+        this.W(var2, var3, new BlockPos(var4.getX() + var8, var4.getY() + 2, var4.getZ() + var9));
+        this.W(var2, var3, new BlockPos(var4.getX() - var8, var4.getY() + 2, var4.getZ() - var9));
         this.W(var2, var3, this.u$r2(var1));
-        this.W(var2, var3, new BlockPos(var5.func_177958_n(), var5.func_177956_o() + 2, var5.func_177952_p()));
-        this.W(var2, var3, new BlockPos(var5.func_177958_n() + var8, var5.func_177956_o() + 2, var5.func_177952_p() + var9));
-        this.W(var2, var3, new BlockPos(var5.func_177958_n() - var8, var5.func_177956_o() + 2, var5.func_177952_p() - var9));
+        this.W(var2, var3, new BlockPos(var5.getX(), var5.getY() + 2, var5.getZ()));
+        this.W(var2, var3, new BlockPos(var5.getX() + var8, var5.getY() + 2, var5.getZ() + var9));
+        this.W(var2, var3, new BlockPos(var5.getX() - var8, var5.getY() + 2, var5.getZ() - var9));
         return var2;
 }
     private boolean b(long var1, long var3) {
@@ -694,11 +783,11 @@ implements EventSubscriber {
         this.X = 0L;
 }
     private boolean X(BlockPos var1) {
-        Block var2 = MiningEngine.F.field_71441_e.func_180495_p(var1).func_177230_c();
-        return var2 != Blocks.field_150350_a && var2.func_176195_g((World)MiningEngine.F.field_71441_e, var1) < 0.0f || BrokenBlockTracker.m.k(var1);
+        Block var2 = MiningEngine.F.theWorld.getBlockState(var1).getBlock();
+        return var2 != Blocks.air && var2.getBlockHardness((World)MiningEngine.F.theWorld, var1) < 0.0f || BrokenBlockTracker.m.k(var1);
 }
     private BlockPos t(EntityPlayerSP var1) {
-        return new BlockPos(Math.floor(var1.field_70165_t), Math.floor(var1.field_70163_u), Math.floor(var1.field_70161_v));
+        return new BlockPos(Math.floor(var1.posX), Math.floor(var1.posY), Math.floor(var1.posZ));
 }
     private void u$r3(EntityPlayerSP var1) {
         boolean var3;
@@ -706,13 +795,13 @@ implements EventSubscriber {
         this.P.clear();
         this.L = null;
         BlockPos var2 = this.j(var1);
-        boolean bl = var3 = MiningEngine.F.field_71441_e.func_180495_p(var2).func_177230_c() == Blocks.field_150350_a;
+        boolean bl = var3 = MiningEngine.F.theWorld.getBlockState(var2).getBlock() == Blocks.air;
         if (var3) {
             int var10;
             this.L = var2;
-            int var4 = var2.func_177958_n();
-            int var5 = var2.func_177956_o() + 2;
-            int var6 = var2.func_177952_p();
+            int var4 = var2.getX();
+            int var5 = var2.getY() + 2;
+            int var6 = var2.getZ();
             double var7 = Math.toRadians(this.m(var1));
             int var9 = (int)Math.round(-Math.sin(var7));
             int var11 = var10 = (int)Math.round(Math.cos(var7));
@@ -765,8 +854,8 @@ implements EventSubscriber {
         return var1;
 }
     private float f(EntityPlayerSP var1, BlockPos var2, float var3) {
-        double var4 = (double)var2.func_177958_n() + 0.5 - var1.field_70165_t;
-        double var6 = (double)var2.func_177952_p() + 0.5 - var1.field_70161_v;
+        double var4 = (double)var2.getX() + 0.5 - var1.posX;
+        double var6 = (double)var2.getZ() + 0.5 - var1.posZ;
         float var8 = (float)Math.toDegrees(Math.atan2(var6, var4)) - 90.0f;
         return Math.abs(this.O(var8 - var3));
 }
@@ -790,10 +879,10 @@ implements EventSubscriber {
         this.T(var3, var4);
 }
     private boolean B(Block var1) {
-        return var1 == Blocks.field_150366_p || var1 == Blocks.field_150365_q;
+        return var1 == Blocks.iron_ore || var1 == Blocks.coal_ore;
 }
     private void n(long var1) {
-        if (MiningEngine.F.field_71439_g != null) {
+        if (MiningEngine.F.thePlayer != null) {
             float var7;
             for (var7 = this.B - this.v; var7 > 180.0f; var7 -= 360.0f) {
 }
@@ -824,11 +913,11 @@ implements EventSubscriber {
         boolean var16 = false;
         float var17 = Float.MAX_VALUE;
         double var18 = Double.MAX_VALUE;
-        for (BlockPos var21 : var4) {
+        for (BlockPos var21 : (Iterable<BlockPos>)(var4)) {
             float var22;
             if (!this.t(var13, var21) || !this.R(var1, var2, var11, var21) || (var22 = this.f(var2, var21, var6)) > var7) continue;
             boolean var23 = this.Q(var21);
-            double var24 = var21.func_177954_c(var2.field_70165_t, var2.field_70163_u, var2.field_70161_v);
+            double var24 = var21.distanceSq(var2.posX, var2.posY, var2.posZ);
             if (!(var15 == null || var23 && !var16 || var23 == var16 && var22 < var17 - 0.001f) && (var23 != var16 || !(Math.abs(var22 - var17) < 0.001f) || !(var24 < var18))) continue;
             var15 = var21;
             var16 = var23;
@@ -870,8 +959,8 @@ implements EventSubscriber {
             if (var11 == null || !var11.equals((Object)var1)) continue;
             return false;
 }
-        Block var13 = MiningEngine.F.field_71441_e.func_180495_p(var1).func_177230_c();
-        if (var13 == Blocks.field_150350_a && var1.equals((Object)this.M)) {
+        Block var13 = MiningEngine.F.theWorld.getBlockState(var1).getBlock();
+        if (var13 == Blocks.air && var1.equals((Object)this.M)) {
             long var14;
             this.u7 = var14 = System.currentTimeMillis();
             this.O = var14;
@@ -887,7 +976,7 @@ implements EventSubscriber {
                 this.b = null;
 }
 }
-        boolean bl = var15 = var13 != Blocks.field_150350_a && var13.func_176195_g((World)MiningEngine.F.field_71441_e, var1) >= 0.0f && !BrokenBlockTracker.m.k(var1);
+        boolean bl = var15 = var13 != Blocks.air && var13.getBlockHardness((World)MiningEngine.F.theWorld, var1) >= 0.0f && !BrokenBlockTracker.m.k(var1);
         if (var15 && !var1.equals((Object)this.M)) {
             this.u7 = System.currentTimeMillis();
 }
@@ -916,13 +1005,13 @@ implements EventSubscriber {
     private void C(int var1, char var2, char var3) {
         long var4 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ ab;
         long var6 = var4 ^ 0x5DDFBE14CC16L;
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74314_A.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74370_x.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74366_z.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74312_F.func_151463_i(), false);
-        KeyBindUtil.A(var6, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindJump.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindLeft.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindRight.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindAttack.getKeyCode(), false);
+        KeyBindUtil.A(var6, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), false);
 }
     private void W(long var1) {
         long var3 = var1 ^ 0x41EA78577FC0L;
@@ -937,14 +1026,14 @@ implements EventSubscriber {
         if (var4 != (var5 = this.Q(var3))) {
             return var4;
 }
-        double var6 = var2.func_177954_c(var1.field_70165_t, var1.field_70163_u, var1.field_70161_v);
-        return Math.abs(var6 - (var8 = var3.func_177954_c(var1.field_70165_t, var1.field_70163_u, var1.field_70161_v))) > 0.001 ? var6 < var8 : uA.nextBoolean();
+        double var6 = var2.distanceSq(var1.posX, var1.posY, var1.posZ);
+        return Math.abs(var6 - (var8 = var3.distanceSq(var1.posX, var1.posY, var1.posZ))) > 0.001 ? var6 < var8 : uA.nextBoolean();
 }
     private boolean u(int var1, long var2, BlockPos var4) {
         long var5 = ((long)var1 << 32 | var2 << 32 >>> 32) ^ ab;
         long var7 = var5 ^ 0x21A50AB0B35FL;
-        Block var9 = MiningEngine.F.field_71441_e.func_180495_p(var4).func_177230_c();
-        return var9 != Blocks.field_150350_a && !this.t(var7, var4);
+        Block var9 = MiningEngine.F.theWorld.getBlockState(var4).getBlock();
+        return var9 != Blocks.air && !this.t(var7, var4);
 }
     private void o(long var1) {
         this.H();
@@ -954,9 +1043,9 @@ implements EventSubscriber {
         double var2 = Math.toRadians(this.m(var1));
         int var4 = (int)Math.round(-Math.sin(var2));
         int var5 = (int)Math.round(Math.cos(var2));
-        int var6 = (int)Math.floor(var1.field_70165_t) + var4;
-        int var7 = (int)Math.floor(var1.field_70163_u);
-        int var8 = (int)Math.floor(var1.field_70161_v) + var5;
+        int var6 = (int)Math.floor(var1.posX) + var4;
+        int var7 = (int)Math.floor(var1.posY);
+        int var8 = (int)Math.floor(var1.posZ) + var5;
         return new BlockPos(var6, var7, var8);
 }
     private BlockPos i(short var1, int var2, int var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
@@ -968,19 +1057,19 @@ implements EventSubscriber {
         if (this.M == null) {
             return null;
 }
-        Vec3 var13 = MiningEngine.F.field_71439_g.func_174824_e(1.0f);
-        Vec3 var14 = new Vec3((double)this.M.func_177958_n() + 0.5, (double)this.M.func_177956_o() + 0.5, (double)this.M.func_177952_p() + 0.5);
-        Vec3 var15 = var14.func_178788_d(var13);
-        double var16 = var15.func_72433_c();
-        Vec3 var18 = new Vec3(var15.field_72450_a / var16, var15.field_72448_b / var16, var15.field_72449_c / var16);
+        Vec3 var13 = MiningEngine.F.thePlayer.getPositionEyes(1.0f);
+        Vec3 var14 = new Vec3((double)this.M.getX() + 0.5, (double)this.M.getY() + 0.5, (double)this.M.getZ() + 0.5);
+        Vec3 var15 = var14.subtract(var13);
+        double var16 = var15.lengthVector();
+        Vec3 var18 = new Vec3(var15.xCoord / var16, var15.yCoord / var16, var15.zCoord / var16);
         double var19 = 0.1;
         int var21 = (int)Math.ceil(var16 / var19);
         for (int var22 = 1; var22 < var21 - 1; ++var22) {
             double var23 = var19 * (double)var22;
-            Vec3 var25 = new Vec3(var13.field_72450_a + var18.field_72450_a * var23, var13.field_72448_b + var18.field_72448_b * var23, var13.field_72449_c + var18.field_72449_c * var23);
-            BlockPos var26 = new BlockPos(var25.field_72450_a, var25.field_72448_b, var25.field_72449_c);
-            Block var27 = MiningEngine.F.field_71441_e.func_180495_p(var26).func_177230_c();
-            if (var27 == Blocks.field_150350_a) continue;
+            Vec3 var25 = new Vec3(var13.xCoord + var18.xCoord * var23, var13.yCoord + var18.yCoord * var23, var13.zCoord + var18.zCoord * var23);
+            BlockPos var26 = new BlockPos(var25.xCoord, var25.yCoord, var25.zCoord);
+            Block var27 = MiningEngine.F.theWorld.getBlockState(var26).getBlock();
+            if (var27 == Blocks.air) continue;
             if (!var26.equals((Object)this.M) && this.X(var26)) {
                 BoxRenderer.I(var26, new Color(0, 0, 255, 180));
                 this.X(var10, (char)var11, var12);
@@ -1017,15 +1106,15 @@ implements EventSubscriber {
         var1 = ab ^ var1;
         long var7 = var1 ^ 0x3E63D1BF086AL;
         long var9 = var1 ^ 0x71394DACCC8EL;
-        Block var13 = MiningEngine.F.field_71441_e.func_180495_p(var4).func_177230_c();
+        Block var13 = MiningEngine.F.theWorld.getBlockState(var4).getBlock();
         this.M = var4;
         this.A(this.M, var7);
-        KeyBindUtil.A(var9, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), false);
-        KeyBindUtil.A(var9, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-        KeyBindUtil.A(var9, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), false);
-        KeyBindUtil.A(var9, MiningEngine.F.field_71474_y.field_74314_A.func_151463_i(), false);
-        if (MiningConstants.r && (var14 = this.U(var3, var13)) != -1 && var14 != var3.field_71071_by.field_70461_c) {
-            var3.field_71071_by.field_70461_c = var14;
+        KeyBindUtil.A(var9, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), false);
+        KeyBindUtil.A(var9, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+        KeyBindUtil.A(var9, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), false);
+        KeyBindUtil.A(var9, MiningEngine.F.gameSettings.keyBindJump.getKeyCode(), false);
+        if (MiningConstants.r && (var14 = this.U(var3, var13)) != -1 && var14 != var3.inventory.currentItem) {
+            var3.inventory.currentItem = var14;
 }
         this.S = var5;
 }
@@ -1033,10 +1122,10 @@ implements EventSubscriber {
         float var5 = 1.0f;
         int var6 = -1;
         for (int var7 = 0; var7 < 9; ++var7) {
-            ItemStack var8 = var3.field_71071_by.func_70301_a(var7);
+            ItemStack var8 = var3.inventory.getStackInSlot(var7);
             if (var8 == null) continue;
-            float var9 = var8.func_150997_a(var4);
-            if (var8.func_77973_b() instanceof ItemTool) {
+            float var9 = var8.getStrVsBlock(var4);
+            if (var8.getItem() instanceof ItemTool) {
                 if (!(var9 > var5)) continue;
                 var5 = var9;
                 var6 = var7;
@@ -1121,7 +1210,7 @@ implements EventSubscriber {
         int var21 = (int)((var4 ^ 0x3DC9B511A039L) << 32 >>> 48);
         int var22 = (int)((var4 ^ 0x3DC9B511A039L) << 48 >>> 48);
         if (this.f()) {
-            EntityPlayerSP var55 = MiningEngine.F.field_71439_g;
+            EntityPlayerSP var55 = MiningEngine.F.thePlayer;
             List var57 = this.D(0L);
             BlockPos var59 = this.C(F, var55, var12, var57, (short)var13, this.w(this.m(var55)), 70.0f, (char)var14);
             if (var59 != null) {
@@ -1136,8 +1225,8 @@ implements EventSubscriber {
             return null;
 }
         this.I.clear();
-        if (MiningConstants.v && MiningEngine.F.field_71439_g != null && MiningEngine.F.field_71441_e != null) {
-            EntityPlayerSP var23 = MiningEngine.F.field_71439_g;
+        if (MiningConstants.v && MiningEngine.F.thePlayer != null && MiningEngine.F.theWorld != null) {
+            EntityPlayerSP var23 = MiningEngine.F.thePlayer;
             BlockPos var24 = this.R(var23);
             BlockPos var25 = this.u$r2(var23);
             BlockPos var26 = this.j(var23);
@@ -1167,15 +1256,15 @@ implements EventSubscriber {
                 return null;
 }
 }
-        EntityPlayerSP var54 = MiningEngine.F.field_71439_g;
+        EntityPlayerSP var54 = MiningEngine.F.thePlayer;
         float var56 = this.w(this.m(var54));
         double var58 = Math.toRadians(var56);
         double var60 = -Math.sin(var58);
         double var29 = Math.cos(var58);
         for (double var31 = 0.2; var31 < 1.2; var31 += 0.2) {
-            int var33 = (int)Math.floor(var54.field_70165_t + var60 * var31);
-            int var34 = (int)var54.field_70163_u;
-            int var35 = (int)Math.floor(var54.field_70161_v + var29 * var31);
+            int var33 = (int)Math.floor(var54.posX + var60 * var31);
+            int var34 = (int)var54.posY;
+            int var35 = (int)Math.floor(var54.posZ + var29 * var31);
             BlockPos var36 = new BlockPos(var33, var34, var35);
             BlockPos var37 = new BlockPos(var33, var34 + 1, var35);
             if (this.i(var36, var18)) {
@@ -1187,8 +1276,8 @@ implements EventSubscriber {
         for (double var61 = 1.2; var61 <= 2.2; var61 += 1.0) {
             int var68;
             int var66;
-            int var64 = (int)Math.floor(var54.field_70165_t + var60 * var61);
-            BlockPos var69 = new BlockPos(var64, var66 = (int)var54.field_70163_u, var68 = (int)Math.floor(var54.field_70161_v + var29 * var61));
+            int var64 = (int)Math.floor(var54.posX + var60 * var61);
+            BlockPos var69 = new BlockPos(var64, var66 = (int)var54.posY, var68 = (int)Math.floor(var54.posZ + var29 * var61));
             if (!this.X(var69)) continue;
             this.c.add(new MinedBlockTimestamp(var69, System.currentTimeMillis()));
             this.X(var20, (char)var21, var22);
@@ -1196,10 +1285,10 @@ implements EventSubscriber {
 }
         BlockPos var62 = null;
         for (double var32 = 1.2; var32 <= 4.2; var32 += 1.0) {
-            double var67 = var54.field_70165_t + var60 * var32;
-            double var70 = var54.field_70161_v + var29 * var32;
+            double var67 = var54.posX + var60 * var32;
+            double var70 = var54.posZ + var29 * var32;
             int var38 = (int)Math.floor(var67);
-            int var39 = (int)var54.field_70163_u;
+            int var39 = (int)var54.posY;
             int var40 = (int)Math.floor(var70);
             BlockPos var41 = new BlockPos(var38, var39, var40);
             BlockPos var42 = new BlockPos(var38, var39 + 1, var40);
@@ -1221,7 +1310,7 @@ implements EventSubscriber {
                 double var45 = var67 + var29 * var43;
                 double var47 = var70 - var60 * var43;
                 int var49 = (int)Math.floor(var45);
-                int var50 = (int)var54.field_70163_u;
+                int var50 = (int)var54.posY;
                 int var51 = (int)Math.floor(var47);
                 BlockPos var52 = new BlockPos(var49, var50, var51);
                 BlockPos var53 = new BlockPos(var49, var50 + 1, var51);
@@ -1240,8 +1329,8 @@ implements EventSubscriber {
 }
         BlockPos var63 = this.K.U();
         if (var63 != null && this.I.contains(var63)) {
-            int var65 = (int)var54.field_70163_u;
-            if (var63.func_177956_o() > var65) {
+            int var65 = (int)var54.posY;
+            if (var63.getY() > var65) {
                 return var63;
 }
 }
@@ -1259,13 +1348,13 @@ implements EventSubscriber {
 }
     private boolean N(long var1, Minecraft var3, EntityPlayerSP var4, BlockPos var5) {
         long var6 = var1 ^ 0x74FC72D70ADBL;
-        if (var4.func_70092_e((double)var5.func_177958_n() + 0.5, (double)var5.func_177956_o() + 0.5, (double)var5.func_177952_p() + 0.5) > 25.0) {
+        if (var4.getDistanceSq((double)var5.getX() + 0.5, (double)var5.getY() + 0.5, (double)var5.getZ() + 0.5) > 25.0) {
             return false;
 }
-        Vec3 var8 = var4.func_174824_e(1.0f);
+        Vec3 var8 = var4.getPositionEyes(1.0f);
         for (Vec3 var12 : this.a(var6, var5)) {
-            MovingObjectPosition var13 = var3.field_71441_e.func_147447_a(var8, var12, false, true, false);
-            if (var13 == null || var13.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK || !var5.equals((Object)var13.func_178782_a())) continue;
+            MovingObjectPosition var13 = var3.theWorld.rayTraceBlocks(var8, var12, false, true, false);
+            if (var13 == null || var13.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || !var5.equals((Object)var13.getBlockPos())) continue;
             return true;
 }
         return false;
@@ -1285,7 +1374,7 @@ implements EventSubscriber {
         while (this.B < -180.0f) {
             this.B += 360.0f;
 }
-        KeyBindUtil.A(var7, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), false);
+        KeyBindUtil.A(var7, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), false);
         this.h = this.w(this.B);
 }
     @Override
@@ -1327,14 +1416,14 @@ implements EventSubscriber {
         if (this.D && !this.p) {
             boolean var78;
             BlockPos var64;
-            KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74312_F.func_151463_i(), true);
+            KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindAttack.getKeyCode(), true);
             this.K.b();
             this.K.T(17790601399577L);
             this.K.v(14218255969322L);
             this.K.C();
-            EntityPlayerSP var61 = MiningEngine.F.field_71439_g;
+            EntityPlayerSP var61 = MiningEngine.F.thePlayer;
             long var62 = System.currentTimeMillis();
-            if (MiningConstants.v && MiningEngine.F.field_71441_e.func_180495_p(var64 = new BlockPos(Math.floor(var61.field_70165_t), Math.floor(var61.field_70163_u) - 1.0, Math.floor(var61.field_70161_v))).func_177230_c() == Blocks.field_150357_h) {
+            if (MiningConstants.v && MiningEngine.F.theWorld.getBlockState(var64 = new BlockPos(Math.floor(var61.posX), Math.floor(var61.posY) - 1.0, Math.floor(var61.posZ))).getBlock() == Blocks.bedrock) {
                 if (this.d == null) {
                     this.d = Boolean.TRUE;
 }
@@ -1346,8 +1435,8 @@ implements EventSubscriber {
 }
             if (var78 = this.K.G()) {
                 for (BlockPos var68 : this.K.M()) {
-                    Block var69 = MiningEngine.F.field_71441_e.func_180495_p(var68).func_177230_c();
-                    if (var69 != Blocks.field_150486_ae && var69 != Blocks.field_150447_bR) continue;
+                    Block var69 = MiningEngine.F.theWorld.getBlockState(var68).getBlock();
+                    if (var69 != Blocks.chest && var69 != Blocks.trapped_chest) continue;
                     this.M = var68;
                     if (this.b == null) {
                         this.b = Float.valueOf(RotationManager.r);
@@ -1361,8 +1450,8 @@ implements EventSubscriber {
 }
 }
             this.q = var78;
-            double var79 = var61.field_70165_t;
-            double var80 = var61.field_70161_v;
+            double var79 = var61.posX;
+            double var80 = var61.posZ;
             double var81 = Math.sqrt(Math.pow(var79 - this.C, 2.0) + Math.pow(var80 - this.Q, 2.0));
             if (var81 > 1.0) {
                 this.C = var79;
@@ -1403,7 +1492,7 @@ implements EventSubscriber {
                 this.n(3902860684954L);
             } else {
                 boolean var71;
-                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74314_A.func_151463_i(), false);
+                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindJump.getKeyCode(), false);
                 boolean bl = var71 = MiningConstants.w != 2;
                 if (this.V) {
                     if ((float)(System.currentTimeMillis() - this.e) > MiningConstants.e) {
@@ -1415,9 +1504,9 @@ implements EventSubscriber {
                 if (!this.f(12830, (short)-27362, var61, var62, (char)var34)) {
                     if (MiningConstants.v && this.M == null) {
                         BlockPos var72 = this.R(var61);
-                        BlockPos[] var73 = this.j(var61);
-                        if (MiningEngine.F.field_71441_e.func_180495_p(var72).func_177230_c() == Blocks.field_150350_a && MiningEngine.F.field_71441_e.func_180495_p((BlockPos)var73).func_177230_c() == Blocks.field_150350_a) {
-                            KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), true);
+                        BlockPos var73 = this.j(var61);
+                        if (MiningEngine.F.theWorld.getBlockState(var72).getBlock() == Blocks.air && MiningEngine.F.theWorld.getBlockState(var73).getBlock() == Blocks.air) {
+                            KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), true);
 }
 }
                     if (this.M != null && this.z(this.M)) {
@@ -1428,10 +1517,10 @@ implements EventSubscriber {
                             this.M = null;
                             return;
 }
-                        BlockPos[] var10000 = new BlockPos[]{this.M.func_177978_c(), this.M.func_177968_d(), this.M.func_177974_f(), this.M.func_177976_e(), this.M.func_177984_a(), this.M.func_177977_b()};
+                        BlockPos[] var10000 = new BlockPos[]{this.M.north(), this.M.south(), this.M.east(), this.M.west(), this.M.up(), this.M.down()};
                         for (BlockPos var75 : var10000) {
-                            Block var76 = MiningEngine.F.field_71441_e.func_180495_p(var75).func_177230_c();
-                            if (var76 != Blocks.field_150486_ae && var76 != Blocks.field_150447_bR || !this.Q(var75)) continue;
+                            Block var76 = MiningEngine.F.theWorld.getBlockState(var75).getBlock();
+                            if (var76 != Blocks.chest && var76 != Blocks.trapped_chest || !this.Q(var75)) continue;
                             BoxRenderer.I(var75, new Color(0, 0, 255, 180));
                             this.M = var75;
                             break;
@@ -1460,16 +1549,16 @@ implements EventSubscriber {
                                 return;
 }
 }
-                        double var84 = Math.sqrt(Math.pow((double)this.M.func_177958_n() + 0.5 - var61.field_70165_t, 2.0) + Math.pow((double)this.M.func_177952_p() + 0.5 - var61.field_70161_v, 2.0));
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), var84 > 1.5);
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), var71);
+                        double var84 = Math.sqrt(Math.pow((double)this.M.getX() + 0.5 - var61.posX, 2.0) + Math.pow((double)this.M.getZ() + 0.5 - var61.posZ, 2.0));
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), var84 > 1.5);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), var71);
                         if (this.i(this.M, 110157827715284L)) {
                             Block var90;
                             int var91;
                             this.A(this.M, 6377414525953L);
-                            if (MiningConstants.r && (var91 = this.U(var61, var90 = MiningEngine.F.field_71441_e.func_180495_p(this.M).func_177230_c())) != -1 && var91 != var61.field_71071_by.field_70461_c) {
-                                var61.field_71071_by.field_70461_c = var91;
+                            if (MiningConstants.r && (var91 = this.U(var61, var90 = MiningEngine.F.theWorld.getBlockState(this.M).getBlock())) != -1 && var91 != var61.inventory.currentItem) {
+                                var61.inventory.currentItem = var91;
 }
                             if (this.m) {
                                 this.m = false;
@@ -1496,8 +1585,8 @@ implements EventSubscriber {
                         if (this.J || !this.D) {
                             return;
 }
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), true);
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), var71);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), true);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), var71);
 }
                     if (!(this.f() || this.J || Float.isNaN(this.h))) {
                         float var85 = this.w(RotationManager.r);
@@ -1514,15 +1603,15 @@ implements EventSubscriber {
                         this.p = true;
                         new Thread(() -> {
                             try {
-                                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74351_w.func_151463_i(), false);
-                                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), true);
+                                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), false);
+                                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), true);
                                 Thread.sleep(700L);
-                                KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
+                                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
 }
                             catch (Exception exception) {
                                 // empty catch block
 }
-                            F.func_152344_a(() -> {
+                            F.addScheduledTask(() -> {
                                 long var3x = 129958705539448L;
                                 int var7x = 1429416877;
                                 this.B(22332L, var7x);
@@ -1531,11 +1620,11 @@ implements EventSubscriber {
                             });
                         }).start();
                     } else if (this.r) {
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), true);
-                        KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), true);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), true);
+                        KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), true);
                         if (System.currentTimeMillis() >= this.z) {
-                            KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74368_y.func_151463_i(), false);
-                            KeyBindUtil.A(82009306480869L, MiningEngine.F.field_71474_y.field_74311_E.func_151463_i(), false);
+                            KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+                            KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), false);
                             this.r = false;
                             this.f = false;
 }
@@ -1555,10 +1644,34 @@ implements EventSubscriber {
         float var2 = Math.abs(RotationManager.G - this.uM);
         return var1 > 15.0f || var2 > 15.0f;
 }
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }
     private boolean t(long var1, BlockPos var3) {
         long var4 = var1 ^ 0xDACB9AD2F5FL;
-        Block var6 = MiningEngine.F.field_71441_e.func_180495_p(var3).func_177230_c();
-        boolean var7 = var6 == Blocks.field_150348_b || this.Q(var3) || !MiningConstants.gapAltOnlyStone && this.G() && this.B(var6);
+        Block var6 = MiningEngine.F.theWorld.getBlockState(var3).getBlock();
+        boolean var7 = var6 == Blocks.stone || this.Q(var3) || !MiningConstants.gapAltOnlyStone && this.G() && this.B(var6);
         return var7 ? this.i(var3, var4) : false;
 }
     private void u(long var1) {
@@ -1577,7 +1690,18 @@ implements EventSubscriber {
         long var6 = var3 ^ 0x29A4785EF0D2L;
         return this.N(var6, var1, var2, var5);
 }
-                Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            long var31 = ab ^ 49477109757273L;
+            int var33 = (int)((var31 ^ 31653288287663L) >>> 32);
+            int var34 = (int)((var31 ^ 31653288287663L) << 32 >>> 48);
+            int var35 = (int)((var31 ^ 31653288287663L) << 48 >>> 48);
+            db = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var31 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var23 = 1; var23 < 8; ++var23) {
+                var10003[var23] = (byte)(var31 << var23 * 8 >>> 56);
+            }
+            Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var22.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var29 = new String[14];
             int var27 = 0;
@@ -1679,7 +1803,6 @@ implements EventSubscriber {
                                                         var68 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                                         var74 = 0;
 }
-                                                    break;
 }
 }
                                             default: {
@@ -1697,7 +1820,6 @@ implements EventSubscriber {
                                         var65 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var71 = 0;
 }
-                                    break;
 }
 }
                             var25 = var26.charAt(var43);
@@ -1718,7 +1840,6 @@ implements EventSubscriber {
                     var44 = var26.substring(++var43, var43 + var25);
                     var50 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var39) {
@@ -1727,6 +1848,7 @@ implements EventSubscriber {
 }
     static {
         ab = 54274017209063L;
+        zkm$clinit();
         uA = new Random();
         F = MinecraftRef.c((byte)0, 0L);
 }

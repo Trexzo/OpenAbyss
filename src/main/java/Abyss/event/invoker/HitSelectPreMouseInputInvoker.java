@@ -7,6 +7,11 @@ import Abyss.event.EventInvoker;
 import Abyss.event.events.PreMouseInputEvent;
 import Abyss.module.impl.combat.HitSelect;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public final class HitSelectPreMouseInputInvoker
 implements EventInvoker {

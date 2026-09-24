@@ -85,6 +85,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 public final class AuthService {
+    private static long a;
+
     public static String E;
     
     public static int P;
@@ -256,7 +258,7 @@ public final class AuthService {
                 try {
                     var3.start();
                     var4.await();
-                    String var13 = (String)Optional.ofNullable(var5.get()).filter(var0xx -> !StringUtils.isBlank((CharSequence)((CharSequence)var0xx))).orElseThrow(() -> new Exception(Optional.ofNullable(var6.get()).orElse("There was no auth code or error description present.")));
+                    String var13 = (String)Optional.ofNullable(var5.get()).filter(var0xx -> !StringUtils.isBlank((CharSequence)((CharSequence)var0xx))).orElseThrow(() -> new Exception((String)Optional.ofNullable(var6.get()).orElse("There was no auth code or error description present.")));
                     var3.stop(2);
                     return var13;
 }
@@ -343,6 +345,7 @@ public final class AuthService {
 }
 }
     static {
+        a = 56313239387342L;
         P = 25575;
         e = RequestConfig.custom().setConnectionRequestTimeout(30000).setConnectTimeout(30000).setSocketTimeout(30000).build();
 }

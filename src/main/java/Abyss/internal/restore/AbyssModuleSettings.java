@@ -76,18 +76,15 @@ public final class AbyssModuleSettings {
                 nullStatics += AbyssModuleSettings.collect(m2.getClass(), byName, declared);
                 JsonObject block = AbyssModuleSettings.configBlock(cfg, m2);
                 if (block != null) {
-                    Object r2;
                     relabelModule = m2.b();
                     if (System.getProperty("abyss.settings.relabel") != null) {
-                        r2 = AbyssModuleSettings.relabel(block, declared);
-                        renamed += r2[0];
-                        revalued += r2[1];
-                        unresolved += r2[2];
+                        int[] relabelResult = AbyssModuleSettings.relabel(block, declared);
+                        renamed += relabelResult[0];
+                        revalued += relabelResult[1];
+                        unresolved += relabelResult[2];
 }
                     byName.clear();
-                    r2 = declared.iterator();
-                    while (r2.hasNext()) {
-                        Setting s = (Setting)r2.next();
+                    for (Setting s : declared) {
                         String n2 = AbyssModuleSettings.name(s);
                         if (n2 == null || byName.containsKey(n2)) continue;
                         byName.put(n2, s);
@@ -269,11 +266,10 @@ public final class AbyssModuleSettings {
                 return v7.equals(((TextSetting)s).X()) ? 0 : 6;
 }
 }
-        finally {
+        catch (Throwable t2) {
             return 6;
 }
-        {
-}
+        return 6;
 }
     private static int collect(Class<?> c, Map<String, Setting> byName, List<Setting> declared) {
         int nulls = 0;
@@ -365,9 +361,9 @@ public final class AbyssModuleSettings {
             if (AbyssModuleSettings.bucketOf(s) == -1) continue;
             ss.add(s);
 }
-        ArrayList keys = new ArrayList();
-        ArrayList vals = new ArrayList();
-        for (Map.Entry en : block.entrySet()) {
+        ArrayList<String> keys = new ArrayList<String>();
+        ArrayList<JsonElement> vals = new ArrayList<JsonElement>();
+        for (Map.Entry<String, JsonElement> en : block.entrySet()) {
             if (COMMON.contains(en.getKey()) || AbyssModuleSettings.bucketOf((JsonElement)en.getValue()) == -1) continue;
             keys.add(en.getKey());
             vals.add(en.getValue());

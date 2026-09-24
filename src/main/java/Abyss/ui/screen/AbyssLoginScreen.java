@@ -62,11 +62,11 @@ extends GuiScreen {
     private static float lineHeight(FontRenderer font) {
         return font.getHeight("Ag");
 }
-    public void func_73866_w_() {
+    public void initGui() {
         Keyboard.enableRepeatEvents((boolean)true);
         FontManager.ensureTextures();
-        int colX = this.field_146294_l / 2 - 100;
-        int centerY = this.field_146295_m / 2;
+        int colX = this.width / 2 - 100;
+        int centerY = this.height / 2;
         this.fields.clear();
         this.username = new Field(colX, centerY + -26, 200, 20, "Username", 32, false);
         this.password = new Field(colX, centerY + -2, 200, 20, "Password", 64, true);
@@ -76,17 +76,17 @@ extends GuiScreen {
         this.login = new Button(colX, centerY + 26, 200, 20, "Login", true);
         this.quit = new Button(colX, centerY + 50, 200, 20, "Quit", false);
 }
-    public void func_146281_b() {
+    public void onGuiClosed() {
         Keyboard.enableRepeatEvents((boolean)false);
 }
-    public boolean func_73868_f() {
+    public boolean doesGuiPauseGame() {
         return false;
 }
-    public void func_73863_a(int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         FontManager.ensureTextures();
-        RenderingUtils.drawGuiBackground(this.field_146294_l, this.field_146295_m);
-        int colX = this.field_146294_l / 2 - 100;
-        int centerY = this.field_146295_m / 2;
+        RenderingUtils.drawGuiBackground(this.width, this.height);
+        int colX = this.width / 2 - 100;
+        int centerY = this.height / 2;
         float cardTop = centerY + -48;
         float cardBottom = centerY + 50 + 20 + 12;
         AbyssLoginScreen.rect(colX - 12, cardTop, colX + 200 + 12, cardBottom, Theme.withAlpha(-15330022, 230));
@@ -105,18 +105,18 @@ extends GuiScreen {
     private void drawTitle(int centerY) {
         float scale = 3.0f;
         String name = "ABYSS";
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)3.0f, (float)3.0f, (float)3.0f);
-        float x = ((float)this.field_146294_l / 2.0f - AbyssLoginScreen.title().getWidth("ABYSS") * 3.0f / 2.0f) / 3.0f;
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)3.0f, (float)3.0f, (float)3.0f);
+        float x = ((float)this.width / 2.0f - AbyssLoginScreen.title().getWidth("ABYSS") * 3.0f / 2.0f) / 3.0f;
         float y = Math.max(4.0f, (float)(centerY + -100)) / 3.0f;
         AbyssLoginScreen.title().drawStringWithShadow("ABYSS", x, y, Theme.pulsingPrimary());
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
         this.centered(AbyssLoginScreen.body(), "Client access", centerY + -64, -7697773);
 }
     private void centered(FontRenderer font, String text, float y, int color) {
-        font.drawStringWithShadow(text, (float)this.field_146294_l / 2.0f - font.getWidth(text) / 2.0f, y, color);
+        font.drawStringWithShadow(text, (float)this.width / 2.0f - font.getWidth(text) / 2.0f, y, color);
 }
-    protected void func_73869_a(char typedChar, int keyCode) {
+    protected void keyTyped(char typedChar, int keyCode) {
         if (keyCode == 15) {
             boolean userFocused = this.username.focused;
             this.username.focused = !userFocused;
@@ -134,7 +134,7 @@ extends GuiScreen {
             return;
 }
 }
-    protected void func_73864_a(int mouseX, int mouseY, int mouseButton) {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         int i;
         if (mouseButton != 0) {
             return;
@@ -156,7 +156,7 @@ extends GuiScreen {
         if (this.login.contains(mouseX, mouseY)) {
             this.attemptLogin();
         } else if (this.quit.contains(mouseX, mouseY)) {
-            this.field_146297_k.func_71400_g();
+            this.mc.shutdown();
 }
 }
     private void attemptLogin() {
@@ -166,7 +166,7 @@ extends GuiScreen {
             this.flash("Enter a username and password", -41876);
             return;
 }
-        this.field_146297_k.func_147108_a(this.next);
+        this.mc.displayGuiScreen(this.next);
 }
     private void flash(String message, int color) {
         this.status = message;
@@ -180,14 +180,14 @@ extends GuiScreen {
         AbyssLoginScreen.rect(r2 - 1.0f, t2, r2, b, color);
 }
     private static void rect(float l, float t2, float r2, float b, int color) {
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        Gui.func_73734_a((int)((int)l), (int)((int)t2), (int)((int)r2), (int)((int)b), (int)color);
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179117_G();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        Gui.drawRect((int)((int)l), (int)((int)t2), (int)((int)r2), (int)((int)b), (int)color);
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
+        GlStateManager.resetColor();
 }
     private static final class Button {
         private final int x;
@@ -269,8 +269,8 @@ extends GuiScreen {
             return out.toString();
 }
         private void key(char typedChar, int keyCode) {
-            if (GuiScreen.func_175279_e((int)keyCode)) {
-                this.write(GuiScreen.func_146277_j());
+            if (GuiScreen.isKeyComboCtrlV((int)keyCode)) {
+                this.write(GuiScreen.getClipboardString());
                 return;
 }
             switch (keyCode) {
@@ -316,7 +316,7 @@ extends GuiScreen {
 }
             for (int i = 0; i < in.length() && this.text.length() < this.maxLength; ++i) {
                 char c = in.charAt(i);
-                if (c >= '\u0100' || !ChatAllowedCharacters.func_71566_a((char)c)) continue;
+                if (c >= '\u0100' || !ChatAllowedCharacters.isAllowedCharacter((char)c)) continue;
                 this.text.insert(this.cursor, c);
                 ++this.cursor;
 }

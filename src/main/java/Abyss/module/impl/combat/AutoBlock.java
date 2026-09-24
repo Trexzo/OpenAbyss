@@ -194,7 +194,7 @@ implements EventSubscriber {
             return false;
 }
         AutoBlock var0 = Modules.J(AutoBlock.class);
-        return var0 != null && var0.F != null && AutoBlock.f.field_71439_g != null && AutoBlock.f.field_71439_g.func_70032_d((Entity)var0.F) <= noSlowDisableRange.L();
+        return var0 != null && var0.F != null && AutoBlock.f.thePlayer != null && AutoBlock.f.thePlayer.getDistanceToEntity((Entity)var0.F) <= noSlowDisableRange.L();
 }
     public static boolean f$r2() {
         return D;
@@ -261,13 +261,13 @@ implements EventSubscriber {
                     return var17;
 }
                 this.e(0L, false);
-                AutoBlock.f.field_71439_g.func_71034_by();
+                AutoBlock.f.thePlayer.stopUsingItem();
                 var20 = var19;
             } else {
                 if (!this.K(0L, true)) {
                     return var17;
 }
-                AutoBlock.f.field_71439_g.func_71034_by();
+                AutoBlock.f.thePlayer.stopUsingItem();
                 var20 = var18;
 }
 }
@@ -315,15 +315,15 @@ implements EventSubscriber {
         if (AutoBlock.zkm$unresolved$1$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_iT_c_OR_Abyss_yO_Y_y_slots_41_67(var2 = o ^ var2)) {
             return true;
 }
-        ItemStack var6 = AutoBlock.f.field_71439_g.func_70694_bm();
+        ItemStack var6 = AutoBlock.f.thePlayer.getHeldItem();
         if (ItemUtil.d() && (!var1 || OutgoingPacketState.Y())) {
             MovingObjectPosition var7;
             if (var4 && var5 != null && (var7 = RaytraceUtil.k(RaytraceUtil.S((Entity)var5), 8.0)) != null) {
-                PacketManager.b(new C02PacketUseEntity((Entity)var5, new Vec3(var7.field_72307_f.field_72450_a - var5.field_70165_t, var7.field_72307_f.field_72448_b - var5.field_70163_u, var7.field_72307_f.field_72449_c - var5.field_70161_v)));
+                PacketManager.b(new C02PacketUseEntity((Entity)var5, new Vec3(var7.hitVec.xCoord - var5.posX, var7.hitVec.yCoord - var5.posY, var7.hitVec.zCoord - var5.posZ)));
                 PacketManager.b(new C02PacketUseEntity((Entity)var5, C02PacketUseEntity.Action.INTERACT));
 }
             PacketManager.b(new C08PacketPlayerBlockPlacement(var6));
-            AutoBlock.f.field_71439_g.func_71008_a(var6, var6.func_77988_m());
+            AutoBlock.f.thePlayer.setItemInUse(var6, var6.getMaxItemUseDuration());
             this.k(true);
             return true;
 }
@@ -349,7 +349,7 @@ implements EventSubscriber {
         return (Class)var6;
 }
     public static boolean c() {
-        return AutoBlock.f$r2() ? K : AutoBlock.f.field_71439_g.func_71039_bw();
+        return AutoBlock.f$r2() ? K : AutoBlock.f.thePlayer.isUsingItem();
 }
     private static Object a(MethodHandles.Lookup var0, MutableCallSite var1, String var2, MethodType var3, Object[] var4) throws Throwable {
         int var5 = var4.length - 2;
@@ -548,7 +548,7 @@ implements EventSubscriber {
                 K = AutoBlock.c();
                 k = AutoBlock.c() ? 0 : 1;
                 AutoBlock.m(21304, (byte)-38, var11);
-                AutoBlock.f.field_71439_g.func_71008_a(AutoBlock.f.field_71439_g.func_70694_bm(), AutoBlock.f.field_71439_g.func_70694_bm().func_77988_m());
+                AutoBlock.f.thePlayer.setItemInUse(AutoBlock.f.thePlayer.getHeldItem(), AutoBlock.f.thePlayer.getHeldItem().getMaxItemUseDuration());
 }
             float var47 = requireKillAura.c() ? KillAura.attackRange.L() : 3.0f;
             boolean var39 = !requireKillAura.c() || !KillAura.throughWall.c();
@@ -684,7 +684,7 @@ implements EventSubscriber {
 }
     private boolean y(long var1) {
         if (C) {
-            PacketManager.b(new C09PacketHeldItemChange(AutoBlock.f.field_71439_g.field_71071_by.field_70461_c));
+            PacketManager.b(new C09PacketHeldItemChange(AutoBlock.f.thePlayer.inventory.currentItem));
             C = false;
             this.k(false);
             return true;
@@ -711,7 +711,7 @@ implements EventSubscriber {
     private boolean e(long var1, boolean var3) {
         if (!var3 || !OutgoingPacketState.h && !OutgoingPacketState.P && !OutgoingPacketState.E) {
             int var5;
-            int var4 = AutoBlock.f.field_71439_g.field_71071_by.field_70461_c;
+            int var4 = AutoBlock.f.thePlayer.inventory.currentItem;
             this.p = var5 = this.p + 1 >= 8 ? (var4 == 0 ? var4 + 1 : 0) : (this.p + 1 == var4 ? this.p + 2 : this.p + 1);
             PacketManager.b(new C09PacketHeldItemChange(var5));
             C = true;
@@ -720,23 +720,30 @@ implements EventSubscriber {
 }
         return false;
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private static void m(int var0, byte var1, int var2) {
         D = true;
 }
@@ -761,7 +768,7 @@ implements EventSubscriber {
                 if (var14.equals("LAG_LEGIT") || var14.equals("LAG_LEGIT_PRE")) {
                     this.o$r2();
                     this.n();
-                    AutoBlock.f.field_71439_g.func_71034_by();
+                    AutoBlock.f.thePlayer.stopUsingItem();
                     this.J = false;
 }
                 if (AutoBlock.X(0L, (short)-10450) && this.F != null && RaytraceUtil.q(50051018191872L, (Entity)this.F, 3.5)) {
@@ -812,7 +819,7 @@ implements EventSubscriber {
 }
 }
     public void onTick(TickEvent var1, long var2) {
-        if (var1.v == AutoBlock.f.field_71474_y.field_74312_F.func_151463_i()) {
+        if (var1.v == AutoBlock.f.gameSettings.keyBindAttack.getKeyCode()) {
             AutoBlock.V(0L);
 }
 }
@@ -1016,6 +1023,7 @@ implements EventSubscriber {
 }
 }
     private static Method d(long var0, long var2) {
+        int var4;
         Class var23;
         Class var15;
         Class[] var14;
@@ -1023,7 +1031,7 @@ implements EventSubscriber {
         String var10;
         Class var8;
         block10: {
-            int var4 = AutoBlock.a(var0, var2);
+            var4 = AutoBlock.a(var0, var2);
             Object var5 = nb[var4];
             if (!(var5 instanceof String)) {
                 return (Method)var5;
@@ -1098,7 +1106,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) {
         S19PacketEntityStatus var6;
-        if (smartUnblock.c() && var1.d instanceof S19PacketEntityStatus && (var6 = (S19PacketEntityStatus)var1.d).func_149161_a((World)AutoBlock.f.field_71441_e) instanceof EntityPlayerSP && var6.func_149160_c() == 2 && MathUtil.Q(smartUnblockChance.k(), 0L)) {
+        if (smartUnblock.c() && var1.d instanceof S19PacketEntityStatus && (var6 = (S19PacketEntityStatus)var1.d).getEntity((World)AutoBlock.f.theWorld) instanceof EntityPlayerSP && var6.getOpCode() == 2 && MathUtil.Q(smartUnblockChance.k(), 0L)) {
             I = (int)smartUnblockTicks.L();
 }
 }
@@ -1120,7 +1128,7 @@ implements EventSubscriber {
                     switch (apsMode.Y()) {
                         case "10APS": {
                             if (this.K(0L, true)) {
-                                AutoBlock.f.field_71439_g.func_71034_by();
+                                AutoBlock.f.thePlayer.stopUsingItem();
                                 k = 7;
                                 break;
 }
@@ -1128,7 +1136,7 @@ implements EventSubscriber {
 }
                         case "14APS": {
                             if (this.K(0L, true)) {
-                                AutoBlock.f.field_71439_g.func_71034_by();
+                                AutoBlock.f.thePlayer.stopUsingItem();
                                 k = 3;
                                 break;
 }
@@ -1150,13 +1158,13 @@ implements EventSubscriber {
                             break;
 }
                         if (!this.K(0L, true)) break;
-                        AutoBlock.f.field_71439_g.func_71034_by();
+                        AutoBlock.f.thePlayer.stopUsingItem();
                         k = 7;
                         break;
 }
                     case "7APS": {
                         if (!this.K(0L, true)) break;
-                        AutoBlock.f.field_71439_g.func_71034_by();
+                        AutoBlock.f.thePlayer.stopUsingItem();
                         k = 7;
                         break;
 }
@@ -1191,7 +1199,7 @@ implements EventSubscriber {
         if (requireKillAura.c() && !KillAura.a) {
             return 0;
 }
-        if (requireRightClick.c() && !KeyBindUtil.V(AutoBlock.f.field_71474_y.field_74313_G.func_151463_i(), var6)) {
+        if (requireRightClick.c() && !KeyBindUtil.V(AutoBlock.f.gameSettings.keyBindUseItem.getKeyCode(), var6)) {
             return 0;
 }
         if (!AutoBlock.T(0L)) {
@@ -1286,7 +1294,7 @@ implements EventSubscriber {
             return true;
 }
         if (!(!ItemUtil.d() || var4 && (OutgoingPacketState.h || OutgoingPacketState.P || OutgoingPacketState.E))) {
-            PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.field_177992_a, EnumFacing.DOWN));
+            PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN));
             this.k(false);
             return true;
 }
@@ -1343,7 +1351,7 @@ implements EventSubscriber {
         if (OutgoingPacketState.T) {
             return true;
 }
-        AutoBlock.f.field_71439_g.func_71038_i();
+        AutoBlock.f.thePlayer.swingItem();
         return true;
 }
     public AutoBlock(byte var1, long var2) {
@@ -1388,7 +1396,7 @@ implements EventSubscriber {
     private static boolean zkm$unresolved$1$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_iT_c_OR_Abyss_yO_Y_y_slots_41_67(long var2) {
         try {
             MethodType var4 = MethodType.fromMethodDescriptorString("(JJ)Z", AutoBlock.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, 1362679790029856311L, var2), var4).invoke(1362679790029856311L, var2);
+            return (boolean)MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, 1362679790029856311L, var2), var4).invoke((long)1362679790029856311L, (long)var2);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
@@ -1397,7 +1405,7 @@ implements EventSubscriber {
     private static boolean zkm$unresolved$2$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_yO_Y_OR_Abyss_yO_f_y_slots_67_99(long var2) {
         try {
             MethodType var4 = MethodType.fromMethodDescriptorString("(JJ)Z", AutoBlock.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, 7385552860468072201L, var2), var4).invoke(7385552860468072201L, var2);
+            return (boolean)MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, 7385552860468072201L, var2), var4).invoke((long)7385552860468072201L, (long)var2);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
@@ -1406,13 +1414,23 @@ implements EventSubscriber {
     private static boolean zkm$unresolved$6$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_iT_c_OR_Abyss_yO_f_y_slots_41_99(long var2) {
         try {
             MethodType var4 = MethodType.fromMethodDescriptorString("(JJ)Z", AutoBlock.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, -855537796426212009L, var2), var4).invoke(-855537796426212009L, var2);
+            return (boolean)MethodHandles.explicitCastArguments(AutoBlock.a(MethodHandles.lookup(), null, "q", var4, -855537796426212009L, var2), var4).invoke((long)-855537796426212009L, (long)var2);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
 }
 }
-                Cipher var16 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            nb = new Object[103];
+            ob = new String[103];
+            a();
+            bb = new HashMap(13);
+            byte[] var10003 = new byte[]{0, 0, 0, 0, 0, 0, 0, 0};
+            for (int var17 = 1; var17 < 8; ++var17) {
+                var10003[var17] = (byte)(56695932197746L << var17 * 8 >>> 56);
+            }
+            Cipher var16 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var16.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var23 = new String[29];
             int var21 = 0;
@@ -1487,7 +1505,6 @@ implements EventSubscriber {
                                         var48 = ((long)var12[0] & 0xFFL) << 56 | ((long)var12[1] & 0xFFL) << 48 | ((long)var12[2] & 0xFFL) << 40 | ((long)var12[3] & 0xFFL) << 32 | ((long)var12[4] & 0xFFL) << 24 | ((long)var12[5] & 0xFFL) << 16 | ((long)var12[6] & 0xFFL) << 8 | (long)var12[7] & 0xFFL;
                                         var53 = 0;
 }
-                                    break;
 }
 }
                             var19 = var20.charAt(var30);
@@ -1508,7 +1525,6 @@ implements EventSubscriber {
                     var31 = var20.substring(++var30, var30 + var19);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var27) {
@@ -1518,6 +1534,7 @@ implements EventSubscriber {
     static {
         KEY_OFFSETS = new byte[]{10, 4, 8, 14, 19, 28, 31, 45, 50, 12, 46, 11, 60, 47, 58, 44, 53, 5, 7, 23, 55, 9, 52, 16, 24, 2, 1, 35, 17, 6, 51, 3, 26, 0, 39, 49, 38, 59, 33, 43, 13, 48, 57, 18, 61, 54, 25, 40, 15, 29, 34, 21, 62, 63, 42, 32, 20, 30, 41, 36, 22, 27, 37, 56};
         o = 2719582613777L;
+        zkm$clinit();
         k = 0;
         C = false;
         m = false;

@@ -12,7 +12,7 @@ import net.minecraft.entity.Entity;
 public class MoveEntityEvent
 extends Event {
     public final Entity D;
-    private static final long public MoveEntityEvent(short var1, int var2, short var3, Entity var4) {
+    public MoveEntityEvent(short var1, int var2, short var3, Entity var4) {
         this.D = var4;
 }
 }

@@ -17,7 +17,7 @@ import Abyss.event.invoker.RotationManagerUpdateWalkingPlayerInvoker;
 import Abyss.util.RotationManager;
 
 public final class RotationManagerBinder {
-    private static final long private RotationManagerBinder() {
+    private RotationManagerBinder() {
 }
     public static void M(EventBus var0, RotationManager var1) {
         var0.R(var1, PreTickEvent.class, 5, new RotationManagerPreTickInvoker(var1));

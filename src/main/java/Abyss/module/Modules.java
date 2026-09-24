@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Modules {
+    private static Map e;
+
         
     private static String b;
     private static long[] c;

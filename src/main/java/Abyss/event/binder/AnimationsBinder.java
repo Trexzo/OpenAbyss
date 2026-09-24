@@ -11,7 +11,7 @@ import Abyss.event.invoker.AnimationsRenderItemInFirstPersonInvoker;
 import Abyss.module.impl.visual.Animations;
 
 public final class AnimationsBinder {
-    private static final long private AnimationsBinder() {
+    private AnimationsBinder() {
 }
     public static void A(EventBus var0, Animations var3) {
         var0.R(var3, GetArmSwingAnimationEndEvent.class, 3, new AnimationsGetArmSwingAnimationEndInvoker(var3));

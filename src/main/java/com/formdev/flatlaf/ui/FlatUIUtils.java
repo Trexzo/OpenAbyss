@@ -554,7 +554,7 @@ public class FlatUIUtils {
             aw = ah;
             ah = temp;
 }
-        boolean extra = chevron;
+        int extra = chevron ? 1 : 0;
         float ox = ((float)width - (aw + (float)extra)) / 2.0f + UIScale.scale(xOffset);
         float oy = ((float)height - (ah + (float)extra)) / 2.0f + UIScale.scale(yOffset);
         float ax = (float)x + (direction == 7 ? (float)(-Math.round(-(ox + aw))) - aw : (float)Math.round(ox));
@@ -701,7 +701,7 @@ public class FlatUIUtils {
         if (!useSharedUIs) {
             return newInstanceSupplier.get();
 }
-        return sharedUIinstances.computeIfAbsent(UIManager.getLookAndFeel(), k -> new IdentityHashMap()).computeIfAbsent(key, k -> (ComponentUI)newInstanceSupplier.get());
+        return sharedUIinstances.computeIfAbsent(UIManager.getLookAndFeel(), k -> new IdentityHashMap<Object, ComponentUI>()).computeIfAbsent(key, k -> newInstanceSupplier.get());
 }
     public static boolean canUseSharedUI(JComponent c) {
         return !FlatStylingSupport.hasStyleProperty(c);

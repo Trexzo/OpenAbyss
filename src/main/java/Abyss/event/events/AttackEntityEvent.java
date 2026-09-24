@@ -11,7 +11,7 @@ import net.minecraft.entity.Entity;
 
 public class AttackEntityEvent
 extends Event {
-    private static final long private final Entity Y;
+    private final Entity Y;
 
     public Entity O() {
         return this.Y;

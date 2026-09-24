@@ -20,33 +20,35 @@ import net.minecraft.client.renderer.GlStateManager;
 
 public class RiddleJokerMenuButton
 extends GuiButton {
-    private static long public int g = 20;
+    private static Map e;
+
+    public int g = 20;
     private boolean p = false;
     private static String b;
     private static long[] c;
 
-    public void func_146112_a(Minecraft var1, int var2, int var3) {
-        if (this.field_146125_m) {
-            FontRenderer var8 = var1.field_71466_p;
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-            boolean bl = this.field_146123_n = var2 >= this.field_146128_h && var3 >= this.field_146129_i && var2 < this.field_146128_h + this.field_146120_f && var3 < this.field_146129_i + this.g;
-            if (this.p && !this.field_146123_n) {
+    public void drawButton(Minecraft var1, int var2, int var3) {
+        if (this.visible) {
+            FontRenderer var8 = var1.fontRendererObj;
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            boolean bl = this.hovered = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.width && var3 < this.yPosition + this.g;
+            if (this.p && !this.hovered) {
                 this.p = false;
 }
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-            GlStateManager.func_179112_b((int)770, (int)771);
-            var1.func_110434_K().func_110577_a(MainMenuTheme.v);
-            RiddleJokerMenuButton.func_146110_a((int)this.field_146128_h, (int)this.field_146129_i, (float)0.0f, (float)0.0f, (int)this.field_146120_f, (int)this.g, (float)this.field_146120_f, (float)this.g);
-            this.func_146119_b(var1, var2, var3);
-            if (this.field_146123_n) {
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+            GlStateManager.blendFunc((int)770, (int)771);
+            var1.getTextureManager().bindTexture(MainMenuTheme.v);
+            RiddleJokerMenuButton.drawModalRectWithCustomSizedTexture((int)this.xPosition, (int)this.yPosition, (float)0.0f, (float)0.0f, (int)this.width, (int)this.g, (float)this.width, (float)this.g);
+            this.mouseDragged(var1, var2, var3);
+            if (this.hovered) {
                 if (!this.p) {
                     this.p = true;
                     SoundEngine.y(59424967409495L, b);
 }
-                var8.func_175065_a(this.field_146126_j, (float)this.field_146128_h + (float)this.field_146120_f / 10.0f, (float)this.field_146129_i + (float)this.g / 12.0f, 0xFFFFA0, true);
+                var8.drawString(this.displayString, (float)this.xPosition + (float)this.width / 10.0f, (float)this.yPosition + (float)this.g / 12.0f, 0xFFFFA0, true);
             } else {
-                var8.func_175065_a(this.field_146126_j, (float)this.field_146128_h + (float)this.field_146120_f / 10.0f, (float)this.field_146129_i + (float)this.g / 12.0f, 0, false);
+                var8.drawString(this.displayString, (float)this.xPosition + (float)this.width / 10.0f, (float)this.yPosition + (float)this.g / 12.0f, 0, false);
 }
 }
 }

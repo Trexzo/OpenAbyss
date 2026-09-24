@@ -134,7 +134,41 @@ extends TransformerBase {
     public TransformGuiScreen() {
         super("net/minecraft/client/gui/GuiScreen");
 }
-                Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }    private static void zkm$clinit() {
+        try {
+            long var0 = d ^ 51472229688949L;
+            P = new Object[28];
+            Z = new String[28];
+            b();
+            t = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var0 << var3 * 8 >>> 56);
+            }
+            Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var4 = new String[36];
             int var5 = 0;
@@ -178,7 +212,6 @@ extends TransformerBase {
                                 return;
 }
                             var8 = var6.charAt(var24);
-                            break;
 }
                         default: {
                             var4[var5++] = var34;
@@ -195,7 +228,6 @@ extends TransformerBase {
                     var25 = var6.substring(++var24, var24 + var8);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var22) {
@@ -204,6 +236,7 @@ extends TransformerBase {
 }
     static {
         d = 122206050968871L;
+        zkm$clinit();
         G = TransformerBase.e(GuiEventHooks.class);
 }
 }

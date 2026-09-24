@@ -25,6 +25,8 @@ import net.minecraft.item.ItemStack;
 public class InventoryHUD
 extends Module
 implements EventSubscriber {
+    private static long a = 132766341431106L;
+
     public static PercentageSetting backgroundOpacity;
         private static long[] c;
     private static Object[] h;
@@ -62,10 +64,10 @@ implements EventSubscriber {
         for (int var11 = 0; var11 < this.p.length; ++var11) {
             ItemStack var12 = this.p[var11];
             if (var12 != null) {
-                if (var12.field_77994_a <= 1) {
+                if (var12.stackSize <= 1) {
                     RenderUtil.m(var12, var9, var10);
                 } else {
-                    RenderUtil.q(var12, var9, var10, String.valueOf(var12.field_77994_a));
+                    RenderUtil.q(var12, var9, var10, String.valueOf(var12.stackSize));
 }
 }
             var9 += 18;
@@ -76,8 +78,8 @@ implements EventSubscriber {
 }
     public void onPostTick(long var1, PostTickEvent var3) {
         for (int var4 = 9; var4 < 36; ++var4) {
-            ItemStack var5 = InventoryHUD.f.field_71439_g == null ? null : InventoryHUD.f.field_71439_g.field_71071_by.field_70462_a[var4];
-            this.p[var4 - 9] = var5 == null ? null : var5.func_77946_l();
+            ItemStack var5 = InventoryHUD.f.thePlayer == null ? null : InventoryHUD.f.thePlayer.inventory.mainInventory[var4];
+            this.p[var4 - 9] = var5 == null ? null : var5.copy();
 }
 }
     static {

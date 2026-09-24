@@ -35,6 +35,7 @@ import net.minecraft.util.MovingObjectPosition;
 public class AutoTool
 extends PriorityModule
 implements EventSubscriber {
+    private static long a = 65895564979047L;
     private int J;
     private boolean I;
     private static Map g;
@@ -51,7 +52,7 @@ implements EventSubscriber {
     
     @Override
     public void P(long var1) {
-        this.J = AutoTool.f.field_71439_g.field_71071_by.field_70461_c;
+        this.J = AutoTool.f.thePlayer.inventory.currentItem;
 }
     public AutoTool(long var1) {
         super((a ^ var1 ^ 0x3C326CF0AF43L) >>> 16, (char)((a ^ var1 ^ 0x3C326CF0AF43L) << 48 >>> 48));
@@ -72,21 +73,21 @@ implements EventSubscriber {
 }
     public void onPreMouseInput(long var1, PreMouseInputEvent var3) {
         if (!this.I) {
-            this.J = AutoTool.f.field_71439_g.field_71071_by.field_70461_c;
+            this.J = AutoTool.f.thePlayer.inventory.currentItem;
 }
-        if (!(disableWhenHoldingSword.c() && AutoTool.f.field_71439_g.func_70694_bm() != null && AutoTool.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSword || requireSneak.c() && !AutoTool.f.field_71439_g.func_70093_af() || !this.Y() || OutgoingPacketState.P || OutgoingPacketState.h)) {
-            if (AutoTool.f.field_71462_r == null && KeyBindUtil.V(AutoTool.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) {
-                if (AutoTool.f.field_71476_x != null && AutoTool.f.field_71476_x.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK && !this.S) {
+        if (!(disableWhenHoldingSword.c() && AutoTool.f.thePlayer.getHeldItem() != null && AutoTool.f.thePlayer.getHeldItem().getItem() instanceof ItemSword || requireSneak.c() && !AutoTool.f.thePlayer.isSneaking() || !this.Y() || OutgoingPacketState.P || OutgoingPacketState.h)) {
+            if (AutoTool.f.currentScreen == null && KeyBindUtil.V(AutoTool.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) {
+                if (AutoTool.f.objectMouseOver != null && AutoTool.f.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && !this.S) {
                     this.t.W();
                     this.S = true;
 }
                 if (this.t.L((long)delay.L(), true)) {
-                    BlockPos var12 = AutoTool.f.field_71476_x.func_178782_a();
+                    BlockPos var12 = AutoTool.f.objectMouseOver.getBlockPos();
                     if (var12 == null) {
                         return;
 }
-                    Block var13 = AutoTool.f.field_71441_e.func_180495_p(var12).func_177230_c();
-                    if (var13 == null || var13 == Blocks.field_150350_a) {
+                    Block var13 = AutoTool.f.theWorld.getBlockState(var12).getBlock();
+                    if (var13 == null || var13 == Blocks.air) {
                         return;
 }
                     if (ItemUtil.e(0L, var13) == -1) {

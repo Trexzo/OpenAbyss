@@ -32,6 +32,7 @@ import net.minecraft.client.network.NetworkPlayerInfo;
 public class Denick
 extends Module
 implements EventSubscriber {
+    private static long a = 94387336124410L;
     private static long[] p;
         private volatile long B;
     private static long[] g;
@@ -68,10 +69,10 @@ implements EventSubscriber {
 }
     private Map<UUID, String> l$r1() {
         HashMap<UUID, String> var1 = new HashMap<UUID, String>();
-        for (NetworkPlayerInfo var4 : f.func_147114_u().func_175106_d()) {
-            UUID var5 = var4.func_178845_a().getId();
+        for (NetworkPlayerInfo var4 : f.getNetHandler().getPlayerInfoMap()) {
+            UUID var5 = var4.getGameProfile().getId();
             if (var5 == null) continue;
-            var1.put(var5, var4.func_178845_a().getName());
+            var1.put(var5, var4.getGameProfile().getName());
 }
         return var1;
 }
@@ -117,11 +118,11 @@ implements EventSubscriber {
                             HashMap<UUID, String> var11x = new HashMap<UUID, String>();
                             HashMap<UUID, Long> var12 = new HashMap<UUID, Long>();
                             long var13x = System.currentTimeMillis() + 1000L;
-                            for (UUID var16 : var15.keySet()) {
+                            for (UUID var16 : (Iterable<UUID>)(var15.keySet())) {
                                 try {
                                     String var17x = MojangApiClient.d(var8x, var16);
                                     var11x.put(var16, var17x);
-                                    f.func_152344_a(() -> {
+                                    f.addScheduledTask(() -> {
                                         long var4xx = 123673313176787L;
                                         long var10001x = var4xx ^ 0x78616C6FA2CL;
                                         int var6xx = 30716;
@@ -132,7 +133,7 @@ implements EventSubscriber {
 }
                                 catch (Exception var18x) {
                                     var12.put(var16, var13x);
-                                    f.func_152344_a(() -> {
+                                    f.addScheduledTask(() -> {
                                         long var5x = 126046718054918L;
                                         long var10001x = var5x ^ 0x55F70FA44F9L;
                                         int var7 = (int)((var5x ^ 0x55F70FA44F9L) >>> 32);
@@ -142,7 +143,7 @@ implements EventSubscriber {
                                     });
 }
 }
-                            f.func_152344_a(() -> {
+                            f.addScheduledTask(() -> {
                                 long var7 = a ^ 0xCC78FA28F40L;
                                 long var9x = var7 ^ 0x14534F9FACBBL;
                                 this.u(var20, var10, var13, var14, var11x, var12.keySet());
@@ -165,12 +166,12 @@ implements EventSubscriber {
                 this.k.put(var2, var6);
                 this.x.remove(var2);
                 NetworkPlayerInfo var12 = null;
-                for (NetworkPlayerInfo var14 : f.func_147114_u().func_175106_d()) {
-                    if (!var2.equals(var14.func_178845_a().getId())) continue;
+                for (NetworkPlayerInfo var14 : f.getNetHandler().getPlayerInfoMap()) {
+                    if (!var2.equals(var14.getGameProfile().getId())) continue;
                     var12 = var14;
                     break;
 }
-                if (var12 != null && (var15 = var12.func_178845_a().getName()) != null) {
+                if (var12 != null && (var15 = var12.getGameProfile().getName()) != null) {
                     if (var15.toLowerCase().contains(var6.toLowerCase())) {
                         this.u.add(var2);
                         return;
@@ -202,7 +203,7 @@ implements EventSubscriber {
             HashMap<UUID, String> var9 = new HashMap<UUID, String>();
             HashMap<UUID, Long> var10 = new HashMap<UUID, Long>();
             long var11 = System.currentTimeMillis() + 1000L;
-            for (UUID var14 : var2.keySet()) {
+            for (UUID var14 : (Iterable<UUID>)(var2.keySet())) {
                 String var15;
                 String string = var15 = var5.containsKey(var14) ? (String)var5.get(var14) : (String)var3.get(var14);
                 if (var15 != null) {
@@ -225,7 +226,7 @@ implements EventSubscriber {
 }
     public void onPlayerGetName(long var1, PlayerGetNameEvent var3) {
         String var5;
-        UUID var4 = var3.u.func_178845_a().getId();
+        UUID var4 = var3.u.getGameProfile().getId();
         if (var4 != null && (var5 = this.k.get(var4)) != null && mode.R("DUPLICATE") && !var3.h.toLowerCase().contains(var5.toLowerCase())) {
             var3.N(" \u00a7f(\u00a7b" + var5 + "\u00a7f)");
 }

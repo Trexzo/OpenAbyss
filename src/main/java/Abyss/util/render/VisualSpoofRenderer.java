@@ -84,21 +84,21 @@ public class VisualSpoofRenderer {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     private static Framebuffer r(Minecraft var2) {
-        if (var2.field_71460_t == null) {
+        if (var2.entityRenderer == null) {
             return null;
 }
-        float var7 = MinecraftAccessor.o((Minecraft)var2).field_74281_c;
-        VisualSpoofRenderer.setFramebufferFilter(var2.field_71443_c, var2.field_71440_d);
-        Framebuffer var8 = var2.func_147110_a();
+        float var7 = MinecraftAccessor.o((Minecraft)var2).renderPartialTicks;
+        VisualSpoofRenderer.setFramebufferFilter(var2.displayWidth, var2.displayHeight);
+        Framebuffer var8 = var2.getFramebuffer();
         try {
             H = true;
             MinecraftAccessor.K(var2, h);
-            h.func_147604_a(0.0f, 0.0f, 0.0f, 1.0f);
-            h.func_147610_a(true);
-            h.func_147614_f();
-            h.func_147610_a(true);
-            var2.field_71460_t.func_78471_a(var7, System.nanoTime());
-            h.func_147610_a(true);
+            h.setFramebufferColor(0.0f, 0.0f, 0.0f, 1.0f);
+            h.bindFramebuffer(true);
+            h.framebufferClear();
+            h.bindFramebuffer(true);
+            var2.entityRenderer.renderWorld(var7, System.nanoTime());
+            h.bindFramebuffer(true);
             W.e(var2, var7);
             Framebuffer framebuffer = h;
             return framebuffer;
@@ -111,9 +111,9 @@ public class VisualSpoofRenderer {
             H = false;
             MinecraftAccessor.K(var2, var8);
             if (var8 != null) {
-                var8.func_147610_a(true);
+                var8.bindFramebuffer(true);
 }
-            GL11.glViewport((int)0, (int)0, (int)var2.field_71443_c, (int)var2.field_71440_d);
+            GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);
             VisualSpoofRenderer.G();
 }
 }
@@ -122,30 +122,30 @@ public class VisualSpoofRenderer {
      */
     public static void l(float var0) {
         if (z && !H) {
-            if (v == null || VisualSpoofRenderer.v.field_71439_g == null || VisualSpoofRenderer.v.field_71441_e == null || VisualSpoofRenderer.v.field_71443_c <= 0 || VisualSpoofRenderer.v.field_71440_d <= 0) {
+            if (v == null || VisualSpoofRenderer.v.thePlayer == null || VisualSpoofRenderer.v.theWorld == null || VisualSpoofRenderer.v.displayWidth <= 0 || VisualSpoofRenderer.v.displayHeight <= 0) {
                 r = false;
-            } else if (VisualSpoofRenderer.v.field_71462_r == null && r) {
+            } else if (VisualSpoofRenderer.v.currentScreen == null && r) {
                 long var1 = System.nanoTime();
                 if (!VisualSpoofRenderer.o(v, var1)) {
                     r = false;
                 } else {
-                    VisualSpoofRenderer.z(VisualSpoofRenderer.v.field_71443_c, VisualSpoofRenderer.v.field_71440_d);
+                    VisualSpoofRenderer.z(VisualSpoofRenderer.v.displayWidth, VisualSpoofRenderer.v.displayHeight);
                     long var3 = System.nanoTime();
                     BufferedImage var5 = null;
                     try {
-                        h.func_147610_a(true);
+                        h.bindFramebuffer(true);
                         W.e(v, var0);
-                        var5 = VisualSpoofRenderer.I(VisualSpoofRenderer.v.field_71443_c, VisualSpoofRenderer.v.field_71440_d);
+                        var5 = VisualSpoofRenderer.I(VisualSpoofRenderer.v.displayWidth, VisualSpoofRenderer.v.displayHeight);
 }
                     catch (Throwable var11) {
                         var5 = null;
 }
                     finally {
-                        Framebuffer var8 = v.func_147110_a();
+                        Framebuffer var8 = v.getFramebuffer();
                         if (var8 != null) {
-                            var8.func_147610_a(true);
+                            var8.bindFramebuffer(true);
 }
-                        GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.field_71443_c, (int)VisualSpoofRenderer.v.field_71440_d);
+                        GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.displayWidth, (int)VisualSpoofRenderer.v.displayHeight);
                         VisualSpoofRenderer.G();
                         r = false;
 }
@@ -189,15 +189,15 @@ public class VisualSpoofRenderer {
 }
     public static Framebuffer f(long var0) {
         var0 = 0x5DAE2CB3A103L ^ var0;
-        if (v == null || VisualSpoofRenderer.v.field_71443_c <= 0 || VisualSpoofRenderer.v.field_71440_d <= 0) {
+        if (v == null || VisualSpoofRenderer.v.displayWidth <= 0 || VisualSpoofRenderer.v.displayHeight <= 0) {
             return null;
 }
-        return VisualSpoofRenderer.v.field_71462_r != null ? VisualSpoofRenderer.i(v) : VisualSpoofRenderer.r(v);
+        return VisualSpoofRenderer.v.currentScreen != null ? VisualSpoofRenderer.i(v) : VisualSpoofRenderer.r(v);
 }
     private static long Z(Minecraft var0) {
-        int var1 = var0 != null && var0.field_71462_r == null ? 120 : 60;
+        int var1 = var0 != null && var0.currentScreen == null ? 120 : 60;
         long var2 = 1000000000L / (long)Math.max(1, var1);
-        if (var0 != null && var0.field_71462_r == null) {
+        if (var0 != null && var0.currentScreen == null) {
             return var2;
 }
         int var4 = 1;
@@ -208,49 +208,47 @@ public class VisualSpoofRenderer {
         if (i > 19999999L) {
             var4 = Math.max(var4, 2);
 }
-        if (var0 != null && var0.field_71441_e != null && var0.field_71441_e.field_72996_f != null && var0.field_71441_e.field_72996_f.size() > 96) {
+        if (var0 != null && var0.theWorld != null && var0.theWorld.loadedEntityList != null && var0.theWorld.loadedEntityList.size() > 96) {
             int var9 = Math.max(32, 48);
-            int var6 = var0.field_71441_e.field_72996_f.size() - 96;
+            int var6 = var0.theWorld.loadedEntityList.size() - 96;
             int var7 = 1 + (var6 + var9 - 1) / var9;
             var4 = Math.max(var4, Math.min(8, var7));
 }
         return var2 * (long)Math.min(8, var4);
 }
     private static void t() {
-        VisualSpoofRenderer.z(v != null ? VisualSpoofRenderer.v.field_71443_c : 960, v != null ? VisualSpoofRenderer.v.field_71440_d : 540);
+        VisualSpoofRenderer.z(v != null ? VisualSpoofRenderer.v.displayWidth : 960, v != null ? VisualSpoofRenderer.v.displayHeight : 540);
 }
     /*
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     private static Framebuffer i(Minecraft var0) {
-        float var7 = MinecraftAccessor.o((Minecraft)var0).field_74281_c;
-        VisualSpoofRenderer.setFramebufferFilter(var0.field_71443_c, var0.field_71440_d);
-        Framebuffer var8 = var0.func_147110_a();
+        float var7 = MinecraftAccessor.o((Minecraft)var0).renderPartialTicks;
+        VisualSpoofRenderer.setFramebufferFilter(var0.displayWidth, var0.displayHeight);
+        Framebuffer var8 = var0.getFramebuffer();
         try {
-            Framebuffer var9;
             H = true;
             MinecraftAccessor.K(var0, h);
-            h.func_147604_a(0.0f, 0.0f, 0.0f, 1.0f);
-            h.func_147610_a(true);
-            h.func_147614_f();
-            h.func_147610_a(true);
-            if (var0.field_71441_e != null && var0.field_71439_g != null && var0.field_71460_t != null) {
-                var0.field_71460_t.func_78471_a(var7, System.nanoTime());
-                h.func_147610_a(true);
-                if (var0.field_71456_v != null) {
-                    var0.field_71456_v.func_175180_a(var7);
-                    h.func_147610_a(true);
+            h.setFramebufferColor(0.0f, 0.0f, 0.0f, 1.0f);
+            h.bindFramebuffer(true);
+            h.framebufferClear();
+            h.bindFramebuffer(true);
+            if (var0.theWorld != null && var0.thePlayer != null && var0.entityRenderer != null) {
+                var0.entityRenderer.renderWorld(var7, System.nanoTime());
+                h.bindFramebuffer(true);
+                if (var0.ingameGUI != null) {
+                    var0.ingameGUI.renderGameOverlay(var7);
+                    h.bindFramebuffer(true);
 }
 }
-            if (var0.field_71462_r != null) {
-                var9 = new ScaledResolution(var0);
-                int var10 = Math.max(0, Math.min(var9.func_78326_a(), Mouse.getX() * var9.func_78326_a() / Math.max(1, var0.field_71443_c)));
-                int var11 = Math.max(0, Math.min(var9.func_78328_b(), var9.func_78328_b() - Mouse.getY() * var9.func_78328_b() / Math.max(1, var0.field_71440_d) - 1));
-                var0.field_71462_r.func_73863_a(var10, var11, var7);
-                h.func_147610_a(true);
+            if (var0.currentScreen != null) {
+                ScaledResolution var9 = new ScaledResolution(var0);
+                int var10 = Math.max(0, Math.min(var9.getScaledWidth(), Mouse.getX() * var9.getScaledWidth() / Math.max(1, var0.displayWidth)));
+                int var11 = Math.max(0, Math.min(var9.getScaledHeight(), var9.getScaledHeight() - Mouse.getY() * var9.getScaledHeight() / Math.max(1, var0.displayHeight) - 1));
+                var0.currentScreen.drawScreen(var10, var11, var7);
+                h.bindFramebuffer(true);
 }
-            var9 = h;
-            return var9;
+            return h;
 }
         catch (Throwable var15) {
             Framebuffer framebuffer = null;
@@ -260,9 +258,9 @@ public class VisualSpoofRenderer {
             H = false;
             MinecraftAccessor.K(var0, var8);
             if (var8 != null) {
-                var8.func_147610_a(true);
+                var8.bindFramebuffer(true);
 }
-            GL11.glViewport((int)0, (int)0, (int)var0.field_71443_c, (int)var0.field_71440_d);
+            GL11.glViewport((int)0, (int)0, (int)var0.displayWidth, (int)var0.displayHeight);
             VisualSpoofRenderer.G();
 }
 }
@@ -294,8 +292,8 @@ public class VisualSpoofRenderer {
         return Math.max(1500000L, 7407407L);
 }
     private static BufferedImage I(int var0, int var1) {
-        h.func_147610_a(false);
-        GL11.glReadBuffer((int)OpenGlHelper.field_153200_g);
+        h.bindFramebuffer(false);
+        GL11.glReadBuffer((int)OpenGlHelper.GL_COLOR_ATTACHMENT0);
         return VisualSpoofRenderer.attribute(var0, var1);
 }
     public static boolean H() {
@@ -305,14 +303,14 @@ public class VisualSpoofRenderer {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     private static BufferedImage A(Minecraft var0) {
-        if (var0.func_147110_a() == null) {
+        if (var0.getFramebuffer() == null) {
             return null;
 }
-        Framebuffer var1 = var0.func_147110_a();
+        Framebuffer var1 = var0.getFramebuffer();
         try {
-            var1.func_147610_a(false);
-            GL11.glReadBuffer((int)OpenGlHelper.field_153200_g);
-            BufferedImage bufferedImage = VisualSpoofRenderer.attribute(var0.field_71443_c, var0.field_71440_d);
+            var1.bindFramebuffer(false);
+            GL11.glReadBuffer((int)OpenGlHelper.GL_COLOR_ATTACHMENT0);
+            BufferedImage bufferedImage = VisualSpoofRenderer.attribute(var0.displayWidth, var0.displayHeight);
             return bufferedImage;
 }
         catch (Throwable var7) {
@@ -320,9 +318,9 @@ public class VisualSpoofRenderer {
             return bufferedImage;
 }
         finally {
-            var1.func_147609_e();
+            var1.unbindFramebuffer();
             GL11.glReadBuffer((int)1029);
-            GL11.glViewport((int)0, (int)0, (int)var0.field_71443_c, (int)var0.field_71440_d);
+            GL11.glViewport((int)0, (int)0, (int)var0.displayWidth, (int)var0.displayHeight);
             VisualSpoofRenderer.G();
 }
 }
@@ -396,10 +394,10 @@ public class VisualSpoofRenderer {
 }
 }
     private static void V() {
-        if (v != null && VisualSpoofRenderer.v.field_71474_y != null) {
-            D = VisualSpoofRenderer.v.field_71474_y.field_82881_y;
+        if (v != null && VisualSpoofRenderer.v.gameSettings != null) {
+            D = VisualSpoofRenderer.v.gameSettings.pauseOnLostFocus;
             U = true;
-            VisualSpoofRenderer.v.field_71474_y.field_82881_y = false;
+            VisualSpoofRenderer.v.gameSettings.pauseOnLostFocus = false;
 }
 }
     private static void y() {
@@ -409,24 +407,24 @@ public class VisualSpoofRenderer {
 }
 }
     public static void f() {
-        if (z && !H && v != null && VisualSpoofRenderer.v.field_71439_g != null && VisualSpoofRenderer.v.field_71441_e != null && VisualSpoofRenderer.v.field_71443_c > 0 && VisualSpoofRenderer.v.field_71440_d > 0 && VisualSpoofRenderer.v.field_71462_r == null) {
-            VisualSpoofRenderer.setFramebufferFilter(VisualSpoofRenderer.v.field_71443_c, VisualSpoofRenderer.v.field_71440_d);
-            Framebuffer var0 = v.func_147110_a();
+        if (z && !H && v != null && VisualSpoofRenderer.v.thePlayer != null && VisualSpoofRenderer.v.theWorld != null && VisualSpoofRenderer.v.displayWidth > 0 && VisualSpoofRenderer.v.displayHeight > 0 && VisualSpoofRenderer.v.currentScreen == null) {
+            VisualSpoofRenderer.setFramebufferFilter(VisualSpoofRenderer.v.displayWidth, VisualSpoofRenderer.v.displayHeight);
+            Framebuffer var0 = v.getFramebuffer();
             if (var0 != null) {
                 try {
-                    h.func_147604_a(0.0f, 0.0f, 0.0f, 1.0f);
-                    h.func_147610_a(true);
-                    h.func_147614_f();
-                    h.func_147610_a(true);
-                    var0.func_178038_a(VisualSpoofRenderer.v.field_71443_c, VisualSpoofRenderer.v.field_71440_d, true);
+                    h.setFramebufferColor(0.0f, 0.0f, 0.0f, 1.0f);
+                    h.bindFramebuffer(true);
+                    h.framebufferClear();
+                    h.bindFramebuffer(true);
+                    var0.framebufferRenderExt(VisualSpoofRenderer.v.displayWidth, VisualSpoofRenderer.v.displayHeight, true);
                     r = true;
 }
                 catch (Throwable var5) {
                     r = false;
 }
                 finally {
-                    var0.func_147610_a(true);
-                    GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.field_71443_c, (int)VisualSpoofRenderer.v.field_71440_d);
+                    var0.bindFramebuffer(true);
+                    GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.displayWidth, (int)VisualSpoofRenderer.v.displayHeight);
                     VisualSpoofRenderer.G();
 }
 }
@@ -456,7 +454,7 @@ public class VisualSpoofRenderer {
 }
     private static void C() {
         if (h != null) {
-            h.func_147608_a();
+            h.deleteFramebuffer();
             h = null;
 }
         K = 0;
@@ -479,28 +477,28 @@ public class VisualSpoofRenderer {
      */
     private static BufferedImage M(short var0, int var1, Minecraft var2, int var3, int var4, short var5, float var6) {
         long var7 = ((long)var0 << 48 | (long)var1 << 32 >>> 16 | (long)var5 << 48 >>> 48) ^ 0x5DAE2CB3A103L;
-        VisualSpoofRenderer.setFramebufferFilter(var2.field_71443_c, var2.field_71440_d);
-        Framebuffer var11 = var2.func_147110_a();
+        VisualSpoofRenderer.setFramebufferFilter(var2.displayWidth, var2.displayHeight);
+        Framebuffer var11 = var2.getFramebuffer();
         try {
             H = true;
             MinecraftAccessor.K(var2, h);
-            h.func_147604_a(0.0f, 0.0f, 0.0f, 1.0f);
-            h.func_147610_a(true);
-            h.func_147614_f();
-            h.func_147610_a(true);
-            if (var2.field_71441_e != null && var2.field_71439_g != null && var2.field_71460_t != null) {
-                var2.field_71460_t.func_78471_a(var6, System.nanoTime());
-                h.func_147610_a(true);
-                if (var2.field_71456_v != null) {
-                    var2.field_71456_v.func_175180_a(var6);
-                    h.func_147610_a(true);
+            h.setFramebufferColor(0.0f, 0.0f, 0.0f, 1.0f);
+            h.bindFramebuffer(true);
+            h.framebufferClear();
+            h.bindFramebuffer(true);
+            if (var2.theWorld != null && var2.thePlayer != null && var2.entityRenderer != null) {
+                var2.entityRenderer.renderWorld(var6, System.nanoTime());
+                h.bindFramebuffer(true);
+                if (var2.ingameGUI != null) {
+                    var2.ingameGUI.renderGameOverlay(var6);
+                    h.bindFramebuffer(true);
 }
 }
-            if (var2.field_71462_r != null) {
-                var2.field_71462_r.func_73863_a(var3, var4, var6);
-                h.func_147610_a(true);
+            if (var2.currentScreen != null) {
+                var2.currentScreen.drawScreen(var3, var4, var6);
+                h.bindFramebuffer(true);
 }
-            BufferedImage bufferedImage = VisualSpoofRenderer.I(var2.field_71443_c, var2.field_71440_d);
+            BufferedImage bufferedImage = VisualSpoofRenderer.I(var2.displayWidth, var2.displayHeight);
             return bufferedImage;
 }
         catch (Throwable var17) {
@@ -511,9 +509,9 @@ public class VisualSpoofRenderer {
             H = false;
             MinecraftAccessor.K(var2, var11);
             if (var11 != null) {
-                var11.func_147610_a(true);
+                var11.bindFramebuffer(true);
 }
-            GL11.glViewport((int)0, (int)0, (int)var2.field_71443_c, (int)var2.field_71440_d);
+            GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);
             VisualSpoofRenderer.G();
 }
 }
@@ -521,7 +519,7 @@ public class VisualSpoofRenderer {
         if (h == null || K != var0 || a != var1) {
             VisualSpoofRenderer.C();
             h = new Framebuffer(var0, var1, true);
-            h.func_147607_a(9729);
+            h.setFramebufferFilter(9729);
             K = var0;
             a = var1;
 }
@@ -535,8 +533,8 @@ public class VisualSpoofRenderer {
         E = Math.max(System.nanoTime(), var1 + var5);
 }
     private static void u() {
-        if (U && v != null && VisualSpoofRenderer.v.field_71474_y != null) {
-            VisualSpoofRenderer.v.field_71474_y.field_82881_y = D;
+        if (U && v != null && VisualSpoofRenderer.v.gameSettings != null) {
+            VisualSpoofRenderer.v.gameSettings.pauseOnLostFocus = D;
 }
         U = false;
 }
@@ -552,8 +550,8 @@ public class VisualSpoofRenderer {
         int var5 = (int)((var3 ^ 0x2B52A23AFFEEL) >>> 48);
         int var6 = (int)((var3 ^ 0x2B52A23AFFEEL) << 16 >>> 32);
         int var7 = (int)((var3 ^ 0x2B52A23AFFEEL) << 48 >>> 48);
-        if (z && !H && !x && v != null && VisualSpoofRenderer.v.field_71462_r != null && VisualSpoofRenderer.v.field_71443_c > 0 && VisualSpoofRenderer.v.field_71440_d > 0 && VisualSpoofRenderer.o(v, var8 = System.nanoTime())) {
-            VisualSpoofRenderer.z(VisualSpoofRenderer.v.field_71443_c, VisualSpoofRenderer.v.field_71440_d);
+        if (z && !H && !x && v != null && VisualSpoofRenderer.v.currentScreen != null && VisualSpoofRenderer.v.displayWidth > 0 && VisualSpoofRenderer.v.displayHeight > 0 && VisualSpoofRenderer.o(v, var8 = System.nanoTime())) {
+            VisualSpoofRenderer.z(VisualSpoofRenderer.v.displayWidth, VisualSpoofRenderer.v.displayHeight);
             long var10 = System.nanoTime();
             BufferedImage var12 = VisualSpoofRenderer.M((short)var5, var6, v, var0, var1, (short)var7, var2);
             if (var12 != null && I != null) {
@@ -565,14 +563,14 @@ public class VisualSpoofRenderer {
 }
     private static void G() {
         GL11.glMatrixMode((int)5888);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179140_f();
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179132_a((boolean)true);
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179092_a((int)516, (float)0.1f);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.enableDepth();
+        GlStateManager.depthMask((boolean)true);
+        GlStateManager.disableBlend();
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc((int)516, (float)0.1f);
 }
     public static boolean h() {
         return z;

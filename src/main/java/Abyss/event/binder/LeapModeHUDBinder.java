@@ -11,7 +11,7 @@ import Abyss.event.invoker.LeapModeHUDRender2DInvoker;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 
 public final class LeapModeHUDBinder {
-    private static final long public static void k(EventBus var0, LeapModeHUD var1) {
+    public static void k(EventBus var0, LeapModeHUD var1) {
         var0.R(var1, ReceivePacketEvent.class, 3, new LeapModeHUDReceivePacketInvoker(var1));
         var0.R(var1, Render2DEvent.class, 3, new LeapModeHUDRender2DInvoker(var1));
 }

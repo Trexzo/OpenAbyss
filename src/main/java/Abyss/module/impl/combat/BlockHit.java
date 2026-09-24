@@ -132,7 +132,7 @@ implements EventSubscriber {
         if (this.k) {
             this.J(var5, (char)var6, (short)var7);
 }
-        BlockHit.f.field_71439_g.func_71039_bw();
+        BlockHit.f.thePlayer.isUsingItem();
 }
     private void T(long var1) {
         var1 = D ^ var1;
@@ -309,7 +309,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         S19PacketEntityStatus var7;
-        if (mode.R("PREDICT") && BlockHit.f.field_71441_e != null && var1.d instanceof S19PacketEntityStatus && (var7 = (S19PacketEntityStatus)var1.d).func_149161_a((World)BlockHit.f.field_71441_e) instanceof EntityPlayerSP && var7.func_149160_c() == 2) {
+        if (mode.R("PREDICT") && BlockHit.f.theWorld != null && var1.d instanceof S19PacketEntityStatus && (var7 = (S19PacketEntityStatus)var1.d).getEntity((World)BlockHit.f.theWorld) instanceof EntityPlayerSP && var7.getOpCode() == 2) {
             this.x = false;
             this.Y = 0;
             this.y = this.Y((short)0, 'b', -1348816909);
@@ -375,7 +375,7 @@ implements EventSubscriber {
     private void V(long var1) {
         long var3 = var1 ^ 0x7494148CB0DBL;
         this.k = true;
-        KeyBindUtil.A(var3, BlockHit.f.field_71474_y.field_74313_G.func_151463_i(), true);
+        KeyBindUtil.A(var3, BlockHit.f.gameSettings.keyBindUseItem.getKeyCode(), true);
 }
     private static Class b(long var0, long var2) {
         Class<?> var5 = null;
@@ -407,28 +407,35 @@ implements EventSubscriber {
         this.y = 0;
         this.V(var3);
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void J(int var1, char var2, short var3) {
         long var4 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ D;
         long var6 = var4 ^ 0x4C8A69E5A4ABL;
         this.k = false;
-        KeyBindUtil.A(var6, BlockHit.f.field_71474_y.field_74313_G.func_151463_i(), false);
+        KeyBindUtil.A(var6, BlockHit.f.gameSettings.keyBindUseItem.getKeyCode(), false);
 }
     private void G(long var1) {
         var1 = D ^ var1;
@@ -457,6 +464,7 @@ implements EventSubscriber {
 }
 }
     private static Method d(long var0, long var2) {
+        int var4;
         Class var23;
         Class var15;
         Class[] var14;
@@ -464,7 +472,7 @@ implements EventSubscriber {
         String var10;
         Class var8;
         block10: {
-            int var4 = BlockHit.a(var0, var2);
+            var4 = BlockHit.a(var0, var2);
             Object var5 = ob[var4];
             if (!(var5 instanceof String)) {
                 return (Method)var5;
@@ -638,10 +646,10 @@ implements EventSubscriber {
         if (!this.Y((short)var6, var7, (char)var8)) {
             return false;
 }
-        if (requireLeftClick.c() && !KeyBindUtil.V(BlockHit.f.field_71474_y.field_74312_F.func_151463_i(), var9)) {
+        if (requireLeftClick.c() && !KeyBindUtil.V(BlockHit.f.gameSettings.keyBindAttack.getKeyCode(), var9)) {
             return false;
 }
-        return requireRightClick.c() && !KeyBindUtil.V(BlockHit.f.field_71474_y.field_74313_G.func_151463_i(), var9) ? false : !onlyAutoClicker.c() || AutoClicker.I;
+        return requireRightClick.c() && !KeyBindUtil.V(BlockHit.f.gameSettings.keyBindUseItem.getKeyCode(), var9) ? false : !onlyAutoClicker.c() || AutoClicker.I;
 }
     @Override
     public String g(long var1) {
@@ -784,7 +792,12 @@ implements EventSubscriber {
             throw Sneaky.rethrow(ex);
 }
 }
-                Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            ob = new Object[49]; pb = new String[49]; c(); ab = new HashMap(13);
+            byte[] var10003 = new byte[]{0, 0, 0, 0, 0, 0, 0, 0};
+            for (int var23 = 1; var23 < 8; ++var23) { var10003[var23] = (byte)(12610113794430L << var23 * 8 >>> 56); }
+            Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var22.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var29 = new String[7];
             int var27 = 0;
@@ -871,7 +884,6 @@ implements EventSubscriber {
                                         var55 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var59 = 0;
 }
-                                    break;
 }
 }
                             var25 = var26.charAt(var36);
@@ -892,7 +904,6 @@ implements EventSubscriber {
                     var37 = var26.substring(++var36, var36 + var25);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var33) {
@@ -902,6 +913,7 @@ implements EventSubscriber {
     static {
         KEY_OFFSETS = new byte[]{49, 50, 33, 43, 17, 44, 2, 27, 39, 0, 40, 8, 21, 10, 31, 15, 5, 16, 45, 59, 4, 1, 60, 3, 61, 38, 41, 63, 52, 57, 6, 42, 12, 37, 23, 36, 7, 9, 47, 25, 51, 29, 58, 62, 13, 26, 28, 48, 34, 18, 24, 46, 22, 20, 56, 19, 35, 30, 11, 53, 14, 32, 55, 54};
         D = 58710388792180L;
+        zkm$clinit();
         N = false;
         allowNoSlow = new BooleanSetting("Allow-NoSlow", true);
         visualBlocking = new BooleanSetting("Visual-blocking", true);

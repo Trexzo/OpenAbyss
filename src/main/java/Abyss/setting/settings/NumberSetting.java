@@ -8,10 +8,14 @@ import Abyss.util.MathUtil;
 
 public class NumberSetting
 extends Setting {
+    private static long a;
+    static {
+        a = 96988644486315L;
+    }
     private float z;
     private final float Z;
     private final float l;
-    private static long private final float o;
+    private final float o;
 
     private int b(float var1, long var2) {
         String var4 = Float.toString(var1);

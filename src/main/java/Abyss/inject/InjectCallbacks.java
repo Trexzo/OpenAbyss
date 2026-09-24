@@ -86,7 +86,7 @@ public final class InjectCallbacks {
             if (!InjectCallbacks.live()) {
                 return;
 }
-            EntityRenderer renderer = MinecraftRef.c((byte)0, (long)0L).field_71460_t;
+            EntityRenderer renderer = MinecraftRef.c((byte)0, (long)0L).entityRenderer;
             if (renderer == null) {
                 return;
 }

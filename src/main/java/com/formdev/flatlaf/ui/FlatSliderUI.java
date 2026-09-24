@@ -437,9 +437,6 @@ implements FlatStylingSupport.StyleableUI {
 }
     protected class FlatTrackListener
     extends BasicSliderUI.TrackListener {
-        protected FlatTrackListener() {
-            super(FlatSliderUI.this);
-}
         @Override
         public void mouseEntered(MouseEvent e) {
             this.setThumbHover(this.isOverThumb(e));

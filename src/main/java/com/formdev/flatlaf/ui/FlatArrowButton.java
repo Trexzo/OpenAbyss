@@ -137,8 +137,9 @@ implements UIResource {
     public void paint(Graphics g) {
         Object[] oldRenderingHints = FlatUIUtils.setRenderingHints(g);
         if (this.isEnabled()) {
-            Color background;
-            Color color = this.pressedBackground != null && this.isPressed() ? this.pressedBackground : (background = this.hoverBackground != null && this.isHover() ? this.hoverBackground : null);
+            Color background = this.pressedBackground != null && this.isPressed()
+                ? this.pressedBackground
+                : (this.hoverBackground != null && this.isHover() ? this.hoverBackground : null);
             if (background != null) {
                 g.setColor(this.deriveBackground(background));
                 this.paintBackground((Graphics2D)g);

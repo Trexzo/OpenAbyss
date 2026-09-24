@@ -15,7 +15,7 @@ import Abyss.event.invoker.StuckPreLivingUpdateInvoker;
 import Abyss.module.impl.movement.Stuck;
 
 public final class StuckBinder {
-    private static final long public static void c(EventBus var0, Stuck var1) {
+    public static void c(EventBus var0, Stuck var1) {
         var0.R(var1, MoveInputEvent.class, 3, new StuckMoveInputInvoker(var1));
         var0.R(var1, PreLivingUpdateEvent.class, 3, new StuckPreLivingUpdateInvoker(var1));
         var0.R(var1, MoveEntityWithHeadingEvent.class, 3, new StuckMoveEntityWithHeadingInvoker(var1));

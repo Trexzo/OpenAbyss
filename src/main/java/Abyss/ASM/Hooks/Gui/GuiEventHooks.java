@@ -38,7 +38,7 @@ public class GuiEventHooks {
     private static boolean J;
     private static Field G;
     private static final Minecraft n;
-    private static final long private static void ensureInitialized() {
+    private static void ensureInitialized() {
         if (!k && AbyssClient.w != null) {
             try {
                 AltManager.M(7874752644491L);
@@ -63,20 +63,20 @@ public class GuiEventHooks {
         GuiEventHooks.post(new InitGuiEvent(var0, GuiEventHooks.buttonList(var0)));
 }
     public static void onClientTick() {
-        GuiScreen var4 = GuiEventHooks.n.field_71462_r;
+        GuiScreen var4 = GuiEventHooks.n.currentScreen;
         boolean var5 = Mouse.isButtonDown((int)0);
         boolean var6 = var5 && !J;
         J = var5;
         if (var4 != null) {
             GuiEventHooks.ensureInitialized();
-            int var7 = Mouse.getX() * var4.field_146294_l / GuiEventHooks.n.field_71443_c;
-            int var8 = var4.field_146295_m - Mouse.getY() * var4.field_146295_m / GuiEventHooks.n.field_71440_d - 1;
+            int var7 = Mouse.getX() * var4.width / GuiEventHooks.n.displayWidth;
+            int var8 = var4.height - Mouse.getY() * var4.height / GuiEventHooks.n.displayHeight - 1;
             GuiEventHooks.post(new GuiMouseEvent(var4, var6, var7, var8));
 }
 }
     public static void onLoadWorld() {
         GuiEventHooks.ensureInitialized();
-        GuiEventHooks.post(new ServerJoinEvent(n.func_147104_D(), 31027, '\u0e8c', -11246));
+        GuiEventHooks.post(new ServerJoinEvent(n.getCurrentServerData(), 31027, (char)3724, (short)54290));
 }
     public static void onActionPerformed(GuiScreen var0, GuiButton var1, CallbackInfo var2) {
         GuiEventHooks.ensureInitialized();

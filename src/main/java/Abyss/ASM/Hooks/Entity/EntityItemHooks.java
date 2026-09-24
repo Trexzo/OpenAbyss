@@ -13,7 +13,7 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 
 public class EntityItemHooks {
-    private static final long public static void onPickUpItem(EntityItem var0, EntityPlayer var1) {
+    public static void onPickUpItem(EntityItem var0, EntityPlayer var1) {
         PickUpItemEvent var8 = new PickUpItemEvent(var0, var1);
         AbyssClient.w.e(var8, 18670087776179L);
 }

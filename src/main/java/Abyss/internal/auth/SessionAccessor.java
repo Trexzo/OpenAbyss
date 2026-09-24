@@ -17,7 +17,7 @@ public class SessionAccessor {
     private static final Minecraft u = MinecraftRef.c((byte)0, 0L);
 
     public static Session d() {
-        return u.func_110432_I();
+        return u.getSession();
 }
     private static Field C() {
         if (t == null) {

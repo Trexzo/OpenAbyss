@@ -63,8 +63,8 @@ public class FlatStylingSupport {
 }
         if (styleClass instanceof List) {
             Object style = null;
-            for (String cls : styleClass) {
-                style = FlatStylingSupport.joinStyles(style, FlatStylingSupport.getStyleForClass(cls, type));
+            for (Object cls : (List<?>)styleClass) {
+                style = FlatStylingSupport.joinStyles(style, FlatStylingSupport.getStyleForClass((String)cls, type));
 }
             return style;
 }
@@ -201,7 +201,7 @@ public class FlatStylingSupport {
         Class<?> cls = obj.getClass();
         do {
             try {
-                StyleableField[] f = cls.getDeclaredField(fieldName);
+                Field f = cls.getDeclaredField(fieldName);
                 if (predicate == null || predicate.test((Field)f)) {
                     return FlatStylingSupport.applyToField((Field)f, obj, value, false);
 }
@@ -320,7 +320,7 @@ public class FlatStylingSupport {
     private static Object convertToEnum(Object value, Class<?> type) throws IllegalArgumentException {
         if (Enum.class.isAssignableFrom(type) && value instanceof String) {
             try {
-                value = Enum.valueOf(type, (String)value);
+                value = Enum.valueOf((Class)type, (String)value);
 }
             catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("unknown enum value '" + value + "' in enum '" + type.getName() + "'", ex);
@@ -465,7 +465,7 @@ public class FlatStylingSupport {
         Class<?> cls = obj.getClass();
         do {
             try {
-                StyleableField[] f = cls.getDeclaredField(fieldName);
+                Field f = cls.getDeclaredField(fieldName);
                 Styleable styleable = f.getAnnotation(Styleable.class);
                 if (styleable != null) {
                     if (styleable.dot() != (fieldName != key)) {
@@ -510,7 +510,7 @@ public class FlatStylingSupport {
 }
         @Override
         public void putAll(Map<? extends K, ? extends V> m2) {
-            for (Map.Entry<K, V> e : m2.entrySet()) {
+            for (Map.Entry<? extends K, ? extends V> e : m2.entrySet()) {
                 this.put(e.getKey(), e.getValue());
 }
 }

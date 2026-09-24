@@ -382,9 +382,6 @@ extends MetalFileChooserUI {
 }
     private class FlatFileView
     extends BasicFileChooserUI.BasicFileView {
-        private FlatFileView() {
-            super(FlatFileChooserUI.this);
-}
         @Override
         public Icon getIcon(File f) {
             Icon icon = this.getCachedIcon(f);

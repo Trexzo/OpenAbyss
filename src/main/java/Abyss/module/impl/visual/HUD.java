@@ -54,6 +54,10 @@ import net.minecraft.util.ResourceLocation;
 public class HUD
 extends Module
 implements EventSubscriber {
+    private static String[] c;
+    private static long a;
+    private static String[] b;
+    private static Map d;
     private static String[] k;
     
     private static ResourceLocation r;
@@ -82,23 +86,30 @@ implements EventSubscriber {
     private static final DateTimeFormatter TIME_FMT_HMS;
     private static final DateTimeFormatter TIME_FMT_HM;
 
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     public void onRender2D(Render2DEvent var1, long var2) {
         CustomFont var25 = Font.F(0L);
         ScaledResolution var26 = var1.C;
@@ -110,12 +121,12 @@ implements EventSubscriber {
             if (bps.c()) {
                 var27 = var27 + " | ";
 }
-            var27 = var27 + (int)HUD.f.field_71439_g.field_70165_t + "/" + (int)HUD.f.field_71439_g.field_70163_u + "/" + (int)HUD.f.field_71439_g.field_70161_v;
+            var27 = var27 + (int)HUD.f.thePlayer.posX + "/" + (int)HUD.f.thePlayer.posY + "/" + (int)HUD.f.thePlayer.posZ;
 }
-        var25.T(37697014677608L, var27, 0.0f, (float)var26.func_78328_b() - var25.o(60714858652844L), -1);
+        var25.T(37697014677608L, var27, 0.0f, (float)var26.getScaledHeight() - var25.o(60714858652844L), -1);
         if (health.c()) {
-            String var43 = CombatUtil.h(CombatUtil.P((EntityLivingBase)HUD.f.field_71439_g), HUD.f.field_71439_g.func_110138_aP(), 88877475006969L) + MathUtil.W(CombatUtil.h((EntityLivingBase)HUD.f.field_71439_g) + CombatUtil.D((EntityLivingBase)HUD.f.field_71439_g)) + "\u2764";
-            var25.T(37697014677608L, var43, (float)var26.func_78326_a() / 2.0f - var25.R(var43, 52019766876817L) / 2.0f, (float)var26.func_78328_b() / 2.0f + var25.o(60714858652844L) + 2.0f, -1);
+            String var43 = CombatUtil.h(CombatUtil.P((EntityLivingBase)HUD.f.thePlayer), HUD.f.thePlayer.getMaxHealth(), 88877475006969L) + MathUtil.W(CombatUtil.h((EntityLivingBase)HUD.f.thePlayer) + CombatUtil.D((EntityLivingBase)HUD.f.thePlayer)) + "\u2764";
+            var25.T(37697014677608L, var43, (float)var26.getScaledWidth() / 2.0f - var25.R(var43, 52019766876817L) / 2.0f, (float)var26.getScaledHeight() / 2.0f + var25.o(60714858652844L) + 2.0f, -1);
 }
         float var44 = 1.0f;
         if (watermark.c()) {
@@ -134,9 +145,9 @@ implements EventSubscriber {
             int primary = Theme.S(0.0, 35338930340239L);
             int wColor = RenderingUtils.fadeBetween(primary, RenderingUtils.darker(primary, 0.49f), off);
             String text = "Abyss";
-            GlStateManager.func_179094_E();
+            GlStateManager.pushMatrix();
             float s = uiScale <= 0.0f ? 1.0f : uiScale;
-            GlStateManager.func_179152_a((float)s, (float)s, (float)s);
+            GlStateManager.scale((float)s, (float)s, (float)s);
             float bx = 2.0f / s;
             float by = 2.0f / s;
             fr.drawStringWithShadow("A", bx, by, wColor);
@@ -149,7 +160,7 @@ implements EventSubscriber {
                 fr.drawStringWithShadow(tm, x += fr.getWidth("["), by, -7697773);
                 fr.drawStringWithShadow("]", x += fr.getWidth(tm), by, -1);
 }
-            GlStateManager.func_179121_F();
+            GlStateManager.popMatrix();
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -175,7 +186,12 @@ implements EventSubscriber {
         HUD.h[5] = "\u001ecFd62\u0015lW+W<\u001egSq";
         HUD.h[6] = "\u0005vbs\u0018\u000f\u001b0b\u00154vRsa+\u0018\u001a\u001aua+tO\u00142xq\t\u0014\u0016w%\u0015NI[)zm\u0018\u000f\u0014=\u001c/\u0006J\u0014-p-\u000f\u0006\rL";
 }
-                Cipher var5 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            long var14 = a ^ 91982637577235L; h = new Object[7]; k = new String[7]; a(); d = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var14 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var6 = 1; var6 < 8; ++var6) { var10003[var6] = (byte)(var14 << var6 * 8 >>> 56); }
+            Cipher var5 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var5.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var12 = new String[21];
             int var10 = 0;
@@ -225,7 +241,6 @@ implements EventSubscriber {
                     var19 = var9.substring(++var18, var18 + var8);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var16) {
@@ -233,6 +248,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 67018157161661L;
+        zkm$clinit();
         theme = Theme.theme;
         customTheme = Theme.customTheme;
         themeOffset = Theme.offset;

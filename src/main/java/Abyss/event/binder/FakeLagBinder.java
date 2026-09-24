@@ -15,7 +15,7 @@ import Abyss.event.invoker.FakeLagSendPacketInvoker;
 import Abyss.module.impl.combat.FakeLag;
 
 public final class FakeLagBinder {
-    private static final long public static void S(EventBus var2, FakeLag var3) {
+    public static void S(EventBus var2, FakeLag var3) {
         var2.R(var3, PreLivingUpdateEvent.class, 3, new FakeLagPreLivingUpdateInvoker(var3));
         var2.R(var3, PostTickEvent.class, 3, new FakeLagPostTickInvoker(var3));
         var2.R(var3, Render2DEvent.class, 3, new FakeLagRender2DInvoker(var3));

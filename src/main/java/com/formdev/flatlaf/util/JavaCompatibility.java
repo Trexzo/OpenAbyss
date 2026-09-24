@@ -88,7 +88,7 @@ public class JavaCompatibility {
 }
             // ** MonitorExit[var4_4] (shouldn't be in output)
             try {
-                return getClippedStringMethod.invoke(c, fm, string, availTextWidth);
+                return (String)getClippedStringMethod.invoke(c, fm, string, availTextWidth);
 }
             catch (Throwable ex) {
                 LoggingFacade.INSTANCE.logSevere(null, ex);

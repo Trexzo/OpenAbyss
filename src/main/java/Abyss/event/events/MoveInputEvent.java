@@ -9,7 +9,7 @@ public class MoveInputEvent
 extends Event {
     private double r;
     private float E;
-    private static final long private boolean n;
+    private boolean n;
     private float e;
     private boolean o;
 

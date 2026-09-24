@@ -443,8 +443,11 @@ FlatStylingSupport.StyleableLookupProvider {
             g2.setColor(this.getBackground(enabled));
             FlatUIUtils.paintComponentBackground(g2, 0, 0, width, height, focusWidth, arc);
             if (enabled && !isCellRenderer) {
-                Color buttonColor;
-                Color color = paintButton ? this.buttonEditableBackground : ((this.buttonFocusedBackground != null || this.focusedBackground != null) && FlatComboBoxUI.isPermanentFocusOwner(this.comboBox) ? (this.buttonFocusedBackground != null ? this.buttonFocusedBackground : this.focusedBackground) : (buttonColor = this.buttonBackground));
+                Color buttonColor = paintButton
+                    ? this.buttonEditableBackground
+                    : ((this.buttonFocusedBackground != null || this.focusedBackground != null) && FlatComboBoxUI.isPermanentFocusOwner(this.comboBox)
+                        ? (this.buttonFocusedBackground != null ? this.buttonFocusedBackground : this.focusedBackground)
+                        : this.buttonBackground);
                 if (buttonColor != null) {
                     g2.setColor(buttonColor);
                     if (this.isMacStyle()) {
@@ -480,7 +483,7 @@ FlatStylingSupport.StyleableLookupProvider {
     @Override
     public void paintCurrentValue(Graphics g, Rectangle bounds, boolean hasFocus) {
         this.paddingBorder.uninstall();
-        DefaultListCellRenderer renderer = this.comboBox.getRenderer();
+        ListCellRenderer renderer = this.comboBox.getRenderer();
         if (renderer == null) {
             renderer = new DefaultListCellRenderer();
 }
@@ -837,7 +840,7 @@ FlatStylingSupport.StyleableLookupProvider {
 }
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 FlatComboBoxUI.this.paddingBorder.uninstall();
-                DefaultListCellRenderer renderer = FlatComboPopup.this.comboBox.getRenderer();
+                ListCellRenderer renderer = FlatComboPopup.this.comboBox.getRenderer();
                 if (renderer == null) {
                     renderer = new DefaultListCellRenderer();
 }
@@ -855,7 +858,7 @@ FlatStylingSupport.StyleableLookupProvider {
     protected class FlatComboBoxButton
     extends FlatArrowButton {
         protected FlatComboBoxButton() {
-            this(5, this$0.arrowType, this$0.buttonArrowColor, this$0.buttonDisabledArrowColor, this$0.buttonHoverArrowColor, null, this$0.buttonPressedArrowColor, null);
+            this(5, FlatComboBoxUI.this.arrowType, FlatComboBoxUI.this.buttonArrowColor, FlatComboBoxUI.this.buttonDisabledArrowColor, FlatComboBoxUI.this.buttonHoverArrowColor, null, FlatComboBoxUI.this.buttonPressedArrowColor, null);
 }
         protected FlatComboBoxButton(int direction, String type, Color foreground, Color disabledForeground, Color hoverForeground, Color hoverBackground, Color pressedForeground, Color pressedBackground) {
             super(direction, type, foreground, disabledForeground, hoverForeground, hoverBackground, pressedForeground, pressedBackground);

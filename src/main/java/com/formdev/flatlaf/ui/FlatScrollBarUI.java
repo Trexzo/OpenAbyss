@@ -310,7 +310,7 @@ FlatStylingSupport.StyleableLookupProvider {
     protected class FlatScrollBarButton
     extends FlatArrowButton {
         protected FlatScrollBarButton(int direction) {
-            this(direction, this$0.arrowType, this$0.buttonArrowColor, this$0.buttonDisabledArrowColor, null, this$0.hoverButtonBackground, null, this$0.pressedButtonBackground);
+            this(direction, FlatScrollBarUI.this.arrowType, FlatScrollBarUI.this.buttonArrowColor, FlatScrollBarUI.this.buttonDisabledArrowColor, null, FlatScrollBarUI.this.hoverButtonBackground, null, FlatScrollBarUI.this.pressedButtonBackground);
 }
         protected FlatScrollBarButton(int direction, String type, Color foreground, Color disabledForeground, Color hoverForeground, Color hoverBackground, Color pressedForeground, Color pressedBackground) {
             super(direction, type, foreground, disabledForeground, hoverForeground, hoverBackground, pressedForeground, pressedBackground);

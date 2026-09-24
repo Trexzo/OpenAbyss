@@ -17,7 +17,7 @@ import Abyss.event.invoker.ScaffoldRender3DInvoker;
 import Abyss.module.impl.world.Scaffold;
 
 public final class ScaffoldBinder {
-    private static final long public static void h(EventBus var0, byte var1, Scaffold var4) {
+    public static void h(EventBus var0, byte var1, Scaffold var4) {
         var0.R(var4, HeldItemChangeEvent.class, 3, new ScaffoldHeldItemChangeInvoker(var4));
         var0.R(var4, MoveInputEvent.class, 3, new ScaffoldMoveInputInvoker(var4));
         var0.R(var4, PreMouseInputEvent.class, 3, new ScaffoldPreMouseInputInvoker(var4));

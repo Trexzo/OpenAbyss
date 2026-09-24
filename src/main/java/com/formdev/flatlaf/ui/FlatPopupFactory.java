@@ -133,14 +133,14 @@ extends PopupFactory {
                     MethodType mt = MethodType.methodType(Popup.class, Component.class, Component.class, Integer.TYPE, Integer.TYPE, Boolean.TYPE);
                     this.java9getPopupMethod = MethodHandles.lookup().findVirtual(PopupFactory.class, "getPopup", mt);
 }
-                return this.java9getPopupMethod.invoke(this, owner, contents, x, y, true);
+                return (Popup)this.java9getPopupMethod.invoke(this, owner, contents, x, y, true);
 }
             if (this.java8getPopupMethod == null) {
                 Method m2 = PopupFactory.class.getDeclaredMethod("getPopup", Component.class, Component.class, Integer.TYPE, Integer.TYPE, Integer.TYPE);
                 m2.setAccessible(true);
                 this.java8getPopupMethod = MethodHandles.lookup().unreflect(m2);
 }
-            return this.java8getPopupMethod.invoke(this, owner, contents, x, y, 2);
+            return (Popup)this.java8getPopupMethod.invoke(this, owner, contents, x, y, 2);
 }
         catch (Throwable ex) {
             return super.getPopup(owner, contents, x, y);

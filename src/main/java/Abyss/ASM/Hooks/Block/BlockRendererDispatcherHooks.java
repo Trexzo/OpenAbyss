@@ -21,10 +21,10 @@ import net.minecraft.util.Vec3i;
 
 public class BlockRendererDispatcherHooks {
     public static void onRenderBlock(IBlockState var0, BlockPos var1) {
-        if (var0.func_177230_c() instanceof BlockBed && var0.func_177229_b((IProperty)BlockBed.field_176472_a) == BlockBed.EnumPartType.HEAD) {
+        if (var0.getBlock() instanceof BlockBed && var0.getValue((IProperty)BlockBed.PART) == BlockBed.EnumPartType.HEAD) {
             AbyssClient.G.add(new BlockPos((Vec3i)var1));
 }
-        if (BlocksESP.L(var0.func_177230_c()) && BlocksESP.y(var1)) {
+        if (BlocksESP.L(var0.getBlock()) && BlocksESP.y(var1)) {
             BlocksESP.L.add(new BlockPos((Vec3i)var1));
 }
 }

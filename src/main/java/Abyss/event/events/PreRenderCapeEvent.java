@@ -12,7 +12,7 @@ import net.minecraft.client.entity.AbstractClientPlayer;
 public class PreRenderCapeEvent
 extends StoppableEvent {
     public final AbstractClientPlayer F;
-    private static final long public PreRenderCapeEvent(short var1, int var2, short var3, AbstractClientPlayer var4) {
+    public PreRenderCapeEvent(short var1, int var2, short var3, AbstractClientPlayer var4) {
         this.F = var4;
 }
 }

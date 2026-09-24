@@ -6,7 +6,7 @@ package Abyss.ASM.Util;
 public final class MethodRef {
     private final String i;
     private final String v;
-    private static long private final String F;
+    private final String F;
 
     static String O(MethodRef var0) {
         return var0.i;

@@ -84,7 +84,16 @@ import net.minecraft.util.Vec3i;
 
 public class AbyssClient
 implements EventSubscriber {
-                private final TimerUtil B;
+    private static Map e;
+    private static Object[] l;
+    private static String[] m;
+    private static String[] d;
+    private static Map h;
+    private static Long[] j;
+    private static long[] f;
+    private static Integer[] g;
+    private static String[] b;
+    private static long a;                private final TimerUtil B;
             private final Minecraft c;
         public static Map<Integer, String> H;
     private boolean s = false;
@@ -117,7 +126,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (var1.d instanceof S02PacketChat) {
-            String var4 = ((S02PacketChat)var1.d).func_148915_c().func_150254_d();
+            String var4 = ((S02PacketChat)var1.d).getChatComponent().getFormattedText();
             if (var4.contains("\u00a7e\u00a7lProtect your bed and destroy the enemy bed") || var4.contains("\u00a7e\u00a7lDestroy the enemy bed and then eliminate them")) {
                 BedNuker.B = true;
 }
@@ -125,14 +134,14 @@ implements EventSubscriber {
             S08PacketPlayerPosLook var6 = (S08PacketPlayerPosLook)var1.d;
             if (BedNuker.B) {
                 BedNuker.B = false;
-                this.U.schedule(() -> this.c.func_152344_a(() -> {
+                this.U.schedule(() -> this.c.addScheduledTask(() -> {
                     try {
-                        if (this.c.field_71441_e == null) {
+                        if (this.c.theWorld == null) {
                             return;
 }
-                        int var4x = MathHelper.func_76128_c((double)var6.func_148932_c());
-                        int var5x = MathHelper.func_76128_c((double)var6.func_148928_d());
-                        int var6x = MathHelper.func_76128_c((double)var6.func_148933_e());
+                        int var4x = MathHelper.floor_double((double)var6.getX());
+                        int var5x = MathHelper.floor_double((double)var6.getY());
+                        int var6x = MathHelper.floor_double((double)var6.getZ());
                         this.bedScanMinX = var4x - 35;
                         this.bedScanMinY = var5x - 15;
                         this.bedScanMinZ = var6x - 35;
@@ -192,6 +201,258 @@ implements EventSubscriber {
 }
         return j[var3];
 }
+    private static Object a(MethodHandles.Lookup var0, MutableCallSite var1, String var2, MethodType var3, Object[] var4) throws Throwable {
+        int var5 = var4.length - 2;
+        long var6 = (Long)var4[var5];
+        long var9 = (Long)var4[++var5];
+        MethodHandle var8 = a(var0, var1, var2, var3, var6, var9);
+        var1.setTarget(MethodHandles.explicitCastArguments(var8, var3));
+        return (Object)var8.asSpreader(Object[].class, var4.length).invoke(var4);
+    }
+
+    private static CallSite a(MethodHandles.Lookup var0, String var1, MethodType var2) {
+        MutableCallSite var3 = new MutableCallSite(var2);
+        try {
+            var3.setTarget(
+                MethodHandles.explicitCastArguments(
+                    MethodHandles.insertArguments(
+                        MethodHandles.lookup().findStatic(
+                            AbyssClient.class,
+                            "a",
+                            MethodType.fromMethodDescriptorString(
+                                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/invoke/MutableCallSite;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/Object;",
+                                AbyssClient.class.getClassLoader()
+                            )
+                        ).asCollector(Object[].class, var2.parameterCount()),
+                        0, var0, var3, var1, var2
+                    ),
+                    var2
+                )
+            );
+            return var3;
+        } catch (Exception var5) {
+            throw new RuntimeException("Abyss/AbyssClient" + " : " + var1 + " : " + var2.toString(), var5);
+        }
+    }
+
+    private static Field a(Class var0, String var1, Class var2) {
+        for (Field var6 : var0.getDeclaredFields()) {
+            if (var6.getName().equals(var1) && var6.getType() == var2) {
+                return var6;
+            }
+        }
+        return null;
+    }
+
+    private static int a(long var0, long var2) {
+        var0 ^= var2 << 48 | var2;
+        int var4 = (int)(var0 >>> 46);
+        if (m[var4] != null) {
+            return var4;
+        }
+
+        Object var5 = l[var4];
+        if (!(var5 instanceof String)) {
+            return var4;
+        }
+
+        byte var6 = KEY_OFFSETS[(int)(var0 >>> 42 & 63L)];
+        int[] var7 = new int[6];
+
+        for (int var8 = 0; var8 < 6; var8++) {
+            int var9 = 7 * (5 - var8);
+            int var10 = (int)(var0 >>> var9 & 127L);
+            var10 -= var6;
+            if (var10 < 0) {
+                var10 += 128;
+            }
+            var7[var8] = var10;
+        }
+
+        char[] var13 = ((String)var5).toCharArray();
+        for (int var14 = 0; var14 < var13.length; var14++) {
+            int var16 = var7[var14 % var7.length];
+            if (var16 == 0) {
+                break;
+            }
+            var13[var14] = (char)(var13[var14] ^ var16);
+        }
+
+        m[var4] = new String(var13);
+        return var4;
+    }
+
+    private static Method a(Class var0, String var1, Class var2, int var3, Class[] var4) {
+        label33:
+        for (Method var8 : var0.getDeclaredMethods()) {
+            if (var8.getName().equals(var1) && var8.getReturnType() == var2) {
+                Class[] var9 = var8.getParameterTypes();
+                if (var9.length == var3) {
+                    for (int var10 = 0; var10 < var3; var10++) {
+                        if (var9[var10] != var4[var10]) {
+                            continue label33;
+                        }
+                    }
+                    return var8;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static MethodHandle a(MethodHandles.Lookup var0, MutableCallSite var1, String var2, MethodType var3, long var4, long var6) {
+        char var8 = var2.charAt(0);
+        MethodHandle var9 = null;
+        Field var10 = null;
+        Method var11 = null;
+
+        try {
+            if (var8 != 204 && var8 != 200 && var8 != 'K' && var8 != 219) {
+                var11 = d(var4, var6);
+                Class var17 = var11.getDeclaringClass();
+                String var19 = var11.getName();
+                MethodType var20 = MethodType.methodType(var11.getReturnType(), var11.getParameterTypes());
+                if (var8 == 244) {
+                    var9 = var0.findVirtual(var17, var19, var20);
+                } else if (var8 == 254) {
+                    var9 = var0.findStatic(var17, var19, var20);
+                } else {
+                    var9 = var0.findSpecial(var17, var19, var20, var17);
+                }
+            } else {
+                var10 = c(var4, var6);
+                Class var12 = var10.getDeclaringClass();
+                String var18 = var10.getName();
+                Class var14 = var10.getType();
+                if (var8 == 204) {
+                    var9 = var0.findGetter(var12, var18, var14);
+                } else if (var8 == 200) {
+                    var9 = var0.findSetter(var12, var18, var14);
+                } else if (var8 == 'K') {
+                    var9 = var0.findStaticGetter(var12, var18, var14);
+                } else {
+                    var9 = var0.findStaticSetter(var12, var18, var14);
+                }
+            }
+            return MethodHandles.dropArguments(var9, var3.parameterCount() - 2, long.class, long.class);
+        } catch (Exception var15) {
+            StringBuilder var13 = new StringBuilder();
+            var13.append(var15.getClass().getName())
+                .append(" : ")
+                .append(var10 != null ? var10.toString() : (var11 != null ? var11.toString() : " null "))
+                .append(" : ")
+                .append(var15.toString());
+            throw new RuntimeException(var13.toString());
+        }
+    }
+
+    private static void a() {
+        l[0] = "";
+        m[0] = "Abyss.event.binder.AbyssClientBinder";
+        l[1] = long.class;
+        m[1] = "java/lang/Long";
+        l[2] = "";
+        m[2] = "Abyss.event.EventBus";
+        l[3] = "";
+        m[3] = "Abyss.AbyssClient";
+        l[4] = void.class;
+        m[4] = "java/lang/Void";
+        l[5] = "";
+        m[5] = "java.util.List";
+        l[6] = int.class;
+        m[6] = "java/lang/Integer";
+        l[7] = "";
+        m[7] = "java.lang.Object";
+        l[8] = "";
+        m[8] = "Abyss.module.impl.configuration.VisualSpoof";
+        l[9] = boolean.class;
+        m[9] = "java/lang/Boolean";
+        l[10] = "";
+        m[10] = "Abyss.module.Modules";
+        l[11] = "";
+        m[11] = "java.lang.Class";
+        l[12] = "";
+        m[12] = "Abyss.module.Module";
+        l[13] = "";
+        m[13] = "Abyss.setting.settings.DisableRenderVisualSetting";
+        l[14] = "";
+        m[14] = "Abyss.util.KeyBindUtil";
+        l[15] = "";
+        m[15] = "Abyss.setting.settings.ModeSetting";
+        l[16] = "";
+        m[16] = "java.lang.String";
+        l[17] = "";
+        m[17] = "Abyss.util.ClientUtil";
+        l[18] = "";
+        m[18] = "java.util.Set";
+        l[19] = "";
+        m[19] = "Abyss.module.impl.configuration.ClickGUI";
+        l[20] = char.class;
+        m[20] = "java/lang/Character";
+        l[21] = short.class;
+        m[21] = "java/lang/Short";
+        l[22] = "";
+        m[22] = "Abyss.util.packet.PacketManager";
+        l[23] = "";
+        m[23] = "Abyss.setting.settings.BooleanSetting";
+        l[24] = "XUJ6&\u0017F]PyE\u0003B\u0010y9|\u0010K";
+        l[25] = "";
+        m[25] = "java.lang.Integer";
+        l[26] = "~E$T!J`M>\u001bFKqV3A`M";
+        l[27] = "";
+        m[27] = "java.util.Map";
+        l[28] = "";
+        m[28] = "net.minecraft.client.entity.EntityPlayerSP";
+        l[29] = "vn\u000f\u0011?q\u0003N\u0004\u001e.>~V\u0017\u0019'w\u0016";
+        l[30] = "";
+        m[30] = "Abyss.event.events.PreMouseInputEvent";
+        l[31] = "KM\u001da\u0001Z\u0015EZu:D\u001dTe%\\HHH\u0004{TZ\u001d(X'VW\rF\u001fwUPp";
+        l[32] = "m;B\n\f-=7L]l)P~JS\u000f!h(\bW\u001cOn \u001fJ\u0012\u007f!(\u0015Ml";
+        l[33] = "<kz]v/7f-V\u000b)>fP\u0000zFn$\u007f\u0011v()t|\u0016\u000b";
+        l[34] = "kC5.\u0005p0G%(lNT\u001d$\u007fS`2F:%\u0005\fdZ&5]rjD\"6l";
+        l[35] = "Q58|Ec_+<\u007ft`a !g\u0014m[|<7\b\u001dXu&m\u001a%\u000e7\"~t'\u001f. 5\u0012v\u00136=\u000e";
+        l[36] = "U2c|l\u0012\u000b:$hW\b\n:r~WY\u00104y?1\b\u001c,d\u0004";
+        l[37] = "\u0018.N8,$U$Z!K#) Q(6#\u0019oY\"1]\u0010&R&%eFdV5KgW}T~-6[eIE";
+        l[38] = "_\u0010\u0015\u001ax(LE\u0011\u0018\u0011\u00116\u0014\u0013\u001e)/WJ\u001b\f|O\u000f\u0010\u0011\u001e\u007fwYR\u0015\r\u0011qQE\b\u0003!>YO\u000f}";
+        l[39] = "gsoQ*\nimkR\u001b\u0010W5rNf\ngzzDat";
+        l[40] = "Wu\b\r\u007f\u0004Yk\f\u000eN>gn\u000f\u0003?\u0002\u001a0\b\u0016sz^5\u0016\u001c B\bw\u0012\u000fN@\u0019n\u0010D(\u0011\u0015v\r\u007f";
+        l[41] = "^}A\u0019\u0012M\t\u007fBXq,7h_\u0013\u001f\bVx[\u0010\u000bv\teTT\u000fFFm^Sq";
+        l[42] = "\u0019q?svy\u0017o;pG`)7\"l:y\u0019x*f=\u0007";
+        l[43] = "\u0002j\u0000\u000fej\ft\u0004\fTt2.\u001c\u001eltSp\u0014\f9\u0014";
+        l[44] = "H\rwmW\u0005F\u0013snf#xKjr\u001b\u0005H\u0004bx\u001c{";
+        l[45] = "#MG\u000fA\u0016-SC\fp!\u0013\f\u0005\u0019\u0013\u0006+ZG\u001d\u0000h)K^\u001fK\u000exGF\u0002p";
+        l[46] = "\u000b\u0000[R\u0014\u000f\u001a\u0014HPi7a@CG\u0014\bQ\u000fKM\u0013v";
+        l[47] = "\u0005\u007fzF;][w=R\u0000W_ho><J]\"b_bBOw\u0002";
+        l[48] = "XX\u001e_C!TGUW\"0GP\u00051\u001dg\u0003\bS1N^PPT\b\\?@TW\u001c\"dDU\f]D5HM\u0011f";
+        l[49] = "\u0002[^\u0017\u001f\u0014R\u0005\u0001\btE\n\u001dw\u001b\u0004YcXV\u001b\t[S\u0017^\u0011\u000e%";
+        l[50] = "%^\u0011\u0003s7+@\u0015\u0000B(\u0015\u001fS\u0015!'-I\u0011\u00112I/X\b\u0013y/~T\u0010\u000eB";
+        l[51] = "\u007fZ\u0013I$HqD\u0017J\u0015wO\u001bQ_vXwM\u0013[e6qE\u0004Fk\u0006>M\u000eA\u0015\f1A\u000b\u0000s]=Y\u0016;";
+        l[52] = "s\u0004\u0004DE8%V\u0011Fz8cQ\u0002R\u0006>e<\u0019\u0006\u00158t\rIXJ'\u001f";
+        l[53] = "\u0011T>sg \u0002\u0001:q\u000e+xP8w6'\u0019\u000e0ecGD\n=,n&\u001a\u0002/y\u000e~@\b=z6(\u0002\f.\u00140 \u0015\u0011 $\u007f(\u001f\u0016^";
+        l[54] = "D\u001e\u0015\u00123\b\u001a\u000e\u000e\fJ\u0001}_Z\u00106\u0007\u0013\u0018\n\u00131zDZ\u0000\u001f$B\u0012\u0018\u0004\fJ@\u0003\u0001\u0006G,\u0011\u000f\u0019\u001b|";
+        l[55] = "'n-\\D\u0006.s8ffhx5 \u0005CP.w$\u0016-Q=|*\u001f_\u000f-g4f\u0017T3v/\u000f\\\u0012|5D\\S\u000b#6\"\r_\u0013>\r";
+        l[56] = "$%Z9E#*;^:t\u0014\u0014cG&\t#$,O,\u000e].#C)O;\u007f/[4t";
+        l[57] = "M{^\u001bYP\u001b)K\u0019fZE.K\u001ef\u000b_ @_\u0000ZS8]d";
+        l[58] = "7\u001eH\b\u001aNm\u0015\u0006PyE1\u0010'\u0001\u001dY:lE\u000e\u001a\u001c7\r\u001b\u0006\bIW";
+        l[59] = "@',HxZN9(KIvpfn^*JH0,Z9$J!5XrB\u001b--EI";
+        l[60] = "}UC\u001e'8vX\u0014\u0015Z>\u007fXtG>,\u007f$\u0017\u00106-oJP@5*\u0012";
+        l[61] = "ME<,r\"]A?8\f.^^o&w\u0002HEa8a\bNXkBf%\u001dMx#v!\u001eY\u0006|k.Z]63c$]#";
+        l[62] = "\u0007k\u000e)X=\u0019j\u000e4%\u0016k1W4\u001d1\no_&HQWkRoE0\tc@:%=\u0019sClU0\f3QW\u001f/\bo\n1N#\u0010r1";
+        l[63] = "\"J!xb\u0003<K!e\u001f\u001fN\u0010xe'\u000f/Npwro#OwfoU\u007fR'z\u001f\u0003<Rl=o\u000e)\u0012~\u0006!\b#Q`6n\u0000)V\u001e";
+        l[64] = "tMyjj\u0003p\u0014rp\u0013w\u001a\u0014%wnL*[-}i2 T!x(TqX9e\u0013";
+        l[65] = "6lW]whf2\bB\u001c?:!D<!g;-ERf78*8";
+        l[66] = "\u0014\"kZG\u001f\u001a<oYv\"$dvE\u000b\u001f\u0014+~O\fa";
+        l[67] = "C{\rnWxOb\\16qDwFpmq^\u000bP9Jc\u001dj\u0006k_a\"";
+        l[68] = "\u0013GJbf\u0015\u001dYNaW\r#\u0001W}*\u0015\u0013N_w-k\u0019ASrl\rHMKoW";
+        l[69] = "\u000e\u000b:\u0004\u0019\u000e\u0000\u0015>\u0007((>Jx\u0012K\u001e\u0006\u001c:\u0016Xp\u0004\r#\u0014\u0013\u0016U\u0001;\t(";
+        l[70] = "s\u0000F0\u000f\tuWL1~\u001b\u001c\u0003\u0011a\u0003\u000e,L\u0019k\u0004p";
+        l[71] = "Z!;QJkT??R{Xjg&N\u0006kZ(.D\u0001\u0015P'\"A@s\u0001+:\\{";
+        l[72] = "\u0019\u0017\u007fof\u001a\u0017\t{lW\u0004)V=y4\n\u0011\u0000\u007f}'d\u0013\u0011f\u007fl\u0002B\u001d~bW";
+        l[73] = "\b\u0010\u007f l\u0019\u0006\u000e{#]\u000b8R{1?\\^\u0003w)\"g";
+        l[74] = "N\u000b(\rnN@\u0015,\u000e_Z~\u00194E1N\u001f\t0F%0";
+        l[75] = "\\zu\u0010\t)\u0002jn\u000ep\u0011e;:\u0012\f&\u000b|j\u0011\u000b[_xg\u001cK=\u000et\u007f\u0001p";
+        l[76] = "C+\u007fezkS/|q\u0004qQ)$w\u0004`Ow+uepKt?\u000bg7K&tmt;\u0010=E";
+    }
     private static Field c(long var0, long var2) {
         int var4 = AbyssClient.a(var0, var2);
         Object var5 = l[var4];
@@ -247,7 +508,7 @@ implements EventSubscriber {
             for (Map.Entry<Integer, String> var18 : H.entrySet()) {
                 if (!KeyBindUtil.d(var18.getKey(), var1.R, 55909487137472L)) continue;
                 for (String var15 : var18.getValue().split("\\n")) {
-                    this.c.field_71439_g.func_71165_d(var15);
+                    this.c.thePlayer.sendChatMessage(var15);
 }
 }
 }
@@ -312,7 +573,7 @@ implements EventSubscriber {
             if (batching) {
                 w.endBatch();
 }
-            if (this.c.field_71462_r == null) {
+            if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
                     try {
                         ClickGUI.O(2169, 8663, (char)var21);
@@ -342,7 +603,7 @@ implements EventSubscriber {
             return;
 }
         try {
-            if (this.c.field_71441_e == null) {
+            if (this.c.theWorld == null) {
                 this.bedScanActive = false;
                 return;
 }
@@ -354,8 +615,8 @@ implements EventSubscriber {
                 int rem = idx % layerYZ;
                 int dy = rem / this.bedScanSpanZ;
                 int dz = rem % this.bedScanSpanZ;
-                this.bedScanPos.func_181079_c(this.bedScanMinX + dx, this.bedScanMinY + dy, this.bedScanMinZ + dz);
-                if (this.c.field_71441_e.func_180495_p((BlockPos)this.bedScanPos).func_177230_c() == Blocks.field_150324_C) {
+                this.bedScanPos.set(this.bedScanMinX + dx, this.bedScanMinY + dy, this.bedScanMinZ + dz);
+                if (this.c.theWorld.getBlockState((BlockPos)this.bedScanPos).getBlock() == Blocks.bed) {
                     BedNuker.D.add(new BlockPos((Vec3i)this.bedScanPos));
 }
                 ++this.bedScanCursor;
@@ -372,10 +633,10 @@ implements EventSubscriber {
         if (I != null && this.B.L(300L, true)) {
             if (this.N) {
                 this.N = false;
-                this.c.field_71439_g.func_71165_d("/p " + I);
+                this.c.thePlayer.sendChatMessage("/p " + I);
             } else {
                 this.N = true;
-                this.c.field_71439_g.func_71165_d("/p leave");
+                this.c.thePlayer.sendChatMessage("/p leave");
 }
 }
 }
@@ -451,77 +712,94 @@ implements EventSubscriber {
         return null;
 }
     private static Method d(long var0, long var2) {
-        Class var23;
-        Class var15;
-        Class[] var14;
+        int var4 = a(var0, var2);
+        Object var5 = l[var4];
+        if (!(var5 instanceof String)) {
+            return (Method)var5;
+        }
+
+        String var6 = m[var4];
+        int var7 = var6.indexOf(8);
+        Class var8 = b(Long.parseLong(var6.substring(0, var7), 36), 0L);
+        int var9 = var6.indexOf(8, ++var7);
+        String var10 = var6.substring(var7, var9);
+        int var11 = -1;
+        int var12 = var9;
+
+        do {
+            var11++;
+            var12++;
+        } while ((var12 = var6.indexOf(8, var12)) > -1);
+
         int var13;
-        String var10;
-        Class var8;
-        block10: {
-            int var4 = AbyssClient.a(var0, var2);
-            Object var5 = l[var4];
-            if (!(var5 instanceof String)) {
-                return (Method)var5;
-}
-            String var6 = m[var4];
-            int var7 = var6.indexOf(8);
-            var8 = AbyssClient.b(Long.parseLong(var6.substring(0, var7), 36), 0L);
-            int var9 = var6.indexOf(8, ++var7);
-            var10 = var6.substring(var7, var9);
-            int var11 = -1;
-            int var12 = var9;
-            do {
-                ++var11;
-                ++var12;
-            } while ((var12 = var6.indexOf(8, var12)) > -1);
-            var13 = var11 - 1;
-            var14 = new Class[var13];
-            var15 = null;
-            var12 = var9 + 1;
-            for (int var16 = 0; var16 < var11; ++var16) {
-                int var17 = var6.indexOf(8, var12);
-                var15 = AbyssClient.b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
-                if (var16 >= var13) continue;
+        Class[] var14 = new Class[var13 = var11 - 1];
+        Class var15 = null;
+        var12 = var9 + 1;
+
+        for (int var16 = 0; var16 < var11; var16++) {
+            int var17 = var6.indexOf(8, var12);
+            var15 = b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
+            if (var16 < var13) {
                 var14[var16] = var15;
-}
-            var23 = var8;
-            do {
-                Method var26;
-                if ((var26 = AbyssClient.a(var23, var10, var15, var13, var14)) != null) {
-                    AbyssClient.l[var4] = var26;
-                    return var26;
-}
-                if (var23.getName().equals("java.lang.Object")) break block10;
-            } while ((var23 = var23.getSuperclass()) != null);
-            var23 = AbyssClient.b(525810144067084L, 0L);
-}
+            }
+        }
+
+        Class var23 = var8;
+        while (true) {
+            Method var26 = a(var23, var10, var15, var13, var14);
+            if (var26 != null) {
+                l[var4] = var26;
+                return var26;
+            }
+
+            if (var23.getName().equals("java.lang.Object")) {
+                break;
+            }
+
+            if ((var23 = var23.getSuperclass()) == null) {
+                var23 = b(525810144067084L, 0L);
+                break;
+            }
+        }
+
         var23 = var8;
         while (true) {
-            Class<?>[] var27;
+            Class[] var27;
             if ((var27 = var23.getInterfaces()) != null) {
-                for (int var18 = 0; var18 < var27.length; ++var18) {
-                    Method var19 = AbyssClient.b(var27[var18], var10, var15, var13, var14);
-                    if (var19 == null) continue;
-                    AbyssClient.l[var4] = var19;
-                    return var19;
-}
-}
+                for (int var18 = 0; var18 < var27.length; var18++) {
+                    Method var19 = b(var27[var18], var10, var15, var13, var14);
+                    if (var19 != null) {
+                        l[var4] = var19;
+                        return var19;
+                    }
+                }
+            }
+
             if (var23.getName().equals("java.lang.Object")) {
                 StringBuffer var28 = new StringBuffer();
-                var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
+                var28.append("NoSuchMethodException in ")
+                    .append(var8.getName())
+                    .append(' ')
+                    .append(var15.getName())
+                    .append(' ')
+                    .append(var10)
+                    .append('(');
                 int var29 = 0;
                 while (var29 < var13) {
                     var28.append(var14[var29].getName());
-                    if (++var29 >= var13) continue;
-                    var28.append(", ");
-}
+                    if (++var29 < var13) {
+                        var28.append(", ");
+                    }
+                }
                 var28.append(')');
                 throw new RuntimeException(var28.toString());
-}
-            if ((var23 = var23.getSuperclass()) != null) continue;
-            var23 = AbyssClient.b(525810144067084L, 0L);
-}
-}
+            }
+
+            if ((var23 = var23.getSuperclass()) == null) {
+                var23 = b(525810144067084L, 0L);
+            }
+        }
+    }
     private static Field b(Class var0, String var1, Class var2) {
         Field var3 = AbyssClient.a(var0, var1, var2);
         if (var3 != null) {
@@ -540,13 +818,47 @@ implements EventSubscriber {
     private static boolean zkm$unresolved$0$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_iD_l_OR_Abyss_iD_K_y_slots_39_49_66_70(Object var0, long var3) {
         try {
             MethodType var5 = MethodType.fromMethodDescriptorString("(Ljava/lang/Object;JJ)Z", AbyssClient.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(AbyssClient.a(MethodHandles.lookup(), null, "\u00f4", var5, 2266045794134596627L, 9901644652386L), var5).invoke(var0, 2266045794134596627L, 9901644652386L);
+            return (boolean)MethodHandles.explicitCastArguments(AbyssClient.a(MethodHandles.lookup(), null, "\u00f4", var5, 2266045794134596627L, 9901644652386L), var5).invoke((Object)var0, 2266045794134596627L, 9901644652386L);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
 }
 }
-                Cipher var24 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }    private static void zkm$clinit() {
+        try {
+            l = new Object[77];
+            m = new String[77];
+            a();
+            e = new HashMap(13);
+            long var22 = a ^ 20790936441576L;
+            byte[] var10003 = new byte[]{(byte)(var22 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var25 = 1; var25 < 8; ++var25) {
+                var10003[var25] = (byte)(var22 << var25 * 8 >>> 56);
+            }
+            Cipher var24 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var24.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var31 = new String[10];
             int var29 = 0;
@@ -634,7 +946,6 @@ implements EventSubscriber {
                                         var55 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var59 = 0;
 }
-                                    break;
 }
 }
                             var27 = var28.charAt(var36);
@@ -655,15 +966,17 @@ implements EventSubscriber {
                     var37 = var28.substring(++var36, var36 + var27);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var33) {
             throw new RuntimeException(var33);
 }
 }
+    // R11_SEMANTIC_RECOVERY_MARKER
     static {
         KEY_OFFSETS = new byte[]{39, 57, 59, 32, 29, 12, 48, 9, 40, 35, 20, 47, 44, 1, 25, 42, 11, 5, 28, 36, 41, 27, 14, 60, 2, 45, 52, 31, 23, 38, 62, 33, 24, 17, 15, 0, 37, 8, 46, 53, 61, 21, 30, 6, 16, 49, 51, 3, 55, 18, 50, 34, 63, 22, 10, 58, 56, 26, 54, 19, 4, 13, 43, 7};
+        a = 55479544243313L;
+        zkm$clinit();
         H = new LinkedHashMap<Integer, String>();
         G = new CopyOnWriteArraySet<BlockPos>();
         I = null;

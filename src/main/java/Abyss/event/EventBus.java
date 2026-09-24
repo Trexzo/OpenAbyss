@@ -20,8 +20,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class EventBus {
+    private static long a;
+    static {
+        a = 34531714106406L;
+    }
         private final Map<Class<? extends Throwable>, Long> Y;
     private final Map<Class<?>, List<ListenerBinding<?>>> P;
     private static long e;
@@ -147,7 +156,7 @@ public class EventBus {
 }
             ListenerBinding var8 = new ListenerBinding(var6, var5);
             var7.add(var8);
-            List var9 = this.P.computeIfAbsent(var2, var0 -> new ArrayList());
+            List<ListenerBinding<?>> var9 = this.P.computeIfAbsent(var2, var0 -> new ArrayList<ListenerBinding<?>>());
             var9.add(var8);
             if (this.batchMode) return;
             var9.sort(PRIORITY_DESC);
@@ -188,7 +197,7 @@ public class EventBus {
 }
 }
     static {
-        PRIORITY_DESC = Comparator.comparingInt(var0 -> ListenerBinding.k(var0)).reversed();
+        PRIORITY_DESC = Comparator.<ListenerBinding>comparingInt(var0 -> ListenerBinding.k(var0)).reversed();
         e = 500L;
 }
 }

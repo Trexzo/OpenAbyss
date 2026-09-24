@@ -15,7 +15,8 @@ import java.awt.Color;
 
 public class HeaderSettingComponent
 extends AbstractSettingComponent<HeaderSetting> {
-    private static long @Override
+    private static long a;
+    @Override
     public void Z(int var1, float var2, char var3, float var4, float var5, float var6, short var7, CategoryPalette var8) {
         long var9 = (long)var1 << 32 | (long)var3 << 48 >>> 32 | (long)var7 << 48 >>> 48;
         long var10001 = var9 ^ 0x7836FBD6A95L;
@@ -59,4 +60,7 @@ extends AbstractSettingComponent<HeaderSetting> {
     public boolean V(long var1, float var3, float var4, int var5) {
         return false;
 }
+    static {
+        a = 71972391866718L;
+    }
 }

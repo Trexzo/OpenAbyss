@@ -18,7 +18,7 @@ import Abyss.setting.settings.TextSetting;
 public class Macro3
 extends MacroModule
 implements EventSubscriber {
-    private static final long public static NumberSetting minHealth;
+    public static NumberSetting minHealth;
     public static BooleanSetting swapBack;
     public static NumberSetting projectilesDuration;
     public static TextSetting chatMessage;

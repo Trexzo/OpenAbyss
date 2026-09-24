@@ -29,9 +29,14 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.Vec3;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class EntityHookDispatch {
-    private static final long public static void EntityLivingBase$onMoveFlying(EntityLivingBase var0, float var1, float var2, float var3, EntityLivingBase var4) {
+    public static void EntityLivingBase$onMoveFlying(EntityLivingBase var0, float var1, float var2, float var3, EntityLivingBase var4) {
         EntityLivingBaseHooks.onMoveFlying(var0, var1, var2, var3, var4);
 }
     public static void Entity$getCollisionBorderSize(Entity var0, CallbackInfoReturnable<Float> var1) {

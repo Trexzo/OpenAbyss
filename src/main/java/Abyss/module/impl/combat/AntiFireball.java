@@ -37,6 +37,10 @@ import net.minecraft.network.play.client.C0APacketAnimation;
 public class AntiFireball
 extends PriorityModule
 implements EventSubscriber {
+    private static long a;
+    static {
+        a = 119630054251485L;
+    }
     private EntityFireball G;
     public static NumberSetting fov;
     public static ModeSetting moveFix;
@@ -59,7 +63,7 @@ implements EventSubscriber {
         long var7 = (var5 ^ 0x69EEE6911949L) >>> 32;
         int var9 = (int)((var5 ^ 0x69EEE6911949L) << 32 >>> 32);
         ArrayList<EntityFireball> var10 = new ArrayList<EntityFireball>();
-        List var11 = AntiFireball.f.field_71441_e.field_72996_f;
+        List var11 = AntiFireball.f.theWorld.loadedEntityList;
         int var13 = var11.size();
         for (var12 = 0; var12 < var13; ++var12) {
             Entity var14 = (Entity)var11.get(var12);
@@ -78,7 +82,7 @@ implements EventSubscriber {
 }
             this.r.add(var22);
 }
-        if (AntiFireball.f.field_71439_g.field_71075_bZ.field_75101_c) {
+        if (AntiFireball.f.thePlayer.capabilities.allowFlying) {
             this.G = null;
         } else {
             boolean var19 = false;
@@ -96,7 +100,7 @@ implements EventSubscriber {
 }
     private void swingItem() {
         if (swing.c()) {
-            AntiFireball.f.field_71439_g.func_71038_i();
+            AntiFireball.f.thePlayer.swingItem();
         } else {
             PacketManager.b(new C0APacketAnimation());
 }
@@ -130,7 +134,7 @@ implements EventSubscriber {
 }
     public void onPreMouseInput(PreMouseInputEvent var1, long var2) {
         EntityFireball var16 = this.G;
-        if (this.G != null && AntiFireball.f.field_71441_e.field_72996_f.contains(var16) && this.Y() && OutgoingPacketState.f()) {
+        if (this.G != null && AntiFireball.f.theWorld.loadedEntityList.contains(var16) && this.Y() && OutgoingPacketState.f()) {
             this.T(true);
             switch (moveFix.Y()) {
                 case "SILENT": {
@@ -145,7 +149,7 @@ implements EventSubscriber {
                     RotationManager.n(RotationMode.NONE);
 }
 }
-            float[] var20 = RotationUtil.h(11022, this.G.func_174813_aQ(), (byte)99, 9521810);
+            float[] var20 = RotationUtil.h(11022, this.G.getEntityBoundingBox(), (byte)99, 9521810);
             RotationManager.N(71285564916286L, var20[0], var20[1]);
             this.N = true;
             if (RaytraceUtil.q(50051018191872L, (Entity)this.G, range.L())) {

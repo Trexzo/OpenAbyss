@@ -88,14 +88,15 @@ implements FlatStylingSupport.StyleableBorder {
             Color outlineColor = this.getOutlineColor(c);
             Color focusColor = null;
             if (outlineColor != null || this.isFocused(c)) {
-                float innerWidth;
-                float f = !this.isCellEditor(c) && !(c instanceof JScrollPane) ? (outlineColor != null ? this.innerOutlineWidth : this.getInnerFocusWidth(c)) : (innerWidth = 0.0f);
+                float innerWidth = !this.isCellEditor(c) && !(c instanceof JScrollPane)
+                    ? (outlineColor != null ? this.innerOutlineWidth : this.getInnerFocusWidth(c))
+                    : 0.0f;
                 if (focusWidth > 0.0f || innerWidth > 0.0f) {
                     focusColor = outlineColor != null ? outlineColor : this.getFocusColor(c);
                     focusInnerWidth = borderWidth + UIScale.scale(innerWidth);
 }
 }
-            Color borderColor = outlineColor != null ? outlineColor : this.getBorderColor(c);
+            Paint borderColor = outlineColor != null ? outlineColor : this.getBorderColor(c);
             FlatUIUtils.paintOutlinedComponent(g2, x, y, width, height, focusWidth, 1.0f, focusInnerWidth, borderWidth, arc, focusColor, borderColor, null);
 }
         finally {
@@ -105,11 +106,11 @@ implements FlatStylingSupport.StyleableBorder {
     protected Color getOutlineColor(Component c) {
         if (!(c instanceof JComponent)) {
             return null;
-}
-        Color[] outline = ((JComponent)c).getClientProperty("JComponent.outline");
+        }
+        Object outline = ((JComponent)c).getClientProperty("JComponent.outline");
         if (outline == null) {
             outline = this.outline;
-}
+        }
         if (outline == null) {
             if (this.outlineColor != null && this.outlineFocusedColor != null) {
                 outline = new Color[]{this.outlineFocusedColor, this.outlineColor};
@@ -117,31 +118,26 @@ implements FlatStylingSupport.StyleableBorder {
                 outline = this.outlineColor;
             } else if (this.outlineFocusedColor != null) {
                 outline = this.outlineFocusedColor;
-}
-}
+            }
+        }
         if (outline instanceof String) {
             switch ((String)outline) {
-                case "error": {
+                case "error":
                     return this.isFocused(c) ? this.errorFocusedBorderColor : this.errorBorderColor;
-}
-                case "warning": {
+                case "warning":
                     return this.isFocused(c) ? this.warningFocusedBorderColor : this.warningBorderColor;
-}
-}
-        } else {
-            if (outline instanceof Color) {
-                Color color = (Color)outline;
-                if (!this.isFocused(c) && this.customBorderColor instanceof DerivedColor) {
-                    color = ((DerivedColor)this.customBorderColor).derive(color);
-}
-                return color;
-}
-            if (outline instanceof Color[] && ((Color[])outline).length >= 2) {
-                return ((Color[])outline)[this.isFocused(c) ? 0 : 1];
-}
-}
+            }
+        } else if (outline instanceof Color) {
+            Color color = (Color)outline;
+            if (!this.isFocused(c) && this.customBorderColor instanceof DerivedColor) {
+                color = ((DerivedColor)this.customBorderColor).derive(color);
+            }
+            return color;
+        } else if (outline instanceof Color[] && ((Color[])outline).length >= 2) {
+            return ((Color[])outline)[this.isFocused(c) ? 0 : 1];
+        }
         return null;
-}
+    }
     protected Color getFocusColor(Component c) {
         return this.focusColor;
 }

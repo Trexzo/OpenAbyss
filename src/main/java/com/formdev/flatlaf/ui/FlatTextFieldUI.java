@@ -288,7 +288,6 @@ implements FlatStylingSupport.StyleableUI {
         FlatTextFieldUI.updateBackground(this.getComponent(), this.background, this.disabledBackground, this.inactiveBackground, this.oldDisabledBackground, this.oldInactiveBackground);
 }
     static void updateBackground(JTextComponent c, Color background, Color disabledBackground, Color inactiveBackground, Color oldDisabledBackground, Color oldInactiveBackground) {
-        Color newBackground;
         Color oldBackground = c.getBackground();
         if (!(oldBackground instanceof UIResource)) {
             return;
@@ -296,7 +295,7 @@ implements FlatStylingSupport.StyleableUI {
         if (oldBackground != background && oldBackground != disabledBackground && oldBackground != inactiveBackground && oldBackground != oldDisabledBackground && oldBackground != oldInactiveBackground) {
             return;
 }
-        Color color = !c.isEnabled() ? disabledBackground : (newBackground = !c.isEditable() ? inactiveBackground : background);
+        Color newBackground = !c.isEnabled() ? disabledBackground : (!c.isEditable() ? inactiveBackground : background);
         if (newBackground != oldBackground) {
             c.setBackground(newBackground);
 }

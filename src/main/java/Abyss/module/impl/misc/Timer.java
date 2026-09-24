@@ -46,19 +46,19 @@ implements EventSubscriber {
             int var6 = (int)((var1 ^ 0x74E117C54967L) >>> 48);
             long var7 = (var1 ^ 0x74E117C54967L) << 16 >>> 16;
             long var9 = var1 ^ 0x3007CB0DBCEEL;
-            boolean bl = var11 = ClientUtil.I() && Timer.f.field_71462_r == null && this.h() != 0 && KeyBindUtil.V(this.h(), var9);
+            boolean bl = var11 = ClientUtil.I() && Timer.f.currentScreen == null && this.h() != 0 && KeyBindUtil.V(this.h(), var9);
             if (var11 && !this.a) {
                 this.u((short)var6, var7);
 }
             this.a = var11;
             if (this.o() && ClientUtil.I()) {
                 if (!this.d) {
-                    this.s = MinecraftAccessor.o((Minecraft)Timer.f).field_74278_d;
+                    this.s = MinecraftAccessor.o((Minecraft)Timer.f).timerSpeed;
                     this.d = true;
 }
-                MinecraftAccessor.o((Minecraft)Timer.f).field_74278_d = speed.L();
+                MinecraftAccessor.o((Minecraft)Timer.f).timerSpeed = speed.L();
             } else if (this.d) {
-                MinecraftAccessor.o((Minecraft)Timer.f).field_74278_d = this.s;
+                MinecraftAccessor.o((Minecraft)Timer.f).timerSpeed = this.s;
                 this.d = false;
 }
 }

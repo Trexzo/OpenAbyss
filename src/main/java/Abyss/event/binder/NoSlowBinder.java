@@ -15,7 +15,7 @@ import Abyss.event.invoker.NoSlowUpdateWalkingPlayerInvoker;
 import Abyss.module.impl.movement.NoSlow;
 
 public final class NoSlowBinder {
-    private static final long private NoSlowBinder() {
+    private NoSlowBinder() {
 }
     public static void G(EventBus var0, NoSlow var1) {
         var0.R(var1, RedirectIsUsingItemEvent.class, 3, new NoSlowRedirectIsUsingItemInvoker(var1));

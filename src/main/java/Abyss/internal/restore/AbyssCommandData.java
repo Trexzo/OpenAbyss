@@ -49,9 +49,9 @@ public final class AbyssCommandData {
             return var1;
 }
         try {
-            Minecraft var2 = Minecraft.func_71410_x();
-            if (var2 != null && var2.field_71412_D != null) {
-                return new File(var2.field_71412_D, "Abyss");
+            Minecraft var2 = Minecraft.getMinecraft();
+            if (var2 != null && var2.mcDataDir != null) {
+                return new File(var2.mcDataDir, "Abyss");
 }
 }
         catch (Throwable throwable) {

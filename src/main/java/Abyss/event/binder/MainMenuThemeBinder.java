@@ -11,7 +11,7 @@ import Abyss.event.invoker.MainMenuThemePreTickInvoker;
 import Abyss.ui.screen.MainMenuTheme;
 
 public final class MainMenuThemeBinder {
-    private static final long private MainMenuThemeBinder() {
+    private MainMenuThemeBinder() {
 }
     public static void D(EventBus var0, MainMenuTheme var1) {
         var0.R(var1, PreTickEvent.class, 3, new MainMenuThemePreTickInvoker(var1));

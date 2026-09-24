@@ -543,7 +543,7 @@ public final class AbyssGuiData {
         return bl;
 }
     public static Map<String, Object> merged(File target) {
-        Map<Object, Object> root = null;
+        Map<String, Object> root = null;
         try {
             if (target != null && target.isFile()) {
                 root = AbyssGuiJson.parseObject(AbyssGuiData.read(target));
@@ -553,7 +553,7 @@ public final class AbyssGuiData {
             // empty catch block
 }
         if (root == null) {
-            root = new LinkedHashMap();
+            root = new LinkedHashMap<String, Object>();
 }
         if (!(root.get(DESCRIPTION_KEY) instanceof String)) {
             root.put(DESCRIPTION_KEY, DEFAULT_DESCRIPTION);

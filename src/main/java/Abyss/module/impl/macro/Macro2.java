@@ -20,7 +20,7 @@ extends MacroModule
 implements EventSubscriber {
     public static BooleanSetting swapBack;
     public static ModeSetting mode;
-    private static final long public static TextSetting chatMessage;
+    public static TextSetting chatMessage;
     public static NumberSetting minHealth;
     public static NumberSetting projectilesDuration;
 

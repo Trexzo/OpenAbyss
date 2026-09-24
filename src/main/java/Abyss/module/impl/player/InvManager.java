@@ -80,6 +80,11 @@ import net.minecraft.item.ItemTool;
 import net.minecraft.network.play.client.C0DPacketCloseWindow;
 import net.minecraft.network.play.client.C16PacketClientStatus;
 import org.lwjgl.input.Keyboard;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class InvManager
 extends PriorityModule
@@ -179,7 +184,7 @@ implements EventSubscriber {
                     return;
 }
                 this.machinePhase = 1;
-                this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.field_71439_g.field_71071_by);
+                this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.thePlayer.inventory);
                 continue;
 }
             int acted = this.stepMachine();
@@ -242,8 +247,8 @@ implements EventSubscriber {
         for (int type = 0; type < 4; ++type) {
             int target = 39 - type;
             Pair best = (Pair)this.machineBest.get(type);
-            if (best == null || best.p() == null || (Integer)best.p() == target || ItemUtil.M((ItemStack)best.a()) <= ItemUtil.M(InvManager.f.field_71439_g.field_71071_by.func_70301_a(target))) continue;
-            if (InvManager.f.field_71439_g.func_71124_b(4 - type) != null) {
+            if (best == null || best.p() == null || (Integer)best.p() == target || ItemUtil.M((ItemStack)best.a()) <= ItemUtil.M(InvManager.f.thePlayer.inventory.getStackInSlot(target))) continue;
+            if (InvManager.f.thePlayer.getEquipmentInSlot(4 - type) != null) {
                 ItemUtil.c(8537, 12546, '\uab5c', target);
                 this.machineArmorStageType = type;
                 this.machineArmorStageSlot = (Integer)best.p();
@@ -271,10 +276,10 @@ implements EventSubscriber {
 }
     private void closeScreen() {
         if (autoClose.c()) {
-            if (InvManager.f.field_71462_r != null) {
-                InvManager.f.field_71439_g.func_71053_j();
+            if (InvManager.f.currentScreen != null) {
+                InvManager.f.thePlayer.closeScreen();
             } else if (mode.R("SILENT")) {
-                PacketManager.b(new C0DPacketCloseWindow(InvManager.f.field_71439_g.field_71069_bz.field_75152_c));
+                PacketManager.b(new C0DPacketCloseWindow(InvManager.f.thePlayer.inventoryContainer.windowId));
 }
 }
         this.T(false);
@@ -283,24 +288,24 @@ implements EventSubscriber {
         long var4 = 0x2312F840ADEBL ^ R;
         int var10 = (int)((var4 ^ 0x3CA5B540D4L) >>> 48);
         long var13 = var4 ^ 0x86C5A8BF0C0L;
-        if (swordSlot.L() != 0.0f && ItemUtil.q(var13, (IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)swordSlot.L() - 1 != (Integer)ItemUtil.q(var13, (IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, (Integer)ItemUtil.q(var13, (IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)swordSlot.L() - 37);
+        if (swordSlot.L() != 0.0f && ItemUtil.q(var13, (IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)swordSlot.L() - 1 != (Integer)ItemUtil.q(var13, (IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, (Integer)ItemUtil.q(var13, (IInventory)InvManager.f.thePlayer.inventory).p(), (int)swordSlot.L() - 37);
             return 1;
 }
-        if (projectilesSlot.L() != 0.0f && !projectilesIsTrash.c() && ItemUtil.o((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)projectilesSlot.L() - 1 != ItemUtil.o((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.o((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)projectilesSlot.L() - 37);
+        if (projectilesSlot.L() != 0.0f && !projectilesIsTrash.c() && ItemUtil.o((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)projectilesSlot.L() - 1 != ItemUtil.o((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.o((IInventory)InvManager.f.thePlayer.inventory).p(), (int)projectilesSlot.L() - 37);
             return 1;
 }
-        if (blockSlot.L() != 0.0f && ItemUtil.Y((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)blockSlot.L() - 1 != ItemUtil.Y((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.Y((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)blockSlot.L() - 37);
+        if (blockSlot.L() != 0.0f && ItemUtil.Y((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)blockSlot.L() - 1 != ItemUtil.Y((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.Y((IInventory)InvManager.f.thePlayer.inventory).p(), (int)blockSlot.L() - 37);
             return 1;
 }
-        if (bowSlot.L() != 0.0f && !bowIsTrash.c() && ItemUtil.O((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)bowSlot.L() - 1 != ItemUtil.O((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.O((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)bowSlot.L() - 37);
+        if (bowSlot.L() != 0.0f && !bowIsTrash.c() && ItemUtil.O((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)bowSlot.L() - 1 != ItemUtil.O((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.O((IInventory)InvManager.f.thePlayer.inventory).p(), (int)bowSlot.L() - 37);
             return 1;
 }
         if (!toolsAreTrash.c()) {
-            List var15 = ItemUtil.D((IInventory)InvManager.f.field_71439_g.field_71071_by, (short)var10);
+            List var15 = ItemUtil.D((IInventory)InvManager.f.thePlayer.inventory, (short)var10);
             if (pickaxeSlot.L() != 0.0f && ((Pair)var15.get(0)).p() != null && (int)pickaxeSlot.L() - 1 != (Integer)((Pair)var15.get(0)).p()) {
                 ItemUtil.Q(0L, (Integer)((Pair)var15.get(0)).p(), (int)pickaxeSlot.L() - 37);
                 return 1;
@@ -314,34 +319,34 @@ implements EventSubscriber {
                 return 1;
 }
 }
-        if (!(foodSlot.L() == 0.0f || ItemUtil.k((IInventory)InvManager.f.field_71439_g.field_71071_by).p() == null || (int)foodSlot.L() - 1 == ItemUtil.k((IInventory)InvManager.f.field_71439_g.field_71071_by).p() || normalFoodIsTrash.c() && ItemUtil.k((IInventory)InvManager.f.field_71439_g.field_71071_by).a().func_77973_b() != Items.field_151153_ao)) {
-            ItemUtil.Q(0L, ItemUtil.k((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)foodSlot.L() - 37);
+        if (!(foodSlot.L() == 0.0f || ItemUtil.k((IInventory)InvManager.f.thePlayer.inventory).p() == null || (int)foodSlot.L() - 1 == ItemUtil.k((IInventory)InvManager.f.thePlayer.inventory).p() || normalFoodIsTrash.c() && ItemUtil.k((IInventory)InvManager.f.thePlayer.inventory).a().getItem() != Items.golden_apple)) {
+            ItemUtil.Q(0L, ItemUtil.k((IInventory)InvManager.f.thePlayer.inventory).p(), (int)foodSlot.L() - 37);
             return 1;
 }
-        if (potionSlot.L() != 0.0f && !potionIsTrash.c() && ItemUtil.H((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)potionSlot.L() - 1 != ItemUtil.H((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.H((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)potionSlot.L() - 37);
+        if (potionSlot.L() != 0.0f && !potionIsTrash.c() && ItemUtil.H((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)potionSlot.L() - 1 != ItemUtil.H((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.H((IInventory)InvManager.f.thePlayer.inventory).p(), (int)potionSlot.L() - 37);
             return 1;
 }
-        if (fireballSlot.L() != 0.0f && ItemUtil.i((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)fireballSlot.L() - 1 != ItemUtil.i((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.i((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)fireballSlot.L() - 37);
+        if (fireballSlot.L() != 0.0f && ItemUtil.i((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)fireballSlot.L() - 1 != ItemUtil.i((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.i((IInventory)InvManager.f.thePlayer.inventory).p(), (int)fireballSlot.L() - 37);
             return 1;
 }
-        if (enderPearlSlot.L() != 0.0f && ItemUtil.F((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)enderPearlSlot.L() - 1 != ItemUtil.F((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.F((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)enderPearlSlot.L() - 37);
+        if (enderPearlSlot.L() != 0.0f && ItemUtil.F((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)enderPearlSlot.L() - 1 != ItemUtil.F((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.F((IInventory)InvManager.f.thePlayer.inventory).p(), (int)enderPearlSlot.L() - 37);
             return 1;
 }
-        if (shearsSlot.L() != 0.0f && ItemUtil.W((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && (int)shearsSlot.L() - 1 != ItemUtil.W((IInventory)InvManager.f.field_71439_g.field_71071_by).p()) {
-            ItemUtil.Q(0L, ItemUtil.W((IInventory)InvManager.f.field_71439_g.field_71071_by).p(), (int)shearsSlot.L() - 37);
+        if (shearsSlot.L() != 0.0f && ItemUtil.W((IInventory)InvManager.f.thePlayer.inventory).p() != null && (int)shearsSlot.L() - 1 != ItemUtil.W((IInventory)InvManager.f.thePlayer.inventory).p()) {
+            ItemUtil.Q(0L, ItemUtil.W((IInventory)InvManager.f.thePlayer.inventory).p(), (int)shearsSlot.L() - 37);
             return 1;
 }
         return 0;
 }
     private int stepTrash() {
-        while (this.machineTrashSlot < InvManager.f.field_71439_g.field_71071_by.func_70302_i_()) {
+        while (this.machineTrashSlot < InvManager.f.thePlayer.inventory.getSizeInventory()) {
             int slot;
             ItemStack stack;
-            if ((stack = InvManager.f.field_71439_g.field_71071_by.func_70301_a(slot = this.machineTrashSlot++)) == null) continue;
-            this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.field_71439_g.field_71071_by);
+            if ((stack = InvManager.f.thePlayer.inventory.getStackInSlot(slot = this.machineTrashSlot++)) == null) continue;
+            this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.thePlayer.inventory);
             int acted = this.stepArmor();
             if (acted != 0) {
                 return acted;
@@ -353,8 +358,8 @@ implements EventSubscriber {
             if ((float)this.machineThrown >= maxTrashThrows.L()) {
                 return 2;
 }
-            this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.field_71439_g.field_71071_by);
-            if (slot == InvManager.f.field_71439_g.field_71071_by.field_70461_c) {
+            this.machineBest = ItemUtil.O(0L, (IInventory)InvManager.f.thePlayer.inventory);
+            if (slot == InvManager.f.thePlayer.inventory.currentItem) {
                 ++this.machineTrashSlot;
                 continue;
 }
@@ -370,77 +375,77 @@ implements EventSubscriber {
      */
     private int trashAction(ItemStack var28, int var27) {
         char var7 = '\uab5c';
-        if (var28.func_77973_b() instanceof ItemArmor && ((ItemArmor)var28.func_77973_b()).field_77881_a == 0) {
+        if (var28.getItem() instanceof ItemArmor && ((ItemArmor)var28.getItem()).armorType == 0) {
             if (ItemUtil.M(var28) > ItemUtil.M((ItemStack)((Pair)this.machineBest.get(0)).a())) return 0;
             if (var27 == 39) return 0;
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if (var28.func_77973_b() instanceof ItemArmor && ((ItemArmor)var28.func_77973_b()).field_77881_a == 1) {
+        if (var28.getItem() instanceof ItemArmor && ((ItemArmor)var28.getItem()).armorType == 1) {
             if (ItemUtil.M(var28) > ItemUtil.M((ItemStack)((Pair)this.machineBest.get(1)).a())) return 0;
             if (var27 == 38) return 0;
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if (var28.func_77973_b() instanceof ItemArmor && ((ItemArmor)var28.func_77973_b()).field_77881_a == 2) {
+        if (var28.getItem() instanceof ItemArmor && ((ItemArmor)var28.getItem()).armorType == 2) {
             if (ItemUtil.M(var28) > ItemUtil.M((ItemStack)((Pair)this.machineBest.get(2)).a())) return 0;
             if (var27 == 37) return 0;
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if (var28.func_77973_b() instanceof ItemArmor && ((ItemArmor)var28.func_77973_b()).field_77881_a == 3) {
+        if (var28.getItem() instanceof ItemArmor && ((ItemArmor)var28.getItem()).armorType == 3) {
             if (ItemUtil.M(var28) > ItemUtil.M((ItemStack)((Pair)this.machineBest.get(3)).a())) return 0;
             if (var27 == 36) return 0;
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if (var28.func_77973_b() instanceof ItemSword && (Integer)ItemUtil.q(45121668772412L, (IInventory)InvManager.f.field_71439_g.field_71071_by).p() != var27) {
+        if (var28.getItem() instanceof ItemSword && (Integer)ItemUtil.q(45121668772412L, (IInventory)InvManager.f.thePlayer.inventory).p() != var27) {
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if ((var28.func_77973_b() instanceof ItemSnowball || var28.func_77973_b() instanceof ItemEgg || var28.func_77973_b() instanceof ItemFishingRod || var28.func_77973_b() instanceof ItemEnderPearl) && projectilesIsTrash.c()) {
+        if ((var28.getItem() instanceof ItemSnowball || var28.getItem() instanceof ItemEgg || var28.getItem() instanceof ItemFishingRod || var28.getItem() instanceof ItemEnderPearl) && projectilesIsTrash.c()) {
             ItemUtil.c(8537, 12546, var7, var27);
             ++this.machineThrown;
             return 1;
 }
-        if (!(var28.func_77973_b() instanceof ItemBow && ItemUtil.O((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != null && ItemUtil.O((IInventory)InvManager.f.field_71439_g.field_71071_by).p() != var27 || bowIsTrash.c() && (var28.func_77973_b() instanceof ItemBow || var28.func_77973_b() == Items.field_151032_g))) {
-            if (!(var28.func_77973_b() instanceof ItemFood) || (!normalFoodIsTrash.c() || var28.func_77973_b() == Items.field_151153_ao) && ItemUtil.k((IInventory)InvManager.f.field_71439_g.field_71071_by).p() == var27) {
-                if (potionIsTrash.c() && var28.func_77973_b() instanceof ItemPotion) {
+        if (!(var28.getItem() instanceof ItemBow && ItemUtil.O((IInventory)InvManager.f.thePlayer.inventory).p() != null && ItemUtil.O((IInventory)InvManager.f.thePlayer.inventory).p() != var27 || bowIsTrash.c() && (var28.getItem() instanceof ItemBow || var28.getItem() == Items.arrow))) {
+            if (!(var28.getItem() instanceof ItemFood) || (!normalFoodIsTrash.c() || var28.getItem() == Items.golden_apple) && ItemUtil.k((IInventory)InvManager.f.thePlayer.inventory).p() == var27) {
+                if (potionIsTrash.c() && var28.getItem() instanceof ItemPotion) {
                     ItemUtil.c(8537, 12546, var7, var27);
                     ++this.machineThrown;
                     return 1;
 }
-                if (var28.func_77973_b() instanceof ItemTool) {
+                if (var28.getItem() instanceof ItemTool) {
                     if (toolsAreTrash.c()) {
                         ItemUtil.c(8537, 12546, var7, var27);
                         ++this.machineThrown;
                         return 1;
 }
-                    if (var28.func_77973_b() instanceof ItemPickaxe) {
-                        if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.field_71439_g.field_71071_by, (short)0).get(0)).p() == var27) return 0;
+                    if (var28.getItem() instanceof ItemPickaxe) {
+                        if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.thePlayer.inventory, (short)0).get(0)).p() == var27) return 0;
                         ItemUtil.c(8537, 12546, var7, var27);
                         ++this.machineThrown;
                         return 1;
 }
-                    if (var28.func_77973_b() instanceof ItemAxe) {
-                        if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.field_71439_g.field_71071_by, (short)0).get(1)).p() == var27) return 0;
+                    if (var28.getItem() instanceof ItemAxe) {
+                        if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.thePlayer.inventory, (short)0).get(1)).p() == var27) return 0;
                         ItemUtil.c(8537, 12546, var7, var27);
                         ++this.machineThrown;
                         return 1;
 }
-                    if (!(var28.func_77973_b() instanceof ItemSpade)) return 0;
-                    if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.field_71439_g.field_71071_by, (short)0).get(2)).p() == var27) return 0;
+                    if (!(var28.getItem() instanceof ItemSpade)) return 0;
+                    if ((Integer)((Pair)ItemUtil.D((IInventory)InvManager.f.thePlayer.inventory, (short)0).get(2)).p() == var27) return 0;
                     ItemUtil.c(8537, 12546, var7, var27);
                     ++this.machineThrown;
                     return 1;
 }
-                if (var28.func_77973_b() instanceof ItemShears) {
-                    if (ItemUtil.W((IInventory)InvManager.f.field_71439_g.field_71071_by).p() == var27) return 0;
+                if (var28.getItem() instanceof ItemShears) {
+                    if (ItemUtil.W((IInventory)InvManager.f.thePlayer.inventory).p() == var27) return 0;
                     ItemUtil.c(8537, 12546, var7, var27);
                     ++this.machineThrown;
                     return 1;
@@ -456,22 +461,22 @@ implements EventSubscriber {
                     ++this.machineThrown;
                     return 0;
 }
-                if (var28.func_77973_b() != Items.field_151032_g) {
+                if (var28.getItem() != Items.arrow) {
                     if (onlyItemsConfiguredAreTrash.c()) return 0;
-                    if (var28.func_77973_b() instanceof ItemPotion) return 0;
-                    if (var28.func_77973_b() == Items.field_151032_g) return 0;
-                    if (var28.func_77973_b() instanceof ItemTool) return 0;
-                    if (var28.func_77973_b() instanceof ItemShears) return 0;
-                    if (var28.func_77973_b() instanceof ItemSword) return 0;
-                    if (var28.func_77973_b() instanceof ItemFood) return 0;
-                    if (var28.func_77973_b() instanceof ItemBow) return 0;
-                    if (var28.func_77973_b() instanceof ItemArmor) return 0;
+                    if (var28.getItem() instanceof ItemPotion) return 0;
+                    if (var28.getItem() == Items.arrow) return 0;
+                    if (var28.getItem() instanceof ItemTool) return 0;
+                    if (var28.getItem() instanceof ItemShears) return 0;
+                    if (var28.getItem() instanceof ItemSword) return 0;
+                    if (var28.getItem() instanceof ItemFood) return 0;
+                    if (var28.getItem() instanceof ItemBow) return 0;
+                    if (var28.getItem() instanceof ItemArmor) return 0;
                     if (ItemUtil.u(var28)) return 0;
-                    if (var28.func_77973_b() instanceof ItemSnowball) return 0;
-                    if (var28.func_77973_b() instanceof ItemEgg) return 0;
-                    if (var28.func_77973_b() instanceof ItemFishingRod) return 0;
-                    if (var28.func_77973_b() instanceof ItemEnderPearl) return 0;
-                    if (var28.func_77973_b() instanceof ItemFireball) return 0;
+                    if (var28.getItem() instanceof ItemSnowball) return 0;
+                    if (var28.getItem() instanceof ItemEgg) return 0;
+                    if (var28.getItem() instanceof ItemFishingRod) return 0;
+                    if (var28.getItem() instanceof ItemEnderPearl) return 0;
+                    if (var28.getItem() instanceof ItemFireball) return 0;
                     ItemUtil.c(8537, 12546, var7, var27);
                     ++this.machineThrown;
                     return 1;
@@ -496,18 +501,18 @@ implements EventSubscriber {
 }
     public void onPreUpdate(PreUpdateEvent var1, long var2) {
         this.pumpMachine();
-        if (!(InvManager.f.field_71462_r instanceof GuiInventory)) {
+        if (!(InvManager.f.currentScreen instanceof GuiInventory)) {
             this.L = false;
 }
-        if (InvManager.f.field_71462_r == null && mode.R("SILENT") && silentMode.R("KEY") && KeyBindUtil.V(Keyboard.getKeyIndex((String)silentKey.X().toUpperCase()), 64165991731362L)) {
+        if (InvManager.f.currentScreen == null && mode.R("SILENT") && silentMode.R("KEY") && KeyBindUtil.V(Keyboard.getKeyIndex((String)silentKey.X().toUpperCase()), 64165991731362L)) {
             PacketManager.b(new C16PacketClientStatus(C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT));
-            f.func_147108_a((GuiScreen)new GuiInventory((EntityPlayer)InvManager.f.field_71439_g));
+            f.displayGuiScreen((GuiScreen)new GuiInventory((EntityPlayer)InvManager.f.thePlayer));
             this.s(23305, (short)32017, 51151);
         } else {
             switch (mode.Y()) {
                 case "SILENT": {
                     if (!silentMode.R("OPEN_INV")) break;
-                    if (InvManager.f.field_71462_r instanceof GuiInventory) {
+                    if (InvManager.f.currentScreen instanceof GuiInventory) {
                         this.s(23305, (short)32017, 51151);
                         break;
 }
@@ -515,7 +520,7 @@ implements EventSubscriber {
                     break;
 }
                 case "OPEN_INV": {
-                    if (InvManager.f.field_71462_r instanceof GuiInventory) {
+                    if (InvManager.f.currentScreen instanceof GuiInventory) {
                         this.s(23305, (short)32017, 51151);
                         break;
 }
@@ -539,14 +544,14 @@ implements EventSubscriber {
         long var5 = ((long)var1 << 48 | (long)var2 << 32 >>> 16 | (long)var3 << 48 >>> 48) ^ R;
         int var7 = (int)((var5 ^ 0x5AAC2C024CF6L) >>> 32);
         long var8 = (var5 ^ 0x5AAC2C024CF6L) << 32 >>> 32;
-        if (InvManager.f.field_71462_r instanceof GuiInventory && mode.R("SILENT") && this.J) {
+        if (InvManager.f.currentScreen instanceof GuiInventory && mode.R("SILENT") && this.J) {
             var4.I(var7, var8);
 }
 }
     public void onPickUpItem(PickUpItemEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (var1.F instanceof EntityPlayerSP && var1.P != null && mode.R("SILENT") && silentMode.R("PICK_ITEM")) {
             PacketManager.b(new C16PacketClientStatus(C16PacketClientStatus.EnumState.OPEN_INVENTORY_ACHIEVEMENT));
-            f.func_147108_a((GuiScreen)new GuiInventory((EntityPlayer)InvManager.f.field_71439_g));
+            f.displayGuiScreen((GuiScreen)new GuiInventory((EntityPlayer)InvManager.f.thePlayer));
             this.s(23305, (short)32017, 51151);
 }
 }
@@ -559,7 +564,7 @@ implements EventSubscriber {
         this.L = false;
 }
     private boolean m(long var1) {
-        if (InvManager.f.field_71462_r instanceof GuiInventory && this.o() && !KeyBindUtil.V(1, 64165991731362L)) {
+        if (InvManager.f.currentScreen instanceof GuiInventory && this.o() && !KeyBindUtil.V(1, 64165991731362L)) {
             return false;
 }
         this.J = false;

@@ -15,6 +15,11 @@ import Abyss.util.render.RenderUtil;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class RavenColorRow
 extends AbstractRavenSettingRow {

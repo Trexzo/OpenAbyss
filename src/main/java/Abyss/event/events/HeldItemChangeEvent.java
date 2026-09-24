@@ -9,7 +9,7 @@ public class HeldItemChangeEvent
 extends Event {
     private final int i;
     private int t;
-    private static final long public void A(int var1) {
+    public void A(int var1) {
         this.t = var1;
 }
     public int j() {

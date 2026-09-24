@@ -19,7 +19,7 @@ import Abyss.event.invoker.TeamInvisiblePreRenderModelBipedInvoker;
 import Abyss.module.impl.visual.TeamInvisible;
 
 public final class TeamInvisibleBinder {
-    private static final long private TeamInvisibleBinder() {
+    private TeamInvisibleBinder() {
 }
     public static void y(EventBus var2, TeamInvisible var3) {
         var2.R(var3, PreRenderEntityEvent.class, 3, new TeamInvisiblePreRenderEntityInvoker(var3));

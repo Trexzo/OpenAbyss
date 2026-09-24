@@ -26,6 +26,10 @@ import net.minecraft.util.MovingObjectPosition;
 public class AutoClicker
 extends Module
 implements EventSubscriber {
+    private static long a;
+    static {
+        a = 116760755216853L;
+    }
     private static Map g;
     private static long[] c;
     public static boolean I;
@@ -70,29 +74,29 @@ implements EventSubscriber {
         if (this.e > 0L) {
             this.e -= 50L;
 }
-        if (KillAura.a || !KeyBindUtil.V(AutoClicker.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L) || AutoClicker.f.field_71462_r != null) {
+        if (KillAura.a || !KeyBindUtil.V(AutoClicker.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L) || AutoClicker.f.currentScreen != null) {
             I = false;
             this.J = false;
-        } else if (breakBlocks.c() && AutoClicker.f.field_71476_x != null && AutoClicker.f.field_71476_x.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK && AutoClicker.f.field_71476_x.field_72308_g == null) {
-            KeyBindUtil.A(82009306480869L, AutoClicker.f.field_71474_y.field_74312_F.func_151463_i(), true);
+        } else if (breakBlocks.c() && AutoClicker.f.objectMouseOver != null && AutoClicker.f.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && AutoClicker.f.objectMouseOver.entityHit == null) {
+            KeyBindUtil.A(82009306480869L, AutoClicker.f.gameSettings.keyBindAttack.getKeyCode(), true);
             this.J = false;
             I = false;
         } else {
             I = true;
-            if (!(sag.c() && KeyBindUtil.V(AutoClicker.f.field_71474_y.field_74313_G.func_151463_i(), 64165991731362L) && AutoClicker.f.field_71439_g.func_70694_bm() != null && AutoClicker.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSword)) {
+            if (!(sag.c() && KeyBindUtil.V(AutoClicker.f.gameSettings.keyBindUseItem.getKeyCode(), 64165991731362L) && AutoClicker.f.thePlayer.getHeldItem() != null && AutoClicker.f.thePlayer.getHeldItem().getItem() instanceof ItemSword)) {
                 this.J = false;
                 if (this.o <= 0L) {
                     this.o += MathUtil.e(mincps.L(), maxcps.L());
-                    KeyBindUtil.A(82009306480869L, AutoClicker.f.field_71474_y.field_74312_F.func_151463_i(), false);
-                    KeyBindUtil.T(27332, (short)-14423, AutoClicker.f.field_71474_y.field_74312_F.func_151463_i(), (short)-22494);
+                    KeyBindUtil.A(82009306480869L, AutoClicker.f.gameSettings.keyBindAttack.getKeyCode(), false);
+                    KeyBindUtil.T(27332, (short)-14423, AutoClicker.f.gameSettings.keyBindAttack.getKeyCode(), (short)-22494);
 }
             } else if (!this.J && this.M <= 0L) {
-                KeyBindUtil.T(27332, (short)-14423, AutoClicker.f.field_71474_y.field_74312_F.func_151463_i(), (short)-22494);
-                KeyBindUtil.A(82009306480869L, AutoClicker.f.field_71474_y.field_74313_G.func_151463_i(), true);
+                KeyBindUtil.T(27332, (short)-14423, AutoClicker.f.gameSettings.keyBindAttack.getKeyCode(), (short)-22494);
+                KeyBindUtil.A(82009306480869L, AutoClicker.f.gameSettings.keyBindUseItem.getKeyCode(), true);
                 this.J = true;
                 this.e += (long)sagBlockingTicks.L() * 50L;
             } else if (this.J && this.e <= 0L) {
-                KeyBindUtil.A(82009306480869L, AutoClicker.f.field_71474_y.field_74313_G.func_151463_i(), false);
+                KeyBindUtil.A(82009306480869L, AutoClicker.f.gameSettings.keyBindUseItem.getKeyCode(), false);
                 this.J = false;
                 this.M += (long)sagUnblockDuration.L() * 50L;
 }

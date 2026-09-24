@@ -25,6 +25,8 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class HypixelGameState
 implements EventSubscriber {
+    private static long a = 84332417681851L;
+
     private static boolean E;
     private static boolean e;
     private static HypixelScoreboardParser h;

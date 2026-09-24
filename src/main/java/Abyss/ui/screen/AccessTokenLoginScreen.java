@@ -37,6 +37,16 @@ import org.lwjgl.input.Keyboard;
 
 public class AccessTokenLoginScreen
 extends GuiScreen {
+    private static Map h;
+
+    private static String[] c;
+
+    private static String[] b;
+
+    private static Map d;
+
+    private static long a;
+
     private static long j;
     
     private static Pattern R;
@@ -55,7 +65,7 @@ extends GuiScreen {
     private CompletableFuture<Void> f;
     
 
-    public void func_146281_b() {
+    public void onGuiClosed() {
         Keyboard.enableRepeatEvents((boolean)false);
         if (this.f != null && !this.f.isDone()) {
             this.f.cancel(true);
@@ -67,34 +77,34 @@ extends GuiScreen {
     private void W(List<CompletableFuture<Void>> var1, List<String> var2, List<String> var3) {
         this.f = ((CompletableFuture)CompletableFuture.allOf(var1.toArray(new CompletableFuture[0])).thenRunAsync(() -> {
             AltManager.O(101554584226764L);
-            this.field_146297_k.func_152344_a(() -> {
+            this.mc.addScheduledTask(() -> {
                 long var5x = 106134966044692L;
                 String var10 = !var3.isEmpty() && var2.isEmpty() ? String.format("\u00a7aSuccessfully logged in %d account(s)!\u00a7r", var3.size()) : (var3.isEmpty() && !var2.isEmpty() ? String.format("\u00a7cFailed to log in %d account(s).\u00a7r", var2.size()) : String.format("\u00a7aLogged in %d, \u00a7cfailed %d account(s).\u00a7r", var3.size(), var2.size()));
-                this.field_146297_k.func_147108_a((GuiScreen)new AccountManagerScreen(var5x, this.W, new TimedStatusMessage(ChatFormatting.y(var10), j)));
+                this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(var5x, this.W, new TimedStatusMessage(ChatFormatting.y(var10), j)));
                 if (!var2.isEmpty()) {
                     var2.forEach(System.err::println);
 }
             });
         }, this.T)).exceptionally(var1x -> {
-            this.field_146297_k.func_152344_a(() -> {
+            this.mc.addScheduledTask(() -> {
                 this.D = "\u00a7cAn unexpected error occurred during batch processing.\u00a7r";
-                this.E.field_146124_l = true;
+                this.E.enabled = true;
             });
             return null;
         });
 }
-    public void func_73866_w_() {
+    public void initGui() {
         Keyboard.enableRepeatEvents((boolean)true);
-        this.field_146292_n.clear();
-        this.E = new GuiButton(0, this.field_146294_l / 2 - 100, this.field_146295_m / 2 + 30, 200, 20, "Login Account(s)");
-        this.field_146292_n.add(this.E);
-        this.C = new GuiButton(1, this.field_146294_l / 2 - 100, this.field_146295_m / 2 + 55, 200, 20, "Cancel");
-        this.field_146292_n.add(this.C);
-        this.K = new GuiTextWidget(2, this.field_146289_q, this.field_146294_l / 2 - 100, this.field_146295_m / 2 - 60, 200, 80);
+        this.buttonList.clear();
+        this.E = new GuiButton(0, this.width / 2 - 100, this.height / 2 + 30, 200, 20, "Login Account(s)");
+        this.buttonList.add(this.E);
+        this.C = new GuiButton(1, this.width / 2 - 100, this.height / 2 + 55, 200, 20, "Cancel");
+        this.buttonList.add(this.C);
+        this.K = new GuiTextWidget(2, this.fontRendererObj, this.width / 2 - 100, this.height / 2 - 60, 200, 80);
         this.K.V(50000);
         this.K.r(true);
 }
-    public void func_73876_c() {
+    public void updateScreen() {
         this.K.o();
 }
     public AccessTokenLoginScreen(GuiScreen var1, long var2) {
@@ -103,9 +113,9 @@ extends GuiScreen {
     private void q(String var1, List var2, List var5, List var6) {
         if (!(var1 = var1.trim()).isEmpty() && var1.length() >= 20) {
             String var7 = var1;
-            CompletionStage var8 = ((CompletableFuture)AuthService.i(var7, this.T).thenAcceptAsync(var2x -> {
-                String var3x = var2x.func_111285_a();
-                String var4 = var2x.func_148255_b();
+            CompletableFuture<Void> var8 = AuthService.i(var7, this.T).thenAcceptAsync((Session var2x) -> {
+                String var3x = var2x.getUsername();
+                String var4 = var2x.getPlayerID();
                 Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var7)).findFirst();
                 if (var5x.isPresent()) {
                     Account var6x = var5x.get();
@@ -115,7 +125,7 @@ extends GuiScreen {
                     AltManager.Q.add(new Account(var3x, var7, var4));
 }
                 var6.add(var3x);
-            }, (Executor)this.T)).exceptionally(var2x -> {
+            }, this.T).exceptionally((Throwable var2x) -> {
                 long var3x = a ^ 0xCCF58EFA7BDL;
                 String var5x = "Login failed!";
                 if (var2x != null) {
@@ -129,16 +139,16 @@ extends GuiScreen {
             var2.add(var8);
 }
 }
-    protected void func_73864_a(int var1, int var2, int var3) {
-        super.func_73864_a(var1, var2, var3);
+    protected void mouseClicked(int var1, int var2, int var3) throws java.io.IOException {
+        super.mouseClicked(var1, var2, var3);
         this.K.D(var1, var2, var3);
 }
-    public void func_73863_a(int var1, int var2, float var3) {
-        this.func_146276_q_();
-        this.func_73732_a(this.field_146289_q, "\u00a7fLogin with Access Token(s)", this.field_146294_l / 2, this.field_146295_m / 2 - 90, 0xFFFFFF);
-        this.func_73732_a(this.field_146289_q, this.D, this.field_146294_l / 2, this.field_146295_m / 2 - 75, 0xAAAAAA);
+    public void drawScreen(int var1, int var2, float var3) {
+        this.drawDefaultBackground();
+        this.drawCenteredString(this.fontRendererObj, "\u00a7fLogin with Access Token(s)", this.width / 2, this.height / 2 - 90, 0xFFFFFF);
+        this.drawCenteredString(this.fontRendererObj, this.D, this.width / 2, this.height / 2 - 75, 0xAAAAAA);
         this.K.h();
-        super.func_73863_a(var1, var2, var3);
+        super.drawScreen(var1, var2, var3);
 }
     private void N(String var1, List var4, List var5, List var6) {
         if (!var1.isEmpty()) {
@@ -178,9 +188,9 @@ extends GuiScreen {
                 String var18 = var8;
                 String var13 = var9;
                 CompletableFuture<Session> var14 = !StringUtils.isBlank(var18) && !StringUtils.isBlank(var13) ? AuthService.y(var17, var18, var13, this.T) : AuthService.i(var17, this.T);
-                CompletionStage var15 = ((CompletableFuture)var14.thenAcceptAsync(var2x -> {
-                    String var3 = var2x.func_111285_a();
-                    String var4x = var2x.func_148255_b();
+                CompletableFuture<Void> var15 = var14.thenAcceptAsync((Session var2x) -> {
+                    String var3 = var2x.getUsername();
+                    String var4x = var2x.getPlayerID();
                     Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var17)).findFirst();
                     if (var5x.isPresent()) {
                         Account var6x = var5x.get();
@@ -190,7 +200,7 @@ extends GuiScreen {
                         AltManager.Q.add(new Account(var3, var17, var4x));
 }
                     var6.add(var3);
-                }, (Executor)this.T)).exceptionally(var3 -> {
+                }, this.T).exceptionally((Throwable var3) -> {
                     long var4x = a ^ 0x5B480AF9E4D1L;
                     String var6x = "Login failed!";
                     if (var3 != null) {
@@ -206,9 +216,9 @@ extends GuiScreen {
 }
 }
 }
-    protected void func_146284_a(GuiButton var1) {
-        if (var1.field_146124_l) {
-            switch (var1.field_146127_k) {
+    protected void actionPerformed(GuiButton var1) {
+        if (var1.enabled) {
+            switch (var1.id) {
                 case 0: {
                     String var6 = this.K.z().trim();
                     if (!var6.isEmpty()) {
@@ -219,18 +229,18 @@ extends GuiScreen {
                     break;
 }
                 case 1: {
-                    this.field_146297_k.func_147108_a(this.W);
+                    this.mc.displayGuiScreen(this.W);
 }
 }
 }
 }
-    protected void func_73869_a(char var1, int var2) {
+    protected void keyTyped(char var1, int var2) {
         if (var2 == 1) {
-            this.func_146284_a(this.C);
+            this.actionPerformed(this.C);
         } else {
             this.K.W(131295994842818L, var1, var2);
-            if (var2 == 28 && AccessTokenLoginScreen.func_146271_m() && !this.K.z().trim().isEmpty()) {
-                this.func_146284_a(this.E);
+            if (var2 == 28 && AccessTokenLoginScreen.isCtrlKeyDown() && !this.K.z().trim().isEmpty()) {
+                this.actionPerformed(this.E);
 }
 }
 }
@@ -239,7 +249,7 @@ extends GuiScreen {
             this.T = Executors.newFixedThreadPool(5);
 }
         this.D = "\u00a77Processing accounts...\u00a7r";
-        this.E.field_146124_l = false;
+        this.E.enabled = false;
         ArrayList<CompletableFuture<Void>> var8 = new ArrayList<CompletableFuture<Void>>();
         ArrayList<String> var9 = new ArrayList<String>();
         ArrayList<String> var10 = new ArrayList<String>();
@@ -314,6 +324,7 @@ extends GuiScreen {
 }
 }
     static {
+        a = 110395747778664L;
         i = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
         Z = Pattern.compile("(?:(?:.*?[:|\\s])?(?:Accesstoken|accesstoken|Mctoken|mctoken):([a-zA-Z0-9\\-_\\.]+))|([a-zA-Z0-9\\-_\\.]+)(?:\\s*\\|McName:([a-zA-Z0-9_]+))?(?:\\s*\\|([a-zA-Z0-9_]+))?(?:\\s*\\|([0-9a-fA-F-]{36}))?");
         X = Pattern.compile("(?:.*?)?(?:Accesstoken|accesstoken|Mctoken|mctoken):([a-zA-Z0-9\\-_\\.]+)(?:\\s*\\|McName:([a-zA-Z0-9_]+))?(?:\\s*\\|([a-zA-Z0-9_]+))?(?:\\s*\\|([0-9a-fA-F-]{36}))?|([a-zA-Z0-9\\-_\\.]+)\\|([a-zA-Z0-9_]+)\\|?([0-9a-fA-F-]{36})?", 32);

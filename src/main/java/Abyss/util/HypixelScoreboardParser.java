@@ -94,7 +94,7 @@ public class HypixelScoreboardParser {
         this.V = false;
         this.v = false;
         this.X = false;
-        if (MinecraftRef.c((byte)((byte)var11), (long)0L).field_71441_e != null && (var14 = MinecraftRef.c((byte)((byte)var11), (long)0L).field_71441_e.func_96441_U()) != null) {
+        if (MinecraftRef.c((byte)((byte)var11), (long)0L).theWorld != null && (var14 = MinecraftRef.c((byte)((byte)var11), (long)0L).theWorld.getScoreboard()) != null) {
             String var15 = ScoreboardUtil.w(var14);
             String var16 = ScoreboardUtil.r(var15);
             if (var16 != null && var16.contains("MEGA WALLS")) {

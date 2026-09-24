@@ -259,9 +259,6 @@ implements FlatStylingSupport.StyleableUI {
     extends BasicTableHeaderUI.MouseInputHandler {
         Cursor oldCursor;
 
-        protected FlatMouseInputHandler() {
-            super(FlatTableHeaderUI.this);
-}
         @Override
         public void mouseMoved(MouseEvent e) {
             int column;

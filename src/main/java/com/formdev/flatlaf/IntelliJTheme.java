@@ -91,7 +91,6 @@ public class IntelliJTheme {
      */
     private void applyProperties(UIDefaults defaults) {
         int rowHeight;
-        void var6_11;
         if (this.ui == null) {
             return;
 }
@@ -107,7 +106,7 @@ public class IntelliJTheme {
 }
         this.applyColorPalette(defaults);
         this.applyCheckBoxColors(defaults);
-        for (Map.Entry<String, Object> entry : uiKeyCopying.entrySet()) {
+        for (Map.Entry<String, String> entry : uiKeyCopying.entrySet()) {
             Object value = defaults.get(entry.getValue());
             if (value == null) continue;
             defaults.put(entry.getKey(), value);
@@ -118,15 +117,15 @@ public class IntelliJTheme {
         this.copyIfNotSet(defaults, "Button.focusedBorderColor", "Component.focusedBorderColor", uiKeys);
         defaults.put("Button.hoverBorderColor", defaults.get("Button.focusedBorderColor"));
         defaults.put("HelpButton.hoverBorderColor", defaults.get("Button.focusedBorderColor"));
-        Object object = defaults.get("Button.startBackground");
+        Object helpButtonBackground = defaults.get("Button.startBackground");
         Object helpButtonBorderColor = defaults.get("Button.startBorderColor");
-        if (object == null) {
-            Object object2 = defaults.get("Button.background");
+        if (helpButtonBackground == null) {
+            helpButtonBackground = defaults.get("Button.background");
 }
         if (helpButtonBorderColor == null) {
             helpButtonBorderColor = defaults.get("Button.borderColor");
 }
-        defaults.put("HelpButton.background", (Object)var6_11);
+        defaults.put("HelpButton.background", helpButtonBackground);
         defaults.put("HelpButton.borderColor", helpButtonBorderColor);
         defaults.put("HelpButton.disabledBackground", panelBackground);
         defaults.put("HelpButton.disabledBorderColor", defaults.get("Button.disabledBorderColor"));
@@ -238,17 +237,16 @@ public class IntelliJTheme {
 }
     private void apply(String key, Object value, UIDefaults defaults, ArrayList<Object> defaultsKeysCache, Set<String> uiKeys) {
         if (value instanceof Map) {
-            Map map = (Map)value;
+            Map<String, Object> map = (Map<String, Object>)value;
             if (map.containsKey("os.default") || map.containsKey("os.windows") || map.containsKey("os.mac") || map.containsKey("os.linux")) {
-                String osKey;
-                String string = SystemInfo.isWindows ? "os.windows" : (SystemInfo.isMacOS ? "os.mac" : (osKey = SystemInfo.isLinux ? "os.linux" : null));
+                String osKey = SystemInfo.isWindows ? "os.windows" : (SystemInfo.isMacOS ? "os.mac" : (SystemInfo.isLinux ? "os.linux" : null));
                 if (osKey != null && map.containsKey(osKey)) {
                     this.apply(key, map.get(osKey), defaults, defaultsKeysCache, uiKeys);
                 } else if (map.containsKey("os.default")) {
                     this.apply(key, map.get("os.default"), defaults, defaultsKeysCache, uiKeys);
 }
             } else {
-                for (Map.Entry e : map.entrySet()) {
+                for (Map.Entry<String, Object> e : map.entrySet()) {
                     this.apply(key + '.' + (String)e.getKey(), e.getValue(), defaults, defaultsKeysCache, uiKeys);
 }
 }
@@ -326,8 +324,8 @@ public class IntelliJTheme {
         if (!(palette instanceof Map)) {
             return;
 }
-        Map colorPalette = (Map)palette;
-        for (Map.Entry e : colorPalette.entrySet()) {
+        Map<String, Object> colorPalette = (Map<String, Object>)palette;
+        for (Map.Entry<String, Object> e : colorPalette.entrySet()) {
             ColorUIResource color;
             String key = (String)e.getKey();
             Object value = e.getValue();
@@ -360,8 +358,8 @@ public class IntelliJTheme {
             return;
 }
         boolean checkboxModified = false;
-        Map colorPalette = (Map)palette;
-        for (Map.Entry e : colorPalette.entrySet()) {
+        Map<String, Object> colorPalette = (Map<String, Object>)palette;
+        for (Map.Entry<String, Object> e : colorPalette.entrySet()) {
             ColorUIResource color;
             String newKey;
             String key = (String)e.getKey();

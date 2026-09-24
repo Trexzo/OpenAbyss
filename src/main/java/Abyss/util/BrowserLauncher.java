@@ -8,7 +8,7 @@ import java.awt.datatransfer.StringSelection;
 import java.net.URI;
 
 public class BrowserLauncher {
-    private static long public static void Y(String var0) {
+    public static void Y(String var0) {
         try {
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(var0), null);
 }

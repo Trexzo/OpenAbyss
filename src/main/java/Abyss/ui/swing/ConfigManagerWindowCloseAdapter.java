@@ -9,7 +9,7 @@ import java.awt.event.WindowEvent;
 
 class ConfigManagerWindowCloseAdapter
 extends WindowAdapter {
-    private static final long final ConfigManagerWindow W;
+    private final ConfigManagerWindow W;
 
     @Override
     public void windowClosing(WindowEvent var1) {

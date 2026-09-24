@@ -13,7 +13,7 @@ import net.minecraft.util.BlockPos;
 
 public class AddCollisionBoxesToListEvent
 extends Event {
-    private static final long public final BlockPos E;
+    public final BlockPos E;
     public final Block B;
 
     public AddCollisionBoxesToListEvent(Block var1, BlockPos var2) {

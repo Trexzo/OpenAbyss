@@ -68,7 +68,7 @@ implements RavenElement {
             return new RavenSliderRow((NumberSetting)var0, 27408400409158L, var1, var4);
 }
         if (var0 instanceof PercentageSetting) {
-            return new RavenSliderRow(0, (PercentageSetting)var0, var1, '\u7709', var4, 338882696);
+            return new RavenSliderRow((short)0, (PercentageSetting)var0, var1, '\u7709', var4, 338882696);
 }
         if (var0 instanceof BooleanSetting) {
             return new RavenCheckBoxRow(var1.R, (BooleanSetting)var0, var1, var4);

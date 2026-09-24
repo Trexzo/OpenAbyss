@@ -15,33 +15,33 @@ import net.minecraft.client.settings.GameSettings;
 import net.minecraft.util.MovementInput;
 
 public class MovementInputHooks {
-    private static final long public static void onUpdatePlayerMoveState(MovementInput var0, GameSettings var1, CallbackInfo var2) {
-        var0.field_78902_a = 0.0f;
-        var0.field_78900_b = 0.0f;
-        if (var1.field_74351_w.func_151470_d()) {
-            var0.field_78900_b += 1.0f;
+    public static void onUpdatePlayerMoveState(MovementInput var0, GameSettings var1, CallbackInfo var2) {
+        var0.moveStrafe = 0.0f;
+        var0.moveForward = 0.0f;
+        if (var1.keyBindForward.isKeyDown()) {
+            var0.moveForward += 1.0f;
 }
-        if (var1.field_74368_y.func_151470_d()) {
-            var0.field_78900_b -= 1.0f;
+        if (var1.keyBindBack.isKeyDown()) {
+            var0.moveForward -= 1.0f;
 }
-        if (var1.field_74370_x.func_151470_d()) {
-            var0.field_78902_a += 1.0f;
+        if (var1.keyBindLeft.isKeyDown()) {
+            var0.moveStrafe += 1.0f;
 }
-        if (var1.field_74366_z.func_151470_d()) {
-            var0.field_78902_a -= 1.0f;
+        if (var1.keyBindRight.isKeyDown()) {
+            var0.moveStrafe -= 1.0f;
 }
-        var0.field_78901_c = var1.field_74314_A.func_151470_d();
-        var0.field_78899_d = var1.field_74311_E.func_151470_d();
-        MoveInputEvent var11 = new MoveInputEvent(var0.field_78900_b, var0.field_78902_a, var0.field_78901_c, var0.field_78899_d, 0.3);
+        var0.jump = var1.keyBindJump.isKeyDown();
+        var0.sneak = var1.keyBindSneak.isKeyDown();
+        MoveInputEvent var11 = new MoveInputEvent(var0.moveForward, var0.moveStrafe, var0.jump, var0.sneak, 0.3);
         AbyssClient.w.e(var11, 18670087776179L);
         double var12 = var11.r();
-        var0.field_78900_b = var11.t();
-        var0.field_78902_a = var11.R();
-        var0.field_78901_c = var11.d();
-        var0.field_78899_d = var11.b();
-        if (var0.field_78899_d) {
-            var0.field_78902_a *= (float)var12;
-            var0.field_78900_b *= (float)var12;
+        var0.moveForward = var11.t();
+        var0.moveStrafe = var11.R();
+        var0.jump = var11.d();
+        var0.sneak = var11.b();
+        if (var0.sneak) {
+            var0.moveStrafe *= (float)var12;
+            var0.moveForward *= (float)var12;
 }
         AbyssClient.w.e(new PostMoveInputEvent(11185, 1025946335), 18670087776179L);
         var2.cancel();

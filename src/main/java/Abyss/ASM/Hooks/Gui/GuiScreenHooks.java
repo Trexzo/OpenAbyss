@@ -54,7 +54,7 @@ public class GuiScreenHooks {
             if (Keyboard.getEventKeyState() || var4 >= (int)b && var5 == 0) {
                 GuiScreenAccessor.J(var0, Keyboard.getEventCharacter(), Keyboard.getEventKey());
 }
-            c.func_152348_aa();
+            c.dispatchKeypresses();
             var1.cancel();
 }
 }

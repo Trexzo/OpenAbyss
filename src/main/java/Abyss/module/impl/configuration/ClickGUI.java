@@ -20,6 +20,8 @@ import net.minecraft.client.gui.GuiScreen;
 
 public class ClickGUI
 extends Module {
+    private static long a;
+
     private static final int DEFAULT_BIND = 54;
     public static NumberSetting scale;
     public static VestigeClickGuiScreen B;
@@ -27,7 +29,7 @@ extends Module {
     public static RavenClickGuiScreen F;
     
     public static void O(int var0, int var1, char var2) {
-        f.func_147108_a((GuiScreen)AbyssClickGuiScreen.INSTANCE);
+        f.displayGuiScreen((GuiScreen)AbyssClickGuiScreen.INSTANCE);
 }
     private static void a() {
 }
@@ -48,6 +50,7 @@ extends Module {
         return var11 != null && KeyBindUtil.V(var11.h(), var9);
 }
     static {
+        a = 104656739453137L;
         scale = new NumberSetting("Scale", 1.0f, 0.1f, 5.0f, 0.01f);
 }
 }

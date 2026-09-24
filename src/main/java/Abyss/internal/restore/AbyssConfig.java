@@ -137,26 +137,7 @@ public final class AbyssConfig {
         return note;
 }
     public static JsonObject read() {
-        JsonObject jsonObject;
-        File f = AbyssConfig.locate();
-        if (f == null) {
-            return null;
-}
-        InputStreamReader r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");
-        try {
-            jsonObject = new JsonParser().parse((Reader)r2).getAsJsonObject();
-}
-        catch (Throwable throwable) {
-            try {
-                ((Reader)r2).close();
-                throw throwable;
-}
-            catch (Throwable t2) {
-                return null;
-}
-}
-        ((Reader)r2).close();
-        return jsonObject;
+        return AbyssConfig.parse(AbyssConfig.locate());
 }
     /*
      * WARNING - Removed try catching itself - possible behaviour change.
@@ -217,10 +198,11 @@ public final class AbyssConfig {
             return 0;
 }
 }
+    // R15_SEMANTIC_RECOVERY_MARKER
     public static int snapshotBoot() {
         IdentityHashMap<Setting, String> snap = new IdentityHashMap<Setting, String>();
         try {
-            ArrayList all = ModuleManager.S == null ? new ArrayList() : ModuleManager.S;
+            List<Module> all = ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S;
             for (Module m2 : all) {
                 List<Setting> live;
                 if (m2 == null) continue;
@@ -267,7 +249,7 @@ public final class AbyssConfig {
                     root.addProperty(DESCRIPTION_KEY, DEFAULT_DESCRIPTION);
 }
                 r2.topLevelBefore = root.entrySet().size();
-                ArrayList all = ModuleManager.S == null ? new ArrayList() : ModuleManager.S;
+                List<Module> all = ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S;
                 for (Module m2 : all) {
                     JsonObject block;
                     if (m2 == null) continue;
@@ -486,7 +468,7 @@ public final class AbyssConfig {
 }
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable p) {
             // empty catch block
@@ -556,7 +538,7 @@ public final class AbyssConfig {
      * Enabled aggressive exception aggregation
      */
     private static boolean write(File f, JsonObject root) {
-        boolean bak222;
+        boolean renamed;
         File tmp = AbyssConfig.sibling(f, ".tmp");
         Writer w2 = null;
         try {
@@ -571,8 +553,8 @@ public final class AbyssConfig {
 }
                 f.renameTo(bak222);
 }
-            bak222 = tmp.renameTo(f);
-            if (w2 == null) return bak222;
+            renamed = tmp.renameTo(f);
+            if (w2 == null) return renamed;
 }
         catch (Throwable t2) {
             try {
@@ -593,12 +575,12 @@ public final class AbyssConfig {
 }
         try {
             w2.close();
-            return bak222;
+            return renamed;
 }
         catch (Throwable throwable) {
             // empty catch block
 }
-        return bak222;
+        return renamed;
 }
     private static File locate() {
         File[] candidates;
@@ -609,7 +591,7 @@ public final class AbyssConfig {
 }
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable throwable) {
             // empty catch block

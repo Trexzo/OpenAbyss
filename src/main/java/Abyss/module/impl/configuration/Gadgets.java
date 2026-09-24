@@ -11,7 +11,7 @@ import Abyss.setting.settings.BooleanSetting;
 public class Gadgets
 extends Module {
     public static BooleanSetting noScreenBackground;
-    private static final long public static BooleanSetting noMiningParticles;
+    public static BooleanSetting noMiningParticles;
     public static BooleanSetting betterWorldSwapping;
 
     public Gadgets(long var1) {

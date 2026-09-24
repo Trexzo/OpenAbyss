@@ -59,7 +59,9 @@ import org.lwjgl.opengl.GL11;
 public class ESP
 extends Module
 implements EventSubscriber {
-    private static long public static BooleanSetting friends;
+    private static long a;
+    private static String[] d;
+    public static BooleanSetting friends;
     public static ModeSetting mode;
     public static ModeSetting healthBar;
     private static Map g;
@@ -89,12 +91,12 @@ implements EventSubscriber {
 }
     public void l(EntityLivingBase var1, long var2, int var4, double var5, float var7, ScaledResolution var8, boolean var9) {
         if (RenderUtil.l((Entity)var1)) {
-            EntityRendererAccessor.k(ESP.f.field_71460_t, var7, 0);
-            double var11 = var1.field_70142_S + (var1.field_70165_t - var1.field_70142_S) * (double)var7 - ESP.f.func_175598_ae().field_78730_l;
-            double var13 = var1.field_70137_T + (var1.field_70163_u - var1.field_70137_T) * (double)var7 - ESP.f.func_175598_ae().field_78731_m;
-            double var15 = var1.field_70136_U + (var1.field_70161_v - var1.field_70136_U) * (double)var7 - ESP.f.func_175598_ae().field_78728_n;
-            AxisAlignedBB var17 = var1.func_174813_aQ().func_72314_b(0.1 + var5, 0.1 + var5, 0.1 + var5).func_72317_d(var11 - var1.field_70165_t, var13 - var1.field_70163_u, var15 - var1.field_70161_v);
-            Vec3[] var10000 = new Vec3[]{new Vec3(var17.field_72340_a, var17.field_72338_b, var17.field_72339_c), new Vec3(var17.field_72340_a, var17.field_72337_e, var17.field_72339_c), new Vec3(var17.field_72336_d, var17.field_72338_b, var17.field_72339_c), new Vec3(var17.field_72336_d, var17.field_72337_e, var17.field_72339_c), new Vec3(var17.field_72340_a, var17.field_72338_b, var17.field_72334_f), new Vec3(var17.field_72340_a, var17.field_72337_e, var17.field_72334_f), new Vec3(var17.field_72336_d, var17.field_72338_b, var17.field_72334_f), new Vec3(var17.field_72336_d, var17.field_72337_e, var17.field_72334_f)};
+            EntityRendererAccessor.k(ESP.f.entityRenderer, var7, 0);
+            double var11 = var1.lastTickPosX + (var1.posX - var1.lastTickPosX) * (double)var7 - ESP.f.getRenderManager().viewerPosX;
+            double var13 = var1.lastTickPosY + (var1.posY - var1.lastTickPosY) * (double)var7 - ESP.f.getRenderManager().viewerPosY;
+            double var15 = var1.lastTickPosZ + (var1.posZ - var1.lastTickPosZ) * (double)var7 - ESP.f.getRenderManager().viewerPosZ;
+            AxisAlignedBB var17 = var1.getEntityBoundingBox().expand(0.1 + var5, 0.1 + var5, 0.1 + var5).offset(var11 - var1.posX, var13 - var1.posY, var15 - var1.posZ);
+            Vec3[] var10000 = new Vec3[]{new Vec3(var17.minX, var17.minY, var17.minZ), new Vec3(var17.minX, var17.maxY, var17.minZ), new Vec3(var17.maxX, var17.minY, var17.minZ), new Vec3(var17.maxX, var17.maxY, var17.minZ), new Vec3(var17.minX, var17.minY, var17.maxZ), new Vec3(var17.minX, var17.maxY, var17.maxZ), new Vec3(var17.maxX, var17.minY, var17.maxZ), new Vec3(var17.maxX, var17.maxY, var17.maxZ)};
             Vec3[] var18 = var10000;
             double var19 = Double.MAX_VALUE;
             double var21 = Double.MAX_VALUE;
@@ -102,20 +104,20 @@ implements EventSubscriber {
             double var25 = -1.7976931348623157E308;
             boolean var27 = false;
             for (Vec3 var31 : var18) {
-                Vec3 var32 = RenderUtil.I(var8.func_78325_e(), var31.field_72450_a, var31.field_72448_b, var31.field_72449_c);
-                if (var32 == null || var32.field_72449_c <= 0.0 || var32.field_72449_c >= 1.0) continue;
+                Vec3 var32 = RenderUtil.I(var8.getScaleFactor(), var31.xCoord, var31.yCoord, var31.zCoord);
+                if (var32 == null || var32.zCoord <= 0.0 || var32.zCoord >= 1.0) continue;
                 var27 = true;
-                var19 = Math.min(var19, var32.field_72450_a);
-                var21 = Math.min(var21, var32.field_72448_b);
-                var23 = Math.max(var23, var32.field_72450_a);
-                var25 = Math.max(var25, var32.field_72448_b);
+                var19 = Math.min(var19, var32.xCoord);
+                var21 = Math.min(var21, var32.yCoord);
+                var23 = Math.max(var23, var32.xCoord);
+                var25 = Math.max(var25, var32.yCoord);
 }
             if (var27) {
-                ESP.f.field_71460_t.func_78478_c();
+                ESP.f.entityRenderer.setupOverlayRendering();
                 var19 = Math.max(0.0, var19);
                 var21 = Math.max(0.0, var21);
-                var23 = Math.min((double)var8.func_78326_a(), var23);
-                var25 = Math.min((double)var8.func_78328_b(), var25);
+                var23 = Math.min((double)var8.getScaledWidth(), var23);
+                var25 = Math.min((double)var8.getScaledHeight(), var25);
                 float var38 = (float)(var4 >> 16 & 0xFF) / 255.0f;
                 float var39 = (float)(var4 >> 8 & 0xFF) / 255.0f;
                 float var40 = (float)(var4 & 0xFF) / 255.0f;
@@ -266,23 +268,30 @@ implements EventSubscriber {
     public String g(long var1) {
         return mode.Y();
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void E(long var1, EntityLivingBase var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (!hideTeammatesHealthBar.c() || !Teams.g(0L, (Entity)var3)) {
             switch (healthBar.Y()) {
@@ -314,13 +323,13 @@ implements EventSubscriber {
             this.r(var15, var9, var3.O, var3.j);
             this.E(var7, var15);
 }
-        if (showSelf.c() && ESP.f.field_71474_y.field_74320_O != 0) {
+        if (showSelf.c() && ESP.f.gameSettings.thirdPersonView != 0) {
             if (var11) {
-                this.E(var7, (EntityLivingBase)ESP.f.field_71439_g);
-                var12.add(ESP.f.field_71439_g);
+                this.E(var7, (EntityLivingBase)ESP.f.thePlayer);
+                var12.add(ESP.f.thePlayer);
             } else {
-                this.r((EntityLivingBase)ESP.f.field_71439_g, var9, var3.O, var3.j);
-                this.E(var7, (EntityLivingBase)ESP.f.field_71439_g);
+                this.r((EntityLivingBase)ESP.f.thePlayer, var9, var3.O, var3.j);
+                this.E(var7, (EntityLivingBase)ESP.f.thePlayer);
 }
 }
         if (var11) {
@@ -331,7 +340,12 @@ implements EventSubscriber {
 }
 }
 }
-                Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            o = new Object[15]; r = new String[15]; a(); g = new HashMap(13); long var11 = a ^ 50776291618664L;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var14 = 1; var14 < 8; ++var14) { var10003[var14] = (byte)(var11 << var14 * 8 >>> 56); }
+            Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var13.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var20 = new String[9];
             int var18 = 0;
@@ -396,7 +410,6 @@ implements EventSubscriber {
                                         var41 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                         var44 = 0;
 }
-                                    break;
 }
 }
                             var16 = var17.charAt(var25);
@@ -417,7 +430,6 @@ implements EventSubscriber {
                     var26 = var17.substring(++var25, var25 + var16);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var22) {
@@ -425,6 +437,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 32365214196100L;
+        zkm$clinit();
         customColor = new ColorSetting("Custom-color", "FFFFFF");
         showSelf = new BooleanSetting("Show-self", false);
         hideTeammatesHealthBar = new BooleanSetting("Hide-teammates-health-bar", true);

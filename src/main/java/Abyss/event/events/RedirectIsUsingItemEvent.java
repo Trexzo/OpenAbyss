@@ -9,7 +9,7 @@ public class RedirectIsUsingItemEvent
 extends Event {
     float l;
     private boolean r = false;
-    private static long public RedirectIsUsingItemEvent(float var1) {
+    public RedirectIsUsingItemEvent(float var1) {
         this.l = var1;
 }
     public void W(float var1) {

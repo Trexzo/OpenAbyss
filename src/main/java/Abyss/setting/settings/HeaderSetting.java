@@ -13,7 +13,7 @@ import java.util.List;
 
 public class HeaderSetting
 extends Setting {
-    private static long public String I;
+    public String I;
 
     public HeaderSetting(String var1) {
         this.q = var1;

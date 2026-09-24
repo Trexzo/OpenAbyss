@@ -27,9 +27,9 @@ public final class DeferredRendererReload {
             pending = false;
             lastReloadMs = now;
             try {
-                Minecraft mc = Minecraft.func_71410_x();
-                if (mc != null && mc.field_71438_f != null) {
-                    mc.field_71438_f.func_72712_a();
+                Minecraft mc = Minecraft.getMinecraft();
+                if (mc != null && mc.renderGlobal != null) {
+                    mc.renderGlobal.loadRenderers();
 }
 }
             catch (Throwable throwable) {

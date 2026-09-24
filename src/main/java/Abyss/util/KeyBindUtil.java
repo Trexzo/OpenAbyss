@@ -14,13 +14,15 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 public class KeyBindUtil {
-    private static long public static int m(long var0, int var2) {
+    private static long a;
+
+    public static int m(long var0, int var2) {
         return var2 >= 1000 ? KeyBindUtil.w('\u0000', var2 - 1000, 132797583844084L) : var2;
 }
     public static void T(int var0, short var1, int var2, short var3) {
         long var4 = ((long)var0 << 32 | (long)var1 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ a;
         long var6 = var4 ^ 0x1BC8930CD043L;
-        KeyBinding.func_74507_a((int)KeyBindUtil.m(var6, var2));
+        KeyBinding.onTick((int)KeyBindUtil.m(var6, var2));
 }
     private static boolean isDigit(String var0) {
         if (var0 != null && !var0.isEmpty()) {
@@ -109,7 +111,7 @@ public class KeyBindUtil {
         int var3 = (int)((var0 ^ 0x2EDC802D03F7L) << 32 >>> 48);
         int var4 = (int)((var0 ^ 0x2EDC802D03F7L) << 48 >>> 48);
         int var5 = (int)((var0 ^ 0xD69E447E219L) >>> 56);
-        KeyBindUtil.T(var2, (short)var3, MinecraftRef.c((byte)((byte)var5), (long)0L).field_71474_y.field_74313_G.func_151463_i(), (short)var4);
+        KeyBindUtil.T(var2, (short)var3, MinecraftRef.c((byte)((byte)var5), (long)0L).gameSettings.keyBindUseItem.getKeyCode(), (short)var4);
 }
     public static int w(char var0, int var1, long var2) {
         return -100 + var1;
@@ -124,14 +126,15 @@ public class KeyBindUtil {
         return KeyBindUtil.m(var3, var0) < 0;
 }
     public static void A(long var0, int var2, boolean var3) {
-        KeyBinding.func_74510_a((int)KeyBindUtil.m(32881896332787L, var2), (boolean)var3);
+        KeyBinding.setKeyBindState((int)KeyBindUtil.m(32881896332787L, var2), (boolean)var3);
 }
     public static void o(long var0, int var2) {
         int var7;
         var0 = a ^ var0;
         long var3 = var0 ^ 0x7C232AFB33A8L;
         long var5 = var0 ^ 0x2B5284AFEEBEL;
-        KeyBindUtil.A(var3, var7, (var7 = KeyBindUtil.m(var5, var2)) < 0 ? Mouse.isButtonDown((int)(var7 + 100)) : Keyboard.isKeyDown((int)var7));
+        var7 = KeyBindUtil.m(var5, var2);
+        KeyBindUtil.A(var3, var7, var7 < 0 ? Mouse.isButtonDown((int)(var7 + 100)) : Keyboard.isKeyDown((int)var7));
 }
     public static boolean d(int var0, int var1, long var2) {
         return KeyBindUtil.m(32881896332787L, var0) == KeyBindUtil.m(32881896332787L, var1);
@@ -151,4 +154,7 @@ public class KeyBindUtil {
         String var11 = Keyboard.getKeyName((int)var10);
         return var11 != null && !var11.trim().isEmpty() ? var11 : "UNKNOWN";
 }
+    static {
+        a = 119759750653330L;
+    }
 }

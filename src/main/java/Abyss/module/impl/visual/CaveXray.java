@@ -17,13 +17,15 @@ import net.minecraft.util.BlockPos;
 
 public class CaveXray
 extends Module {
+    private static long a;
+
     public static BooleanSetting reloadRenderer;
     private static long[] b;
         public static PercentageSetting opacity;
 
     private void markBlockRangeForRenderUpdate(int var1) {
         BlockPos var2 = BlockUtil.Z();
-        CaveXray.f.field_71438_f.func_147585_a(var2.func_177958_n() - var1, var2.func_177956_o() - var1, var2.func_177952_p() - var1, var2.func_177958_n() + var1, var2.func_177956_o() + var1, var2.func_177952_p() + var1);
+        CaveXray.f.renderGlobal.markBlockRangeForRenderUpdate(var2.getX() - var1, var2.getY() - var1, var2.getZ() - var1, var2.getX() + var1, var2.getY() + var1, var2.getZ() + var1);
 }
     public static int L(long var0) {
         return 255 * opacity.k() / 100;
@@ -54,6 +56,7 @@ extends Module {
         return opacity.k() + "%";
 }
     static {
+        a = 106916738106937L;
         reloadRenderer = new BooleanSetting("Reload-renderer", false);
         opacity = new PercentageSetting("Opacity", 60);
 }

@@ -11,7 +11,7 @@ import Abyss.event.invoker.AutoGGPostTickInvoker;
 import Abyss.module.impl.misc.AutoGG;
 
 public final class AutoGGBinder {
-    private static final long public static void X(EventBus var0, AutoGG var3) {
+    public static void X(EventBus var0, AutoGG var3) {
         var0.R(var3, HandleChatEvent.class, 3, new AutoGGHandleChatInvoker(var3));
         var0.R(var3, PostTickEvent.class, 3, new AutoGGPostTickInvoker(var3));
 }

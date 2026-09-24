@@ -2049,9 +2049,6 @@ implements FlatStylingSupport.StyleableUI {
 }
     protected class FlatTabbedPaneLayout
     extends BasicTabbedPaneUI.TabbedPaneLayout {
-        protected FlatTabbedPaneLayout() {
-            super(FlatTabbedPaneUI.this);
-}
         @Override
         protected Dimension calculateSize(boolean minimum) {
             if (this.isContentEmpty()) {

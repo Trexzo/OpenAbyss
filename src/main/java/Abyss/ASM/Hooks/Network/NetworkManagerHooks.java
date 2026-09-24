@@ -22,10 +22,10 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.C01PacketChatMessage;
 
 public class NetworkManagerHooks {
-    private static final long public static void onSendPacket(Packet<?> var0, CallbackInfo var1) {
+    public static void onSendPacket(Packet<?> var0, CallbackInfo var1) {
         if (var0 != null && NetworkManagerHooks.isKnownPacket(PacketAccessor.U, var0)) {
-            if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).func_149439_c().startsWith(".")) {
-                StockCommandRegistry.E(27284, '\u313f', '\u9352', ((C01PacketChatMessage)var0).func_149439_c());
+            if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).getMessage().startsWith(".")) {
+                StockCommandRegistry.E(27284, '\u313f', '\u9352', ((C01PacketChatMessage)var0).getMessage());
                 var1.cancel();
 }
             if (PacketManager.v.contains(var0)) {

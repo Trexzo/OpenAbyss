@@ -13,6 +13,8 @@ import Abyss.util.TimerUtil;
 
 public class NoFall
 extends Module {
+    private static long a;
+
     private static long[] b;
     public static BooleanSetting alwaysGroundSpoof;
     private final TimerUtil o;
@@ -40,6 +42,7 @@ extends Module {
         this.x = false;
 }
     static {
+        a = 5137402864309L;
         alwaysGroundSpoof = new BooleanSetting("Always-ground-spoof", true);
         fallDistance = new NumberSetting("Fall-distance", 3.0f, 0.0f, 6.0f, 0.020000001f);
         timerSpeed = new NumberSetting("Timer-speed", 0.7f, 0.0f, 6.0f, 0.020000001f);

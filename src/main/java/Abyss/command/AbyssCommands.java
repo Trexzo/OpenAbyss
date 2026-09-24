@@ -181,8 +181,8 @@ public final class AbyssCommands {
             if (ConfigManagerWindow.D == null) {
                 ConfigManagerWindow.D = new ArrayList<String>();
 }
-            if ((var1 = Minecraft.func_71410_x()) != null && var1.field_71456_v != null) {
-                var1.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText(var0));
+            if ((var1 = Minecraft.getMinecraft()) != null && var1.ingameGUI != null) {
+                var1.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText(var0));
 }
             ConfigManagerWindow.D.add(var0);
 }

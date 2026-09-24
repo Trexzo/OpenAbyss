@@ -47,15 +47,28 @@ public class CommandLine
 extends Module
 implements EventSubscriber {
     private static long[] b;
+    private static long a;
     
     public static BooleanSetting autoFillPrompt;
     
     private static Object[] e;
+    private static Map d;
     public static BooleanSetting autoFill;
     private static String[] g;
 
-                Cipher var2 = Cipher.getInstance("DES/CBC/NoPadding");
-            var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            e = new Object[7];
+            g = new String[7];
+            a();
+            d = new HashMap(13);
+            long var0 = a ^ 46196709686825L;
+            Cipher var2;
+            byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var0 << var3 * 8 >>> 56);
+            }
+            (var2 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             long[] var8 = new long[3];
             int var5 = 0;
             String var6 = "\u00f8\u0002&e\u00ab\u00cb\u0017\u001fX\u0098i*\u00a6\u0084\u00bc3G\u0097\u000f\u00f5]\u00ccN\u00e7";
@@ -85,17 +98,17 @@ implements EventSubscriber {
         int var12 = (int)((var5 ^ 0x52157B5B4E76L) >>> 48);
         int var13 = (int)((var5 ^ 0x52157B5B4E76L) << 16 >>> 48);
         int var14 = (int)((var5 ^ 0x52157B5B4E76L) << 32 >>> 32);
-        if (CommandLine.f.field_71462_r instanceof GuiChat) {
-            GuiTextField var17 = GuiChatAccessor.z((char)var12, (char)var13, var14, (GuiChat)CommandLine.f.field_71462_r);
+        if (CommandLine.f.currentScreen instanceof GuiChat) {
+            GuiTextField var17 = GuiChatAccessor.z((char)var12, (char)var13, var14, (GuiChat)CommandLine.f.currentScreen);
             if (var17 == null) {
                 return;
 }
-            String var18 = var17.func_146179_b();
+            String var18 = var17.getText();
             if (!var18.isEmpty() && var18.charAt(0) == '.') {
-                float var20 = CommandLine.f.field_71462_r.field_146295_m - 14;
+                float var20 = CommandLine.f.currentScreen.height - 14;
                 Color var15 = new Color(Theme.S(Theme.offset.L(), var7));
-                float var16 = CommandLine.f.field_71462_r.field_146295_m - 2;
-                RenderUtil.G(2.0f, var20, CommandLine.f.field_71462_r.field_146294_l - 2, (char)var9, var16, (char)var10, var15);
+                float var16 = CommandLine.f.currentScreen.height - 2;
+                RenderUtil.G(2.0f, var20, CommandLine.f.currentScreen.width - 2, (char)var9, var16, (char)var10, var15);
 }
 }
 }
@@ -116,11 +129,11 @@ implements EventSubscriber {
         CommandLine.e[6] = "E\\H`\\2WCL\u000b\u001fB\u0017\u0019\bl\u0002zIMCydx\u0016D\u001cm\u0016:TI\u0002\u000b^.GG\u0012nX9_\u0019r1\u001bzU\u001c\u0010z^,V&";
 }
     public void onPreUpdate(PreUpdateEvent var1, long var2) {
-        if (CommandLine.f.field_71462_r == null) {
+        if (CommandLine.f.currentScreen == null) {
             boolean var6;
-            boolean bl = var6 = CommandLine.f.field_71474_y.field_74343_n != EntityPlayer.EnumChatVisibility.HIDDEN;
+            boolean bl = var6 = CommandLine.f.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN;
             if (ClientUtil.b(52, 35207672374243L) && var6) {
-                f.func_147108_a((GuiScreen)new GuiChat("."));
+                f.displayGuiScreen((GuiScreen)new GuiChat("."));
 }
 }
 }
@@ -129,6 +142,8 @@ implements EventSubscriber {
         CommandLineBinder.s(var3, this);
 }
     static {
+        a = 54022204389669L;
+        zkm$clinit();
         autoFill = new BooleanSetting("Auto-fill", true);
         autoFillPrompt = new BooleanSetting("Auto-fill-prompt", true);
 }

@@ -22,10 +22,17 @@ import Abyss.util.KeyBindUtil;
 import Abyss.util.MathUtil;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.util.BlockPos;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class SpeedMine
 extends Module
 implements EventSubscriber {
+    private static long a = 40047299343839L;
+
     public static PercentageSetting delayChance;
         private BlockPos b;
     private float J;
@@ -56,25 +63,25 @@ implements EventSubscriber {
             block21: {
                 block22: {
                     double var21;
-                    var19 = PlayerControllerStateAccessor.Z(SpeedMine.f.field_71442_b);
-                    if (!SpeedMine.f.field_71415_G) break block20;
+                    var19 = PlayerControllerStateAccessor.Z(SpeedMine.f.playerController);
+                    if (!SpeedMine.f.inGameHasFocus) break block20;
                     int var20 = (int)delay.L();
                     if ((double)var20 < 5.0 && (delayChance.k() == 100 || MathUtil.Q(delayChance.k(), 0L) && var19 != this.b)) {
                         if ((double)var20 == 0.0) {
-                            PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, SpeedMine.f.field_71442_b, 0);
-                        } else if (PlayerControllerStateAccessor.W(SpeedMine.f.field_71442_b) > var20) {
-                            PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, SpeedMine.f.field_71442_b, var20);
+                            PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, SpeedMine.f.playerController, 0);
+                        } else if (PlayerControllerStateAccessor.W(SpeedMine.f.playerController) > var20) {
+                            PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, SpeedMine.f.playerController, var20);
 }
 }
                     if (!((var21 = 1.0 + (double)increaseSpeed.k() / 100.0) > 1.0)) break block21;
-                    if (SpeedMine.f.field_71439_g.field_71075_bZ.field_75098_d || !KeyBindUtil.V(SpeedMine.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) break block22;
-                    float var23 = PlayerControllerStateAccessor.s(0L, SpeedMine.f.field_71442_b);
+                    if (SpeedMine.f.thePlayer.capabilities.isCreativeMode || !KeyBindUtil.V(SpeedMine.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) break block22;
+                    float var23 = PlayerControllerStateAccessor.s(0L, SpeedMine.f.playerController);
                     switch (mode.Y()) {
                         case "PRE": {
                             if (!MathUtil.Q(speedChance.k(), 0L)) break;
                             float var26 = (float)(1.0 - 1.0 / var21);
                             if (var23 > 0.0f && var23 < var26) {
-                                PlayerControllerStateAccessor.e(0L, SpeedMine.f.field_71442_b, var26);
+                                PlayerControllerStateAccessor.e(0L, SpeedMine.f.playerController, var26);
                                 break;
 }
                             break block21;
@@ -83,7 +90,7 @@ implements EventSubscriber {
                             if (!MathUtil.Q(speedChance.k(), 0L)) break;
                             double var27 = 1.0 / var21;
                             if (var23 < 1.0f && (double)var23 >= var27) {
-                                PlayerControllerStateAccessor.e(0L, SpeedMine.f.field_71442_b, 1.0f);
+                                PlayerControllerStateAccessor.e(0L, SpeedMine.f.playerController, 1.0f);
                                 break;
 }
                             break block21;
@@ -91,11 +98,11 @@ implements EventSubscriber {
                         case "INCREASE": {
                             float var29 = -1.0f;
                             if (MathUtil.Q(speedChance.k(), 0L) && var23 < 1.0f) {
-                                if (SpeedMine.f.field_71476_x != null && var23 > this.J) {
-                                    var29 = (float)((double)this.J + (double)BlockUtil.g(SpeedMine.f.field_71441_e.func_180495_p(SpeedMine.f.field_71476_x.func_178782_a()).func_177230_c(), SpeedMine.f.field_71439_g.field_71071_by.func_70301_a(SpeedMine.f.field_71439_g.field_71071_by.field_70461_c), false, false) * (var21 - 0.2152857 * (var21 - 1.0)));
+                                if (SpeedMine.f.objectMouseOver != null && var23 > this.J) {
+                                    var29 = (float)((double)this.J + (double)BlockUtil.g(SpeedMine.f.theWorld.getBlockState(SpeedMine.f.objectMouseOver.getBlockPos()).getBlock(), SpeedMine.f.thePlayer.inventory.getStackInSlot(SpeedMine.f.thePlayer.inventory.currentItem), false, false) * (var21 - 0.2152857 * (var21 - 1.0)));
 }
                                 if (var29 != -1.0f && var23 > 0.0f) {
-                                    PlayerControllerStateAccessor.e(0L, SpeedMine.f.field_71442_b, var29);
+                                    PlayerControllerStateAccessor.e(0L, SpeedMine.f.playerController, var29);
 }
 }
                             this.J = var23;

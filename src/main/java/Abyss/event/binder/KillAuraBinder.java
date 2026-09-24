@@ -13,7 +13,7 @@ import Abyss.event.invoker.KillAuraSetAnglesInvoker;
 import Abyss.module.impl.combat.KillAura;
 
 public final class KillAuraBinder {
-    private static final long private KillAuraBinder() {
+    private KillAuraBinder() {
 }
     public static void e(EventBus var2, KillAura var3) {
         var2.R(var3, PreMouseInputEvent.class, 4, new KillAuraPreMouseInputInvoker(var3));

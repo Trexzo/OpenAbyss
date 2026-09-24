@@ -88,7 +88,7 @@ extends GuiScreen {
             this.panels.add(new Panel(c, 5 + i++ * 134, 5.0f));
 }
 }
-    public void func_73866_w_() {
+    public void initGui() {
         Keyboard.enableRepeatEvents((boolean)true);
         this.ensurePanels();
         this.metrics();
@@ -109,13 +109,13 @@ extends GuiScreen {
             this.latchedGs = s <= 0.05f ? 1.0f : s;
 }
         this.gs = this.latchedGs;
-        this.sw = Math.max(140, (int)((float)this.field_146294_l / this.gs));
-        this.sh = Math.max(56, (int)((float)this.field_146295_m / this.gs));
+        this.sw = Math.max(140, (int)((float)this.width / this.gs));
+        this.sh = Math.max(56, (int)((float)this.height / this.gs));
 }
-    public boolean func_73868_f() {
+    public boolean doesGuiPauseGame() {
         return false;
 }
-    public void func_146281_b() {
+    public void onGuiClosed() {
         Keyboard.enableRepeatEvents((boolean)false);
         this.commitText();
         if (this.picker != null) {
@@ -126,7 +126,7 @@ extends GuiScreen {
         this.pickerAnim = 0.0f;
         this.latched = false;
 }
-    public void func_73863_a(int mx, int my, float pt) {
+    public void drawScreen(int mx, int my, float pt) {
         try {
             this.drawScreenImpl(mx, my, pt);
 }
@@ -151,11 +151,11 @@ extends GuiScreen {
             this.picker = null;
 }
         float in = AbyssClickGuiScreen.ease(AbyssClickGuiScreen.clamp01((float)(now - this.openedAt) / 240.0f));
-        AbyssClickGuiScreen.rect(0.0f, 0.0f, this.field_146294_l, this.field_146295_m, AbyssClickGuiScreen.alpha(Integer.MIN_VALUE, in));
+        AbyssClickGuiScreen.rect(0.0f, 0.0f, this.width, this.height, AbyssClickGuiScreen.alpha(Integer.MIN_VALUE, in));
         int pmx = (int)((float)mx / this.gs);
         int pmy = (int)((float)my / this.gs);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)this.gs, (float)this.gs, (float)1.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)this.gs, (float)this.gs, (float)1.0f);
         AbyssClickGuiScreen.font().drawStringWithShadow("Abyss", 6.0f, (float)this.sh - 12.0f, AbyssClickGuiScreen.alpha(AbyssClickGuiScreen.accent(), in * 0.7f));
         AbyssClickGuiScreen.font().drawStringWithShadow("  ESC close   type to search", 6.0f + AbyssClickGuiScreen.font().getWidth("Abyss"), (float)this.sh - 12.0f, AbyssClickGuiScreen.alpha(-10855837, in));
         if (!this.search.isEmpty()) {
@@ -164,16 +164,16 @@ extends GuiScreen {
         for (int i = 0; i < this.panels.size(); ++i) {
             this.panels.get(i).draw(pmx, pmy, AbyssClickGuiScreen.ease(AbyssClickGuiScreen.clamp01(((float)(now - this.openedAt) - (float)i * 45.0f) / 240.0f)));
 }
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
-    public void func_146274_d() {
-        super.func_146274_d();
+    public void handleMouseInput() throws java.io.IOException {
+        super.handleMouseInput();
         int d = Mouse.getEventDWheel();
         if (d == 0) {
             return;
 }
-        int mx = (int)((float)(Mouse.getEventX() * this.field_146294_l / this.field_146297_k.field_71443_c) / this.gs);
-        int my = (int)((float)(this.field_146295_m - Mouse.getEventY() * this.field_146295_m / this.field_146297_k.field_71440_d - 1) / this.gs);
+        int mx = (int)((float)(Mouse.getEventX() * this.width / this.mc.displayWidth) / this.gs);
+        int my = (int)((float)(this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1) / this.gs);
         for (Panel p : this.panels) {
             if (!p.hit(mx, my)) continue;
             p.scroll = p.scroll + (d > 0 ? 28.0f : -28.0f);
@@ -181,7 +181,7 @@ extends GuiScreen {
             break;
 }
 }
-    protected void func_73864_a(int mx, int my, int b) {
+    protected void mouseClicked(int mx, int my, int b) {
         try {
             this.mouseClickedImpl(mx, my, b);
 }
@@ -199,7 +199,7 @@ extends GuiScreen {
 }
         this.commitText();
 }
-    protected void func_146286_b(int mx, int my, int state) {
+    protected void mouseReleased(int mx, int my, int state) {
         this.latched = false;
         for (Panel p : this.panels) {
             p.release();
@@ -208,14 +208,14 @@ extends GuiScreen {
             this.picker.release();
 }
 }
-    protected void func_73869_a(char ch, int key) {
+    protected void keyTyped(char ch, int key) {
         block2: {
             try {
                 this.keyTypedImpl(ch, key);
 }
             catch (Throwable ignored) {
                 if (key != 1) break block2;
-                this.field_146297_k.func_147108_a(null);
+                this.mc.displayGuiScreen(null);
 }
 }
 }
@@ -231,7 +231,7 @@ extends GuiScreen {
             return;
 }
         if (key == 1) {
-            this.field_146297_k.func_147108_a(null);
+            this.mc.displayGuiScreen(null);
             return;
 }
         if (key == 14) {
@@ -252,8 +252,8 @@ extends GuiScreen {
             this.commitText();
             return true;
 }
-        if (GuiScreen.func_175279_e((int)key)) {
-            String clip = GuiScreen.func_146277_j();
+        if (GuiScreen.isKeyComboCtrlV((int)key)) {
+            String clip = GuiScreen.getClipboardString();
             if (clip != null) {
                 this.editBuffer = this.editBuffer + clip.replace("\n", "").replace("\r", "");
 }
@@ -333,35 +333,35 @@ extends GuiScreen {
         return (int)((float)(a >>> 24) + (float)((b >>> 24) - (a >>> 24)) * t2) << 24 | (int)((float)(a >> 16 & 0xFF) + (float)((b >> 16 & 0xFF) - (a >> 16 & 0xFF)) * t2) << 16 | (int)((float)(a >> 8 & 0xFF) + (float)((b >> 8 & 0xFF) - (a >> 8 & 0xFF)) * t2) << 8 | (int)((float)(a & 0xFF) + (float)((b & 0xFF) - (a & 0xFF)) * t2);
 }
     private void scissor(float left, float top, float right, float bottom) {
-        float ppu = (float)this.field_146297_k.field_71443_c / (float)this.field_146294_l * this.gs;
+        float ppu = (float)this.mc.displayWidth / (float)this.width * this.gs;
         int px = Math.round(left * ppu);
-        int py = Math.round((float)this.field_146297_k.field_71440_d - bottom * ppu);
+        int py = Math.round((float)this.mc.displayHeight - bottom * ppu);
         int pw = Math.max(0, Math.round((right - left) * ppu));
         int ph = Math.max(0, Math.round((bottom - top) * ppu));
         GL11.glEnable((int)3089);
         GL11.glScissor((int)px, (int)py, (int)pw, (int)ph);
 }
     private static void icon(Category c, float x, float y, float size, int color) {
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179131_c((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)(color >>> 24) / 255.0f));
-        Minecraft.func_71410_x().func_110434_K().func_110577_a(Category.n(c));
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.color((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)(color >>> 24) / 255.0f));
+        Minecraft.getMinecraft().getTextureManager().bindTexture(Category.n(c));
         GL11.glTexParameteri((int)3553, (int)10241, (int)9729);
         GL11.glTexParameteri((int)3553, (int)10240, (int)9729);
-        Gui.func_146110_a((int)((int)x), (int)((int)y), (float)0.0f, (float)0.0f, (int)((int)size), (int)((int)size), (float)size, (float)size);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179117_G();
+        Gui.drawModalRectWithCustomSizedTexture((int)((int)x), (int)((int)y), (float)0.0f, (float)0.0f, (int)((int)size), (int)((int)size), (float)size, (float)size);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.resetColor();
 }
     static void rect(float x1, float y1, float x2, float y2, int color) {
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        Gui.func_73734_a((int)((int)x1), (int)((int)y1), (int)((int)x2), (int)((int)y2), (int)color);
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179117_G();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        Gui.drawRect((int)((int)x1), (int)((int)y1), (int)((int)x2), (int)((int)y2), (int)color);
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
+        GlStateManager.resetColor();
 }
     private static String tabLabel(Category c) {
         return c == Category.Visual_utility ? "Other" : c.name().replace('_', ' ');

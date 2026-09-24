@@ -73,22 +73,20 @@ implements ChangeListener {
     public void stateChanged(ChangeEvent e) {
         if (!FlatUIUtils.getUIBoolean(KEY_USE_SAFE_TRIANGLE, true)) {
             return;
-}
-        SubMenuUsabilityHelper subMenuUsabilityHelper = this;
-        synchronized (subMenuUsabilityHelper) {
+        }
+        synchronized (this) {
             if (this.changePending) {
                 return;
-}
+            }
             this.changePending = true;
-}
+        }
         EventQueue.invokeLater(() -> {
-            SubMenuUsabilityHelper subMenuUsabilityHelper = this;
-            synchronized (subMenuUsabilityHelper) {
+            synchronized (this) {
                 this.changePending = false;
-}
+            }
             this.menuSelectionChanged();
         });
-}
+    }
     private void menuSelectionChanged() {
         MenuElement[] path = MenuSelectionManager.defaultManager().getSelectedPath();
         int subMenuIndex = this.findSubMenu(path);

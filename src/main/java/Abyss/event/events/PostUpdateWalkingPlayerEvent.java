@@ -7,6 +7,6 @@ import Abyss.event.Event;
 
 public class PostUpdateWalkingPlayerEvent
 extends Event {
-    private static final long public PostUpdateWalkingPlayerEvent(int var1) {
+    public PostUpdateWalkingPlayerEvent(int var1) {
 }
 }

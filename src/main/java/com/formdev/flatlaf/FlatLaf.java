@@ -310,7 +310,7 @@ extends BasicLookAndFeel {
         for (FlatDefaultsAddon addon : addons) {
             addon.afterDefaultsLoading(this, defaults);
 }
-        defaults.put("laf.scaleFactor", t2 -> Float.valueOf(UIScale.getUserScaleFactor()));
+        defaults.put("laf.scaleFactor", (UIDefaults.ActiveValue)t2 -> Float.valueOf(UIScale.getUserScaleFactor()));
         if (this.postInitialization != null) {
             this.postInitialization.accept(defaults);
             this.postInitialization = null;
@@ -595,26 +595,19 @@ extends BasicLookAndFeel {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     public static void updateUILater() {
-        Class<FlatLaf> clazz = FlatLaf.class;
         synchronized (FlatLaf.class) {
             if (updateUIPending) {
-                // ** MonitorExit[var0] (shouldn't be in output)
                 return;
-}
+            }
             updateUIPending = true;
-            // ** MonitorExit[var0] (shouldn't be in output)
-            EventQueue.invokeLater(() -> {
-                FlatLaf.updateUI();
-                Class<FlatLaf> clazz = FlatLaf.class;
-                synchronized (FlatLaf.class) {
-                    updateUIPending = false;
-                    // ** MonitorExit[var0] (shouldn't be in output)
-                    return;
-}
-            });
-            return;
-}
-}
+        }
+        EventQueue.invokeLater(() -> {
+            FlatLaf.updateUI();
+            synchronized (FlatLaf.class) {
+                updateUIPending = false;
+            }
+        });
+    }
     public static boolean supportsNativeWindowDecorations() {
         return SystemInfo.isWindows_10_orLater && FlatNativeWindowBorder.isSupported();
 }
@@ -633,9 +626,8 @@ extends BasicLookAndFeel {
 }
     public static void revalidateAndRepaintAllFramesAndDialogs() {
         for (Window w2 : Window.getWindows()) {
-            JMenuBar menuBar;
             if (!FlatLaf.isDisplayableFrameOrDialog(w2)) continue;
-            JMenuBar jMenuBar = w2 instanceof JFrame ? ((JFrame)w2).getJMenuBar() : (menuBar = w2 instanceof JDialog ? ((JDialog)w2).getJMenuBar() : null);
+            JMenuBar menuBar = w2 instanceof JFrame ? ((JFrame)w2).getJMenuBar() : (w2 instanceof JDialog ? ((JDialog)w2).getJMenuBar() : null);
             if (menuBar != null) {
                 menuBar.revalidate();
 }
@@ -813,36 +805,54 @@ extends BasicLookAndFeel {
             return this.font;
 }
         FontUIResource derive(Font baseFont, IntUnaryOperator scale) {
-            int newSize;
-            int newStyle;
             int baseStyle = baseFont.getStyle();
             int baseSize = baseFont.getSize();
-            int n2 = this.style != -1 ? this.style : (newStyle = this.styleChange != 0 ? baseStyle & ~(this.styleChange >> 16 & 0xFFFF) | this.styleChange & 0xFFFF : baseStyle);
-            int n3 = this.absoluteSize > 0 ? scale.applyAsInt(this.absoluteSize) : (this.relativeSize != 0 ? baseSize + scale.applyAsInt(this.relativeSize) : (newSize = this.scaleSize > 0.0f ? Math.round((float)baseSize * this.scaleSize) : baseSize));
+
+            int newStyle = this.style != -1
+                ? this.style
+                : this.styleChange != 0
+                    ? baseStyle & ~(this.styleChange >> 16 & 0xFFFF) | this.styleChange & 0xFFFF
+                    : baseStyle;
+
+            int newSize = this.absoluteSize > 0
+                ? scale.applyAsInt(this.absoluteSize)
+                : this.relativeSize != 0
+                    ? baseSize + scale.applyAsInt(this.relativeSize)
+                    : this.scaleSize > 0.0f
+                        ? Math.round((float)baseSize * this.scaleSize)
+                        : baseSize;
             if (newSize <= 0) {
                 newSize = 1;
-}
+            }
+
             if (this.families != null && !this.families.isEmpty()) {
-                FontUIResource font;
                 String preferredFamily = ActiveFont.preferredFamily(this.families);
-                if (preferredFamily != null && (!ActiveFont.isFallbackFont(font = FlatLaf.createCompositeFont(preferredFamily, newStyle, newSize)) || ActiveFont.isDialogFamily(preferredFamily))) {
-                    return this.toUIResource(font);
-}
+                if (preferredFamily != null) {
+                    Font font = FlatLaf.createCompositeFont(preferredFamily, newStyle, newSize);
+                    if (!ActiveFont.isFallbackFont(font) || ActiveFont.isDialogFamily(preferredFamily)) {
+                        return this.toUIResource(font);
+                    }
+                }
+
                 for (String family : this.families) {
-                    FontUIResource font2 = FlatLaf.createCompositeFont(family, newStyle, newSize);
-                    if (ActiveFont.isFallbackFont(font2) && !ActiveFont.isDialogFamily(family)) continue;
-                    return this.toUIResource(font2);
-}
-}
+                    Font font = FlatLaf.createCompositeFont(family, newStyle, newSize);
+                    if (!ActiveFont.isFallbackFont(font) || ActiveFont.isDialogFamily(family)) {
+                        return this.toUIResource(font);
+                    }
+                }
+            }
+
             if (newStyle != baseStyle || newSize != baseSize) {
-                FontUIResource font;
-                if ("Ubuntu Medium".equalsIgnoreCase(baseFont.getName()) && "Ubuntu Light".equalsIgnoreCase(baseFont.getFamily()) && !ActiveFont.isFallbackFont(font = FlatLaf.createCompositeFont("Ubuntu Medium", newStyle, newSize))) {
-                    return this.toUIResource(font);
-}
+                if ("Ubuntu Medium".equalsIgnoreCase(baseFont.getName()) && "Ubuntu Light".equalsIgnoreCase(baseFont.getFamily())) {
+                    Font font = FlatLaf.createCompositeFont("Ubuntu Medium", newStyle, newSize);
+                    if (!ActiveFont.isFallbackFont(font)) {
+                        return this.toUIResource(font);
+                    }
+                }
                 return this.toUIResource(baseFont.deriveFont(newStyle, newSize));
-}
+            }
             return this.toUIResource(baseFont);
-}
+        }
         private FontUIResource toUIResource(Font font) {
             return font instanceof FontUIResource ? (FontUIResource)font : new FontUIResource(font);
 }

@@ -23,6 +23,7 @@ import javax.crypto.spec.IvParameterSpec;
 public class Freelook
 extends Module {
     public static boolean G;
+    private static long a;
     private int T;
     private float p;
     
@@ -34,10 +35,18 @@ extends Module {
     public static float M() {
         return v;
 }
-                Cipher var2 = Cipher.getInstance("DES/CBC/NoPadding");
-            var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            long var7 = a ^ 109798899218549L;
+            Cipher var2;
+            byte[] var10003 = new byte[]{(byte)(var7 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var7 << var3 * 8 >>> 56);
+            }
+            (var2 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             byte[] var6 = var2.doFinal(new byte[]{19, -30, -100, 37, -37, 34, -57, -128});
-            long var0 = var10 = ((long)var6[0] & 0xFFL) << 56 | ((long)var6[1] & 0xFFL) << 48 | ((long)var6[2] & 0xFFL) << 40 | ((long)var6[3] & 0xFFL) << 32 | ((long)var6[4] & 0xFFL) << 24 | ((long)var6[5] & 0xFFL) << 16 | ((long)var6[6] & 0xFFL) << 8 | (long)var6[7] & 0xFFL;
+            long var10 = ((long)var6[0] & 0xFFL) << 56 | ((long)var6[1] & 0xFFL) << 48 | ((long)var6[2] & 0xFFL) << 40 | ((long)var6[3] & 0xFFL) << 32 | ((long)var6[4] & 0xFFL) << 24 | ((long)var6[5] & 0xFFL) << 16 | ((long)var6[6] & 0xFFL) << 8 | (long)var6[7] & 0xFFL;
+            long var0 = var10;
             G = (var0 & 1L) != 0L;
 }
         catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var9) {
@@ -70,10 +79,10 @@ extends Module {
 }
     @Override
     public void i(long var1) {
-        this.p = Freelook.f.field_71439_g.field_70177_z;
-        this.s = Freelook.f.field_71439_g.field_70125_A;
-        this.T = Freelook.f.field_71474_y.field_74320_O;
-        Freelook.f.field_71474_y.field_74320_O = 1;
+        this.p = Freelook.f.thePlayer.rotationYaw;
+        this.s = Freelook.f.thePlayer.rotationPitch;
+        this.T = Freelook.f.gameSettings.thirdPersonView;
+        Freelook.f.gameSettings.thirdPersonView = 1;
         Freelook.B(this.p);
         Freelook.v(this.s);
         Freelook.L(true);
@@ -81,11 +90,13 @@ extends Module {
     @Override
     public void A(long var1) {
         Freelook.L(false);
-        Freelook.f.field_71474_y.field_74320_O = this.T;
-        Freelook.f.field_71439_g.field_70177_z = this.p;
-        Freelook.f.field_71439_g.field_70125_A = this.s;
+        Freelook.f.gameSettings.thirdPersonView = this.T;
+        Freelook.f.thePlayer.rotationYaw = this.p;
+        Freelook.f.thePlayer.rotationPitch = this.s;
 }
     static {
+        a = 47083344118779L;
+        zkm$clinit();
         mode = new ModeSetting("Mode", true, "HOLD", "HOLD", "TOGGLE");
 }
 }

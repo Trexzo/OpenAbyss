@@ -14,6 +14,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.util.Vec3;
 
 public class MathUtil {
+    private static long a;
+
     private static long b;
         private static Random N;
 
@@ -31,7 +33,7 @@ public class MathUtil {
         return (double)Math.round(var0 * 2.0) / 2.0;
 }
     public static Vec3 Z(Vec3 var0, Vec3 var1, float var2) {
-        return new Vec3((double)((float)MathUtil.j(var0.field_72450_a, var1.field_72450_a, var2)), (double)((float)MathUtil.j(var0.field_72448_b, var1.field_72448_b, var2)), (double)((float)MathUtil.j(var0.field_72449_c, var1.field_72449_c, var2)));
+        return new Vec3((double)((float)MathUtil.j(var0.xCoord, var1.xCoord, var2)), (double)((float)MathUtil.j(var0.yCoord, var1.yCoord, var2)), (double)((float)MathUtil.j(var0.zCoord, var1.zCoord, var2)));
 }
     public static boolean B() {
         return ThreadLocalRandom.current().nextBoolean();
@@ -112,6 +114,7 @@ public class MathUtil {
         return var2.doubleValue();
 }
     static {
+        a = 54732061872882L;
         N = new Random();
         b = -8432971632028417948L;
 }

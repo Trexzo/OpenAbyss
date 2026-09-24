@@ -13,7 +13,7 @@ import Abyss.event.invoker.NoHitDelayPostTickInvoker;
 import Abyss.module.impl.player.NoHitDelay;
 
 public final class NoHitDelayBinder {
-    private static final long public static void k(EventBus var2, NoHitDelay var3) {
+    public static void k(EventBus var2, NoHitDelay var3) {
         var2.R(var3, ClickMouseEvent.class, 3, new NoHitDelayClickMouseInvoker(var3));
         var2.R(var3, PostClickMouseEvent.class, 3, new NoHitDelayPostClickMouseInvoker(var3));
         var2.R(var3, PostTickEvent.class, 3, new NoHitDelayPostTickInvoker(var3));
