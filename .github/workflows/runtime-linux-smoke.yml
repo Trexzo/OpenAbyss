@@ -81,7 +81,11 @@ jobs:
           if ! id abyssci >/dev/null 2>&1; then
             sudo useradd --create-home --shell /bin/bash abyssci
           fi
+          # The hosted runner's temp directory is not traversable by a secondary user by default.
+          # Keep the runtime isolated as abyssci, but allow traversal to the prepared Gradle/cache paths.
+          sudo chmod a+rx /home/runner /home/runner/work "$RUNNER_TEMP"
           sudo chmod -R a+rwX "$GITHUB_WORKSPACE" "$GRADLE_USER_HOME" "$RUNNER_TEMP/gradle-2.14.1"
+          sudo chmod a+rx "$RUNNER_TEMP/gradle-2.14.1/bin/gradle"
           UID_ABYSS="$(id -u abyssci)"
           echo "ABYSS_CI_UID=$UID_ABYSS" >> "$GITHUB_ENV"
           sudo iptables -I OUTPUT 1 -m owner --uid-owner "$UID_ABYSS" -j REJECT
