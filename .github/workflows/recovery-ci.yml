@@ -18,11 +18,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 45
 
-    env:
-      GRADLE_VERSION: '2.14.1'
-      GRADLE_HOME: ${{ runner.temp }}\gradle-2.14.1
-      GRADLE_USER_HOME: ${{ runner.temp }}\gradle-user-home
-
     steps:
       - name: Checkout recovery source
         uses: actions/checkout@v4
@@ -38,35 +33,38 @@ jobs:
         run: |
           java -version
           Write-Host "JAVA_HOME=$env:JAVA_HOME"
+          Write-Host "RUNNER_TEMP=$env:RUNNER_TEMP"
 
       - name: Install Gradle 2.14.1
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-all.zip'
+          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
+          $gradleUserHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
           $url = 'https://services.gradle.org/distributions/gradle-2.14.1-all.zip'
           Invoke-WebRequest -Uri $url -OutFile $zip
           Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
-          $gradle = Join-Path $env:GRADLE_HOME 'bin\gradle.bat'
+          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
           if (-not (Test-Path -LiteralPath $gradle)) {
             throw "Gradle executable missing: $gradle"
           }
+          "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "GRADLE_USER_HOME=$gradleUserHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           & $gradle --version
 
       - name: Compile recovered source
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $gradle = Join-Path $env:GRADLE_HOME 'bin\gradle.bat'
-          & $gradle --no-daemon clean compileJava
+          & $env:OPENABYSS_GRADLE --no-daemon clean compileJava
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Clean full build
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $gradle = Join-Path $env:GRADLE_HOME 'bin\gradle.bat'
-          & $gradle --no-daemon clean build
+          & $env:OPENABYSS_GRADLE --no-daemon clean build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Inspect built JARs
