@@ -69,9 +69,21 @@ jobs:
         run: |
           set -euo pipefail
           "$OPENABYSS_GRADLE" --no-daemon clean build
-          "$OPENABYSS_GRADLE" --no-daemon getAssets
+
+          # ForgeGradle 2.1 uses legacy HTTP object URLs that now return 400 for
+          # many 1.8 assets. The runtime only needs the 1.8 index to get through
+          # Gradle launch preparation; missing objects fall back inside Minecraft.
+          set +e
+          timeout --signal=TERM --kill-after=5s 45s "$OPENABYSS_GRADLE" --no-daemon getAssets
+          GET_ASSETS_EXIT=$?
+          set -e
+          echo "GET_ASSETS_EXIT=$GET_ASSETS_EXIT"
+
           ASSET_INDEX="$GRADLE_USER_HOME/caches/minecraft/assets/indexes/1.8.json"
-          test -f "$ASSET_INDEX"
+          if [ ! -f "$ASSET_INDEX" ]; then
+            echo "Asset index missing after bounded getAssets preparation: $ASSET_INDEX"
+            exit 1
+          fi
           echo "ASSET_INDEX_READY=$ASSET_INDEX"
 
       - name: Create isolated runtime user and block its outbound network
