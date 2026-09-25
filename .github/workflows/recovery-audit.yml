@@ -1,0 +1,51 @@
+name: OpenAbyss Recovery Source Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - src/main/java/**
+      - tools/recovery_audit.py
+      - .github/workflows/recovery-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Whole-source CFR/ZKM damage audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout recovered source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Scan Java recovery surface
+        run: python tools/recovery_audit.py --out build/recovery-audit
+
+      - name: Publish audit summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/recovery-audit/summary.md ]; then
+            cat build/recovery-audit/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload recovery audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-recovery-source-audit
+          path: build/recovery-audit/**
+          if-no-files-found: error
+          retention-days: 14
