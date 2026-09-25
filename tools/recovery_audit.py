@@ -104,7 +104,19 @@ def scan_file(path: Path, root: Path):
     for idx, line in enumerate(lines, 1):
         for category, pattern in LINE_PATTERNS.items():
             if pattern.search(line):
-                confidence = "medium" if category == "suspicious_throwaway_ternary_assignment" else "high"
+                if category == "cfr_warning_comment" and "Decompiled with CFR" in line:
+                    # Proven origin metadata, not evidence of semantic loss by itself.
+                    confidence = "low"
+                elif category in {
+                    "synthetic_block_label",
+                    "labelled_break_continue",
+                    "suspicious_throwaway_ternary_assignment",
+                }:
+                    # OpenExpo authority contains legitimate CFR/ZKM labels in working
+                    # decoders, so labels/control transfers alone are review signals.
+                    confidence = "medium"
+                else:
+                    confidence = "high"
                 add(findings, category, rel, idx, line, confidence)
 
         for marker in WARNING_STRINGS:
@@ -230,6 +242,7 @@ def scan_file(path: Path, root: Path):
                 rel,
                 line_number(text, first),
                 "zkm$clinit contains synthetic block-label/control-transfer remnants",
+                "medium",
             )
 
     return findings
@@ -281,6 +294,7 @@ def main():
     md.append(f"- Findings: **{len(findings)}**")
     md.append(f"- High confidence: **{confidence.get('high', 0)}**")
     md.append(f"- Medium confidence: **{confidence.get('medium', 0)}**")
+    md.append(f"- Low confidence / provenance-only: **{confidence.get('low', 0)}**")
     md.append("")
     md.append("## Categories")
     md.append("")
