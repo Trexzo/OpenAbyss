@@ -17,36 +17,14 @@ public class JavaCompatibility {
     private static MethodHandle drawStringUnderlineCharAtMethod;
     private static MethodHandle getClippedStringMethod;
 
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static void drawStringUnderlineCharAt(JComponent c, Graphics g, String text, int underlinedIndex, int x, int y) {
-        Class<JavaCompatibility> clazz = JavaCompatibility.class;
         synchronized (JavaCompatibility.class) {
             if (drawStringUnderlineCharAtMethod == null) {
                 try {
-                    Class[] classArray;
                     Class<?> cls = Class.forName(SystemInfo.isJava_9_orLater ? "javax.swing.plaf.basic.BasicGraphicsUtils" : "sun.swing.SwingUtilities2");
-                    if (SystemInfo.isJava_9_orLater) {
-                        Class[] classArray2 = new Class[6];
-                        classArray2[0] = JComponent.class;
-                        classArray2[1] = Graphics2D.class;
-                        classArray2[2] = String.class;
-                        classArray2[3] = Integer.TYPE;
-                        classArray2[4] = Float.TYPE;
-                        classArray = classArray2;
-                        classArray2[5] = Float.TYPE;
-                    } else {
-                        Class[] classArray3 = new Class[6];
-                        classArray3[0] = JComponent.class;
-                        classArray3[1] = Graphics.class;
-                        classArray3[2] = String.class;
-                        classArray3[3] = Integer.TYPE;
-                        classArray3[4] = Integer.TYPE;
-                        classArray = classArray3;
-                        classArray3[5] = Integer.TYPE;
-}
-                    MethodType mt = MethodType.methodType(Void.TYPE, classArray);
+                    MethodType mt = MethodType.methodType(Void.TYPE, SystemInfo.isJava_9_orLater
+                            ? new Class[]{JComponent.class, Graphics2D.class, String.class, Integer.TYPE, Float.TYPE, Float.TYPE}
+                            : new Class[]{JComponent.class, Graphics.class, String.class, Integer.TYPE, Integer.TYPE, Integer.TYPE});
                     drawStringUnderlineCharAtMethod = MethodHandles.publicLookup().findStatic(cls, "drawStringUnderlineCharAt", mt);
 }
                 catch (Exception ex) {
@@ -54,26 +32,21 @@ public class JavaCompatibility {
                     throw new RuntimeException(ex);
 }
 }
-            // ** MonitorExit[var6_6] (shouldn't be in output)
-            try {
-                if (SystemInfo.isJava_9_orLater) {
-                    drawStringUnderlineCharAtMethod.invoke(c, (Graphics2D)g, text, underlinedIndex, x, y);
-                } else {
-                    drawStringUnderlineCharAtMethod.invoke(c, g, text, underlinedIndex, x, y);
+}
+        try {
+            if (SystemInfo.isJava_9_orLater) {
+                drawStringUnderlineCharAtMethod.invoke(c, (Graphics2D)g, text, underlinedIndex, (float)x, (float)y);
+            } else {
+                drawStringUnderlineCharAtMethod.invoke(c, g, text, underlinedIndex, x, y);
 }
 }
-            catch (Throwable ex) {
-                LoggingFacade.INSTANCE.logSevere(null, ex);
-                throw new RuntimeException(ex);
-}
-            return;
+        catch (Throwable ex) {
+            LoggingFacade.INSTANCE.logSevere(null, ex);
+            throw new RuntimeException(ex);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
+
     public static String getClippedString(JComponent c, FontMetrics fm, String string, int availTextWidth) {
-        Class<JavaCompatibility> clazz = JavaCompatibility.class;
         synchronized (JavaCompatibility.class) {
             if (getClippedStringMethod == null) {
                 try {
@@ -86,14 +59,14 @@ public class JavaCompatibility {
                     throw new RuntimeException(ex);
 }
 }
-            // ** MonitorExit[var4_4] (shouldn't be in output)
-            try {
-                return (String)getClippedStringMethod.invoke(c, fm, string, availTextWidth);
 }
-            catch (Throwable ex) {
-                LoggingFacade.INSTANCE.logSevere(null, ex);
-                throw new RuntimeException(ex);
+        try {
+            return (String)getClippedStringMethod.invoke(c, fm, string, availTextWidth);
+}
+        catch (Throwable ex) {
+            LoggingFacade.INSTANCE.logSevere(null, ex);
+            throw new RuntimeException(ex);
 }
 }
-}
+
 }
