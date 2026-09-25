@@ -52,13 +52,6 @@ implements Runnable {
     public void L() {
         this.o = true;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Unable to fully structure code
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private void r(InputStream var1, float var4) {
         SyncState var5 = null;
         StreamState var6 = null;
@@ -167,6 +160,8 @@ implements Runnable {
                                     var15 = var5.data;
                                     var16 = var1.read(var15, var14, 4096);
                                     if (var16 <= 0) {
+                                        var21 = true;
+                                        continue;
                                     }
 
                                     var5.wrote(var16);
@@ -210,6 +205,7 @@ implements Runnable {
                                     }
 
                                     if (var7.eos() != 0) {
+                                        var21 = true;
                                     }
                                 }
                             }
