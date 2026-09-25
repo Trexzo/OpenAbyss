@@ -7,6 +7,7 @@ import Abyss.AbyssClient;
 import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.internal.BrokenBlockTracker;
+import Abyss.internal.CheaterDetector;
 import Abyss.internal.MiningEngine;
 import Abyss.internal.MiningRenderSubscriber;
 import Abyss.internal.auth.TrustAllSslContext;
@@ -103,11 +104,14 @@ public final class AbyssBootstrap {
         AbyssClickGui.install(PENDING);
         AbyssCommands.install(PENDING);
         AbyssBootstrap.subscribeAlways(var2, "Abyss.module.impl.misc.Timer", "Timer");
+        if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
+            var2.s(AbyssModuleRegistry.PLAIN_LISTENER, 0L);
+            SUBSCRIBED.add("Abyss.internal.CheaterDetector (internal service; held out of ModuleManager.S)");
+} else {
+            PENDING.add("Abyss.internal.CheaterDetector internal listener missing from ModuleManager.o");
+}
         var2.endBatch();
         AbyssClient.w = var2;
-        if (AbyssModuleRegistry.PLAIN_LISTENER != null) {
-            PENDING.add("Abyss.internal.CheaterDetector held out of tD.S and left unsubscribed -- /cheaters reads its R/c maps and they stay empty until a world-gated subscription exists");
-}
         AbyssConfig.apply(PENDING);
         AbyssBootstrap.forceEnableCommandLine();
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
