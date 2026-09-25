@@ -254,14 +254,16 @@ def scan_file(path: Path, root: Path):
             "high",
         )
 
-    # Duplicate Throwable catches inside a short local window were the broader
-    # StallWatchdog review family. Keep these medium because nested handlers
-    # can be legitimate.
+    # Throwable catches that merely occur near one another are too broad to
+    # support a source-failure claim: many legitimate nested handlers and
+    # neighboring methods satisfy this shape. Keep the inventory for forensic
+    # review, but leave executable gating to the exact adjacent-catch detector
+    # above, which captures the proven StallWatchdog CFR failure family.
     throwable_lines = [i for i, line in enumerate(lines, 1) if CATCH_THROWABLE.search(line)]
     for a, b in zip(throwable_lines, throwable_lines[1:]):
         if b - a <= 35:
             excerpt = "\n".join(lines[max(0, a-2):min(len(lines), b+2)])
-            add(findings, "nearby_duplicate_throwable_catches", rel, a, excerpt, "medium")
+            add(findings, "nearby_duplicate_throwable_catches", rel, a, excerpt, "low")
 
     # ZKM static decoders deserve extra attention when synthetic labels or
     # labelled control transfer remain inside the same file.
