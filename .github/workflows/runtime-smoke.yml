@@ -7,8 +7,9 @@ on:
       - recovery/r38-compile-pass
     paths:
       - .github/workflows/runtime-smoke.yml
-      - src/main/java/Abyss/ASM/**
-      - src/main/java/Abyss/internal/**
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
       - build.gradle
 
 permissions:

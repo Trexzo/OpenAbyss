@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/runtime-linux-smoke.yml
       - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
       - src/main/resources/**
       - build.gradle
 
