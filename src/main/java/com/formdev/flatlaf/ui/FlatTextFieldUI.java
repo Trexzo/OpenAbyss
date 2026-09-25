@@ -1,17 +1,23 @@
 /*
- * Decompiled with CFR 0.152.
+ * Copyright 2019 FormDev Software GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package com.formdev.flatlaf.ui;
 
-import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.ui.FlatCaret;
-import com.formdev.flatlaf.ui.FlatStylingSupport;
-import com.formdev.flatlaf.ui.FlatUIUtils;
-import com.formdev.flatlaf.ui.MigLayoutVisualPadding;
-import com.formdev.flatlaf.util.HiDPIUtils;
-import com.formdev.flatlaf.util.JavaCompatibility;
-import com.formdev.flatlaf.util.LoggingFacade;
-import com.formdev.flatlaf.util.UIScale;
+import static com.formdev.flatlaf.FlatClientProperties.*;
+import static com.formdev.flatlaf.util.UIScale.scale;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -48,674 +54,921 @@ import javax.swing.plaf.basic.BasicTextFieldUI;
 import javax.swing.text.Caret;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+import com.formdev.flatlaf.ui.FlatStylingSupport.Styleable;
+import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableUI;
+import com.formdev.flatlaf.util.HiDPIUtils;
+import com.formdev.flatlaf.util.JavaCompatibility;
+import com.formdev.flatlaf.util.LoggingFacade;
 
+/**
+ * Provides the Flat LaF UI delegate for {@link javax.swing.JTextField}.
+ *
+ * <!-- BasicTextFieldUI -->
+ *
+ * @uiDefault TextField.font					Font
+ * @uiDefault TextField.background				Color
+ * @uiDefault TextField.foreground				Color	also used if not editable
+ * @uiDefault TextField.caretForeground			Color
+ * @uiDefault TextField.selectionBackground		Color
+ * @uiDefault TextField.selectionForeground		Color
+ * @uiDefault TextField.disabledBackground		Color	used if not enabled
+ * @uiDefault TextField.inactiveBackground		Color	used if not editable
+ * @uiDefault TextField.inactiveForeground		Color	used if not enabled (yes, this is confusing; this should be named disabledForeground)
+ * @uiDefault TextField.border					Border
+ * @uiDefault TextField.margin					Insets
+ * @uiDefault TextField.caretBlinkRate			int		default is 500 milliseconds
+ *
+ * <!-- FlatTextFieldUI -->
+ *
+ * @uiDefault Component.minimumWidth			int
+ * @uiDefault TextField.placeholderForeground	Color
+ * @uiDefault TextField.focusedBackground		Color	optional
+ * @uiDefault TextField.iconTextGap				int		optional, default is 4
+ * @uiDefault TextComponent.selectAllOnFocusPolicy	String	never, once (default) or always
+ * @uiDefault TextComponent.selectAllOnMouseClick	boolean
+ *
+ * @author Karl Tauber
+ */
 public class FlatTextFieldUI
-extends BasicTextFieldUI
-implements FlatStylingSupport.StyleableUI {
-    @FlatStylingSupport.Styleable
-    protected int minimumWidth;
-    private Color background;
-    @FlatStylingSupport.Styleable
-    protected Color disabledBackground;
-    @FlatStylingSupport.Styleable
-    protected Color inactiveBackground;
-    @FlatStylingSupport.Styleable
-    protected Color placeholderForeground;
-    @FlatStylingSupport.Styleable
-    protected Color focusedBackground;
-    @FlatStylingSupport.Styleable
-    protected int iconTextGap;
-    @FlatStylingSupport.Styleable
-    protected Icon leadingIcon;
-    @FlatStylingSupport.Styleable
-    protected Icon trailingIcon;
-    protected JComponent leadingComponent;
-    protected JComponent trailingComponent;
-    protected JComponent clearButton;
-    @FlatStylingSupport.Styleable
-    protected boolean showClearButton;
-    private Color oldDisabledBackground;
-    private Color oldInactiveBackground;
-    private Insets defaultMargin;
-    private FocusListener focusListener;
-    private DocumentListener documentListener;
-    private Map<String, Object> oldStyleValues;
-    private AtomicBoolean borderShared;
+	extends BasicTextFieldUI
+	implements StyleableUI
+{
+	@Styleable protected int minimumWidth;
+	private Color background;
+	@Styleable protected Color disabledBackground;
+	@Styleable protected Color inactiveBackground;
+	@Styleable protected Color placeholderForeground;
+	@Styleable protected Color focusedBackground;
+	/** @since 2 */ @Styleable protected int iconTextGap;
 
-    public static ComponentUI createUI(JComponent c) {
-        return new FlatTextFieldUI();
-}
-    @Override
-    public void installUI(JComponent c) {
-        if (FlatUIUtils.needsLightAWTPeer(c)) {
-            FlatUIUtils.runWithLightAWTPeerUIDefaults(() -> this.installUIImpl(c));
-        } else {
-            this.installUIImpl(c);
-}
-}
-    private void installUIImpl(JComponent c) {
-        super.installUI(c);
-        this.leadingIcon = FlatClientProperties.clientProperty(c, "JTextField.leadingIcon", null, Icon.class);
-        this.trailingIcon = FlatClientProperties.clientProperty(c, "JTextField.trailingIcon", null, Icon.class);
-        this.installLeadingComponent();
-        this.installTrailingComponent();
-        this.installClearButton();
-        this.installStyle();
-}
-    @Override
-    public void uninstallUI(JComponent c) {
-        this.uninstallLeadingComponent();
-        this.uninstallTrailingComponent();
-        this.uninstallClearButton();
-        super.uninstallUI(c);
-        this.leadingIcon = null;
-        this.trailingIcon = null;
-}
-    @Override
-    protected void installDefaults() {
-        super.installDefaults();
-        String prefix = this.getPropertyPrefix();
-        this.minimumWidth = UIManager.getInt("Component.minimumWidth");
-        this.background = UIManager.getColor(prefix + ".background");
-        this.disabledBackground = UIManager.getColor(prefix + ".disabledBackground");
-        this.inactiveBackground = UIManager.getColor(prefix + ".inactiveBackground");
-        this.placeholderForeground = UIManager.getColor(prefix + ".placeholderForeground");
-        this.focusedBackground = UIManager.getColor(prefix + ".focusedBackground");
-        this.iconTextGap = FlatUIUtils.getUIInt(prefix + ".iconTextGap", 4);
-        this.defaultMargin = UIManager.getInsets(prefix + ".margin");
-        LookAndFeel.installProperty(this.getComponent(), "opaque", false);
-        MigLayoutVisualPadding.install(this.getComponent());
-}
-    @Override
-    protected void uninstallDefaults() {
-        super.uninstallDefaults();
-        this.background = null;
-        this.disabledBackground = null;
-        this.inactiveBackground = null;
-        this.placeholderForeground = null;
-        this.focusedBackground = null;
-        this.oldDisabledBackground = null;
-        this.oldInactiveBackground = null;
-        this.oldStyleValues = null;
-        this.borderShared = null;
-        MigLayoutVisualPadding.uninstall(this.getComponent());
-}
-    @Override
-    protected void installListeners() {
-        super.installListeners();
-        this.focusListener = new FlatUIUtils.RepaintFocusListener(this.getComponent(), null);
-        this.getComponent().addFocusListener(this.focusListener);
-}
-    @Override
-    protected void uninstallListeners() {
-        super.uninstallListeners();
-        this.getComponent().removeFocusListener(this.focusListener);
-        this.focusListener = null;
-        if (this.documentListener != null) {
-            this.getComponent().getDocument().removeDocumentListener(this.documentListener);
-            this.documentListener = null;
-}
-}
-    @Override
-    protected Caret createCaret() {
-        return new FlatCaret(UIManager.getString("TextComponent.selectAllOnFocusPolicy"), UIManager.getBoolean("TextComponent.selectAllOnMouseClick"));
-}
-    @Override
-    protected void propertyChange(PropertyChangeEvent e) {
-        String propertyName = e.getPropertyName();
-        if ("editable".equals(propertyName) || "enabled".equals(propertyName)) {
-            this.updateBackground();
-        } else {
-            super.propertyChange(e);
-}
-        JTextComponent c = this.getComponent();
-        switch (e.getPropertyName()) {
-            case "JTextField.placeholderText": 
-            case "JComponent.roundRect": 
-            case "JComponent.outline": 
-            case "JTextField.padding": {
-                c.repaint();
-                break;
-}
-            case "JComponent.minimumWidth": {
-                c.revalidate();
-                break;
-}
-            case "FlatLaf.style": 
-            case "FlatLaf.styleClass": {
-                this.installStyle();
-                c.revalidate();
-                c.repaint();
-                break;
-}
-            case "JTextField.leadingIcon": {
-                this.leadingIcon = e.getNewValue() instanceof Icon ? (Icon)e.getNewValue() : null;
-                c.repaint();
-                break;
-}
-            case "JTextField.trailingIcon": {
-                this.trailingIcon = e.getNewValue() instanceof Icon ? (Icon)e.getNewValue() : null;
-                c.repaint();
-                break;
-}
-            case "JTextField.leadingComponent": {
-                this.uninstallLeadingComponent();
-                this.installLeadingComponent();
-                c.revalidate();
-                c.repaint();
-                break;
-}
-            case "JTextField.trailingComponent": {
-                this.uninstallTrailingComponent();
-                this.installTrailingComponent();
-                c.revalidate();
-                c.repaint();
-                break;
-}
-            case "JTextField.showClearButton": {
-                this.uninstallClearButton();
-                this.installClearButton();
-                c.revalidate();
-                c.repaint();
-                break;
-}
-            case "enabled": 
-            case "editable": {
-                this.updateClearButton();
-                break;
-}
-            case "document": {
-                if (this.documentListener == null) break;
-                if (e.getOldValue() instanceof Document) {
-                    ((Document)e.getOldValue()).removeDocumentListener(this.documentListener);
-}
-                if (e.getNewValue() instanceof Document) {
-                    ((Document)e.getNewValue()).addDocumentListener(this.documentListener);
-}
-                this.updateClearButton();
-}
-}
-}
-    protected void installDocumentListener() {
-        if (this.documentListener != null) {
-            return;
-}
-        this.documentListener = new FlatDocumentListener();
-        this.getComponent().getDocument().addDocumentListener(this.documentListener);
-}
-    protected void documentChanged(DocumentEvent e) {
-        if (this.clearButton != null) {
-            this.updateClearButton();
-}
-}
-    protected void installStyle() {
-        try {
-            this.applyStyle(FlatStylingSupport.getResolvedStyle(this.getComponent(), this.getStyleType()));
-}
-        catch (RuntimeException ex) {
-            LoggingFacade.INSTANCE.logSevere(null, ex);
-}
-}
-    String getStyleType() {
-        return "TextField";
-}
-    protected void applyStyle(Object style) {
-        this.oldDisabledBackground = this.disabledBackground;
-        this.oldInactiveBackground = this.inactiveBackground;
-        boolean oldShowClearButton = this.showClearButton;
-        this.oldStyleValues = FlatStylingSupport.parseAndApply(this.oldStyleValues, style, this::applyStyleProperty);
-        this.updateBackground();
-        if (this.showClearButton != oldShowClearButton) {
-            this.uninstallClearButton();
-            this.installClearButton();
-}
-}
-    protected Object applyStyleProperty(String key, Object value) {
-        if (this.borderShared == null) {
-            this.borderShared = new AtomicBoolean(true);
-}
-        return FlatStylingSupport.applyToAnnotatedObjectOrBorder(this, key, value, this.getComponent(), this.borderShared);
-}
-    @Override
-    public Map<String, Class<?>> getStyleableInfos(JComponent c) {
-        return FlatStylingSupport.getAnnotatedStyleableInfos(this, this.getComponent().getBorder());
-}
-    @Override
-    public Object getStyleableValue(JComponent c, String key) {
-        return FlatStylingSupport.getAnnotatedStyleableValue(this, this.getComponent().getBorder(), key);
-}
-    private void updateBackground() {
-        FlatTextFieldUI.updateBackground(this.getComponent(), this.background, this.disabledBackground, this.inactiveBackground, this.oldDisabledBackground, this.oldInactiveBackground);
-}
-    static void updateBackground(JTextComponent c, Color background, Color disabledBackground, Color inactiveBackground, Color oldDisabledBackground, Color oldInactiveBackground) {
-        Color oldBackground = c.getBackground();
-        if (!(oldBackground instanceof UIResource)) {
-            return;
-}
-        if (oldBackground != background && oldBackground != disabledBackground && oldBackground != inactiveBackground && oldBackground != oldDisabledBackground && oldBackground != oldInactiveBackground) {
-            return;
-}
-        Color newBackground = !c.isEnabled() ? disabledBackground : (!c.isEditable() ? inactiveBackground : background);
-        if (newBackground != oldBackground) {
-            c.setBackground(newBackground);
-}
-}
-    @Override
-    protected void paintSafely(Graphics g) {
-        FlatTextFieldUI.paintBackground(g, this.getComponent(), this.focusedBackground);
-        this.paintPlaceholder(g);
-        if (this.hasLeadingIcon() || this.hasTrailingIcon()) {
-            this.paintIcons(g, new Rectangle(this.getIconsRect()));
-}
-        super.paintSafely(HiDPIUtils.createGraphicsTextYCorrection((Graphics2D)g));
-}
-    @Override
-    protected void paintBackground(Graphics g) {
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
-    static void paintBackground(Graphics g, JTextComponent c, Color focusedBackground) {
-        if (!c.isOpaque() && FlatUIUtils.getOutsideFlatBorder(c) == null && FlatUIUtils.hasOpaqueBeenExplicitlySet(c)) {
-            return;
-}
-        float focusWidth = FlatUIUtils.getBorderFocusWidth(c);
-        float arc = FlatUIUtils.getBorderArc(c);
-        if (c.isOpaque() && (focusWidth > 0.0f || arc > 0.0f)) {
-            FlatUIUtils.paintParentBackground(g, c);
-}
-        Graphics2D g2 = (Graphics2D)g.create();
-        try {
-            FlatUIUtils.setRenderingHints(g2);
-            g2.setColor(FlatTextFieldUI.getBackground(c, focusedBackground));
-            FlatUIUtils.paintComponentBackground(g2, 0, 0, c.getWidth(), c.getHeight(), focusWidth, arc);
-}
-        finally {
-            g2.dispose();
-}
-}
-    static Color getBackground(JTextComponent c, Color focusedBackground) {
-        Color background = c.getBackground();
-        if (!(background instanceof UIResource)) {
-            return background;
-}
-        if (focusedBackground != null && FlatUIUtils.isPermanentFocusOwner(c)) {
-            return focusedBackground;
-}
-        return background;
-}
-    protected void paintPlaceholder(Graphics g) {
-        JTextComponent c = this.getComponent();
-        if (c.getDocument().getLength() > 0) {
-            return;
-}
-        Container parent = c.getParent();
-        JComponent jc = parent instanceof JComboBox ? (JComboBox)parent : c;
-        String placeholder = FlatClientProperties.clientProperty(jc, "JTextField.placeholderText", null, String.class);
-        if (placeholder == null) {
-            return;
-}
-        Rectangle r2 = this.getVisibleEditorRect();
-        FontMetrics fm = c.getFontMetrics(c.getFont());
-        String clippedPlaceholder = JavaCompatibility.getClippedString(c, fm, placeholder, r2.width);
-        int x = r2.x + (this.isLeftToRight() ? 0 : r2.width - fm.stringWidth(clippedPlaceholder));
-        int y = r2.y + fm.getAscent() + (r2.height - fm.getHeight()) / 2;
-        g.setColor(this.placeholderForeground);
-        FlatUIUtils.drawString(c, g, clippedPlaceholder, x, y);
-}
-    protected void paintIcons(Graphics g, Rectangle r2) {
-        Icon rightIcon;
-        boolean ltr = this.isLeftToRight();
-        Icon leftIcon = ltr ? this.leadingIcon : this.trailingIcon;
-        Icon icon = rightIcon = ltr ? this.trailingIcon : this.leadingIcon;
-        if (leftIcon != null) {
-            int x = r2.x;
-            int y = r2.y + Math.round((float)(r2.height - leftIcon.getIconHeight()) / 2.0f);
-            leftIcon.paintIcon(this.getComponent(), g, x, y);
-            int w2 = leftIcon.getIconWidth() + UIScale.scale(this.iconTextGap);
-            r2.x += w2;
-            r2.width -= w2;
-}
-        if (rightIcon != null) {
-            int iconWidth = rightIcon.getIconWidth();
-            int x = r2.x + r2.width - iconWidth;
-            int y = r2.y + Math.round((float)(r2.height - rightIcon.getIconHeight()) / 2.0f);
-            rightIcon.paintIcon(this.getComponent(), g, x, y);
-            r2.width -= iconWidth + UIScale.scale(this.iconTextGap);
-}
-}
-    @Override
-    public Dimension getPreferredSize(JComponent c) {
-        return this.applyMinimumWidth(c, this.applyExtraSize(super.getPreferredSize(c)), this.minimumWidth);
-}
-    @Override
-    public Dimension getMinimumSize(JComponent c) {
-        return this.applyMinimumWidth(c, this.applyExtraSize(super.getMinimumSize(c)), this.minimumWidth);
-}
-    private Dimension applyExtraSize(Dimension size) {
-        size.width += this.getLeadingIconWidth() + this.getTrailingIconWidth();
-        for (JComponent comp : this.getLeadingComponents()) {
-            if (comp == null || !comp.isVisible()) continue;
-            size.width += comp.getPreferredSize().width;
-}
-        for (JComponent comp : this.getTrailingComponents()) {
-            if (comp == null || !comp.isVisible()) continue;
-            size.width += comp.getPreferredSize().width;
-}
-        return size;
-}
-    private Dimension applyMinimumWidth(JComponent c, Dimension size, int minimumWidth) {
-        if (c instanceof JTextField && ((JTextField)c).getColumns() > 0) {
-            return size;
-}
-        if (!FlatTextFieldUI.hasDefaultMargins(c, this.defaultMargin)) {
-            return size;
-}
-        Container parent = c.getParent();
-        if (parent instanceof JComboBox || parent instanceof JSpinner || parent != null && parent.getParent() instanceof JSpinner) {
-            return size;
-}
-        minimumWidth = FlatUIUtils.minimumWidth(c, minimumWidth);
-        float focusWidth = FlatUIUtils.getBorderFocusWidth(c);
-        size.width = Math.max(size.width, UIScale.scale(minimumWidth) + Math.round(focusWidth * 2.0f));
-        return size;
-}
-    static boolean hasDefaultMargins(JComponent c, Insets defaultMargin) {
-        Insets margin = ((JTextComponent)c).getMargin();
-        return margin instanceof UIResource && Objects.equals(margin, defaultMargin);
-}
-    @Override
-    protected Rectangle getVisibleEditorRect() {
-        Insets padding;
-        Rectangle r2 = this.getIconsRect();
-        if (r2 == null) {
-            return null;
-}
-        int leading = this.getLeadingIconWidth();
-        int trailing = this.getTrailingIconWidth();
-        if (leading != 0 || trailing != 0) {
-            boolean ltr = this.isLeftToRight();
-            int left = ltr ? leading : trailing;
-            int right = ltr ? trailing : leading;
-            r2.x += left;
-            r2.width -= left + right;
-}
-        if ((padding = this.getPadding()) != null) {
-            r2 = FlatUIUtils.subtractInsets(r2, padding);
-}
-        r2.width = Math.max(r2.width, 0);
-        r2.height = Math.max(r2.height, 0);
-        return r2;
-}
-    protected Rectangle getIconsRect() {
-        Insets margin;
-        Rectangle r2 = super.getVisibleEditorRect();
-        if (r2 == null) {
-            return null;
-}
-        boolean ltr = this.isLeftToRight();
-        JComponent[] leftComponents = ltr ? this.getLeadingComponents() : this.getTrailingComponents();
-        JComponent[] rightComponents = ltr ? this.getTrailingComponents() : this.getLeadingComponents();
-        boolean leftVisible = false;
-        boolean rightVisible = false;
-        for (JComponent leftComponent : leftComponents) {
-            if (leftComponent == null || !leftComponent.isVisible()) continue;
-            int w2 = leftComponent.getPreferredSize().width;
-            r2.x += w2;
-            r2.width -= w2;
-            leftVisible = true;
-}
-        for (JComponent rightComponent : rightComponents) {
-            if (rightComponent == null || !rightComponent.isVisible()) continue;
-            r2.width -= rightComponent.getPreferredSize().width;
-            rightVisible = true;
-}
-        if (leftVisible || (ltr ? this.hasLeadingIcon() : this.hasTrailingIcon())) {
-            margin = this.getComponent().getMargin();
-            int newLeftMargin = Math.min(margin.left, margin.top);
-            if (newLeftMargin < margin.left) {
-                int diff = UIScale.scale(margin.left - newLeftMargin);
-                r2.x -= diff;
-                r2.width += diff;
-}
-}
-        if (rightVisible || (ltr ? this.hasTrailingIcon() : this.hasLeadingIcon())) {
-            margin = this.getComponent().getMargin();
-            int newRightMargin = Math.min(margin.right, margin.top);
-            if (newRightMargin < margin.left) {
-                r2.width += UIScale.scale(margin.right - newRightMargin);
-}
-}
-        r2.width = Math.max(r2.width, 0);
-        r2.height = Math.max(r2.height, 0);
-        return r2;
-}
-    protected boolean hasLeadingIcon() {
-        return this.leadingIcon != null;
-}
-    protected boolean hasTrailingIcon() {
-        return this.trailingIcon != null;
-}
-    protected int getLeadingIconWidth() {
-        return this.leadingIcon != null ? this.leadingIcon.getIconWidth() + UIScale.scale(this.iconTextGap) : 0;
-}
-    protected int getTrailingIconWidth() {
-        return this.trailingIcon != null ? this.trailingIcon.getIconWidth() + UIScale.scale(this.iconTextGap) : 0;
-}
-    boolean isLeftToRight() {
-        return this.getComponent().getComponentOrientation().isLeftToRight();
-}
-    protected Insets getPadding() {
-        return UIScale.scale(FlatClientProperties.clientProperty(this.getComponent(), "JTextField.padding", null, Insets.class));
-}
-    protected void scrollCaretToVisible() {
-        Caret caret = this.getComponent().getCaret();
-        if (caret instanceof FlatCaret) {
-            ((FlatCaret)caret).scrollCaretToVisible();
-}
-}
-    protected void installLeadingComponent() {
-        JTextComponent c = this.getComponent();
-        this.leadingComponent = FlatClientProperties.clientProperty(c, "JTextField.leadingComponent", null, JComponent.class);
-        if (this.leadingComponent != null) {
-            this.prepareLeadingOrTrailingComponent(this.leadingComponent);
-            this.installLayout();
-            c.add(this.leadingComponent);
-}
-}
-    protected void installTrailingComponent() {
-        JTextComponent c = this.getComponent();
-        this.trailingComponent = FlatClientProperties.clientProperty(c, "JTextField.trailingComponent", null, JComponent.class);
-        if (this.trailingComponent != null) {
-            this.prepareLeadingOrTrailingComponent(this.trailingComponent);
-            this.installLayout();
-            c.add(this.trailingComponent);
-}
-}
-    protected void uninstallLeadingComponent() {
-        if (this.leadingComponent != null) {
-            this.getComponent().remove(this.leadingComponent);
-            this.leadingComponent = null;
-}
-}
-    protected void uninstallTrailingComponent() {
-        if (this.trailingComponent != null) {
-            this.getComponent().remove(this.trailingComponent);
-            this.trailingComponent = null;
-}
-}
-    protected void installClearButton() {
-        JTextComponent c = this.getComponent();
-        if (FlatClientProperties.clientPropertyBoolean(c, "JTextField.showClearButton", this.showClearButton)) {
-            this.clearButton = this.createClearButton();
-            this.updateClearButton();
-            this.installDocumentListener();
-            this.installLayout();
-            c.add(this.clearButton);
-}
-}
-    protected void uninstallClearButton() {
-        if (this.clearButton != null) {
-            this.getComponent().remove(this.clearButton);
-            this.clearButton = null;
-}
-}
-    protected JComponent createClearButton() {
-        JButton button = new JButton();
-        button.setName("TextField.clearButton");
-        button.putClientProperty("FlatLaf.styleClass", "clearButton");
-        button.putClientProperty("JButton.buttonType", "toolBarButton");
-        button.setCursor(Cursor.getDefaultCursor());
-        button.addActionListener(e -> this.clearButtonClicked());
-        return button;
-}
-    protected void clearButtonClicked() {
-        JTextComponent c = this.getComponent();
-        Object callback = c.getClientProperty("JTextField.clearCallback");
-        if (callback instanceof Runnable) {
-            ((Runnable)callback).run();
-        } else if (callback instanceof Consumer) {
-            ((Consumer)callback).accept(c);
-        } else {
-            c.setText("");
-}
-}
-    protected void updateClearButton() {
-        boolean visible;
-        if (this.clearButton == null) {
-            return;
-}
-        JTextComponent c = this.getComponent();
-        boolean bl = visible = c.isEnabled() && c.isEditable() && c.getDocument().getLength() > 0;
-        if (visible != this.clearButton.isVisible()) {
-            this.clearButton.setVisible(visible);
-            c.revalidate();
-            c.repaint();
-}
-}
-    protected JComponent[] getLeadingComponents() {
-        return new JComponent[]{this.leadingComponent};
-}
-    protected JComponent[] getTrailingComponents() {
-        return new JComponent[]{this.trailingComponent, this.clearButton};
-}
-    protected void prepareLeadingOrTrailingComponent(JComponent c) {
-        c.putClientProperty("FlatLaf.styleClass", "inTextField");
-        if (c instanceof JButton || c instanceof JToggleButton) {
-            c.putClientProperty("JButton.buttonType", "toolBarButton");
-            if (!c.isCursorSet()) {
-                c.setCursor(Cursor.getDefaultCursor());
-}
-        } else if (c instanceof JToolBar) {
-            for (Component child : c.getComponents()) {
-                if (!(child instanceof JComponent)) continue;
-                ((JComponent)child).putClientProperty("FlatLaf.styleClass", "inTextField");
-}
-            if (!c.isCursorSet()) {
-                c.setCursor(Cursor.getDefaultCursor());
-}
-}
-}
-    protected void installLayout() {
-        JTextComponent c = this.getComponent();
-        LayoutManager oldLayout = c.getLayout();
-        if (!(oldLayout instanceof FlatTextFieldLayout)) {
-            c.setLayout(new FlatTextFieldLayout(oldLayout));
-}
-}
-    private class FlatDocumentListener
-    implements DocumentListener {
-        private FlatDocumentListener() {
-}
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            FlatTextFieldUI.this.documentChanged(e);
-}
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            FlatTextFieldUI.this.documentChanged(e);
-}
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            FlatTextFieldUI.this.documentChanged(e);
-}
-}
-    private class FlatTextFieldLayout
-    implements LayoutManager2,
-    UIResource {
-        private final LayoutManager delegate;
+	/** @since 2 */ @Styleable protected Icon leadingIcon;
+	/** @since 2 */ @Styleable protected Icon trailingIcon;
+	/** @since 2 */ protected JComponent leadingComponent;
+	/** @since 2 */ protected JComponent trailingComponent;
+	/** @since 2 */ protected JComponent clearButton;
 
-        FlatTextFieldLayout(LayoutManager delegate) {
-            this.delegate = delegate;
-}
-        @Override
-        public void addLayoutComponent(String name, Component comp) {
-            if (this.delegate != null) {
-                this.delegate.addLayoutComponent(name, comp);
-}
-}
-        @Override
-        public void removeLayoutComponent(Component comp) {
-            if (this.delegate != null) {
-                this.delegate.removeLayoutComponent(comp);
-}
-}
-        @Override
-        public Dimension preferredLayoutSize(Container parent) {
-            return this.delegate != null ? this.delegate.preferredLayoutSize(parent) : null;
-}
-        @Override
-        public Dimension minimumLayoutSize(Container parent) {
-            return this.delegate != null ? this.delegate.minimumLayoutSize(parent) : null;
-}
-        @Override
-        public void layoutContainer(Container parent) {
-            int cw;
-            if (this.delegate != null) {
-                this.delegate.layoutContainer(parent);
-}
-            int ow = FlatUIUtils.getBorderFocusAndLineWidth(FlatTextFieldUI.this.getComponent());
-            int h = parent.getHeight() - ow - ow;
-            boolean ltr = FlatTextFieldUI.this.isLeftToRight();
-            JComponent[] leftComponents = ltr ? FlatTextFieldUI.this.getLeadingComponents() : FlatTextFieldUI.this.getTrailingComponents();
-            JComponent[] rightComponents = ltr ? FlatTextFieldUI.this.getTrailingComponents() : FlatTextFieldUI.this.getLeadingComponents();
-            int x = ow;
-            for (JComponent leftComponent : leftComponents) {
-                if (leftComponent == null || !leftComponent.isVisible()) continue;
-                cw = leftComponent.getPreferredSize().width;
-                leftComponent.setBounds(x, ow, cw, h);
-                x += cw;
-}
-            x = parent.getWidth() - ow;
-            for (JComponent rightComponent : rightComponents) {
-                if (rightComponent == null || !rightComponent.isVisible()) continue;
-                cw = rightComponent.getPreferredSize().width;
-                rightComponent.setBounds(x -= cw, ow, cw, h);
-}
-}
-        @Override
-        public void addLayoutComponent(Component comp, Object constraints) {
-            if (this.delegate instanceof LayoutManager2) {
-                ((LayoutManager2)this.delegate).addLayoutComponent(comp, constraints);
-}
-}
-        @Override
-        public Dimension maximumLayoutSize(Container target) {
-            return this.delegate instanceof LayoutManager2 ? ((LayoutManager2)this.delegate).maximumLayoutSize(target) : null;
-}
-        @Override
-        public float getLayoutAlignmentX(Container target) {
-            return this.delegate instanceof LayoutManager2 ? ((LayoutManager2)this.delegate).getLayoutAlignmentX(target) : 0.5f;
-}
-        @Override
-        public float getLayoutAlignmentY(Container target) {
-            return this.delegate instanceof LayoutManager2 ? ((LayoutManager2)this.delegate).getLayoutAlignmentY(target) : 0.5f;
-}
-        @Override
-        public void invalidateLayout(Container target) {
-            if (this.delegate instanceof LayoutManager2) {
-                ((LayoutManager2)this.delegate).invalidateLayout(target);
-}
-}
-}
+	// only used via styling (not in UI defaults, but has likewise client properties)
+	/** @since 2 */ @Styleable protected boolean showClearButton;
+
+	private Color oldDisabledBackground;
+	private Color oldInactiveBackground;
+
+	private Insets defaultMargin;
+
+	private FocusListener focusListener;
+	private DocumentListener documentListener;
+	private Map<String, Object> oldStyleValues;
+	private AtomicBoolean borderShared;
+
+	public static ComponentUI createUI( JComponent c ) {
+		return new FlatTextFieldUI();
+	}
+
+	@Override
+	public void installUI( JComponent c ) {
+		if( FlatUIUtils.needsLightAWTPeer( c ) )
+			FlatUIUtils.runWithLightAWTPeerUIDefaults( () -> installUIImpl( c ) );
+		else
+			installUIImpl( c );
+	}
+
+	private void installUIImpl( JComponent c ) {
+		super.installUI( c );
+
+		leadingIcon = clientProperty( c, TEXT_FIELD_LEADING_ICON, null, Icon.class );
+		trailingIcon = clientProperty( c, TEXT_FIELD_TRAILING_ICON, null, Icon.class );
+
+		installLeadingComponent();
+		installTrailingComponent();
+		installClearButton();
+
+		installStyle();
+	}
+
+	@Override
+	public void uninstallUI( JComponent c ) {
+		uninstallLeadingComponent();
+		uninstallTrailingComponent();
+		uninstallClearButton();
+
+		super.uninstallUI( c );
+
+		leadingIcon = null;
+		trailingIcon = null;
+	}
+
+	@Override
+	protected void installDefaults() {
+		super.installDefaults();
+
+		String prefix = getPropertyPrefix();
+		minimumWidth = UIManager.getInt( "Component.minimumWidth" );
+		background = UIManager.getColor( prefix + ".background" );
+		disabledBackground = UIManager.getColor( prefix + ".disabledBackground" );
+		inactiveBackground = UIManager.getColor( prefix + ".inactiveBackground" );
+		placeholderForeground = UIManager.getColor( prefix + ".placeholderForeground" );
+		focusedBackground = UIManager.getColor( prefix + ".focusedBackground" );
+		iconTextGap = FlatUIUtils.getUIInt( prefix + ".iconTextGap", 4 );
+
+		defaultMargin = UIManager.getInsets( prefix + ".margin" );
+
+		LookAndFeel.installProperty( getComponent(), "opaque", false );
+
+		MigLayoutVisualPadding.install( getComponent() );
+	}
+
+	@Override
+	protected void uninstallDefaults() {
+		super.uninstallDefaults();
+
+		background = null;
+		disabledBackground = null;
+		inactiveBackground = null;
+		placeholderForeground = null;
+		focusedBackground = null;
+
+		oldDisabledBackground = null;
+		oldInactiveBackground = null;
+
+		oldStyleValues = null;
+		borderShared = null;
+
+		MigLayoutVisualPadding.uninstall( getComponent() );
+	}
+
+	@Override
+	protected void installListeners() {
+		super.installListeners();
+
+		// necessary to update focus border and background
+		focusListener = new FlatUIUtils.RepaintFocusListener( getComponent(), null );
+		getComponent().addFocusListener( focusListener );
+	}
+
+	@Override
+	protected void uninstallListeners() {
+		super.uninstallListeners();
+
+		getComponent().removeFocusListener( focusListener );
+		focusListener = null;
+
+		if( documentListener != null ) {
+			getComponent().getDocument().removeDocumentListener( documentListener );
+			documentListener = null;
+		}
+	}
+
+	@Override
+	protected Caret createCaret() {
+		return new FlatCaret( UIManager.getString( "TextComponent.selectAllOnFocusPolicy"),
+			UIManager.getBoolean( "TextComponent.selectAllOnMouseClick" ) );
+	}
+
+	@Override
+	protected void propertyChange( PropertyChangeEvent e ) {
+		String propertyName = e.getPropertyName();
+		if( "editable".equals( propertyName ) || "enabled".equals( propertyName ) )
+			updateBackground();
+		else
+			super.propertyChange( e );
+
+		JTextComponent c = getComponent();
+		switch( e.getPropertyName() ) {
+			case PLACEHOLDER_TEXT:
+			case COMPONENT_ROUND_RECT:
+			case OUTLINE:
+			case TEXT_FIELD_PADDING:
+				c.repaint();
+				break;
+
+			case MINIMUM_WIDTH:
+				c.revalidate();
+				break;
+
+			case STYLE:
+			case STYLE_CLASS:
+				installStyle();
+				c.revalidate();
+				c.repaint();
+				break;
+
+			case TEXT_FIELD_LEADING_ICON:
+				leadingIcon = (e.getNewValue() instanceof Icon) ? (Icon) e.getNewValue() : null;
+				c.repaint();
+				break;
+
+			case TEXT_FIELD_TRAILING_ICON:
+				trailingIcon = (e.getNewValue() instanceof Icon) ? (Icon) e.getNewValue() : null;
+				c.repaint();
+				break;
+
+			case TEXT_FIELD_LEADING_COMPONENT:
+				uninstallLeadingComponent();
+				installLeadingComponent();
+				c.revalidate();
+				c.repaint();
+				break;
+
+			case TEXT_FIELD_TRAILING_COMPONENT:
+				uninstallTrailingComponent();
+				installTrailingComponent();
+				c.revalidate();
+				c.repaint();
+				break;
+
+			case TEXT_FIELD_SHOW_CLEAR_BUTTON:
+				uninstallClearButton();
+				installClearButton();
+				c.revalidate();
+				c.repaint();
+				break;
+
+			case "enabled":
+			case "editable":
+				updateClearButton();
+				break;
+
+			case "document":
+				if( documentListener != null ) {
+					if( e.getOldValue() instanceof Document )
+						((Document)e.getOldValue()).removeDocumentListener( documentListener );
+					if( e.getNewValue() instanceof Document )
+						((Document)e.getNewValue()).addDocumentListener( documentListener );
+
+					updateClearButton();
+				}
+				break;
+		}
+	}
+
+	/** @since 2 */
+	protected void installDocumentListener() {
+		if( documentListener != null )
+			return;
+
+		documentListener = new FlatDocumentListener();
+		getComponent().getDocument().addDocumentListener( documentListener );
+	}
+
+	/** @since 2 */
+	protected void documentChanged( DocumentEvent e ) {
+		if( clearButton != null )
+			updateClearButton();
+	}
+
+	/** @since 2 */
+	protected void installStyle() {
+		try {
+			applyStyle( FlatStylingSupport.getResolvedStyle( getComponent(), getStyleType() ) );
+		} catch( RuntimeException ex ) {
+			LoggingFacade.INSTANCE.logSevere( null, ex );
+		}
+	}
+
+	/** @since 2 */
+	String getStyleType() {
+		return "TextField";
+	}
+
+	/** @since 2 */
+	protected void applyStyle( Object style ) {
+		oldDisabledBackground = disabledBackground;
+		oldInactiveBackground = inactiveBackground;
+		boolean oldShowClearButton = showClearButton;
+
+		oldStyleValues = FlatStylingSupport.parseAndApply( oldStyleValues, style, this::applyStyleProperty );
+
+		updateBackground();
+		if( showClearButton != oldShowClearButton ) {
+			uninstallClearButton();
+			installClearButton();
+		}
+	}
+
+	/** @since 2 */
+	protected Object applyStyleProperty( String key, Object value ) {
+		if( borderShared == null )
+			borderShared = new AtomicBoolean( true );
+		return FlatStylingSupport.applyToAnnotatedObjectOrBorder( this, key, value, getComponent(), borderShared );
+	}
+
+	/** @since 2 */
+	@Override
+	public Map<String, Class<?>> getStyleableInfos( JComponent c ) {
+		return FlatStylingSupport.getAnnotatedStyleableInfos( this, getComponent().getBorder() );
+	}
+
+	/** @since 2.5 */
+	@Override
+	public Object getStyleableValue( JComponent c, String key ) {
+		return FlatStylingSupport.getAnnotatedStyleableValue( this, getComponent().getBorder(), key );
+	}
+
+	private void updateBackground() {
+		updateBackground( getComponent(), background,
+			disabledBackground, inactiveBackground,
+			oldDisabledBackground, oldInactiveBackground );
+	}
+
+	// same functionality as BasicTextUI.updateBackground()
+	static void updateBackground( JTextComponent c, Color background,
+		Color disabledBackground, Color inactiveBackground,
+		Color oldDisabledBackground, Color oldInactiveBackground )
+	{
+		Color oldBackground = c.getBackground();
+		if( !(oldBackground instanceof UIResource) )
+			return;
+
+		// do not update background if it currently has an unknown color (assigned from outside)
+		if( oldBackground != background &&
+			oldBackground != disabledBackground &&
+			oldBackground != inactiveBackground &&
+			oldBackground != oldDisabledBackground &&
+			oldBackground != oldInactiveBackground )
+		  return;
+
+		Color newBackground = !c.isEnabled()
+			? disabledBackground
+			: (!c.isEditable()
+				? inactiveBackground
+				: background);
+
+		if( newBackground != oldBackground )
+			c.setBackground( newBackground );
+	}
+
+	@Override
+	protected void paintSafely( Graphics g ) {
+		paintBackground( g, getComponent(), focusedBackground );
+		paintPlaceholder( g );
+
+		if( hasLeadingIcon() || hasTrailingIcon() )
+			paintIcons( g, new Rectangle( getIconsRect() ) );
+
+/*debug
+		Rectangle r = getVisibleEditorRect();
+		g.setColor( Color.red );
+		g.drawRect( r.x, r.y, r.width - 1, r.height - 1 );
+debug*/
+
+		super.paintSafely( HiDPIUtils.createGraphicsTextYCorrection( (Graphics2D) g ) );
+	}
+
+	@Override
+	protected void paintBackground( Graphics g ) {
+		// background is painted elsewhere
+	}
+
+	static void paintBackground( Graphics g, JTextComponent c, Color focusedBackground ) {
+		// do not paint background if:
+		//   - not opaque and
+		//   - border is not a flat border and
+		//   - opaque was explicitly set (to false)
+		// (same behavior as in AquaTextFieldUI)
+		if( !c.isOpaque() && FlatUIUtils.getOutsideFlatBorder( c ) == null && FlatUIUtils.hasOpaqueBeenExplicitlySet( c ) )
+			return;
+
+		float focusWidth = FlatUIUtils.getBorderFocusWidth( c );
+		float arc = FlatUIUtils.getBorderArc( c );
+
+		// fill background if opaque to avoid garbage if user sets opaque to true
+		if( c.isOpaque() && (focusWidth > 0 || arc > 0) )
+			FlatUIUtils.paintParentBackground( g, c );
+
+		// paint background
+		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+			FlatUIUtils.setRenderingHints( g2 );
+
+			g2.setColor( getBackground( c, focusedBackground ) );
+			FlatUIUtils.paintComponentBackground( g2, 0, 0, c.getWidth(), c.getHeight(), focusWidth, arc );
+		} finally {
+			g2.dispose();
+		}
+	}
+
+	static Color getBackground( JTextComponent c, Color focusedBackground ) {
+		Color background = c.getBackground();
+
+		// always use explicitly set color
+		if( !(background instanceof UIResource) )
+			return background;
+
+		// focused
+		if( focusedBackground != null && FlatUIUtils.isPermanentFocusOwner( c ) )
+			return focusedBackground;
+
+		return background;
+	}
+
+	protected void paintPlaceholder( Graphics g ) {
+		JTextComponent c = getComponent();
+
+		// check whether text component is empty
+		if( c.getDocument().getLength() > 0 )
+			return;
+
+		// check for JComboBox
+		Container parent = c.getParent();
+		JComponent jc = (parent instanceof JComboBox) ? (JComboBox<?>) parent : c;
+
+		// get placeholder text
+		String placeholder = clientProperty( jc, PLACEHOLDER_TEXT, null, String.class );
+		if( placeholder == null )
+			return;
+
+		// compute placeholder location
+		Rectangle r = getVisibleEditorRect();
+		FontMetrics fm = c.getFontMetrics( c.getFont() );
+		String clippedPlaceholder = JavaCompatibility.getClippedString( c, fm, placeholder, r.width );
+		int x = r.x + (isLeftToRight() ? 0 : r.width - fm.stringWidth( clippedPlaceholder ));
+		int y = r.y + fm.getAscent() + ((r.height - fm.getHeight()) / 2);
+
+		// paint placeholder
+		g.setColor( placeholderForeground );
+		FlatUIUtils.drawString( c, g, clippedPlaceholder, x, y );
+	}
+
+	/**
+	 * Paints the leading and trailing icons in the given rectangle.
+	 * The rectangle is updated by this method so that subclasses can use it
+	 * without painting over leading or trailing icons.
+	 *
+	 * @since 2
+	 */
+	protected void paintIcons( Graphics g, Rectangle r ) {
+		boolean ltr = isLeftToRight();
+		Icon leftIcon = ltr ? leadingIcon : trailingIcon;
+		Icon rightIcon = ltr ? trailingIcon : leadingIcon;
+
+		// paint left icon
+		if( leftIcon != null ) {
+			int x = r.x;
+			int y = r.y + Math.round( (r.height - leftIcon.getIconHeight()) / 2f );
+			leftIcon.paintIcon( getComponent(), g, x, y );
+
+			// update rectangle so that subclasses can use it
+			int w = leftIcon.getIconWidth() + scale( iconTextGap );
+			r.x += w;
+			r.width -= w;
+		}
+
+		// paint right icon
+		if( rightIcon != null ) {
+			int iconWidth = rightIcon.getIconWidth();
+			int x = r.x + r.width - iconWidth;
+			int y = r.y + Math.round( (r.height - rightIcon.getIconHeight()) / 2f );
+			rightIcon.paintIcon( getComponent(), g, x, y );
+
+			// update rectangle so that subclasses can use it
+			r.width -= iconWidth + scale( iconTextGap );
+		}
+	}
+
+	@Override
+	public Dimension getPreferredSize( JComponent c ) {
+		return applyMinimumWidth( c, applyExtraSize( super.getPreferredSize( c ) ), minimumWidth );
+	}
+
+	@Override
+	public Dimension getMinimumSize( JComponent c ) {
+		return applyMinimumWidth( c, applyExtraSize( super.getMinimumSize( c ) ), minimumWidth );
+	}
+
+	private Dimension applyExtraSize( Dimension size ) {
+		// add width of leading and trailing icons
+		size.width += getLeadingIconWidth() + getTrailingIconWidth();
+
+		// add width of leading and trailing components
+		for( JComponent comp : getLeadingComponents() ) {
+			if( comp != null && comp.isVisible() )
+				size.width += comp.getPreferredSize().width;
+		}
+		for( JComponent comp : getTrailingComponents() ) {
+			if( comp != null && comp.isVisible() )
+				size.width += comp.getPreferredSize().width;
+		}
+
+		return size;
+	}
+
+	private Dimension applyMinimumWidth( JComponent c, Dimension size, int minimumWidth ) {
+		// do not apply minimum width if JTextField.columns is set
+		if( c instanceof JTextField && ((JTextField)c).getColumns() > 0 )
+			return size;
+
+		// do not apply minimum width if JTextComponent.margin is set
+		if( !hasDefaultMargins( c, defaultMargin ) )
+			return size;
+
+		// do not apply minimum width if used in combobox or spinner
+		Container parent = c.getParent();
+		if( parent instanceof JComboBox ||
+			parent instanceof JSpinner ||
+			(parent != null && parent.getParent() instanceof JSpinner) )
+		  return size;
+
+		minimumWidth = FlatUIUtils.minimumWidth( c, minimumWidth );
+		float focusWidth = FlatUIUtils.getBorderFocusWidth( c );
+		size.width = Math.max( size.width, scale( minimumWidth ) + Math.round( focusWidth * 2 ) );
+		return size;
+	}
+
+	static boolean hasDefaultMargins( JComponent c, Insets defaultMargin ) {
+		Insets margin = ((JTextComponent)c).getMargin();
+		return margin instanceof UIResource && Objects.equals( margin, defaultMargin );
+	}
+
+	/**
+	 * Returns the rectangle used for the root view of the text.
+	 * This method is used to place the text.
+	 */
+	@Override
+	protected Rectangle getVisibleEditorRect() {
+		Rectangle r = getIconsRect();
+		if( r == null )
+			return null;
+
+		// remove space needed for leading and trailing icons
+		int leading = getLeadingIconWidth();
+		int trailing = getTrailingIconWidth();
+		if( leading != 0 || trailing != 0 ) {
+			boolean ltr = isLeftToRight();
+			int left = ltr ? leading : trailing;
+			int right = ltr ? trailing : leading;
+			r.x += left;
+			r.width -= left + right;
+		}
+
+		// remove padding
+		Insets padding = getPadding();
+		if( padding != null )
+			r = FlatUIUtils.subtractInsets( r, padding );
+
+		// make sure that width and height are not negative
+		r.width = Math.max( r.width, 0 );
+		r.height = Math.max( r.height, 0 );
+
+		return r;
+	}
+
+	/**
+	 * Returns the rectangle used to paint leading and trailing icons.
+	 * It invokes {@code super.getVisibleEditorRect()} and reduces left and/or
+	 * right margin if the text field has leading or trailing icons or components.
+	 * Also, the preferred widths of leading and trailing components are removed.
+	 *
+	 * @since 2
+	 */
+	protected Rectangle getIconsRect() {
+		Rectangle r = super.getVisibleEditorRect();
+		if( r == null )
+			return null;
+
+		boolean ltr = isLeftToRight();
+
+		// remove width of leading/trailing components
+		JComponent[] leftComponents = ltr ? getLeadingComponents() : getTrailingComponents();
+		JComponent[] rightComponents = ltr ? getTrailingComponents() : getLeadingComponents();
+		boolean leftVisible = false;
+		boolean rightVisible = false;
+		for( JComponent leftComponent : leftComponents ) {
+			if( leftComponent != null && leftComponent.isVisible() ) {
+				int w = leftComponent.getPreferredSize().width;
+				r.x += w;
+				r.width -= w;
+				leftVisible = true;
+			}
+		}
+		for( JComponent rightComponent : rightComponents ) {
+			if( rightComponent != null && rightComponent.isVisible() ) {
+				r.width -= rightComponent.getPreferredSize().width;
+				rightVisible = true;
+			}
+		}
+
+		// if a leading/trailing icons (or components) are shown, then the left/right margins are reduced
+		// to the top margin, which places the icon nicely centered on left/right side
+		if( leftVisible || (ltr ? hasLeadingIcon() : hasTrailingIcon()) ) {
+			// reduce left margin
+			Insets margin = getComponent().getMargin();
+			int newLeftMargin = Math.min( margin.left, margin.top );
+			if( newLeftMargin < margin.left ) {
+				int diff = scale( margin.left - newLeftMargin );
+				r.x -= diff;
+				r.width += diff;
+			}
+		}
+		if( rightVisible || (ltr ? hasTrailingIcon() : hasLeadingIcon()) ) {
+			// reduce right margin
+			Insets margin = getComponent().getMargin();
+			int newRightMargin = Math.min( margin.right, margin.top );
+			if( newRightMargin < margin.left )
+				r.width += scale( margin.right - newRightMargin );
+		}
+
+		// make sure that width and height are not negative
+		r.width = Math.max( r.width, 0 );
+		r.height = Math.max( r.height, 0 );
+
+		return r;
+	}
+
+	/** @since 2 */
+	protected boolean hasLeadingIcon() {
+		return leadingIcon != null;
+	}
+
+	/** @since 2 */
+	protected boolean hasTrailingIcon() {
+		return trailingIcon != null;
+	}
+
+	/** @since 2 */
+	protected int getLeadingIconWidth() {
+		return (leadingIcon != null) ? leadingIcon.getIconWidth() + scale( iconTextGap ) : 0;
+	}
+
+	/** @since 2 */
+	protected int getTrailingIconWidth() {
+		return (trailingIcon != null) ? trailingIcon.getIconWidth() + scale( iconTextGap ) : 0;
+	}
+
+	boolean isLeftToRight() {
+		return getComponent().getComponentOrientation().isLeftToRight();
+	}
+
+	/** @since 1.4 */
+	protected Insets getPadding() {
+		return scale( clientProperty( getComponent(), TEXT_FIELD_PADDING, null, Insets.class ) );
+	}
+
+	/** @since 1.4 */
+	protected void scrollCaretToVisible() {
+		Caret caret = getComponent().getCaret();
+		if( caret instanceof FlatCaret )
+			((FlatCaret)caret).scrollCaretToVisible();
+	}
+
+	/** @since 2 */
+	protected void installLeadingComponent() {
+		JTextComponent c = getComponent();
+		leadingComponent = clientProperty( c, TEXT_FIELD_LEADING_COMPONENT, null, JComponent.class );
+		if( leadingComponent != null ) {
+			prepareLeadingOrTrailingComponent( leadingComponent );
+			installLayout();
+			c.add( leadingComponent );
+		}
+	}
+
+	/** @since 2 */
+	protected void installTrailingComponent() {
+		JTextComponent c = getComponent();
+		trailingComponent = clientProperty( c, TEXT_FIELD_TRAILING_COMPONENT, null, JComponent.class );
+		if( trailingComponent != null ) {
+			prepareLeadingOrTrailingComponent( trailingComponent );
+			installLayout();
+			c.add( trailingComponent );
+		}
+	}
+
+	/** @since 2 */
+	protected void uninstallLeadingComponent() {
+		if( leadingComponent != null ) {
+			getComponent().remove( leadingComponent );
+			leadingComponent = null;
+		}
+	}
+
+	/** @since 2 */
+	protected void uninstallTrailingComponent() {
+		if( trailingComponent != null ) {
+			getComponent().remove( trailingComponent );
+			trailingComponent = null;
+		}
+	}
+
+	/** @since 2 */
+	protected void installClearButton() {
+		JTextComponent c = getComponent();
+		if( clientPropertyBoolean( c, TEXT_FIELD_SHOW_CLEAR_BUTTON, showClearButton ) ) {
+			clearButton = createClearButton();
+			updateClearButton();
+			installDocumentListener();
+			installLayout();
+			c.add( clearButton );
+		}
+	}
+
+	/** @since 2 */
+	protected void uninstallClearButton() {
+		if( clearButton != null ) {
+			getComponent().remove( clearButton );
+			clearButton = null;
+		}
+	}
+
+	/** @since 2 */
+	protected JComponent createClearButton() {
+		JButton button = new JButton();
+		button.setName( "TextField.clearButton" );
+		button.putClientProperty( STYLE_CLASS, "clearButton" );
+		button.putClientProperty( BUTTON_TYPE, BUTTON_TYPE_TOOLBAR_BUTTON );
+		button.setCursor( Cursor.getDefaultCursor() );
+		button.addActionListener( e -> clearButtonClicked() );
+		return button;
+	}
+
+	/** @since 2 */
+	@SuppressWarnings( "unchecked" )
+	protected void clearButtonClicked() {
+		JTextComponent c = getComponent();
+		Object callback = c.getClientProperty( TEXT_FIELD_CLEAR_CALLBACK );
+		if( callback instanceof Runnable )
+			((Runnable)callback).run();
+		else if( callback instanceof Consumer )
+			((Consumer<JTextComponent>)callback).accept( c );
+		else
+			c.setText( "" );
+	}
+
+	/** @since 2 */
+	protected void updateClearButton() {
+		if( clearButton == null )
+			return;
+
+		JTextComponent c = getComponent();
+		boolean visible = c.isEnabled() && c.isEditable() && c.getDocument().getLength() > 0;
+		if( visible != clearButton.isVisible() ) {
+			clearButton.setVisible( visible );
+			c.revalidate();
+			c.repaint();
+		}
+	}
+
+	/**
+	 * Returns components placed at the leading side of the text field.
+	 * The returned array may contain {@code null}.
+	 * The default implementation returns {@link #leadingComponent}.
+	 *
+	 * @since 2
+	 */
+	protected JComponent[] getLeadingComponents() {
+		return new JComponent[] { leadingComponent };
+	}
+
+	/**
+	 * Returns components placed at the trailing side of the text field.
+	 * The returned array may contain {@code null}.
+	 * The default implementation returns {@link #trailingComponent} and {@link #clearButton}.
+	 * <p>
+	 * <strong>Note</strong>: The components in the array must be in reverse (visual) order.
+	 *
+	 * @since 2
+	 */
+	protected JComponent[] getTrailingComponents() {
+		return new JComponent[] { trailingComponent, clearButton };
+	}
+
+	/** @since 2 */
+	protected void prepareLeadingOrTrailingComponent( JComponent c ) {
+		c.putClientProperty( STYLE_CLASS, "inTextField" );
+
+		if( c instanceof JButton || c instanceof JToggleButton ) {
+			c.putClientProperty( BUTTON_TYPE, BUTTON_TYPE_TOOLBAR_BUTTON );
+
+			if( !c.isCursorSet() )
+				c.setCursor( Cursor.getDefaultCursor() );
+		} else if( c instanceof JToolBar ) {
+			for( Component child : c.getComponents() ) {
+				if( child instanceof JComponent )
+					((JComponent)child).putClientProperty( STYLE_CLASS, "inTextField" );
+			}
+
+			if( !c.isCursorSet() )
+				c.setCursor( Cursor.getDefaultCursor() );
+		}
+	}
+
+	/** @since 2 */
+	protected void installLayout() {
+		JTextComponent c = getComponent();
+		LayoutManager oldLayout = c.getLayout();
+		if( !(oldLayout instanceof FlatTextFieldLayout) )
+			c.setLayout( new FlatTextFieldLayout( oldLayout ) );
+	}
+
+	//---- class FlatTextFieldLayout ------------------------------------------
+
+	private class FlatTextFieldLayout
+		implements LayoutManager2, UIResource
+	{
+		private final LayoutManager delegate;
+
+		FlatTextFieldLayout( LayoutManager delegate ) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public void addLayoutComponent( String name, Component comp ) {
+			if( delegate != null )
+				delegate.addLayoutComponent( name, comp );
+		}
+
+		@Override
+		public void removeLayoutComponent( Component comp ) {
+			if( delegate != null )
+				delegate.removeLayoutComponent( comp );
+		}
+
+		@Override
+		public Dimension preferredLayoutSize( Container parent ) {
+			return (delegate != null) ? delegate.preferredLayoutSize( parent ) : null;
+		}
+
+		@Override
+		public Dimension minimumLayoutSize( Container parent ) {
+			return (delegate != null) ? delegate.minimumLayoutSize( parent ) : null;
+		}
+
+		@Override
+		public void layoutContainer( Container parent ) {
+			if( delegate != null )
+				delegate.layoutContainer( parent );
+
+			int ow = FlatUIUtils.getBorderFocusAndLineWidth( getComponent() );
+			int h = parent.getHeight() - ow - ow;
+			boolean ltr = isLeftToRight();
+			JComponent[] leftComponents = ltr ? getLeadingComponents() : getTrailingComponents();
+			JComponent[] rightComponents = ltr ? getTrailingComponents() : getLeadingComponents();
+
+			// layout left components
+			int x = ow;
+			for( JComponent leftComponent : leftComponents ) {
+				if( leftComponent != null && leftComponent.isVisible() ) {
+					int cw = leftComponent.getPreferredSize().width;
+					leftComponent.setBounds( x, ow, cw, h );
+					x += cw;
+				}
+			}
+
+			// layout right components
+			x = parent.getWidth() - ow;
+			for( JComponent rightComponent : rightComponents ) {
+				if( rightComponent != null && rightComponent.isVisible() ) {
+					int cw = rightComponent.getPreferredSize().width;
+					x -= cw;
+					rightComponent.setBounds( x, ow, cw, h );
+				}
+			}
+		}
+
+		@Override
+		public void addLayoutComponent( Component comp, Object constraints ) {
+			if( delegate instanceof LayoutManager2 )
+				((LayoutManager2)delegate).addLayoutComponent( comp, constraints );
+		}
+
+		@Override
+		public Dimension maximumLayoutSize( Container target ) {
+			return (delegate instanceof LayoutManager2) ? ((LayoutManager2)delegate).maximumLayoutSize( target ) : null;
+		}
+
+		@Override
+		public float getLayoutAlignmentX( Container target ) {
+			return (delegate instanceof LayoutManager2) ? ((LayoutManager2)delegate).getLayoutAlignmentX( target ) : 0.5f;
+		}
+
+		@Override
+		public float getLayoutAlignmentY( Container target ) {
+			return (delegate instanceof LayoutManager2) ? ((LayoutManager2)delegate).getLayoutAlignmentY( target ) : 0.5f;
+		}
+
+		@Override
+		public void invalidateLayout( Container target ) {
+			if( delegate instanceof LayoutManager2 )
+				((LayoutManager2)delegate).invalidateLayout( target );
+		}
+	}
+
+	//---- class FlatDocumentListener -----------------------------------------
+
+	private class FlatDocumentListener
+		implements DocumentListener
+	{
+		@Override
+		public void insertUpdate( DocumentEvent e ) {
+			documentChanged( e );
+		}
+
+		@Override
+		public void removeUpdate( DocumentEvent e ) {
+			documentChanged( e );
+		}
+
+		@Override
+		public void changedUpdate( DocumentEvent e ) {
+			documentChanged( e );
+		}
+	}
 }
