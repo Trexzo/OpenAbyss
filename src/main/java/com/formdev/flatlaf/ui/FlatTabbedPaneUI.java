@@ -1654,39 +1654,25 @@ implements FlatStylingSupport.StyleableUI {
         private static FlatSelectedTabRepainter instance;
         private KeyboardFocusManager keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
 
-        /*
-         * WARNING - Removed try catching itself - possible behaviour change.
-         */
         static void install() {
-            Class<FlatSelectedTabRepainter> clazz = FlatSelectedTabRepainter.class;
             synchronized (FlatSelectedTabRepainter.class) {
                 if (instance != null) {
-                    // ** MonitorExit[var0] (shouldn't be in output)
                     return;
 }
                 instance = new FlatSelectedTabRepainter();
-                // ** MonitorExit[var0] (shouldn't be in output)
-                return;
 }
 }
         FlatSelectedTabRepainter() {
             this.keyboardFocusManager.addPropertyChangeListener(this);
 }
-        /*
-         * WARNING - Removed try catching itself - possible behaviour change.
-         */
         private void uninstall() {
-            Class<FlatSelectedTabRepainter> clazz = FlatSelectedTabRepainter.class;
             synchronized (FlatSelectedTabRepainter.class) {
                 if (instance == null) {
-                    // ** MonitorExit[var1_1] (shouldn't be in output)
                     return;
 }
                 this.keyboardFocusManager.removePropertyChangeListener(this);
                 this.keyboardFocusManager = null;
                 instance = null;
-                // ** MonitorExit[var1_1] (shouldn't be in output)
-                return;
 }
 }
         @Override
