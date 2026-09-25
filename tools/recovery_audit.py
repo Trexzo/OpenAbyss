@@ -20,6 +20,8 @@ WARNING_STRINGS = (
 LINE_PATTERNS = {
     "synthetic_block_label": re.compile(r"^\s*block\d+\s*:"),
     "labelled_break_continue": re.compile(r"\b(?:break|continue)\s+block\d+\s*;"),
+    "monitor_exit_artifact": re.compile(r"MonitorExit\[|shouldn't be in output"),
+    "void_declaration_warning": re.compile(r"WARNING\s*-\s*void declaration", re.IGNORECASE),
     "cfr_warning_comment": re.compile(
         r"(?i)(?:CFR|decompil|unable to fully structure|loose catch block|removed try catching itself|could not reconstruct switch)"
     ),
