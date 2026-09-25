@@ -180,6 +180,8 @@ jobs:
           INJECT="/tmp/abyss-inject.log"
           CENSUS_ROOT="$GITHUB_WORKSPACE/abyss-census.tsv"
           CENSUS_RUN="$GITHUB_WORKSPACE/run/abyss-census.tsv"
+          DIAG_ROOT="$GITHUB_WORKSPACE/abyss-bootstrap-diagnostics.txt"
+          DIAG_RUN="$GITHUB_WORKSPACE/run/abyss-bootstrap-diagnostics.txt"
 
           echo "LATEST_LOG=$([ -f "$LATEST" ] && echo true || echo false)"
           echo "INJECT_LOG=$([ -f "$INJECT" ] && echo true || echo false)"
@@ -252,6 +254,25 @@ jobs:
           require_setting_count BlockIn 5
           echo 'MODULE_CENSUS_CONTRACT=PASS'
 
+          DIAG=''
+          if [ -f "$DIAG_ROOT" ]; then DIAG="$DIAG_ROOT"; fi
+          if [ -z "$DIAG" ] && [ -f "$DIAG_RUN" ]; then DIAG="$DIAG_RUN"; fi
+          if [ -z "$DIAG" ]; then
+            echo 'Bootstrap diagnostic report was not produced.'
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] module count     = 92 of 92 OK' "$DIAG"; then
+            echo 'Bootstrap diagnostic module-count gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] config writable   = writable=true' "$DIAG"; then
+            echo 'Bootstrap diagnostic config-writable gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          echo 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+
           TRANSFORMS="$RUNNER_TEMP/openabyss-linux-transforms.txt"
           grep -o 'ASM transformed: .*' "$COMBINED" | sed 's/^ASM transformed: //' | sort -u > "$TRANSFORMS" || true
           TRANSFORM_COUNT="$(grep -cv '^[[:space:]]*$' "$TRANSFORMS" || true)"
@@ -298,6 +319,8 @@ jobs:
             run/crash-reports/**
             run/abyss-census.tsv
             abyss-census.tsv
+            run/abyss-bootstrap-diagnostics.txt
+            abyss-bootstrap-diagnostics.txt
             ${{ runner.temp }}/openabyss-linux-runClient.stdout.log
             ${{ runner.temp }}/openabyss-linux-runClient.stderr.log
             ${{ runner.temp }}/openabyss-linux-combined.log

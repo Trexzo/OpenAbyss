@@ -239,6 +239,17 @@ public final class AbyssBootstrap {
                 b.append("[ABYSSDIAG]   degraded> ").append(d).append('\n');
 }
             b.append("[ABYSSDIAG] ==== end ====");
+            String report = b.toString();
+            System.out.println(report);
+            StringBuilder full = new StringBuilder(report);
+            full.append('\n').append("[ABYSSDIAG] ==== full pending ====\n");
+            for (String pending : PENDING) {
+                full.append("[ABYSSDIAG] pending-all> ").append(pending).append('\n');
+}
+            full.append("[ABYSSDIAG] ==== full pending end ====\n");
+            try (OutputStreamWriter diag = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-bootstrap-diagnostics.txt")), "UTF-8");){
+                diag.write(full.toString());
+}
 }
         catch (Throwable throwable) {
             // empty catch block

@@ -128,6 +128,8 @@ jobs:
           $inject = Join-Path $env:TEMP 'abyss-inject.log'
           $census = Join-Path $env:GITHUB_WORKSPACE 'abyss-census.tsv'
           $runCensus = Join-Path $env:GITHUB_WORKSPACE 'run\abyss-census.tsv'
+          $diag = Join-Path $env:GITHUB_WORKSPACE 'abyss-bootstrap-diagnostics.txt'
+          $runDiag = Join-Path $env:GITHUB_WORKSPACE 'run\abyss-bootstrap-diagnostics.txt'
 
           Write-Host '=== runtime evidence ==='
           Write-Host ('LATEST_LOG=' + (Test-Path -LiteralPath $latest))
@@ -208,6 +210,19 @@ jobs:
               }
             }
             Write-Host 'MODULE_CENSUS_CONTRACT=PASS'
+
+            $diagPath = if (Test-Path -LiteralPath $diag) { $diag } elseif (Test-Path -LiteralPath $runDiag) { $runDiag } else { $null }
+            if ($null -eq $diagPath) {
+              throw 'Bootstrap diagnostic report was not produced.'
+            }
+            $diagText = [IO.File]::ReadAllText($diagPath)
+            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 92 of 92 OK')) {
+              throw 'Bootstrap diagnostic module-count gate is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
+              throw 'Bootstrap diagnostic config-writable gate is not green.'
+            }
+            Write-Host 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
           }
 
           $transformTargets = @([regex]::Matches($combined, 'ASM transformed: ([^\r\n]+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
@@ -254,6 +269,8 @@ jobs:
             run/crash-reports/**
             run/abyss-census.tsv
             abyss-census.tsv
+            run/abyss-bootstrap-diagnostics.txt
+            abyss-bootstrap-diagnostics.txt
             ${{ runner.temp }}/openabyss-runClient.stdout.log
             ${{ runner.temp }}/openabyss-runClient.stderr.log
             ${{ runner.temp }}/abyss-inject.log
