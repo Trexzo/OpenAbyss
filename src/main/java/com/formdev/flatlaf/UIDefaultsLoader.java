@@ -75,35 +75,24 @@ class UIDefaultsLoader {
 }
         UIDefaultsLoader.loadDefaultsFromProperties(lafClasses, addons, additionalDefaults, dark, defaults);
 }
-    /*
-     * WARNING - void declaration
-     */
     static void loadDefaultsFromProperties(List<Class<?>> lafClasses, List<FlatDefaultsAddon> addons, Properties additionalDefaults, boolean dark, UIDefaults defaults) {
         try {
             systemColorCache = FlatLaf.getSystemColorGetter() != null ? new HashMap() : null;
             Properties properties = new Properties();
             for (Class<?> clazz : lafClasses) {
                 String propertiesName = '/' + clazz.getName().replace('.', '/') + ".properties";
-                InputStream in = clazz.getResourceAsStream(propertiesName);
-                try {
-                    if (in == null) continue;
-                    properties.load(in);
+                try (InputStream in = clazz.getResourceAsStream(propertiesName);){
+                    if (in != null) {
+                        properties.load(in);
 }
-                finally {
-                    if (in == null) continue;
-                    in.close();
 }
 }
             for (FlatDefaultsAddon flatDefaultsAddon : addons) {
                 for (Class<?> lafClass : lafClasses) {
-                    InputStream in = flatDefaultsAddon.getDefaults(lafClass);
-                    try {
-                        if (in == null) continue;
-                        properties.load(in);
+                    try (InputStream in = flatDefaultsAddon.getDefaults(lafClass);){
+                        if (in != null) {
+                            properties.load(in);
 }
-                    finally {
-                        if (in == null) continue;
-                        in.close();
 }
 }
 }
@@ -129,14 +118,10 @@ class UIDefaultsLoader {
 }
                     for (Class<?> lafClass2 : lafClasses) {
                         String propertiesName = string2 + '/' + lafClass2.getSimpleName() + ".properties";
-                        InputStream in2 = classLoader.getResourceAsStream(propertiesName);
-                        try {
-                            if (in2 == null) continue;
-                            properties.load(in2);
+                        try (InputStream in2 = classLoader.getResourceAsStream(propertiesName);){
+                            if (in2 != null) {
+                                properties.load(in2);
 }
-                        finally {
-                            if (in2 == null) continue;
-                            in2.close();
 }
 }
                     continue;
@@ -145,17 +130,10 @@ class UIDefaultsLoader {
                     URL uRL = (URL)((Object)source);
                     for (Class<?> lafClass : lafClasses) {
                         URL propertiesUrl = new URL(uRL + lafClass.getSimpleName() + ".properties");
-                        try {
-                            InputStream in3 = propertiesUrl.openStream();
-                            try {
-                                properties.load(in3);
+                        try (InputStream in3 = propertiesUrl.openStream();){
+                            properties.load(in3);
 }
-                            finally {
-                                if (in3 == null) continue;
-                                in3.close();
-}
-}
-                        catch (FileNotFoundException in3) {}
+                        catch (FileNotFoundException ex) {}
 }
                     continue;
 }
