@@ -116,9 +116,12 @@ def scan_file(path: Path, root: Path):
                     "synthetic_block_label",
                     "labelled_break_continue",
                     "suspicious_throwaway_ternary_assignment",
+                    "void_declaration_warning",
                 }:
                     # OpenExpo authority contains legitimate CFR/ZKM labels in working
-                    # decoders, so labels/control transfers alone are review signals.
+                    # decoders, and a surviving CFR void-declaration warning records
+                    # decompiler uncertainty rather than proving the recovered postimage
+                    # is wrong. Keep these as review signals instead of source failures.
                     confidence = "medium"
                 else:
                     confidence = "high"
