@@ -271,7 +271,46 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
+            echo 'Constructor-cache bootstrap gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 92' "$DIAG"; then
+            echo 'Published module-list size is not 92.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] tD.o (byClass)   = 113' "$DIAG"; then
+            echo 'By-class module registry size is not 113.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] t6.L (commands)  = 19' "$DIAG"; then
+            echo 'Recovered command registry size is not 19.'
+            cat "$DIAG"
+            exit 1
+          fi
+
+          for SUBSCRIBER in \
+            Abyss.internal.MiningEngine \
+            Abyss.internal.BrokenBlockTracker \
+            Abyss.internal.MiningRenderSubscriber \
+            Abyss.util.RotationManager \
+            Abyss.util.packet.PacketManager \
+            Abyss.AbyssClient \
+            Abyss.internal.ChatInputHandler \
+            Abyss.module.impl.misc.Timer \
+            Abyss.internal.CheaterDetector
+          do
+            if ! grep -Fq "$SUBSCRIBER" "$DIAG"; then
+              echo "Required recovered subscriber missing from bootstrap diagnostics: $SUBSCRIBER"
+              cat "$DIAG"
+              exit 1
+            fi
+          done
           echo 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+          echo 'INTERNAL_SUBSCRIBER_CONTRACT=PASS'
 
           TRANSFORMS="$RUNNER_TEMP/openabyss-linux-transforms.txt"
           grep -o 'ASM transformed: .*' "$COMBINED" | sed 's/^ASM transformed: //' | sort -u > "$TRANSFORMS" || true
