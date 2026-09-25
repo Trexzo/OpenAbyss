@@ -43,6 +43,42 @@ EMPTY_HANDLER_THEN_BLOCK = re.compile(
 CATCH_THROWABLE = re.compile(r"catch\s*\(\s*Throwable\b")
 
 
+# Silent semantic-loss families recovered elsewhere in this tree.
+# These are intentionally narrow so that they complement, rather than
+# duplicate, the broad CFR comment/label inventory.
+HASH_SELECTOR_BLOCK = re.compile(
+    r"(?P<decl>\bint\s+(?P<selector>\w+)\s*=\s*(?:-?1|0)\s*;)"
+    r"(?P<body>.{0,2600}?switch\s*\(\s*(?P<textvar>\w+)\.hashCode\(\)\s*\)"
+    r".{0,2200}?switch\s*\(\s*(?P=selector)\s*\))",
+    re.DOTALL,
+)
+
+PARTIAL_TERNARY_INIT = re.compile(
+    r"\b(?P<type>double|float|int|long|boolean)\s+(?P<target>\w+)\s*;\s*"
+    r"(?P<gap>.{0,700}?)"
+    r"\b(?:double|float|int|long|boolean)\s+\w+\s*=\s*[^;?]+\?[^:;]+:"
+    r"\s*\(\s*(?P=target)\s*=",
+    re.DOTALL,
+)
+
+COLLAPSED_ARRAY_LOOP = re.compile(
+    r"\bint\s+(?P<idx>\w+)\s*=\s*0\s*;\s*"
+    r"(?P<array_type>[\w.$<>?]+(?:\[\])+)\s+(?P<array>\w+)\s*=\s*[^;]+;\s*"
+    r"int\s+(?P<len>\w+)\s*=\s*(?P=array)\.length\s*;\s*"
+    r"if\s*\(\s*(?P=idx)\s*>=\s*(?P=len)\s*\)\s*(?:continue|break|return)\b",
+    re.DOTALL,
+)
+
+EMPTY_IF_BODY = re.compile(
+    r"if\s*\((?P<cond>[^{}\n]{1,220})\)\s*\{\s*\}",
+    re.MULTILINE,
+)
+
+READ_ASSIGNMENT = re.compile(
+    r"(?P<var>\w+)\s*=\s*[^;\n]*\.read\s*\(",
+)
+
+
 def add(findings, category, path, line, excerpt, confidence="high"):
     findings.append(
         {
@@ -97,6 +133,80 @@ def scan_file(path: Path, root: Path):
             line_number(text, m.start()),
             m.group(0),
         )
+
+    # A string hash-switch followed by a numeric selector switch is normal
+    # only when the selector is actually assigned by the hash cases. BedPlates
+    # lost those assignments and silently selected case 0 forever.
+    for m in HASH_SELECTOR_BLOCK.finditer(text):
+        selector = m.group("selector")
+        body = m.group("body")
+        assignments = len(re.findall(r"\b" + re.escape(selector) + r"\s*=", body))
+        if assignments == 0:
+            add(
+                findings,
+                "hash_switch_selector_never_assigned",
+                rel,
+                line_number(text, m.start()),
+                m.group(0)[:900],
+            )
+
+    # MoveUtil's forward/backward ternary declared the real variable first,
+    # then assigned it only in the false branch while storing the full ternary
+    # in a throwaway local.
+    for m in PARTIAL_TERNARY_INIT.finditer(text):
+        add(
+            findings,
+            "partial_ternary_initialization",
+            rel,
+            line_number(text, m.start()),
+            m.group(0)[:900],
+        )
+
+    # CFR can collapse a for/array iteration into an index declaration plus one
+    # element access and no increment/loop-back. AbyssSettingStatics exhibited
+    # this exact family.
+    for m in COLLAPSED_ARRAY_LOOP.finditer(text):
+        add(
+            findings,
+            "collapsed_array_iteration",
+            rel,
+            line_number(text, m.start()),
+            m.group(0)[:900],
+        )
+
+    # Empty condition bodies are common enough to be noisy, so only promote
+    # stream-termination shapes that have already proven semantic.
+    read_vars = {m.group("var") for m in READ_ASSIGNMENT.finditer(text)}
+    for m in EMPTY_IF_BODY.finditer(text):
+        cond = m.group("cond")
+        cond_compact = re.sub(r"\s+", " ", cond).strip()
+        eos_like = re.search(r"\.eos\s*\(\s*\)\s*!=\s*0", cond) is not None
+        eof_vars = [
+            name for name in read_vars
+            if re.search(r"\b" + re.escape(name) + r"\s*<=\s*0", cond)
+        ]
+        if eos_like:
+            add(
+                findings,
+                "empty_stream_eos_branch",
+                rel,
+                line_number(text, m.start()),
+                cond_compact,
+            )
+        elif eof_vars:
+            tail = text[m.end():m.end()+220]
+            same_feed = any(
+                re.search(r"\.wrote\s*\(\s*" + re.escape(name) + r"\s*\)", tail)
+                for name in eof_vars
+            )
+            if same_feed:
+                add(
+                    findings,
+                    "empty_stream_eof_branch",
+                    rel,
+                    line_number(text, m.start()),
+                    cond_compact + " -> " + tail[:140].strip(),
+                )
 
     # Duplicate Throwable catches inside a short local window were the exact
     # StallWatchdog failure family. Report, but mark medium because nested
