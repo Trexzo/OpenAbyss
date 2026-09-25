@@ -106,6 +106,59 @@ def line_number(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
+def java_brace_block(text: str, open_brace: int):
+    """Return the Java block starting at open_brace, ignoring braces in literals/comments."""
+    if open_brace < 0 or open_brace >= len(text) or text[open_brace] != "{":
+        return None
+
+    depth = 0
+    i = open_brace
+    state = "code"
+    escaped = False
+
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                state = "code"
+        elif state == "block_comment":
+            if ch == "*" and nxt == "/":
+                state = "code"
+                i += 1
+        elif state in {"string", "char"}:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif state == "string" and ch == '"':
+                state = "code"
+            elif state == "char" and ch == "'":
+                state = "code"
+        else:
+            if ch == "/" and nxt == "/":
+                state = "line_comment"
+                i += 1
+            elif ch == "/" and nxt == "*":
+                state = "block_comment"
+                i += 1
+            elif ch == '"':
+                state = "string"
+            elif ch == "'":
+                state = "char"
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[open_brace : i + 1]
+
+        i += 1
+
+    return None
+
+
 def scan_file(path: Path, root: Path):
     rel = path.relative_to(root)
     text = path.read_text(encoding="utf-8", errors="replace")
@@ -265,21 +318,31 @@ def scan_file(path: Path, root: Path):
             excerpt = "\n".join(lines[max(0, a-2):min(len(lines), b+2)])
             add(findings, "nearby_duplicate_throwable_catches", rel, a, excerpt, "low")
 
-    # ZKM static decoders deserve extra attention when synthetic labels or
-    # labelled control transfer remain inside the same file.
-    if "zkm$clinit" in text:
-        has_label = any(f["category"] == "synthetic_block_label" for f in findings)
-        has_transfer = any(f["category"] == "labelled_break_continue" for f in findings)
-        if has_label or has_transfer:
-            first = text.find("zkm$clinit")
-            add(
-                findings,
-                "zkm_decoder_with_synthetic_control_flow",
-                rel,
-                line_number(text, first),
-                "zkm$clinit contains synthetic block-label/control-transfer remnants",
-                "medium",
+    # ZKM static decoders deserve extra attention only when the synthetic
+    # label/control-transfer is actually inside zkm$clinit(). A file-level
+    # association produced false positives when unrelated methods in the same
+    # class retained CFR block labels.
+    zkm_match = re.search(
+        r"\\b(?:private\\s+)?static\\s+void\\s+zkm\\$clinit\\s*\\(\\s*\\)\\s*\\{",
+        text,
+    )
+    if zkm_match is not None:
+        open_brace = text.find("{", zkm_match.start())
+        zkm_body = java_brace_block(text, open_brace)
+        if zkm_body is not None:
+            has_label = re.search(r"^\\s*block\\d+\\s*:", zkm_body, re.MULTILINE) is not None
+            has_transfer = (
+                re.search(r"\\b(?:break|continue)\\s+block\\d+\\s*;", zkm_body) is not None
             )
+            if has_label or has_transfer:
+                add(
+                    findings,
+                    "zkm_decoder_with_synthetic_control_flow",
+                    rel,
+                    line_number(text, zkm_match.start()),
+                    "zkm$clinit contains synthetic block-label/control-transfer remnants",
+                    "medium",
+                )
 
     return findings
 
