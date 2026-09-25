@@ -41,6 +41,22 @@ jobs:
             cat build/recovery-audit/summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Gate high-confidence recovery findings
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = Path("build/recovery-audit/recovery-audit.json")
+          data = json.loads(report.read_text(encoding="utf-8"))
+          high = int(data.get("counts_by_confidence", {}).get("high", 0))
+          print(f"RECOVERY_AUDIT_HIGH_CONFIDENCE={high}")
+          if high != 0:
+              raise SystemExit(f"Recovery audit found {high} high-confidence finding(s).")
+          print("RECOVERY_AUDIT_HIGH_CONFIDENCE_GATE=PASS")
+          PY
+
       - name: Upload recovery audit
         if: always()
         uses: actions/upload-artifact@v4
