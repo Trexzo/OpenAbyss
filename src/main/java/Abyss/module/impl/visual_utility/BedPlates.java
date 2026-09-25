@@ -110,32 +110,15 @@ implements EventSubscriber {
         EnumFacing var3 = (EnumFacing)var2.getValue((IProperty)BlockBed.FACING);
         return var1.offset(var3.getOpposite());
 }
-    /*
-     * WARNING - void declaration
-     */
     public void onRender3D(Render3DEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        int var40;
-        int var6_8 = 0;
         CustomFont var39 = Font.s(0L);
-        String string = color.Y();
-        int n2 = -1;
-        switch (string.hashCode()) {
-            case 79789481: {
-                if (!string.equals("THEME")) break;
-                boolean bl = false;
-                break;
-}
-            case -280494393: {
-                if (!string.equals("THEME_CUSTOM")) break;
-                boolean bl = true;
-}
-}
-        switch (var6_8) {
-            case 0: {
+        int var40;
+        switch (color.Y()) {
+            case "THEME": {
                 var40 = Theme.S(0.0, 35338930340239L);
                 break;
 }
-            case 1: {
+            case "THEME_CUSTOM": {
                 var40 = Theme.X(65301174328177L, 0.0);
                 break;
 }
