@@ -455,92 +455,52 @@ public final class AbyssGuiData {
         });
         return out;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     public static String read(File f) {
-        String string;
         Reader r2 = null;
         try {
-            int k;
             r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");
             StringBuilder b = new StringBuilder();
             char[] buf = new char[4096];
+            int k;
             while ((k = r2.read(buf)) > 0) {
                 b.append(buf, 0, k);
 }
-            string = b.toString();
-            if (r2 == null) return string;
+            return b.toString();
 }
         catch (Throwable t2) {
-            try {
-                String string2 = null;
-                return string2;
+            return null;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (r2 != null) {
+                try {
+                    r2.close();
 }
-            finally {
-                if (r2 != null) {
-                    try {
-                        r2.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure does not change the read result
 }
 }
 }
-        try {
-            r2.close();
-            return string;
 }
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return string;
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     public static boolean write(File f, String text) {
-        boolean bl;
         Writer w2 = null;
         try {
             w2 = new OutputStreamWriter((OutputStream)new FileOutputStream(f), "UTF-8");
             w2.write(text);
-            bl = true;
-            if (w2 == null) return bl;
+            return true;
 }
         catch (Throwable t2) {
-            try {
-                boolean bl2 = false;
-                return bl2;
+            return false;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (w2 != null) {
+                try {
+                    w2.close();
 }
-            finally {
-                if (w2 != null) {
-                    try {
-                        w2.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure cannot make a failed write successful
 }
 }
 }
-        try {
-            w2.close();
-            return bl;
-}
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return bl;
 }
     public static Map<String, Object> merged(File target) {
         Map<String, Object> root = null;
