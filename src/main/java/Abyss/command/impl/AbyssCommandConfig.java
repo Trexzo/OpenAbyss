@@ -302,53 +302,27 @@ extends Command {
         String var2 = var0.toLowerCase().endsWith(SUFFIX) ? var0 : var0 + SUFFIX;
         return new File(var1, var2);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static JsonObject read(File var0) {
-        JsonObject jsonObject;
         Reader var1 = null;
         try {
             var1 = new InputStreamReader((InputStream)new FileInputStream(var0), "UTF-8");
             JsonElement var2 = new JsonParser().parse(var1);
-            jsonObject = var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
-            if (var1 == null) return jsonObject;
+            return var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
 }
         catch (Throwable var3) {
-            try {
-                JsonObject jsonObject3 = null;
-                return jsonObject3;
+            return null;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (var1 != null) {
+                try {
+                    var1.close();
 }
-            finally {
-                if (var1 != null) {
-                    try {
-                        var1.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure does not change the read result
 }
 }
 }
-        try {
-            var1.close();
-            return jsonObject;
 }
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return jsonObject;
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static boolean write(File var0, JsonObject var1) {
         File var2 = new File(var0.getParentFile(), var0.getName() + ".tmp");
         Writer var3 = null;
