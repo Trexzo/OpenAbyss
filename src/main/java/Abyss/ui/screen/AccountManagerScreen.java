@@ -60,10 +60,10 @@ extends GuiScreen {
     protected final GuiScreen v;
     
     public void actionPerformed(GuiButton var1) {
-        block12: {
+        {
             try {
                 long var2 = 43158565309945L;
-                if (var1 == null || !var1.enabled) break block12;
+                if (var1 == null || !var1.enabled) return;
                 switch (var1.id) {
                     case 0: {
                         if (this.I == null || this.I.isDone()) {
