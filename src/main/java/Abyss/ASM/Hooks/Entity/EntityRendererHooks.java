@@ -71,30 +71,28 @@ public class EntityRendererHooks {
         if (!m && Boolean.parseBoolean(System.getProperty("abyss.injection.loaded", "false")) && EntityRendererHooks.Y.thePlayer != null) {
             m = true;
             new Thread(() -> {
-                block5: {
+                try {
+                    long var0 = 85534997054632L;
                     try {
-                        long var0 = 85534997054632L;
-                        try {
-                            Thread.sleep(500L);
-                            String var9 = "Abyss injected!";
-                            if (Notifications.graphic != null && Notifications.graphic.R("CHAT")) {
-                                Notifications.G(58053444091952L, var9, true);
-                                break block5;
-}
+                        Thread.sleep(500L);
+                        String var9 = "Abyss injected!";
+                        if (Notifications.graphic != null && Notifications.graphic.R("CHAT")) {
+                            Notifications.G(58053444091952L, var9, true);
+                        } else {
                             ClientUtil.t(48081174263320L, var9);
                             Notifications.Z(350448395L, var9, '\uab6b', true, 4000.0f);
-}
-                        catch (InterruptedException var10) {
-                            Thread.currentThread().interrupt();
-}
-}
-                    catch (Throwable ex) {
-                        throw Sneaky.rethrow(ex);
-}
-}
+                        }
+                    }
+                    catch (InterruptedException var10) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                catch (Throwable ex) {
+                    throw Sneaky.rethrow(ex);
+                }
             }, "Abyss announce").start();
-}
-}
+        }
+    }
     private static void a() {
         EntityRendererHooks.b[0] = "\u0013T\u00076~Z\u0018";
         EntityRendererHooks.b[1] = Float.TYPE;
