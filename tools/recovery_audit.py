@@ -23,7 +23,7 @@ LINE_PATTERNS = {
     "monitor_exit_artifact": re.compile(r"MonitorExit\[|shouldn't be in output"),
     "void_declaration_warning": re.compile(r"WARNING\s*-\s*void declaration", re.IGNORECASE),
     "cfr_warning_comment": re.compile(
-        r"(?i)(?:CFR|decompil|unable to fully structure|loose catch block|removed try catching itself|could not reconstruct switch)"
+        r"(?i)(?:\\bCFR\\b|decompil|unable to fully structure|loose catch block|removed try catching itself|could not reconstruct switch)"
     ),
     "suspicious_throwaway_ternary_assignment": re.compile(
         r"\b(?:double|float|int|long|boolean)\s+\w+\s*=.*\?[^;]*:\s*\(\w+\s*="
@@ -102,8 +102,13 @@ def scan_file(path: Path, root: Path):
     findings = []
 
     for idx, line in enumerate(lines, 1):
+        warning_marker = next((marker for marker in WARNING_STRINGS if marker in line), None)
         for category, pattern in LINE_PATTERNS.items():
             if pattern.search(line):
+                # Do not double-count a concrete CFR warning line as both a broad
+                # comment hit and a warning marker. The marker category is more precise.
+                if category == "cfr_warning_comment" and warning_marker is not None:
+                    continue
                 if category == "cfr_warning_comment" and "Decompiled with CFR" in line:
                     # Proven origin metadata, not evidence of semantic loss by itself.
                     confidence = "low"
@@ -119,9 +124,10 @@ def scan_file(path: Path, root: Path):
                     confidence = "high"
                 add(findings, category, rel, idx, line, confidence)
 
-        for marker in WARNING_STRINGS:
-            if marker in line:
-                add(findings, "decompiler_warning_marker", rel, idx, line)
+        if warning_marker is not None:
+            # A decompiler warning is evidence that the original decompilation was
+            # uncertain, but it is not proof the current recovered postimage is wrong.
+            add(findings, "decompiler_warning_marker", rel, idx, line, "medium")
 
     for m in FINALLY_CONTROL.finditer(text):
         body = m.group("body")
