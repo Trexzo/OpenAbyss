@@ -323,16 +323,16 @@ def scan_file(path: Path, root: Path):
     # association produced false positives when unrelated methods in the same
     # class retained CFR block labels.
     zkm_match = re.search(
-        r"\\b(?:private\\s+)?static\\s+void\\s+zkm\\$clinit\\s*\\(\\s*\\)\\s*\\{",
+        r"\b(?:private\s+)?static\s+void\s+zkm\$clinit\s*\(\s*\)\s*\{",
         text,
     )
     if zkm_match is not None:
         open_brace = text.find("{", zkm_match.start())
         zkm_body = java_brace_block(text, open_brace)
         if zkm_body is not None:
-            has_label = re.search(r"^\\s*block\\d+\\s*:", zkm_body, re.MULTILINE) is not None
+            has_label = re.search(r"^\s*block\d+\s*:", zkm_body, re.MULTILINE) is not None
             has_transfer = (
-                re.search(r"\\b(?:break|continue)\\s+block\\d+\\s*;", zkm_body) is not None
+                re.search(r"\b(?:break|continue)\s+block\d+\s*;", zkm_body) is not None
             )
             if has_label or has_transfer:
                 add(
