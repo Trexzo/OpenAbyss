@@ -224,7 +224,37 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
               throw 'Bootstrap diagnostic config-writable gate is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
+              throw 'Constructor-cache bootstrap gate is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 92')) {
+              throw 'Published module-list size is not 92.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.o (byClass)   = 113')) {
+              throw 'By-class module registry size is not 113.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] t6.L (commands)  = 19')) {
+              throw 'Recovered command registry size is not 19.'
+            }
+
+            $requiredSubscribers = @(
+              'Abyss.internal.MiningEngine',
+              'Abyss.internal.BrokenBlockTracker',
+              'Abyss.internal.MiningRenderSubscriber',
+              'Abyss.util.RotationManager',
+              'Abyss.util.packet.PacketManager',
+              'Abyss.AbyssClient',
+              'Abyss.internal.ChatInputHandler',
+              'Abyss.module.impl.misc.Timer',
+              'Abyss.internal.CheaterDetector'
+            )
+            foreach ($subscriber in $requiredSubscribers) {
+              if (-not $diagText.Contains($subscriber)) {
+                throw "Required recovered subscriber missing from bootstrap diagnostics: $subscriber"
+              }
+            }
             Write-Host 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+            Write-Host 'INTERNAL_SUBSCRIBER_CONTRACT=PASS'
           }
 
           $transformTargets = @([regex]::Matches($combined, 'ASM transformed: ([^\r\n]+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
