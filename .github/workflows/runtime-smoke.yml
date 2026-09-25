@@ -200,7 +200,9 @@ jobs:
               BlockIn    = 5
             }
             foreach ($entry in $expectedSettingCounts.GetEnumerator()) {
-              $parts = @($censusLines | ForEach-Object { $_ -split "\t" } | Where-Object { $_.Count -ge 4 -and $_[1] -eq $entry.Key })
+              # Preserve each split row as one array object. Without the unary comma,
+              # PowerShell flattens the fields into the pipeline and the row matcher sees strings.
+              $parts = @($censusLines | ForEach-Object { ,($_ -split "\t") } | Where-Object { $_.Count -ge 4 -and $_[1] -eq $entry.Key })
               if ($parts.Count -ne 1) {
                 throw "Expected exactly one census row for $($entry.Key), found $($parts.Count)."
               }
