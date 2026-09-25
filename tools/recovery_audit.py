@@ -42,6 +42,17 @@ EMPTY_HANDLER_THEN_BLOCK = re.compile(
 
 CATCH_THROWABLE = re.compile(r"catch\s*\(\s*Throwable\b")
 
+# Proven CFR failure shape from the original StallWatchdog drainer: two
+# Throwable catch clauses emitted directly adjacent to one another for the
+# same try. Keep this deliberately narrow so legitimate nested handlers remain
+# review-only under nearby_duplicate_throwable_catches.
+ADJACENT_DUPLICATE_THROWABLE_CATCH = re.compile(
+    r"catch\s*\(\s*Throwable\s+\w+\s*\)\s*\{"
+    r"[^{}]{0,500}"
+    r"\}\s*catch\s*\(\s*Throwable\s+\w+\s*\)",
+    re.DOTALL,
+)
+
 
 # Silent semantic-loss families recovered elsewhere in this tree.
 # These are intentionally narrow so that they complement, rather than
@@ -229,9 +240,23 @@ def scan_file(path: Path, root: Path):
                     cond_compact + " -> " + tail[:140].strip(),
                 )
 
-    # Duplicate Throwable catches inside a short local window were the exact
-    # StallWatchdog failure family. Report, but mark medium because nested
-    # handlers can be legitimate.
+    # The original StallWatchdog drainer contained directly adjacent duplicate
+    # Throwable catch clauses: a concrete, compile-breaking CFR reconstruction
+    # failure. Unlike the broad proximity heuristic below, this exact shape is
+    # a high-confidence regression.
+    for m in ADJACENT_DUPLICATE_THROWABLE_CATCH.finditer(text):
+        add(
+            findings,
+            "adjacent_duplicate_throwable_catches",
+            rel,
+            line_number(text, m.start()),
+            m.group(0),
+            "high",
+        )
+
+    # Duplicate Throwable catches inside a short local window were the broader
+    # StallWatchdog review family. Keep these medium because nested handlers
+    # can be legitimate.
     throwable_lines = [i for i, line in enumerate(lines, 1) if CATCH_THROWABLE.search(line)]
     for a, b in zip(throwable_lines, throwable_lines[1:]):
         if b - a <= 35:
