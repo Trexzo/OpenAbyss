@@ -372,7 +372,10 @@ def scan_file(path: Path, root: Path):
             if has_label or has_transfer:
                 zkm_start_line = line_number(text, zkm_match.start())
                 zkm_end_line = zkm_start_line + zkm_body.count("\n")
-                authority_backed = rel.as_posix() in ZKM_LABEL_AUTHORITY_PATHS
+                authority_path = rel.as_posix()
+                if authority_path.startswith("src/main/java/"):
+                    authority_path = authority_path[len("src/main/java/"):]
+                authority_backed = authority_path in ZKM_LABEL_AUTHORITY_PATHS
 
                 if authority_backed:
                     for finding in findings:
