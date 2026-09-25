@@ -54,6 +54,41 @@ ADJACENT_DUPLICATE_THROWABLE_CATCH = re.compile(
 )
 
 
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# contains the same labelled zkm$clinit control-flow shape for these files.
+# This does not make OpenExpo's encrypted data authoritative; it only proves
+# that decoder-local labels/transfers are not themselves evidence of damage.
+ZKM_LABEL_AUTHORITY_PATHS = frozenset({
+    "Abyss/internal/BrokenBlockTracker.java",
+    "Abyss/internal/CheaterDetector.java",
+    "Abyss/internal/MiningEngine.java",
+    "Abyss/internal/auth/CookieAuthService.java",
+    "Abyss/internal/auth/TrustAllSslContext.java",
+    "Abyss/module/ModulePriority.java",
+    "Abyss/module/impl/combat/AimAssist.java",
+    "Abyss/module/impl/combat/AutoBlock.java",
+    "Abyss/module/impl/combat/BlockHit.java",
+    "Abyss/module/impl/combat/JumpReset.java",
+    "Abyss/module/impl/configuration/Font.java",
+    "Abyss/module/impl/player/FastCraft.java",
+    "Abyss/module/impl/visual/ArrayList.java",
+    "Abyss/module/impl/visual/BindGUI.java",
+    "Abyss/module/impl/visual/HUD.java",
+    "Abyss/module/impl/visual/KeyStrokes.java",
+    "Abyss/module/impl/visual/KillEffect.java",
+    "Abyss/module/impl/visual_utility/BedESP.java",
+    "Abyss/module/impl/visual_utility/BedPlates.java",
+    "Abyss/module/impl/visual_utility/BlocksESP.java",
+    "Abyss/module/impl/visual_utility/ESP.java",
+    "Abyss/module/impl/visual_utility/FKCounter.java",
+    "Abyss/module/impl/visual_utility/FallIndicator.java",
+    "Abyss/module/impl/world/BridgeAssist.java",
+    "Abyss/util/MiningConstants.java",
+    "Abyss/util/MoveUtil.java",
+    "Abyss/util/RotationManager.java",
+    "Abyss/util/render/ShaderRenderer.java",
+})
+
 # Silent semantic-loss families recovered elsewhere in this tree.
 # These are intentionally narrow so that they complement, rather than
 # duplicate, the broad CFR comment/label inventory.
@@ -335,13 +370,31 @@ def scan_file(path: Path, root: Path):
                 re.search(r"\b(?:break|continue)\s+block\d+\s*;", zkm_body) is not None
             )
             if has_label or has_transfer:
+                zkm_start_line = line_number(text, zkm_match.start())
+                zkm_end_line = zkm_start_line + zkm_body.count("\n")
+                authority_backed = rel.as_posix() in ZKM_LABEL_AUTHORITY_PATHS
+
+                if authority_backed:
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and zkm_start_line <= finding["line"] <= zkm_end_line
+                        ):
+                            finding["confidence"] = "low"
+
                 add(
                     findings,
                     "zkm_decoder_with_synthetic_control_flow",
                     rel,
-                    line_number(text, zkm_match.start()),
-                    "zkm$clinit contains synthetic block-label/control-transfer remnants",
-                    "medium",
+                    zkm_start_line,
+                    (
+                        "zkm$clinit labelled control flow matches pinned OpenExpo "
+                        "cross-build structure"
+                        if authority_backed
+                        else "zkm$clinit contains synthetic block-label/control-transfer remnants"
+                    ),
+                    "low" if authority_backed else "medium",
                 )
 
     return findings
