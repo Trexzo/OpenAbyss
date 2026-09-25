@@ -91,6 +91,9 @@ implements EventSubscriber {
     private static Map k;
 
     public void onPostTick(long var1, PostTickEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        if (CheaterDetector.f.theWorld == null) {
+            return;
+}
         int var13 = CheaterDetector.f.theWorld.playerEntities.size();
         for (int var12 = 0; var12 < var13; ++var12) {
             EntityPlayer var14 = (EntityPlayer)CheaterDetector.f.theWorld.playerEntities.get(var12);
