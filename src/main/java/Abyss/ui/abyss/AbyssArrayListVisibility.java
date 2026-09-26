@@ -28,13 +28,22 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import net.minecraft.client.Minecraft;
 
 public final class AbyssArrayListVisibility {
     private static final String FILE = "abyss-arraylist.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
-    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor();
+    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor(new ThreadFactory(){
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable, "Abyss-ArrayList-save");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
     private static volatile Set<String> hidden;
 
     private AbyssArrayListVisibility() {
@@ -76,9 +85,6 @@ public final class AbyssArrayListVisibility {
 }
         return new File(d, FILE);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static Set<String> data() {
         Set<String> local = hidden;
         if (local != null) {
@@ -157,9 +163,6 @@ public final class AbyssArrayListVisibility {
     public static void toggle(Module m2) {
         AbyssArrayListVisibility.setShown(m2, !AbyssArrayListVisibility.isShown(m2));
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static void setShown(Module m2, boolean shown) {
         String k = AbyssArrayListVisibility.key(m2);
         if (k == null) {
