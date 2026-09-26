@@ -502,14 +502,38 @@ public final class AbyssModuleRegistry {
         PERSISTABLE = new HashSet<Class<? extends Module>>();
         PERSISTABLE_NAMES = new LinkedHashSet<String>();
         RETIRED = new HashSet<String>();
+        int registryTarget = 112;
         if (Boolean.getBoolean("abyss.referenceRegistryCompat")) {
+            registryTarget = 92;
+}
+        String requestedRegistryTarget = System.getProperty("abyss.referenceRegistryCount");
+        if (requestedRegistryTarget != null) {
+            try {
+                int parsed = Integer.parseInt(requestedRegistryTarget);
+                if (parsed == 92 || parsed == 97 || parsed == 103 || parsed == 112) {
+                    registryTarget = parsed;
+}
+}
+            catch (NumberFormatException ignored) {
+}
+}
+        if (registryTarget <= 103) {
             Collections.addAll(RETIRED,
-                    "AntiNick", "ContainerKeeper", "InputFix", "NoObfuscation",
-                    "RawInput", "CustomCape", "Font", "Gadgets", "Language",
-                    "Theme", "VisualSpoof", "BindGUI", "CaveXray", "ItemScale",
-                    "KeyStrokes", "TeamInvisible", "ClosestPlayerHUD", "FKCounter",
+                    "AntiNick", "ContainerKeeper", "BindGUI", "KeyStrokes",
+                    "TeamInvisible", "ClosestPlayerHUD", "FKCounter",
                     "FallIndicator", "LeapModeHUD");
-            PENDING.add("reference registry compatibility enabled: 20 recovered modules remain retired to match reference abyss.jar");
+}
+        if (registryTarget <= 97) {
+            Collections.addAll(RETIRED,
+                    "InputFix", "NoObfuscation", "RawInput",
+                    "VisualSpoof", "CaveXray", "ItemScale");
+}
+        if (registryTarget <= 92) {
+            Collections.addAll(RETIRED,
+                    "CustomCape", "Font", "Gadgets", "Language", "Theme");
+}
+        if (registryTarget != 112) {
+            PENDING.add("reference registry stage enabled: target=" + registryTarget + " live modules, retired=" + RETIRED.size());
 }
         MISSING = new ArrayList<String>();
         DISABLED_UPSTREAM = new String[]{"Abyss.module.impl.combat.AutoProjectiles", "Abyss.module.impl.player.NoFall", "Abyss.module.impl.player.FreeCam"};
