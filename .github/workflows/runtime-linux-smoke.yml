@@ -156,6 +156,7 @@ jobs:
                 PATH="$JAVA_HOME/bin:$PATH" \
                 GRADLE_USER_HOME="$GRADLE_USER_HOME" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
+                JAVA_TOOL_OPTIONS='-Dabyss.runtimeSelfTest=true' \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -314,6 +315,11 @@ jobs:
           fi
           if ! grep -Fq '[ABYSSDIAG] module selftest    = PASS' "$DIAG"; then
             echo 'Module state-machine self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] config selftest    = PASS' "$DIAG"; then
+            echo 'Config persistence self-test is not green.'
             cat "$DIAG"
             exit 1
           fi
