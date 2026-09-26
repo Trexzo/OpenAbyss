@@ -333,6 +333,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19' "$DIAG"; then
+            echo 'Recovered command resolver self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
