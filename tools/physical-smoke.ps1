@@ -183,7 +183,9 @@ try {
     $ModuleFailureRun = Join-Path $Root 'run\abyss-module-failure.txt'
     $EventFailure = Join-Path $Root 'abyss-event-failure.txt'
     $EventFailureRun = Join-Path $Root 'run\abyss-event-failure.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$EventFailure,$EventFailureRun -Force -ErrorAction SilentlyContinue
+    $ConfigFailure = Join-Path $Root 'abyss-config-failure.txt'
+    $ConfigFailureRun = Join-Path $Root 'run\abyss-config-failure.txt'
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -260,6 +262,8 @@ try {
         (Join-Path $Root 'abyss-module-failure.txt'),
         (Join-Path $Root 'run\abyss-event-failure.txt'),
         (Join-Path $Root 'abyss-event-failure.txt'),
+        (Join-Path $Root 'run\abyss-config-failure.txt'),
+        (Join-Path $Root 'abyss-config-failure.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
     )
     foreach ($Source in $Sources) {
@@ -384,6 +388,19 @@ try {
         }
     }
 
+    $ConfigFailureCandidates = @(
+        (Join-Path $Root 'run\abyss-config-failure.txt'),
+        (Join-Path $Root 'abyss-config-failure.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $ConfigFailureFile = $ConfigFailureCandidates | Select-Object -First 1
+    $LastConfigFailure = '<none>'
+    if ($ConfigFailureFile) {
+        $ConfigFailureLines = @(Get-Content -LiteralPath $ConfigFailureFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($ConfigFailureLines.Count -gt 0) {
+            $LastConfigFailure = $ConfigFailureLines[-1]
+        }
+    }
+
     $CrashCount = @(Get-ChildItem -LiteralPath $CrashEvidence -File -ErrorAction SilentlyContinue).Count
     @(
         "HEAD=$Head"
@@ -399,6 +416,7 @@ try {
         "LAST_RUNTIME_STAGE=$LastRuntimeStage"
         "LAST_MODULE_FAILURE=$LastModuleFailure"
         "LAST_EVENT_FAILURE=$LastEventFailure"
+        "LAST_CONFIG_FAILURE=$LastConfigFailure"
         "CRASH_EVIDENCE_FILES=$CrashCount"
     ) | Set-Content -LiteralPath (Join-Path $Evidence 'RESULT.txt') -Encoding UTF8
 
