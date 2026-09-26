@@ -264,6 +264,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] config selftest    = PASS')) {
               throw 'Config persistence self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] session selftest   = PASS')) {
+              throw 'Minecraft session swap self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] command data load = friends.txt=')) {
               throw 'Persisted command-data loader did not run.'
             }
