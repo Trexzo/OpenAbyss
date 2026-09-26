@@ -30,6 +30,14 @@ try {
     $Branch = (& git branch --show-current).Trim()
     $Head = (& git rev-parse HEAD).Trim()
     Require ($LASTEXITCODE -eq 0 -and $Head) 'git rev-parse HEAD failed.'
+    Require ($Branch -eq 'recovery/r38-compile-pass') ("Expected recovery/r38-compile-pass, current branch is '" + $Branch + "'.")
+
+    $Status = @(& git status --porcelain --untracked-files=no)
+    Require ($LASTEXITCODE -eq 0) 'git status failed.'
+    $DirtyTracked = $Status.Count -gt 0
+    if ($DirtyTracked) {
+        Write-Warning 'Tracked working-tree changes are present. Physical-smoke evidence will record dirty=true and is not release-authoritative.'
+    }
 
     function Get-Java8Version([string]$Home) {
         if (-not $Home) { return $null }
@@ -105,6 +113,7 @@ try {
         "keep_open=$KeepOpen"
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
+        "dirty_tracked=$DirtyTracked"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
     $JavaVersion | Add-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
