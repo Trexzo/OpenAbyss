@@ -26,6 +26,7 @@ foreach ($evidenceName in @(
     'abyss-module-failure.txt',
     'abyss-event-failure.txt',
     'abyss-config-failure.txt',
+    'abyss-renderer-failure.txt',
     'abyss-bootstrap-diagnostics.txt',
     'abyss-census.tsv'
 )) {
