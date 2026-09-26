@@ -186,7 +186,10 @@ public final class AbyssCommands {
             if (placeholders != 0) {
                 return "FAIL module-placeholders " + placeholders;
 }
-            return "PASS commands=" + count + " primaryAliases=" + primaryResolved;
+            if (!AbyssCommandBind.gateOk()) {
+                return "FAIL keybind-gate " + AbyssCommandBind.gateNote();
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " keybind=TRUSTED";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
