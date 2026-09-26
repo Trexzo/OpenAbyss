@@ -467,13 +467,14 @@ public final class AbyssModuleSettings {
                 ++nS;
 }
             if (!uniform || nK == 0 || nS == 0 || nS > nK) continue;
-            block12: for (i = 0; i < n2; ++i) {
+            for (i = 0; i < n2; ++i) {
                 if (doneS[i] || AbyssModuleSettings.groupOf(AbyssModuleSettings.bucketOf((Setting)ss.get(i)), null, splitStrings) != g) continue;
                 for (int j = 0; j < m2; ++j) {
                     if (doneK[j] || AbyssModuleSettings.groupOf(AbyssModuleSettings.bucketOf((JsonElement)vals.get(j)), (JsonElement)vals.get(j), splitStrings) != g) continue;
-                    if (!AbyssModuleSettings.applyValue((Setting)ss.get(i), (JsonElement)vals.get(j))) continue block12;
-                    ++revalued;
-                    continue block12;
+                    if (AbyssModuleSettings.applyValue((Setting)ss.get(i), (JsonElement)vals.get(j))) {
+                        ++revalued;
+}
+                    break;
 }
 }
 }
