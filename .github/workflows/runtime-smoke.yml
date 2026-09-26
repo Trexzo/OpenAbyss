@@ -279,6 +279,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] clickgui selftest = PASS mode=')) {
               throw 'Recovered ClickGUI selector self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] altmenu selftest  = PASS')) {
+              throw 'Alt Manager main-menu injection self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
