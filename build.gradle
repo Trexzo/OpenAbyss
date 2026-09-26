@@ -50,3 +50,28 @@ abyssRunClient.jvmArgs([
     '-Dfml.coreMods.load=Abyss.ASM.CoreMod',
     '-Xmx2G'
 ])
+
+if (project.hasProperty('abyssPackaged')) {
+    abyssRunClient.dependsOn jar
+    abyssRunClient.doFirst {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        Set<String> devOutputs = sourceSets.main.output.files.collect { it.canonicalPath } as Set
+        def filtered = abyssRunClient.classpath.files.findAll { !devOutputs.contains(it.canonicalPath) }
+        abyssRunClient.classpath = files(filtered) + files(packagedJar)
+
+        def leaked = abyssRunClient.classpath.files.findAll { devOutputs.contains(it.canonicalPath) }
+        if (!leaked.isEmpty()) {
+            throw new GradleException("Packaged runtime still contains dev source-set output: " + leaked)
+        }
+        if (!abyssRunClient.classpath.files.any { it.canonicalPath == packagedJar.canonicalPath }) {
+            throw new GradleException("Packaged runtime classpath does not contain " + packagedJar)
+        }
+
+        println "ABYSS_PACKAGED_RUNTIME_JAR=" + packagedJar.canonicalPath
+        println "ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0"
+    }
+}
