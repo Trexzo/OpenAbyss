@@ -251,6 +251,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] census names       = 112 of 112 (truth 112)')) {
               throw 'Not all 112 original module names are published.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] module usability   = toggleable=109 stockDisabled=3 invalid=0 nullSettings=0')) {
+              throw 'Published module usability contract is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
