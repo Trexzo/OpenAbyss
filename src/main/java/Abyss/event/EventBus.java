@@ -196,6 +196,76 @@ public class EventBus {
             this.rwLock.writeLock().unlock();
 }
 }
+    public static String selfTest() {
+        try {
+            final EventBus bus = new EventBus();
+            final List<String> calls = new ArrayList<String>();
+            class TestEvent extends Event {
+}
+            EventSubscriber low = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 1, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("low");
+}
+                    });
+}
+            };
+            EventSubscriber high = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 5, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("high");
+}
+                    });
+}
+            };
+            bus.beginBatch();
+            bus.s(low, 0L);
+            bus.s(high, 0L);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.isEmpty()) {
+                return "FAIL batch-visible-before-end " + calls;
+}
+            bus.endBatch();
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("high", "low"))) {
+                return "FAIL priority " + calls;
+}
+            calls.clear();
+            bus.B(high);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("low"))) {
+                return "FAIL disable " + calls;
+}
+            calls.clear();
+            EventSubscriber stopper = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 10, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("stop");
+                            ((Event)event).I(0, 0L);
+}
+                    });
+}
+            };
+            bus.s(stopper, 0L);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("stop"))) {
+                return "FAIL cancellation " + calls;
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     static {
         PRIORITY_DESC = Comparator.<ListenerBinding>comparingInt(var0 -> ListenerBinding.k(var0)).reversed();
         e = 500L;
