@@ -4,11 +4,16 @@ param(
     [switch]$SkipBuild,
     [switch]$KeepOpen,
     [switch]$DevRuntime,
-    [switch]$ReferenceBootstrap
+    [switch]$ReferenceBootstrap,
+    [switch]$ReferenceRegistry,
+    [switch]$ReferenceRuntime
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+
+$UseReferenceBootstrap = $ReferenceBootstrap -or $ReferenceRuntime
+$UseReferenceRegistry = $ReferenceRegistry -or $ReferenceRuntime
 
 $Root = Split-Path -Parent $PSScriptRoot
 $Evidence = Join-Path $Root 'physical-smoke-evidence'
@@ -103,7 +108,9 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
-    $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' + $(if ($ReferenceBootstrap) { ' -Dabyss.referenceBootstrapCompat=true' } else { '' })
+    $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
+        $(if ($UseReferenceBootstrap) { ' -Dabyss.referenceBootstrapCompat=true' } else { '' }) +
+        $(if ($UseReferenceRegistry) { ' -Dabyss.referenceRegistryCompat=true' } else { '' })
 
     $Meta = @(
         "timestamp=$(Get-Date -Format o)"
@@ -114,7 +121,8 @@ try {
         "keep_open=$KeepOpen"
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
-        "reference_bootstrap=$ReferenceBootstrap"
+        "reference_bootstrap=$UseReferenceBootstrap"
+        "reference_registry=$UseReferenceRegistry"
         "dirty_tracked=$DirtyTracked"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
@@ -240,10 +248,13 @@ try {
         Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0')) 'Packaged runtime dev-output isolation marker is missing.'
     }
 
+    $ExpectedModuleCount = $(if ($UseReferenceRegistry) { 92 } else { 112 })
+    $ExpectedToggleable = $(if ($UseReferenceRegistry) { 89 } else { 109 })
+
     $Required = @(
-        '[ABYSSDIAG] module count     = 112 of 112 OK',
+        "[ABYSSDIAG] module count     = $ExpectedModuleCount of $ExpectedModuleCount OK",
         '[ABYSSDIAG] config writable   = writable=true',
-        '[ABYSSDIAG] module usability   = toggleable=109 stockDisabled=3 invalid=0 nullSettings=0',
+        "[ABYSSDIAG] module usability   = toggleable=$ExpectedToggleable stockDisabled=3 invalid=0 nullSettings=0",
         '[ABYSSDIAG] eventbus selftest  = PASS',
         '[ABYSSDIAG] module selftest    = PASS',
         '[ABYSSDIAG] config selftest    = PASS',
@@ -251,7 +262,7 @@ try {
         '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19',
         '[ABYSSDIAG] clickgui selftest = PASS mode=',
         '[ABYSSDIAG] altmenu selftest  = PASS',
-        '[ABYSSDIAG] tD.S (list)      = 112',
+        "[ABYSSDIAG] tD.S (list)      = $ExpectedModuleCount",
         '[ABYSSDIAG] zu_3.B VESTIGE   = live',
         '[ABYSSDIAG] zu_3.Y STUDIO    = live',
         '[ABYSSDIAG] zu_3.F RAVEN     = live'
