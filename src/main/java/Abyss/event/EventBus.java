@@ -10,6 +10,10 @@ import Abyss.event.ListenerBinding;
 import Abyss.event.events.StoppableEvent;
 import Abyss.ui.ModuleTagRenderer;
 import Abyss.util.ClientUtil;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +40,8 @@ public class EventBus {
     private final Map<Class<?>, List<ListenerBinding<?>>> P;
     private static long e;
     private final Map<Object, List<ListenerBinding<?>>> U = new ConcurrentHashMap();
+    private final Map<ListenerBinding<?>, String> ownerNames = new ConcurrentHashMap();
+    private final Map<String, Boolean> recordedFailures = new ConcurrentHashMap();
     private static final Comparator<ListenerBinding> PRIORITY_DESC;
     private final Map<Class<?>, ListenerBinding<?>[]> snapshots = new ConcurrentHashMap();
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -68,11 +74,44 @@ public class EventBus {
                 EventBus.v(var11, var1, 3958);
 }
             catch (Throwable var13) {
+                this.recordFailure(var11, var1, var13);
                 this.O(var13, 128094061068843L);
 }
             if (var1.a() || var1 instanceof StoppableEvent && ((StoppableEvent)var1).p()) break;
 }
 }
+    private void recordFailure(ListenerBinding<?> binding, Event event, Throwable failure) {
+        String owner = this.ownerNames.get(binding);
+        if (owner == null) {
+            owner = "<unknown>";
+}
+        String eventType = event == null ? "<null>" : event.getClass().getName();
+        String invoker = "<unknown>";
+        try {
+            EventInvoker callback = ListenerBinding.d(binding);
+            if (callback != null) {
+                invoker = callback.getClass().getName();
+}
+}
+        catch (Throwable ignored) {
+}
+        String message = String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        String signature = owner + "|" + eventType + "|" + failure.getClass().getName() + "|" + message;
+        if (this.recordedFailures.putIfAbsent(signature, Boolean.TRUE) != null) {
+            return;
+}
+        String line = System.currentTimeMillis() + "\t" + owner + "\t" + eventType + "\t" + invoker
+                + "\t" + failure.getClass().getName() + "\t" + message;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-event-failure.txt"), true), "UTF-8");){
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] event callback failure " + line);
+}
+
     private static void v(ListenerBinding var0, Object var1, int var2) throws UnsupportedEncodingException, Throwable, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var5 = ((long)var2 << 32 | 0x16D4329BL) ^ a;
         long var7 = var5 ^ 0x123FF3A27F1L;
@@ -148,6 +187,7 @@ public class EventBus {
                 throw new IllegalStateException("Generated listener bound outside buildCache");
 }
             ListenerBinding var8 = new ListenerBinding(var6, var5);
+            this.ownerNames.put(var8, var1.getClass().getName());
             var7.add(var8);
             List<ListenerBinding<?>> var9 = this.P.computeIfAbsent(var2, var0 -> new ArrayList<ListenerBinding<?>>());
             var9.add(var8);
