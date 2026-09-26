@@ -23,7 +23,7 @@ public class SessionAccessor {
         if (t == null) {
             try {
                 for (Field var3 : Minecraft.class.getDeclaredFields()) {
-                    if (!var3.getType().isAssignableFrom(Session.class)) continue;
+                    if (var3.getType() != Session.class) continue;
                     t = var3;
                     t.setAccessible(true);
                     break;
@@ -42,7 +42,7 @@ public class SessionAccessor {
         catch (Exception exception) {
             // empty catch block
 }
-}    public static String selfTest() {
+    public static String selfTest() {
         Session original = null;
         try {
             original = SessionAccessor.d();
