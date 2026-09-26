@@ -351,7 +351,7 @@ implements ClassFileTransformer {
         Set<String> descriptors = InjectMappingBridge.descriptors(hook.targetDescriptor);
         ArrayList<MethodInsnNode> found = new ArrayList<MethodInsnNode>();
         int seen = 0;
-        block0: for (AbstractInsnNode insn = target.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+        for (AbstractInsnNode insn = target.instructions.getFirst(); insn != null; insn = insn.getNext()) {
             if (!(insn instanceof MethodInsnNode)) continue;
             MethodInsnNode call = (MethodInsnNode)insn;
             if (!owners.contains(call.owner) || hook.targetDescriptor != null && !descriptors.contains(call.desc)) continue;
@@ -361,7 +361,7 @@ implements ClassFileTransformer {
                     found.add(call);
 }
                 ++seen;
-                continue block0;
+                break;
 }
 }
         if (found.isEmpty()) {
@@ -384,7 +384,7 @@ implements ClassFileTransformer {
         Set<String> descriptors = InjectMappingBridge.descriptors(hook.targetDescriptor);
         ArrayList<FieldInsnNode> found = new ArrayList<FieldInsnNode>();
         int seen = 0;
-        block0: for (AbstractInsnNode insn = target.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+        for (AbstractInsnNode insn = target.instructions.getFirst(); insn != null; insn = insn.getNext()) {
             if (!(insn instanceof FieldInsnNode)) continue;
             FieldInsnNode access = (FieldInsnNode)insn;
             if (!owners.contains(access.owner) || hook.targetDescriptor != null && !descriptors.contains(access.desc)) continue;
@@ -394,7 +394,7 @@ implements ClassFileTransformer {
                     found.add(access);
 }
                 ++seen;
-                continue block0;
+                break;
 }
 }
         if (found.isEmpty()) {
