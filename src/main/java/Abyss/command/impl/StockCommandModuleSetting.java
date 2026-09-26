@@ -15,9 +15,18 @@ import Abyss.setting.settings.PercentageSetting;
 import Abyss.setting.settings.TextSetting;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class StockCommandModuleSetting
 extends Command {
+    // Preserve the runnable-era private field layout; JNIC used these as
+    // decoder/cache state even though the recovered Java behavior does not.
+    private static String[] c;
+    private static long[] e;
+    private static Map g;
+    private static String[] b;
+    private static Map d;
+    private static long a;
 
     @Override
     public boolean J() {
