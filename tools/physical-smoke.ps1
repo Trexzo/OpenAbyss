@@ -22,7 +22,7 @@ $UseSkipCheaterDetector = $SkipCheaterDetector -or $ReferenceBootstrap -or $Refe
 $UseSkipAltManager = $SkipAltManager -or $ReferenceBootstrap -or $ReferenceRuntime
 $UseReferenceBootstrap = $UseSkipChatMenu -and $UseSkipCheaterDetector -and $UseSkipAltManager
 
-$RegistrySwitchCount = @($ReferenceRegistry,$Registry97,$Registry103,$ReferenceRuntime | Where-Object { $_ }).Count
+$RegistrySwitchCount = @(@($ReferenceRegistry,$Registry97,$Registry103,$ReferenceRuntime) | Where-Object { $_ }).Count
 if ($RegistrySwitchCount -gt 1) {
     throw 'Choose only one registry compatibility stage: -ReferenceRegistry (92), -Registry97, -Registry103, or -ReferenceRuntime.'
 }
