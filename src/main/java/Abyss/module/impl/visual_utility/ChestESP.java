@@ -69,59 +69,82 @@ implements EventSubscriber {
     public static ColorSetting customColor;
 
     private void B(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        this.I.clear();
-        List var6 = ChestESP.f.theWorld.loadedTileEntityList;
-        boolean var7 = ignoreOpened.c();
-        int var9 = var6.size();
-        block6: for (int var8 = 0; var8 < var9; ++var8) {
-            TileEntity var10 = (TileEntity)var6.get(var8);
-            if (!(var10 instanceof TileEntityChest)) continue;
-            BlockPos var11 = var10.getPos();
-            if (!this.v.contains(var11) && (((TileEntityChest)var10).numPlayersUsing > 0 || BlockUtil.Y((byte)0, var11, 8170486))) {
+       this.I.clear();
+       List var6 = ChestESP.f.theWorld.loadedTileEntityList;
+       boolean var7 = ignoreOpened.c();
+       int var8 = 0;
+
+       for (int var9 = var6.size(); var8 < var9; var8++) {
+          TileEntity var10 = (TileEntity)var6.get(var8);
+          if (var10 instanceof TileEntityChest) {
+             BlockPos var11 = var10.getPos();
+             if (!this.v.contains(var11) && (((TileEntityChest)var10).numPlayersUsing > 0 || BlockUtil.Y((byte)0, var11, 8170486))) {
                 this.v.add(var11);
-}
-            if (this.v.contains(var11) && var7) continue;
-            Block var12 = ChestESP.f.theWorld.getBlockState(var11).getBlock();
-            double var13 = 0.0625;
-            double var15 = 0.0625;
-            double var17 = 0.9375;
-            double var19 = 0.9375;
-            if (var12 instanceof BlockChest) {
-                EnumFacing var21 = (EnumFacing)ChestESP.f.theWorld.getBlockState(var11).getValue((IProperty)BlockChest.FACING);
-                switch (ChestESPSwitchMapEnumFacing.V[var21.ordinal()]) {
-                    case 1: {
-                        if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() == var12) continue block6;
-                        if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() != var12) break;
-                        var13 -= 1.0;
-                        break;
-}
-                    case 2: {
-                        if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() == var12) continue block6;
-                        if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() != var12) break;
-                        var17 += 1.0;
-                        break;
-}
-                    case 3: {
-                        if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() == var12) continue block6;
-                        if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() != var12) break;
-                        var19 += 1.0;
-                        break;
-}
-                    case 4: {
-                        if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() != var12) {
-                            if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() != var12) break;
-                            var15 -= 1.0;
+             }
+
+             if (!this.v.contains(var11) || !var7) {
+                Block var12 = ChestESP.f.theWorld.getBlockState(var11).getBlock();
+                double var13 = 0.0625;
+                double var15 = 0.0625;
+                double var17 = 0.9375;
+                double var19 = 0.9375;
+                if (var12 instanceof BlockChest) {
+                   EnumFacing var21 = (EnumFacing)ChestESP.f.theWorld.getBlockState(var11).getValue(BlockChest.FACING);
+                   switch (ChestESPSwitchMapEnumFacing.V[var21.ordinal()]) {
+                      case 1:
+                         if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() == var12) {
+                            var13--;
+                         }
+                         break;
+                      case 2:
+                         if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() == var12) {
+                            var17++;
+                         }
+                         break;
+                      case 3:
+                         if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() == var12) {
+                            var19++;
+                         }
+                         break;
+                      case 4:
+                         if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() != var12) {
+                            if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() == var12) {
+                               var15--;
+                            }
                             break;
-}
-}
-                    default: {
-                        continue block6;
-}
-}
-}
-            this.I.add(new AxisAlignedBB((double)var11.getX() + var13, (double)var11.getY(), (double)var11.getZ() + var15, (double)var11.getX() + var17, (double)var11.getY() + 0.875, (double)var11.getZ() + var19));
-}
-}
+                         }
+                      default:
+                         continue;
+                   }
+                }
+
+                this.I
+                   .add(
+                      new AxisAlignedBB(
+                         var11.getX() + var13,
+                         var11.getY(),
+                         var11.getZ() + var15,
+                         var11.getX() + var17,
+                         var11.getY() + 0.875,
+                         var11.getZ() + var19
+                      )
+                   );
+             }
+          }
+       }
+    }
     @Override
     public final void x(long var1, EventBus var3) {
         ChestESPBinder.N(var3, this);
