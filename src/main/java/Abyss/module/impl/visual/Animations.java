@@ -93,7 +93,7 @@ implements EventSubscriber {
             float var9 = var3.J;
             float var10 = var3.C;
             float var11 = MathHelper.sin((float)(MathHelper.sqrt_float((float)var10) * (float)Math.PI));
-            block0 : switch (AnimationsSwitchMapEnumAction.j[var7.ordinal()]) {
+            switch (AnimationsSwitchMapEnumAction.j[var7.ordinal()]) {
                 case 1: {
                     switch (mode.Y()) {
                         case "SMOOTH": {
@@ -104,7 +104,7 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)250.0f, (float)0.2f, (float)1.0f, (float)-0.6f);
                             GlStateManager.rotate((float)-10.0f, (float)1.0f, (float)0.5f, (float)1.0f);
                             GlStateManager.rotate((float)(-var14 * 20.0f), (float)1.0f, (float)0.5f, (float)1.0f);
-                            break block0;
+                            break;
 }
                         case "EXHIBITION": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, 0.0f);
@@ -112,7 +112,7 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)(-var11 * 31.0f), (float)1.0f, (float)0.0f, (float)2.0f);
                             GlStateManager.rotate((float)(-var11 * 33.0f), (float)1.5f, (float)(var11 / 1.1f), (float)0.0f);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "STAB": {
                             float var15 = MathHelper.sin((float)(MathHelper.sqrt_float((float)var10) * (float)Math.PI));
@@ -122,7 +122,7 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)6110.0f, (float)0.1f, (float)0.0f, (float)0.0f);
                             ItemRendererAccessor.s(var8, 0.0f, 0.0f);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "SPIN": {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
@@ -130,7 +130,7 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)-59.0f, (float)-1.0f, (float)0.0f, (float)3.0f);
                             GlStateManager.rotate((float)(-(System.currentTimeMillis() / 2L % 360L)), (float)1.0f, (float)0.0f, (float)0.0f);
                             GlStateManager.rotate((float)60.0f, (float)0.0f, (float)1.0f, (float)0.0f);
-                            break block0;
+                            break;
 }
                         case "SIGMA": {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
@@ -138,7 +138,7 @@ implements EventSubscriber {
                             ItemRendererAccessor.e(var8);
                             GlStateManager.rotate((float)(var11 * 35.0f / 2.0f), (float)0.0f, (float)1.0f, (float)1.5f);
                             GlStateManager.rotate((float)(-var11 * 135.0f / 4.0f), (float)1.0f, (float)1.0f, (float)0.0f);
-                            break block0;
+                            break;
 }
                         case "WOOD": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, 0.0f);
@@ -146,7 +146,7 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)(-var11 * 30.0f), (float)1.0f, (float)0.0f, (float)2.0f);
                             GlStateManager.rotate((float)(-var11 * 44.0f), (float)1.5f, (float)(var11 / 1.2f), (float)0.0f);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "SWONG": {
                             ItemRendererAccessor.s(var8, var9 / 2.0f, var10);
@@ -154,13 +154,13 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)(var11 * 40.0f), (float)1.0f, (float)(-var11 / 2.0f), (float)-0.0f);
                             Animations.f(0.0, 0.2f, 0.0);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "CHILL": {
                             ItemRendererAccessor.s(var8, -0.25f, 1.0f + var11 / 10.0f);
                             GL11.glRotated((double)(-var11 * 25.0f), (double)1.0, (double)0.0, (double)0.0);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "KOMOREBI": {
                             Animations.f(0.41f, -0.25, -0.5555557012557983);
@@ -171,13 +171,13 @@ implements EventSubscriber {
                             GlStateManager.rotate((float)(var11 * -12.0f), (float)0.0f, (float)0.0f, (float)1.0f);
                             GlStateManager.rotate((float)(var11 * -65.0f), (float)1.0f, (float)0.0f, (float)0.0f);
                             ItemRendererAccessor.e(var8);
-                            break block0;
+                            break;
 }
                         case "RHYS": {
                             ItemRendererAccessor.s(var8, var9, var10);
                             ItemRendererAccessor.e(var8);
                             Animations.f(-0.3f, -0.1f, -0.0);
-                            break block0;
+                            break;
 }
                         case "ALLAH": {
                             ItemRendererAccessor.s(var8, var9, 0.0f);
