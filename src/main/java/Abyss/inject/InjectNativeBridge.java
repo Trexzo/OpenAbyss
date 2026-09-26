@@ -145,9 +145,6 @@ public final class InjectNativeBridge {
             return classfile;
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static byte[] coremod(String internalName, byte[] classfile) {
         ClassTransform owner = InjectNativeBridge.lookup(internalName);
         if (owner == null) {
@@ -241,9 +238,6 @@ public final class InjectNativeBridge {
         String dotted = internalName.replace('/', '.');
         return dotted.startsWith("java.") || dotted.startsWith("javax.") || dotted.startsWith("sun.") || dotted.startsWith("com.sun.") || dotted.startsWith("jdk.") || dotted.startsWith("org.") || dotted.startsWith("com.google.") || dotted.startsWith("net.minecraftforge.") || dotted.startsWith("net.minecraft.launchwrapper.") || dotted.startsWith("optifine.") || dotted.startsWith("com.spiderfrog.") || dotted.startsWith("Abyss.");
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static byte[] remapOwn(String internalName, byte[] classfile) {
         Set<String> active = REMAPPING.get();
         if (active != null && active.contains(internalName)) {
@@ -509,9 +503,6 @@ public final class InjectNativeBridge {
             InjectLog.swallowed(swallowed);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static void dump(String name, byte[] bytes) {
         try {
             File dir = new File(System.getProperty("java.io.tmpdir"), "abyss-inject-dump");
