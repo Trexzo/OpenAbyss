@@ -42,6 +42,7 @@ public class EventBus {
     private final Map<Object, List<ListenerBinding<?>>> U = new ConcurrentHashMap();
     private final Map<ListenerBinding<?>, String> ownerNames = new ConcurrentHashMap();
     private final Map<String, Boolean> recordedFailures = new ConcurrentHashMap();
+    private boolean failureEvidenceEnabled = true;
     private static final Comparator<ListenerBinding> PRIORITY_DESC;
     private final Map<Class<?>, ListenerBinding<?>[]> snapshots = new ConcurrentHashMap();
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
@@ -98,6 +99,9 @@ public class EventBus {
         String message = String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
         String signature = owner + "|" + eventType + "|" + failure.getClass().getName() + "|" + message;
         if (this.recordedFailures.putIfAbsent(signature, Boolean.TRUE) != null) {
+            return;
+}
+        if (!this.failureEvidenceEnabled) {
             return;
 }
         String line = System.currentTimeMillis() + "\t" + owner + "\t" + eventType + "\t" + invoker
@@ -289,6 +293,51 @@ public class EventBus {
             bus.e(new TestEvent(), 0L);
             if (!calls.equals(Arrays.asList("stop"))) {
                 return "FAIL cancellation " + calls;
+}
+
+            calls.clear();
+            class ThrowEvent extends Event {
+}
+            bus.failureEvidenceEnabled = false;
+            EventSubscriber thrower = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, ThrowEvent.class, 10, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("throw");
+                            throw new RuntimeException("eventbus-selftest");
+}
+                    });
+}
+            };
+            EventSubscriber after = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, ThrowEvent.class, 1, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("after");
+}
+                    });
+}
+            };
+            bus.s(thrower, 0L);
+            bus.s(after, 0L);
+            bus.e(new ThrowEvent(), 0L);
+            if (!calls.equals(Arrays.asList("throw", "after"))) {
+                return "FAIL callback-failure-continue " + calls;
+}
+            if (bus.recordedFailures.size() != 1) {
+                return "FAIL callback-failure-recorded " + bus.recordedFailures.size();
+}
+            calls.clear();
+            bus.e(new ThrowEvent(), 0L);
+            if (!calls.equals(Arrays.asList("throw", "after"))) {
+                return "FAIL callback-failure-repeat " + calls;
+}
+            if (bus.recordedFailures.size() != 1) {
+                return "FAIL callback-failure-dedup " + bus.recordedFailures.size();
 }
             return "PASS";
 }
