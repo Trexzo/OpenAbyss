@@ -107,6 +107,8 @@ AUTHORITY_BACKED_FINDINGS = frozenset({
     ("Abyss/ASM/ClassNameFilterTransformer.java", "decompiler_warning_marker"),
     ("Abyss/ASM/Util/BytecodeHelper.java", "decompiler_warning_marker"),
     ("Abyss/inject/InjectNativeBridge.java", "void_declaration_warning"),
+    ("Abyss/internal/auth/MojangApiClient.java", "decompiler_warning_marker"),
+    ("Abyss/module/impl/visual_utility/FireBallPredict.java", "decompiler_warning_marker"),
 })
 
 
