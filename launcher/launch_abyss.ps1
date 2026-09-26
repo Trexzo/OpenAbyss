@@ -290,9 +290,10 @@ Set-Content -LiteralPath $Log -Value ('OpenAbyss standalone launcher ' + (Get-Da
 $BootstrapStage = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
 $RuntimeStage = Join-Path $GameDir 'abyss-runtime-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
+$EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
 $BootstrapDiag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
-Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFailure,$BootstrapDiag,$Census -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$BootstrapDiag,$Census -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $CrashOut -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $GameDir,(Join-Path $GameDir 'mods'),$CrashOut | Out-Null
 
@@ -493,12 +494,13 @@ function Last-Line([string]$Path) {
 $lastBootstrap = Last-Stage $BootstrapStage
 $lastRuntime = Last-Stage $RuntimeStage
 $lastModuleFailure = Last-Line $ModuleFailure
+$lastEventFailure = Last-Line $EventFailure
 $diagPresent = Test-Path -LiteralPath $BootstrapDiag -PathType Leaf
 $censusCount = if (Test-Path -LiteralPath $Census -PathType Leaf) {
     @(Get-Content -LiteralPath $Census | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
 } else { -1 }
 
-foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$BootstrapDiag,$Census)) {
+foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$BootstrapDiag,$Census)) {
     if (Test-Path -LiteralPath $evidenceFile -PathType Leaf) {
         Copy-Item -LiteralPath $evidenceFile -Destination $CrashOut -Force
     }
@@ -518,6 +520,7 @@ $result = @(
     "LAST_BOOTSTRAP_STAGE=$lastBootstrap",
     "LAST_RUNTIME_STAGE=$lastRuntime",
     "LAST_MODULE_FAILURE=$lastModuleFailure",
+    "LAST_EVENT_FAILURE=$lastEventFailure",
     "CRASH_FILES=$(@(Get-ChildItem -LiteralPath $CrashOut -File -ErrorAction SilentlyContinue).Count)"
 )
 $result | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
