@@ -641,11 +641,13 @@ implements EventSubscriber {
 }
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
+                    runtimeMilestone("clickgui-open-request");
                     try {
                         ClickGUI.O(2169, 8663, (char)var21);
+                        runtimeMilestone("clickgui-open-success:" + (this.c.currentScreen == null ? "<null>" : this.c.currentScreen.getClass().getName()));
 }
                     catch (NullPointerException nullPointerException) {
-                        // empty catch block
+                        runtimeMilestone("clickgui-open-nullpointer:" + String.valueOf(nullPointerException.getMessage()));
 }
 }
                 if (Freelook.mode.R("HOLD") && Modules.J(Freelook.class).h() != 0) {
