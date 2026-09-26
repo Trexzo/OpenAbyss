@@ -1111,78 +1111,64 @@ implements EventSubscriber {
 }
 }
     private void b(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        block26: {
-            block28: {
-                block27: {
-                    block25: {
-                        if (k != 1) break block25;
-                        k = 2;
-                        if (AutoBlock.X(0L, (short)-10450) && this.F != null && RaytraceUtil.q(50051018191872L, (Entity)this.F, 3.5)) {
-                            KeepSprint.t = 2;
-                            KeepSprint.a = 0;
-}
-                        break block26;
-}
-                    if (k != 0 && k != 3 && k != 5) break block26;
-                    if (k != 0) break block27;
-                    switch (apsMode.Y()) {
-                        case "10APS": {
-                            if (this.K(0L, true)) {
-                                AutoBlock.f.thePlayer.stopUsingItem();
-                                k = 7;
-                                break;
-}
-                            break block28;
-}
-                        case "14APS": {
-                            if (this.K(0L, true)) {
-                                AutoBlock.f.thePlayer.stopUsingItem();
-                                k = 3;
-                                break;
-}
-                            break block28;
-}
-                        default: {
-                            k = 3;
-                            break;
-}
-}
-                    break block28;
-}
+        if (k == 1) {
+            k = 2;
+            if (AutoBlock.X(0L, (short)-10450) && this.F != null && RaytraceUtil.q(50051018191872L, (Entity)this.F, 3.5)) {
+                KeepSprint.t = 2;
+                KeepSprint.a = 0;
+            }
+        } else if (k == 0 || k == 3 || k == 5) {
+            if (k == 0) {
                 switch (apsMode.Y()) {
-                    case "3APS": 
-                    case "5APS": {
+                    case "10APS":
+                        if (this.K(0L, true)) {
+                            AutoBlock.f.thePlayer.stopUsingItem();
+                            k = 7;
+                        }
+                        break;
+                    case "14APS":
+                        if (this.K(0L, true)) {
+                            AutoBlock.f.thePlayer.stopUsingItem();
+                            k = 3;
+                        }
+                        break;
+                    default:
+                        k = 3;
+                }
+            } else {
+                switch (apsMode.Y()) {
+                    case "3APS":
+                    case "5APS":
                         if (k == 3) {
                             OutgoingPacketState.P = true;
                             k = 5;
-                            break;
-}
-                        if (!this.K(0L, true)) break;
-                        AutoBlock.f.thePlayer.stopUsingItem();
-                        k = 7;
+                        } else if (this.K(0L, true)) {
+                            AutoBlock.f.thePlayer.stopUsingItem();
+                            k = 7;
+                        }
                         break;
-}
-                    case "7APS": {
-                        if (!this.K(0L, true)) break;
-                        AutoBlock.f.thePlayer.stopUsingItem();
-                        k = 7;
+                    case "7APS":
+                        if (this.K(0L, true)) {
+                            AutoBlock.f.thePlayer.stopUsingItem();
+                            k = 7;
+                        }
                         break;
-}
-                    case "14APS": {
-                        if (k != 3) break;
-                        k = 7;
-}
-}
-}
+                    case "14APS":
+                        if (k == 3) {
+                            k = 7;
+                        }
+                }
+            }
+
             if (k == 7) {
                 k = 1;
                 if (AutoBlock.X(0L, (short)-10450) && this.F != null && RaytraceUtil.q(50051018191872L, (Entity)this.F, 3.5)) {
                     KeepSprint.t = 1;
                     KeepSprint.a = 0;
-}
-}
-}
-}
+                }
+            }
+        }
+    }
     public static int t(long var0) {
         var0 = o ^ var0;
         long var2 = var0 ^ 0x13CC74CA33B1L;
