@@ -95,6 +95,8 @@ ZKM_LABEL_AUTHORITY_PATHS = frozenset({
 # a future structural change becomes review-visible again.
 LABELLED_METHOD_AUTHORITIES = {
     "Abyss/module/Module.java": ("$jnicClinit", 2, 2),
+    "Abyss/ui/studio/StudioClickGuiScreen.java": ("$jnicClinit", 2, 2),
+    "Abyss/module/impl/world/BlockIn.java": ("$jnicClinit", 1, 1),
 }
 
 
