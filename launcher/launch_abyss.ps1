@@ -4,6 +4,8 @@ param(
     [string]$Java8 = "",
     [string]$Username = "Player",
     [int]$RamMB = 4096,
+    [string]$ForgeVersion = "",
+    [switch]$ValidateOnly,
     [switch]$ResolverSelfTest
 )
 
@@ -312,10 +314,20 @@ Log "Minecraft source directory: $MinecraftDir"
 Log "Isolated game directory: $GameDir"
 
 $versions = Join-Path $MinecraftDir 'versions'
-$forgeDir = Get-ChildItem -LiteralPath $versions -Directory -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -match '1\.8\.9.*forge|forge.*1\.8\.9' } |
-    Sort-Object Name -Descending |
-    Select-Object -First 1
+$forgeCandidates = @(Get-ChildItem -LiteralPath $versions -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match '1\.8\.9.*forge|forge.*1\.8\.9' })
+
+$forgeDir = $null
+if ($ForgeVersion) {
+    $forgeDir = $forgeCandidates | Where-Object { $_.Name -eq $ForgeVersion } | Select-Object -First 1
+    Require ($null -ne $forgeDir) "Requested Forge profile is not installed: $ForgeVersion"
+} else {
+    $preferredForge = '1.8.9-forge1.8.9-11.15.1.2318-1.8.9'
+    $forgeDir = $forgeCandidates | Where-Object { $_.Name -eq $preferredForge } | Select-Object -First 1
+    if (-not $forgeDir) {
+        $forgeDir = $forgeCandidates | Sort-Object Name -Descending | Select-Object -First 1
+    }
+}
 Require ($null -ne $forgeDir) 'No installed Forge 1.8.9 version was found under .minecraft\versions.'
 
 $forgeJsonPath = Join-Path $forgeDir.FullName ($forgeDir.Name + '.json')
@@ -418,6 +430,23 @@ $fullArgs = @($jvmArgs) + @('-cp', ($classPath -join ';'), $mainClass) + $gameAr
 $argString = ($fullArgs | ForEach-Object { Quote-Arg ([string]$_) }) -join ' '
 
 Log "Main class: $mainClass"
+
+if ($ValidateOnly) {
+    @(
+        'OPENABYSS_STANDALONE_PREFLIGHT=PASS'
+        "JAVA=$Java"
+        "FORGE=$($forgeDir.Name)"
+        "CLASSPATH_COUNT=$($classPath.Count)"
+        "MISSING_LIBRARIES=$($missingLibraries.Count)"
+        "NATIVE_ARCHIVES=$nativeCount"
+        "NATIVE_DLLS=$($nativeFiles.Count)"
+        "JAR_SHA256=$JarHash"
+        "GAME_DIR=$GameDir"
+    ) | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
+    Log 'Standalone launcher preflight passed; -ValidateOnly requested, Minecraft was not started.'
+    exit 0
+}
+
 Log "Launching packaged OpenAbyss..."
 $p = Start-Process -FilePath $Java -ArgumentList $argString -WorkingDirectory $GameDir -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru -Wait
 $exitCode = $p.ExitCode
