@@ -12,6 +12,7 @@ import Abyss.internal.CheaterDetector;
 import Abyss.internal.ChatInputHandler;
 import Abyss.internal.MiningEngine;
 import Abyss.internal.MiningRenderSubscriber;
+import Abyss.internal.auth.AltManager;
 import Abyss.internal.auth.SessionAccessor;
 import Abyss.internal.auth.TrustAllSslContext;
 import Abyss.internal.jnic.StockCommandRegistry;
@@ -118,6 +119,12 @@ public final class AbyssBootstrap {
 }
         var2.endBatch();
         AbyssClient.w = var2;
+        AltManager.M(0L);
+        if (AltManager.isInitialized()) {
+            SUBSCRIBED.add("Abyss.ui.screen.ReconnectHandler");
+} else {
+            PENDING.add("Abyss.ui.screen.ReconnectHandler was not initialized by AltManager.M");
+}
         AbyssConfig.apply(PENDING);
         AbyssBootstrap.forceEnableCommandLine();
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
