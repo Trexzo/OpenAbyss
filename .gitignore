@@ -25,3 +25,5 @@ logs/
 *.keystore
 *.p12
 *.pfx
+
+physical-smoke-evidence/
