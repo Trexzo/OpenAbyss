@@ -78,9 +78,6 @@ public class EventBus {
         long var7 = var5 ^ 0x123FF3A27F1L;
         ListenerBinding.d(var0).c(var7, var1);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public void z(long var1, Object var3) {
         long var4 = var1 ^ 0x7FD2D60C5916L;
         if (var3 != null && !this.U.containsKey(var3)) {
@@ -133,11 +130,6 @@ public class EventBus {
 }
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled force condition propagation
-     * Lifted jumps to return sites
-     */
     public void R(Object var1, Class var2, int var5, EventInvoker var6) {
         if (var1 == null || var2 == null || var6 == null) throw new NullPointerException("owner, eventType and invoker are required");
         boolean locked = false;
@@ -171,9 +163,6 @@ public class EventBus {
     public void beginBatch() {
         this.batchMode = true;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public void endBatch() {
         this.batchMode = false;
         boolean locked = false;
