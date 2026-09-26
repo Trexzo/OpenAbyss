@@ -2,7 +2,8 @@ param(
     [string]$Jdk8,
     [int]$RunSeconds = 180,
     [switch]$SkipBuild,
-    [switch]$KeepOpen
+    [switch]$KeepOpen,
+    [switch]$DevRuntime
 )
 
 Set-StrictMode -Version 2.0
@@ -103,6 +104,7 @@ try {
         "gradle=$Gradle"
         "keep_open=$KeepOpen"
         "run_seconds=$RunSeconds"
+        "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
     $JavaVersion | Add-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
@@ -131,12 +133,18 @@ try {
     $Stderr = Join-Path $Evidence 'runClient.stderr.log'
     Remove-Item -LiteralPath $Stdout,$Stderr -Force -ErrorAction SilentlyContinue
 
-    if ($KeepOpen) {
-        Write-Host 'Launching interactive runClient. Close Minecraft normally when testing is complete.'
-    } else {
-        Write-Host "Launching runClient for up to $RunSeconds seconds..."
+    $RunArgs = @('--offline','--no-daemon')
+    if (-not $DevRuntime) {
+        $RunArgs += '-PabyssPackaged=true'
     }
-    $P = Start-Process -FilePath $Gradle -ArgumentList @('--offline','--no-daemon','runClient') -WorkingDirectory $Root -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
+    $RunArgs += 'runClient'
+
+    if ($KeepOpen) {
+        Write-Host ('Launching interactive ' + $(if ($DevRuntime) { 'dev-source' } else { 'packaged-JAR' }) + ' runClient. Close Minecraft normally when testing is complete.')
+    } else {
+        Write-Host ('Launching ' + $(if ($DevRuntime) { 'dev-source' } else { 'packaged-JAR' }) + " runClient for up to $RunSeconds seconds...")
+    }
+    $P = Start-Process -FilePath $Gradle -ArgumentList $RunArgs -WorkingDirectory $Root -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
 
     if ($KeepOpen) {
         while (-not $P.HasExited) {
@@ -185,6 +193,17 @@ try {
 
     Require ($null -ne $Diag) 'No bootstrap diagnostics were produced.'
     $DiagText = [IO.File]::ReadAllText($Diag)
+
+    $Combined = ''
+    foreach ($LogPath in @($Stdout,$Stderr,$LatestLog,(Join-Path $env:TEMP 'abyss-inject.log'))) {
+        if ($LogPath -and (Test-Path -LiteralPath $LogPath)) {
+            $Combined += [Environment]::NewLine + [IO.File]::ReadAllText($LogPath)
+        }
+    }
+    if (-not $DevRuntime) {
+        Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_JAR=')) 'Packaged runtime marker was not observed.'
+        Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0')) 'Packaged runtime dev-output isolation marker is missing.'
+    }
 
     $Required = @(
         '[ABYSSDIAG] module count     = 112 of 112 OK',
