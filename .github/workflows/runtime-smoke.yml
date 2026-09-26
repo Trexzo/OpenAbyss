@@ -205,6 +205,7 @@ jobs:
               VisualSpoof = 4
               CaveXray    = 2
               ItemScale   = 7
+              ClickGUI    = 3
               AntiNick    = 1
               ContainerKeeper = 2
               BindGUI     = 3
@@ -271,6 +272,9 @@ jobs:
             }
             if (-not $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19')) {
               throw 'Recovered command resolver self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] clickgui selftest = PASS mode=')) {
+              throw 'Recovered ClickGUI selector self-test is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
