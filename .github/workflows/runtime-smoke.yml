@@ -257,6 +257,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] eventbus selftest  = PASS')) {
               throw 'EventBus isolated self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] module selftest    = PASS')) {
+              throw 'Module state-machine self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
