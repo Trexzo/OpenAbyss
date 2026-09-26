@@ -179,7 +179,7 @@ jobs:
               throw "Unexpected OpenAbyss module census count: $censusCount (expected 97)."
             }
 
-            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD')
+            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme')
             foreach ($module in $requiredModules) {
               if (-not ($censusLines -match ("\t" + [regex]::Escape($module) + "\t"))) {
                 throw "Required module missing from census: $module"
@@ -194,6 +194,11 @@ jobs:
               Velocity   = 24
               ESP        = 16
               TargetHUD  = 26
+              CustomCape = 1
+              Font        = 6
+              Gadgets     = 3
+              Language    = 6
+              Theme       = 7
               BlockHit   = 26
               BedNuker   = 21
               BlocksESP  = 17

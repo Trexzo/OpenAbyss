@@ -248,6 +248,11 @@ jobs:
           require_setting_count Velocity 24
           require_setting_count ESP 16
           require_setting_count TargetHUD 26
+          require_setting_count CustomCape 1
+          require_setting_count Font 6
+          require_setting_count Gadgets 3
+          require_setting_count Language 6
+          require_setting_count Theme 7
           require_setting_count BlockHit 26
           require_setting_count BedNuker 21
           require_setting_count BlocksESP 17
