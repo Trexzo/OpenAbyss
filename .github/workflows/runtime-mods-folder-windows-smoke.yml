@@ -158,7 +158,20 @@ jobs:
           if (-not (Test-Path -LiteralPath $modsJar -PathType Leaf)) {
             throw "Mods-folder runtime jar is missing: $modsJar"
           }
+          $builtJar = Get-ChildItem -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'build\libs') -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $builtJar) { throw 'Built OpenAbyss JAR is missing.' }
+          $modsHash = (Get-FileHash -LiteralPath $modsJar -Algorithm SHA256).Hash
+          $builtHash = (Get-FileHash -LiteralPath $builtJar.FullName -Algorithm SHA256).Hash
+          if ($modsHash -ne $builtHash) {
+            throw "Mods-folder JAR hash mismatch: mods=$modsHash built=$builtHash"
+          }
+          if ($combined -notmatch ('ABYSS_MODS_FOLDER_RUNTIME_JAR_SHA256=' + [regex]::Escape($modsHash))) {
+            throw 'Mods-folder runtime hash marker does not match the installed JAR.'
+          }
           Write-Host "MODS_FOLDER_JAR_FILE=$modsJar"
+          Write-Host "MODS_FOLDER_JAR_SHA256=$modsHash"
           Write-Host 'MODS_FOLDER_JAR_DISCOVERY_CONTRACT=PASS'
 
           $forgeLaunch = $combined -match 'Launching wrapped minecraft|Setting user:|LWJGL Version|Forge Mod Loader version|MinecraftForge v'
