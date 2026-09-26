@@ -86,7 +86,9 @@ public final class StallWatchdog {
         long gcTimeAtStart = 0L;
         ArrayList<String> samples = new ArrayList<String>();
         while (true) {
-            StallWatchdog.sleep(100L);
+            if (!StallWatchdog.sleep(100L)) {
+                return;
+            }
             long beat = heartbeat;
             long now = System.nanoTime();
             if (beat != lastBeat) {
@@ -209,16 +211,14 @@ public final class StallWatchdog {
             QUEUE.offer(line);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Loose catch block
-     */
     private static void runDrainer() {
         while (true) {
             try {
                 String line = QUEUE.poll();
                 if (line == null) {
-                    StallWatchdog.sleep(500L);
+                    if (!StallWatchdog.sleep(500L)) {
+                        return;
+                    }
                     continue;
 }
                 File f = StallWatchdog.logFile();
@@ -251,7 +251,9 @@ public final class StallWatchdog {
 }
 }
             catch (Throwable ignored) {
-                StallWatchdog.sleep(1000L);
+                if (!StallWatchdog.sleep(1000L)) {
+                    return;
+                }
 }
 }
 }
@@ -275,12 +277,14 @@ public final class StallWatchdog {
             return null;
 }
 }
-    private static void sleep(long ms) {
+    private static boolean sleep(long ms) {
         try {
             Thread.sleep(ms);
+            return true;
 }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return false;
 }
 }
 }
