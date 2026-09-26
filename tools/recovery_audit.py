@@ -89,6 +89,15 @@ ZKM_LABEL_AUTHORITY_PATHS = frozenset({
     "Abyss/util/render/ShaderRenderer.java",
 })
 
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# also preserves the labelled decoder-loop structure in Module.$jnicClinit().
+# Require the exact observed label/transfer shape before lowering confidence so
+# a future structural change becomes review-visible again.
+LABELLED_METHOD_AUTHORITIES = {
+    "Abyss/module/Module.java": ("$jnicClinit", 2, 2),
+}
+
+
 # Silent semantic-loss families recovered elsewhere in this tree.
 # These are intentionally narrow so that they complement, rather than
 # duplicate, the broad CFR comment/label inventory.
@@ -352,6 +361,47 @@ def scan_file(path: Path, root: Path):
         if b - a <= 35:
             excerpt = "\n".join(lines[max(0, a-2):min(len(lines), b+2)])
             add(findings, "nearby_duplicate_throwable_catches", rel, a, excerpt, "low")
+
+    # Cross-build-authorized labelled decoder methods outside zkm$clinit().
+    authority_path = rel.as_posix()
+    if authority_path.startswith("src/main/java/"):
+        authority_path = authority_path[len("src/main/java/"):]
+
+    method_authority = LABELLED_METHOD_AUTHORITIES.get(authority_path)
+    if method_authority is not None:
+        method_name, expected_labels, expected_transfers = method_authority
+        method_match = re.search(
+            r"\\b(?:private\\s+|protected\\s+|public\\s+)?static\\s+void\\s+"
+            + re.escape(method_name)
+            + r"\\s*\\([^)]*\\)(?:\\s+throws\\s+[^\\{]+)?\\s*\\{",
+            text,
+        )
+        if method_match is not None:
+            open_brace = text.find("{", method_match.start())
+            method_body = java_brace_block(text, open_brace)
+            if method_body is not None:
+                label_count = len(
+                    re.findall(r"^\\s*block\\d+\\s*:", method_body, re.MULTILINE)
+                )
+                transfer_count = len(
+                    re.findall(
+                        r"\\b(?:break|continue)\\s+block\\d+\\s*;",
+                        method_body,
+                    )
+                )
+                if (
+                    label_count == expected_labels
+                    and transfer_count == expected_transfers
+                ):
+                    method_start_line = line_number(text, method_match.start())
+                    method_end_line = method_start_line + method_body.count("\\n")
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and method_start_line <= finding["line"] <= method_end_line
+                        ):
+                            finding["confidence"] = "low"
 
     # ZKM static decoders deserve extra attention only when the synthetic
     # label/control-transfer is actually inside zkm$clinit(). A file-level
