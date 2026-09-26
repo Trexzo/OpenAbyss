@@ -697,12 +697,39 @@ def main():
     by_file = collections.Counter(f["path"] for f in findings)
     confidence = collections.Counter(f["confidence"] for f in findings)
 
+    native_files = collections.Counter(
+        f["path"] for f in findings if f["category"] == "native_method_declaration"
+    )
+    source_text = {}
+    for path in java_files:
+        rel = path.relative_to(root).as_posix()
+        source_text[rel] = path.read_text(encoding="utf-8", errors="replace")
+
+    native_reachability = []
+    for native_path, native_count in sorted(native_files.items()):
+        class_name = Path(native_path).stem
+        external = []
+        token = re.compile(r"\\b" + re.escape(class_name) + r"\\b")
+        for rel, body in source_text.items():
+            if rel == native_path:
+                continue
+            if token.search(body):
+                external.append(rel)
+        native_reachability.append({
+            "path": native_path,
+            "class": class_name,
+            "native_methods": native_count,
+            "external_reference_files": len(external),
+            "references": external[:100],
+        })
+
     payload = {
         "java_files_scanned": len(java_files),
         "finding_count": len(findings),
         "counts_by_category": dict(sorted(counts.items())),
         "counts_by_confidence": dict(sorted(confidence.items())),
         "top_files": by_file.most_common(50),
+        "native_reachability": native_reachability,
         "findings": findings,
     }
     (out / "recovery-audit.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -733,6 +760,18 @@ def main():
             md.append(f"| {category} | {count} |")
     else:
         md.append("No heuristic findings.")
+    md.append("")
+    md.append("## Native reachability")
+    md.append("")
+    if native_reachability:
+        md.append("| Native class | Native methods | Referencing files |")
+        md.append("|---|---:|---:|")
+        for item in sorted(native_reachability, key=lambda x: (-x["external_reference_files"], -x["native_methods"], x["path"]))[:40]:
+            md.append(
+                f'| `{item["path"]}` | {item["native_methods"]} | {item["external_reference_files"]} |'
+            )
+    else:
+        md.append("No native declarations.")
     md.append("")
     md.append("## Top files")
     md.append("")
