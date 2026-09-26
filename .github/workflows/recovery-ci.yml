@@ -73,6 +73,13 @@ jobs:
           & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\launcher\launch_abyss.ps1' -ResolverSelfTest
           if ($LASTEXITCODE -ne 0) { throw "Standalone launcher resolver self-test failed: $LASTEXITCODE" }
 
+          $checkerFixture = Join-Path $env:RUNNER_TEMP 'openabyss-official-checker-selftest'
+          New-Item -ItemType Directory -Force -Path $checkerFixture | Out-Null
+          Copy-Item -LiteralPath '.\launcher\Check-Official-Launcher.ps1' -Destination $checkerFixture -Force
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $checkerFixture 'Check-Official-Launcher.ps1') -PackageDir $checkerFixture -FixtureSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Official usability checker self-test failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $checkerFixture -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Compile recovered source
         shell: powershell
         run: |
