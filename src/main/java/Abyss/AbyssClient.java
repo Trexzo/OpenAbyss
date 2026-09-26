@@ -43,6 +43,10 @@ import Abyss.util.TimerUtil;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.PacketManager;
 import Abyss.util.render.abyss.FontManager;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
@@ -116,9 +120,44 @@ implements EventSubscriber {
     public static String I;
     private static final byte[] KEY_OFFSETS;
     public static EventBus w;
+    private static final Set<String> RUNTIME_MILESTONES = new CopyOnWriteArraySet<String>();
+
+    private static void runtimeMilestone(String name) {
+        if (name == null || !RUNTIME_MILESTONES.add(name)) {
+            return;
+}
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-runtime-stage.txt"), true), "UTF-8");){
+                out.write(System.currentTimeMillis() + "\t" + name + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+}
+    private static void moduleFailure(String phase, Module module, Throwable failure) {
+        String name = "<null>";
+        try {
+            if (module != null && module.b() != null) {
+                name = module.b();
+}
+}
+        catch (Throwable ignored) {
+}
+        String line = System.currentTimeMillis() + "\t" + phase + "\t" + name + "\t"
+                + failure.getClass().getName() + "\t" + String.valueOf(failure.getMessage());
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-module-failure.txt"), true), "UTF-8");){
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] module lifecycle failure " + line);
+}
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
         if (var3.H instanceof EntityPlayerSP) {
+            runtimeMilestone("entity-player-join-world");
             BedNuker.D.clear();
             BedNuker.B = false;
             this.bedScanActive = false;
@@ -524,10 +563,12 @@ implements EventSubscriber {
         this.B = new TimerUtil();
 }
     public void onPostTick(PostTickEvent var1, long var2) throws Throwable {
-        StallWatchdog.tick(ClientUtil.I());
+        boolean inWorld = ClientUtil.I();
+        StallWatchdog.tick(inWorld);
+        runtimeMilestone(inWorld ? "world-ready-tick" : "menu-no-world-tick");
         int var16 = 22243;
         int var21 = 12652;
-        if (!ClientUtil.I()) {
+        if (!inWorld) {
             BedNuker.B = false;
             PacketManager.M(false);
             PacketManager.u.clear();
@@ -544,6 +585,7 @@ implements EventSubscriber {
 }
             this.s = false;
         } else {
+            runtimeMilestone("world-module-lifecycle-start");
             List<Module> var26 = ModuleManager.S;
             int subscribesBudget = 3;
             boolean batching = false;
@@ -552,10 +594,22 @@ implements EventSubscriber {
                 Module var29 = var26.get(var27);
                 if (var29.b().equalsIgnoreCase("Timer")) continue;
                 if (var29.l()) {
-                    var29.i(17998201765264L);
+                    try {
+                        var29.i(17998201765264L);
+                    }
+                    catch (Throwable failure) {
+                        moduleFailure("enable", var29, failure);
+                        throw failure;
+                    }
                     var29.n(false);
                 } else if (var29.K()) {
-                    var29.A(94287625739397L);
+                    try {
+                        var29.A(94287625739397L);
+                    }
+                    catch (Throwable failure) {
+                        moduleFailure("disable", var29, failure);
+                        throw failure;
+                    }
                     var29.E(false);
 }
                 if (var29.o()) {
@@ -573,8 +627,15 @@ implements EventSubscriber {
                     w.B(var29);
                     var29.A(false);
 }
-                var29.P(11128156246666L);
+                try {
+                    var29.P(11128156246666L);
+                }
+                catch (Throwable failure) {
+                    moduleFailure("disabled-reset", var29, failure);
+                    throw failure;
+                }
 }
+            runtimeMilestone("world-module-lifecycle-complete");
             if (batching) {
                 w.endBatch();
 }
