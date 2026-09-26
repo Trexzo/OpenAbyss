@@ -34,20 +34,23 @@ extends Module {
     
     public static void O(int var0, int var1, char var2) {
         String selected = mode == null ? "STUDIO" : mode.Y();
-        if ("RAVEN".equalsIgnoreCase(selected) && F != null) {
-            f.displayGuiScreen((GuiScreen)F);
+        GuiScreen screen = ClickGUI.selectedScreen(selected);
+        f.displayGuiScreen(screen);
+        if (screen == F && F != null) {
             F.P();
-            return;
+}
+}
+    private static GuiScreen selectedScreen(String selected) {
+        if ("RAVEN".equalsIgnoreCase(selected) && F != null) {
+            return F;
 }
         if ("VESTIGE".equalsIgnoreCase(selected) && B != null) {
-            f.displayGuiScreen((GuiScreen)B);
-            return;
+            return B;
 }
         if (Y != null) {
-            f.displayGuiScreen((GuiScreen)Y);
-            return;
+            return Y;
 }
-        f.displayGuiScreen((GuiScreen)AbyssClickGuiScreen.INSTANCE);
+        return AbyssClickGuiScreen.INSTANCE;
 }
     private static void a() {
 }
@@ -86,7 +89,19 @@ extends Module {
             if (B == null || Y == null || F == null) {
                 return "FAIL screens B=" + (B != null) + " Y=" + (Y != null) + " F=" + (F != null);
 }
-            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code;
+            if (ClickGUI.selectedScreen("RAVEN") != F) {
+                return "FAIL selector RAVEN";
+}
+            if (ClickGUI.selectedScreen("VESTIGE") != B) {
+                return "FAIL selector VESTIGE";
+}
+            if (ClickGUI.selectedScreen("STUDIO") != Y) {
+                return "FAIL selector STUDIO";
+}
+            if (ClickGUI.selectedScreen("__UNKNOWN__") != Y) {
+                return "FAIL selector fallback";
+}
+            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code + " screens=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
