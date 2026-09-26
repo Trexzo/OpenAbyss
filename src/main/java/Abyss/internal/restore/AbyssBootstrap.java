@@ -61,8 +61,17 @@ public final class AbyssBootstrap {
 
     private AbyssBootstrap() {
 }
+    private static boolean skipChatMenu() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipChatMenu");
+}
+    private static boolean skipCheaterDetector() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipCheaterDetector");
+}
+    private static boolean skipAltManager() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipAltManager");
+}
     private static boolean referenceBootstrapCompat() {
-        return Boolean.getBoolean("abyss.referenceBootstrapCompat");
+        return skipChatMenu() && skipCheaterDetector() && skipAltManager();
 }
     private static void stage(String name) {
         try {
@@ -121,7 +130,7 @@ public final class AbyssBootstrap {
         AbyssAzPump.install(var2, 0L, SUBSCRIBED, PENDING);
         stage("azpump-installed");
         PENDING.addAll(AbyssModuleRegistry.PENDING);
-        if (referenceBootstrapCompat()) {
+        if (skipChatMenu()) {
             PENDING.add("Abyss.internal.ChatInputHandler reference-bootstrap compatibility: left unsubscribed");
             PENDING.add("Abyss.ui.screen.MainMenuTheme reference-bootstrap compatibility: left unsubscribed");
             stage("reference-bootstrap-skipped-chat-menu");
@@ -143,7 +152,7 @@ public final class AbyssBootstrap {
         stage("commands-installed");
         AbyssBootstrap.subscribeAlways(var2, "Abyss.module.impl.misc.Timer", "Timer");
         stage("timer-subscribed");
-        if (referenceBootstrapCompat()) {
+        if (skipCheaterDetector()) {
             PENDING.add("Abyss.internal.CheaterDetector reference-bootstrap compatibility: held out of ModuleManager.S and left unsubscribed");
             stage("reference-bootstrap-skipped-cheater-detector");
 } else if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
@@ -157,7 +166,7 @@ public final class AbyssBootstrap {
         stage("eventbus-batch-ended");
         AbyssClient.w = var2;
         stage("eventbus-published");
-        if (referenceBootstrapCompat()) {
+        if (skipAltManager()) {
             PENDING.add("Abyss.ui.screen.ReconnectHandler reference-bootstrap compatibility: AltManager.M not invoked");
             stage("reference-bootstrap-skipped-altmanager");
 } else {
@@ -306,7 +315,10 @@ public final class AbyssBootstrap {
         try {
             StringBuilder b = new StringBuilder("\n[ABYSSDIAG] ==== bootstrap outcome ====\n");
             b.append("[ABYSSDIAG] reference bootstrap = ").append(referenceBootstrapCompat()).append('\n');
-            b.append("[ABYSSDIAG] reference registry  = ").append(Boolean.getBoolean("abyss.referenceRegistryCompat")).append('\n');
+            b.append("[ABYSSDIAG] skip chat/menu       = ").append(skipChatMenu()).append('\n');
+            b.append("[ABYSSDIAG] skip cheater         = ").append(skipCheaterDetector()).append('\n');
+            b.append("[ABYSSDIAG] skip altmanager      = ").append(skipAltManager()).append('\n');
+            b.append("[ABYSSDIAG] registry target      = ").append(AbyssModuleRegistry.expectedModuleCount()).append('\n');
             b.append("[ABYSSDIAG] AZ.w             = ").append(AbyssClient.w == null ? "null" : "live").append('\n');
             b.append("[ABYSSDIAG] subscribed       = ").append(SUBSCRIBED.size()).append(' ').append(SUBSCRIBED).append('\n');
             b.append("[ABYSSDIAG] pending          = ").append(PENDING.size()).append('\n');
