@@ -242,6 +242,7 @@ public final class AbyssConfig {
                 List<Module> all = ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S;
                 for (Module m2 : all) {
                     JsonObject block;
+                    boolean createdBlock = false;
                     if (m2 == null) continue;
                     ++r2.modules;
                     if (!AbyssModuleRegistry.isConfigPersistable(m2)) {
@@ -256,6 +257,7 @@ public final class AbyssConfig {
                         block = new JsonObject();
                         root.add(n2, (JsonElement)block);
                         ++r2.created;
+                        createdBlock = true;
 }
                     ++r2.blocks;
                     AbyssConfig.put(r2, block, n2, COMMON[0], 0, new JsonPrimitive(Boolean.valueOf(m2.o())));
@@ -263,7 +265,7 @@ public final class AbyssConfig {
                     AbyssConfig.put(r2, block, n2, COMMON[2], 0, new JsonPrimitive(Boolean.valueOf(m2.D())));
                     AbyssConfig.put(r2, block, n2, COMMON[3], 0, new JsonPrimitive(Boolean.valueOf(m2.r())));
                     r2.commonKeys += 4;
-                    AbyssConfig.settings(r2, block, n2, m2);
+                    AbyssConfig.settings(r2, block, n2, m2, createdBlock);
 }
                 r2.topLevelAfter = root.entrySet().size();
                 r2.ok = AbyssConfig.write(f, root);
@@ -279,7 +281,7 @@ public final class AbyssConfig {
 }
         return r2;
 }
-    private static void settings(SaveResult r2, JsonObject block, String module, Module m2) {
+    private static void settings(SaveResult r2, JsonObject block, String module, Module m2, boolean seedNewBlock) {
         List<Setting> live;
         try {
             live = m2.w();
@@ -305,6 +307,16 @@ public final class AbyssConfig {
 }
             if (label == null || label.length() == 0 || (v2 = (kind = AbyssConfig.kindOf(s)) < 0 ? null : AbyssConfig.value(s)) == null) continue;
             String string = key = block.has(label) ? label : AbyssConfig.settingKey(label);
+            if (!block.has(key) && seedNewBlock) {
+                if (!done.add(key)) {
+                    ++r2.settingsOutsideSchema;
+                    r2.outside.add(module + '.' + label + " (key " + key + " already taken)");
+                    continue;
+}
+                AbyssConfig.put(r2, block, module, key, kind, v2);
+                ++r2.settingKeys;
+                continue;
+}
             if (!block.has(key)) {
                 ++r2.settingsOutsideSchema;
                 r2.outside.add(module + '.' + label);
