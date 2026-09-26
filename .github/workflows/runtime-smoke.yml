@@ -323,7 +323,8 @@ jobs:
               'Abyss.AbyssClient',
               'Abyss.internal.ChatInputHandler',
               'Abyss.module.impl.misc.Timer',
-              'Abyss.internal.CheaterDetector'
+              'Abyss.internal.CheaterDetector',
+              'Abyss.ui.screen.ReconnectHandler'
             )
             foreach ($subscriber in $requiredSubscribers) {
               if (-not $diagText.Contains($subscriber)) {
