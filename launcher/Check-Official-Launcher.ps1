@@ -11,6 +11,7 @@ $GameDir = Join-Path $PackageDir 'official-game'
 $Runtime = Join-Path $GameDir 'abyss-runtime-stage.txt'
 $Bootstrap = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
+$EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
 $Diag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
 $LatestLog = Join-Path $GameDir 'logs\latest.log'
@@ -54,6 +55,7 @@ function Read-All([string]$Path) {
 $runtimeText = Read-All $Runtime
 $bootstrapText = Read-All $Bootstrap
 $moduleFailureText = Read-All $ModuleFailure
+$eventFailureText = Read-All $EventFailure
 $diagText = Read-All $Diag
 
 $sessionStartUtc = $null
@@ -91,6 +93,7 @@ $checks = [ordered]@{
     ModuleLifecycleStart = $runtimeText.Contains('world-module-lifecycle-start')
     ModuleLifecycleComplete = $runtimeText.Contains('world-module-lifecycle-complete')
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
+    EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ModuleCensus112 = $false
 }
 
@@ -122,6 +125,7 @@ $pass = $checks.GameDirectoryExists -and
         $checks.ModuleLifecycleStart -and
         $checks.ModuleLifecycleComplete -and
         (-not $checks.ModuleLifecycleFailure) -and
+        (-not $checks.EventCallbackFailure) -and
         $checks.ModuleCensus112 -and
         ($crashFiles -eq 0)
 
@@ -136,6 +140,7 @@ $lines.Add('LATEST_LOG=' + $(if (Test-Path -LiteralPath $LatestLog -PathType Lea
 $lines.Add('RUNTIME_STAGE=' + $(if (Test-Path -LiteralPath $Runtime -PathType Leaf) { $Runtime } else { '<none>' }))
 $lines.Add('BOOTSTRAP_STAGE=' + $(if (Test-Path -LiteralPath $Bootstrap -PathType Leaf) { $Bootstrap } else { '<none>' }))
 $lines.Add('MODULE_FAILURE=' + $(if (Test-Path -LiteralPath $ModuleFailure -PathType Leaf) { $ModuleFailure } else { '<none>' }))
+$lines.Add('EVENT_FAILURE=' + $(if (Test-Path -LiteralPath $EventFailure -PathType Leaf) { $EventFailure } else { '<none>' }))
 
 $lines | Set-Content -LiteralPath $Verdict -Encoding UTF8
 $lines | ForEach-Object { Write-Host $_ }
