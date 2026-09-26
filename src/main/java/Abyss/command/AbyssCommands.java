@@ -189,7 +189,11 @@ public final class AbyssCommands {
             if (!AbyssCommandBind.gateOk()) {
                 return "FAIL keybind-gate " + AbyssCommandBind.gateNote();
 }
-            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " keybind=TRUSTED";
+            String configTest = AbyssCommandConfig.selfTest();
+            if (!configTest.startsWith("PASS")) {
+                return "FAIL config-metadata " + configTest;
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " keybind=TRUSTED config=PASS";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
