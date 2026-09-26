@@ -26,6 +26,16 @@ gradle --no-daemon clean build
 
 The compiled JAR is written to `build/libs/`.
 
+## Windows launch
+
+From a checked-out copy of the recovery branch, double-click `launch.bat` or run:
+
+```powershell
+.\launch.bat
+```
+
+The launcher uses the packaged OpenAbyss JAR runtime, keeps Minecraft open for interactive testing, and writes runtime/crash evidence under `physical-smoke-evidence/`. A non-zero Minecraft/OpenAbyss exit is treated as a failed runtime rather than a successful bootstrap.
+
 ## Physical-PC smoke test
 
 The recovery branch includes a Windows PowerShell harness that reproduces the hosted recovery checks on a real GPU and collects the evidence needed before the recovery PR can be considered runnable on physical hardware.
