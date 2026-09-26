@@ -14,6 +14,7 @@ $Diag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
 $LatestLog = Join-Path $GameDir 'logs\latest.log'
 $CrashDir = Join-Path $GameDir 'crash-reports'
+$SessionFile = Join-Path $GameDir 'openabyss-test-session.txt'
 $Verdict = Join-Path $PackageDir 'official-usability-result.txt'
 
 function Read-All([string]$Path) {
@@ -28,9 +29,30 @@ $bootstrapText = Read-All $Bootstrap
 $moduleFailureText = Read-All $ModuleFailure
 $diagText = Read-All $Diag
 
+$sessionStartUtc = $null
+if (Test-Path -LiteralPath $SessionFile -PathType Leaf) {
+    foreach ($line in @(Get-Content -LiteralPath $SessionFile)) {
+        if ($line -match '^SESSION_START_UTC=(.+)$') {
+            try { $sessionStartUtc = [DateTime]::Parse($matches[1]).ToUniversalTime() } catch {}
+        }
+    }
+}
+
+function Is-Fresh([string]$Path) {
+    if ($null -eq $sessionStartUtc) { return $false }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    return (Get-Item -LiteralPath $Path).LastWriteTimeUtc -ge $sessionStartUtc.AddSeconds(-2)
+}
+
 $checks = [ordered]@{
     GameDirectoryExists = Test-Path -LiteralPath $GameDir -PathType Container
+    SessionMarker = $null -ne $sessionStartUtc
     LatestLogExists = Test-Path -LiteralPath $LatestLog -PathType Leaf
+    LatestLogFresh = Is-Fresh $LatestLog
+    BootstrapStageFresh = Is-Fresh $Bootstrap
+    RuntimeStageFresh = Is-Fresh $Runtime
+    BootstrapDiagnosticsFresh = Is-Fresh $Diag
+    CensusFresh = Is-Fresh $Census
     BootstrapDiagnostics = -not [string]::IsNullOrWhiteSpace($diagText)
     BootstrapComplete = $bootstrapText.Contains('bootstrap-complete')
     MenuTick = $runtimeText.Contains('menu-no-world-tick')
@@ -55,7 +77,13 @@ $crashFiles = if (Test-Path -LiteralPath $CrashDir -PathType Container) {
 } else { 0 }
 
 $pass = $checks.GameDirectoryExists -and
+        $checks.SessionMarker -and
         $checks.LatestLogExists -and
+        $checks.LatestLogFresh -and
+        $checks.BootstrapStageFresh -and
+        $checks.RuntimeStageFresh -and
+        $checks.BootstrapDiagnosticsFresh -and
+        $checks.CensusFresh -and
         $checks.BootstrapDiagnostics -and
         $checks.BootstrapComplete -and
         $checks.MenuTick -and
