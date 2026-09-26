@@ -58,7 +58,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\tools\physical-usability.ps1','.\launcher\launch_abyss.ps1','.\launcher\Prepare-Official-Launcher.ps1')) {
+          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\tools\physical-usability.ps1','.\launcher\launch_abyss.ps1','.\launcher\Prepare-Official-Launcher.ps1','.\launcher\Check-Official-Launcher.ps1')) {
             $path = (Resolve-Path $relative).Path
             $tokens = $null
             $errors = $null
@@ -102,7 +102,7 @@ jobs:
           $zip = [System.IO.Compression.ZipFile]::OpenRead($package)
           try {
             $names = @($zip.Entries | ForEach-Object { $_.FullName })
-            foreach ($required in @('abyss.jar','BUILD-INFO.txt','Launcher.bat','launch_abyss.ps1','Prepare-Official-Launcher.bat','Prepare-Official-Launcher.ps1','README.txt')) {
+            foreach ($required in @('abyss.jar','BUILD-INFO.txt','Launcher.bat','launch_abyss.ps1','Prepare-Official-Launcher.bat','Prepare-Official-Launcher.ps1','Check-Official-Launcher.bat','Check-Official-Launcher.ps1','README.txt')) {
               if ($names -notcontains $required) { throw "Standalone launcher package missing: $required" }
             }
             $jar = $zip.GetEntry('abyss.jar')
