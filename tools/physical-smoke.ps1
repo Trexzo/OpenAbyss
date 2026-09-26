@@ -1,7 +1,8 @@
 param(
     [string]$Jdk8 = $env:JAVA_HOME,
     [int]$RunSeconds = 180,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [switch]$KeepOpen
 )
 
 Set-StrictMode -Version 2.0
@@ -62,6 +63,8 @@ try {
         "head=$Head"
         "java_home=$Jdk8"
         "gradle=$Gradle"
+        "keep_open=$KeepOpen"
+        "run_seconds=$RunSeconds"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
     $JavaVersion | Add-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
@@ -90,21 +93,37 @@ try {
     $Stderr = Join-Path $Evidence 'runClient.stderr.log'
     Remove-Item -LiteralPath $Stdout,$Stderr -Force -ErrorAction SilentlyContinue
 
-    Write-Host "Launching runClient for up to $RunSeconds seconds..."
+    if ($KeepOpen) {
+        Write-Host 'Launching interactive runClient. Close Minecraft normally when testing is complete.'
+    } else {
+        Write-Host "Launching runClient for up to $RunSeconds seconds..."
+    }
     $P = Start-Process -FilePath $Gradle -ArgumentList @('--offline','--no-daemon','runClient') -WorkingDirectory $Root -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
 
-    $Deadline = (Get-Date).AddSeconds($RunSeconds)
-    while (-not $P.HasExited -and (Get-Date) -lt $Deadline) {
-        Start-Sleep -Seconds 2
-        $P.Refresh()
-    }
-
-    if (-not $P.HasExited) {
-        Write-Host 'Stopping runClient after evidence window.'
-        & taskkill.exe /PID $P.Id /T /F | Out-Null
-        Start-Sleep -Seconds 2
-    } else {
+    if ($KeepOpen) {
+        while (-not $P.HasExited) {
+            Start-Sleep -Seconds 2
+            $P.Refresh()
+        }
         $P.WaitForExit()
+        $P.Refresh()
+        Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+    } else {
+        $Deadline = (Get-Date).AddSeconds($RunSeconds)
+        while (-not $P.HasExited -and (Get-Date) -lt $Deadline) {
+            Start-Sleep -Seconds 2
+            $P.Refresh()
+        }
+
+        if (-not $P.HasExited) {
+            Write-Host 'Stopping runClient after evidence window.'
+            & taskkill.exe /PID $P.Id /T /F | Out-Null
+            Start-Sleep -Seconds 2
+        } else {
+            $P.WaitForExit()
+            $P.Refresh()
+            Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+        }
     }
 
     $Sources = @(
