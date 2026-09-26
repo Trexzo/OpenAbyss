@@ -502,6 +502,15 @@ public final class AbyssModuleRegistry {
         PERSISTABLE = new HashSet<Class<? extends Module>>();
         PERSISTABLE_NAMES = new LinkedHashSet<String>();
         RETIRED = new HashSet<String>();
+        if (Boolean.getBoolean("abyss.referenceRegistryCompat")) {
+            Collections.addAll(RETIRED,
+                    "AntiNick", "ContainerKeeper", "InputFix", "NoObfuscation",
+                    "RawInput", "CustomCape", "Font", "Gadgets", "Language",
+                    "Theme", "VisualSpoof", "BindGUI", "CaveXray", "ItemScale",
+                    "KeyStrokes", "TeamInvisible", "ClosestPlayerHUD", "FKCounter",
+                    "FallIndicator", "LeapModeHUD");
+            PENDING.add("reference registry compatibility enabled: 20 recovered modules remain retired to match reference abyss.jar");
+}
         MISSING = new ArrayList<String>();
         DISABLED_UPSTREAM = new String[]{"Abyss.module.impl.combat.AutoProjectiles", "Abyss.module.impl.player.NoFall", "Abyss.module.impl.player.FreeCam"};
 }
