@@ -292,9 +292,10 @@ $RuntimeStage = Join-Path $GameDir 'abyss-runtime-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
 $EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
 $ConfigFailure = Join-Path $GameDir 'abyss-config-failure.txt'
+$RendererFailure = Join-Path $GameDir 'abyss-renderer-failure.txt'
 $BootstrapDiag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
-Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$ConfigFailure,$BootstrapDiag,$Census -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$ConfigFailure,$RendererFailure,$BootstrapDiag,$Census -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $CrashOut -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $GameDir,(Join-Path $GameDir 'mods'),$CrashOut | Out-Null
 
@@ -497,12 +498,13 @@ $lastRuntime = Last-Stage $RuntimeStage
 $lastModuleFailure = Last-Line $ModuleFailure
 $lastEventFailure = Last-Line $EventFailure
 $lastConfigFailure = Last-Line $ConfigFailure
+$lastRendererFailure = Last-Line $RendererFailure
 $diagPresent = Test-Path -LiteralPath $BootstrapDiag -PathType Leaf
 $censusCount = if (Test-Path -LiteralPath $Census -PathType Leaf) {
     @(Get-Content -LiteralPath $Census | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
 } else { -1 }
 
-foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$ConfigFailure,$BootstrapDiag,$Census)) {
+foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$EventFailure,$ConfigFailure,$RendererFailure,$BootstrapDiag,$Census)) {
     if (Test-Path -LiteralPath $evidenceFile -PathType Leaf) {
         Copy-Item -LiteralPath $evidenceFile -Destination $CrashOut -Force
     }
@@ -524,6 +526,7 @@ $result = @(
     "LAST_MODULE_FAILURE=$lastModuleFailure",
     "LAST_EVENT_FAILURE=$lastEventFailure",
     "LAST_CONFIG_FAILURE=$lastConfigFailure",
+    "LAST_RENDERER_FAILURE=$lastRendererFailure",
     "CRASH_FILES=$(@(Get-ChildItem -LiteralPath $CrashOut -File -ErrorAction SilentlyContinue).Count)"
 )
 $result | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
