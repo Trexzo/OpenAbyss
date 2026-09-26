@@ -33,16 +33,16 @@ The recovery branch includes a Windows PowerShell harness that reproduces the ho
 From the repository root, for an automated bootstrap evidence window:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1 -Jdk8 "C:\Path\To\JDK8"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1
 ```
 
 For an actual interactive real-GPU test, keep Minecraft open until you close it normally:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1 -Jdk8 "C:\Path\To\JDK8" -KeepOpen
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1 -KeepOpen
 ```
 
-The harness verifies Java 8, obtains Gradle 2.14.1 when needed, runs `clean build` and `getAssets`, clears GitHub runtime-token variables plus `ABYSS_PAYLOAD_KEY`, launches Forge with `--offline runClient`, records the branch HEAD and built JAR SHA-256, and captures Minecraft/OpenAbyss bootstrap, census, injection, graphics, and session evidence.
+The harness auto-detects common local JDK 8 installations (or accepts `-Jdk8` explicitly), obtains Gradle 2.14.1 when needed, runs `clean build` and `getAssets`, clears GitHub runtime-token variables plus `ABYSS_PAYLOAD_KEY`, launches Forge with `--offline runClient`, records the branch HEAD and built JAR SHA-256, and captures Minecraft/OpenAbyss bootstrap, census, injection, graphics, and session evidence.
 
 It requires the recovered module/config/EventBus/session/command/ClickGUI/Alt Manager contracts to pass. Evidence is written to `physical-smoke-evidence/`; a successful bootstrap creates `PASS.txt` containing `PHYSICAL_SMOKE_BOOTSTRAP_PASS`.
 
