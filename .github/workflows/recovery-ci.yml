@@ -70,6 +70,9 @@ jobs:
             Write-Host "POWERSHELL_PARSE_PASS file=$relative tokens=$($tokens.Count)"
           }
 
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\launcher\launch_abyss.ps1' -ResolverSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Standalone launcher resolver self-test failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
