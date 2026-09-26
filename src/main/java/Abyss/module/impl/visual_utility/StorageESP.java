@@ -67,16 +67,15 @@ implements EventSubscriber {
 }
         });
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public void onRender3D(Render3DEvent event) {
         if (StorageESP.f.theWorld == null) {
             return;
 }
         GL11.glPushAttrib((int)1048575);
-        GL11.glPushMatrix();
+        boolean matrixPushed = false;
         try {
+            GL11.glPushMatrix();
+            matrixPushed = true;
             GL11.glEnable((int)3042);
             GL11.glBlendFunc((int)770, (int)771);
             GL11.glDisable((int)3553);
@@ -101,7 +100,9 @@ implements EventSubscriber {
 }
 }
         finally {
-            GL11.glPopMatrix();
+            if (matrixPushed) {
+                GL11.glPopMatrix();
+            }
             GL11.glPopAttrib();
             GL11.glColor4f((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
