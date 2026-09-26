@@ -42,6 +42,13 @@ EMPTY_HANDLER_THEN_BLOCK = re.compile(
 
 CATCH_THROWABLE = re.compile(r"catch\s*\(\s*Throwable\b")
 
+NATIVE_DECLARATION = re.compile(
+    r"\b(?:(?:public|protected|private)\s+)?(?:(?:static|final|synchronized)\s+)*"
+    r"native\s+[\w.$<>\[\]?]+\s+\w+\s*\([^;{}]*\)"
+    r"(?:\s+throws\s+[^;{]+)?\s*;"
+)
+
+
 # Proven CFR failure shape from the original StallWatchdog drainer: two
 # Throwable catch clauses emitted directly adjacent to one another for the
 # same try. Keep this deliberately narrow so legitimate nested handlers remain
@@ -474,6 +481,28 @@ def scan_file(path: Path, root: Path):
             line_number(text, m.start()),
             m.group(0),
             "high",
+        )
+
+    # Native declarations are not automatically broken: the runnable-era client
+    # used JNIC extensively. Inventory them so recovery work can distinguish
+    # known bridge/native compatibility surfaces from user-facing classes that
+    # may still be reachable before their behavior is recovered.
+    for m in NATIVE_DECLARATION.finditer(text):
+        if authority_path.startswith("Abyss/internal/jnic/"):
+            native_confidence = "low"
+        elif authority_path == "Abyss/inject/InjectNativeBridge.java":
+            native_confidence = "low"
+        elif authority_path.startswith("loader_forgemod/"):
+            native_confidence = "low"
+        else:
+            native_confidence = "medium"
+        add(
+            findings,
+            "native_method_declaration",
+            rel,
+            line_number(text, m.start()),
+            m.group(0),
+            native_confidence,
         )
 
     # Throwable catches that merely occur near one another are too broad to
