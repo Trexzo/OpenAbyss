@@ -224,7 +224,12 @@ extends Command {
 }
         File file = var3 = var2.isFile() ? var2 : new File(var2.getParentFile(), "current.json");
         if (!var3.isFile()) {
-            AbyssCommands.chat("\u00a7cNo template to merge into (neither " + var2.getName() + " nor current.json exists). Refusing to invent a config.");
+            AbyssConfig.SaveResult fresh = AbyssConfig.save(var0);
+            if (fresh != null && fresh.ok) {
+                AbyssCommands.chat("\u00a7aSaved \u00a7f" + new File(fresh.path).getName() + "\u00a7a (created fresh config)");
+            } else {
+                AbyssCommands.chat("\u00a7cFresh config save failed: " + String.valueOf(fresh));
+            }
             return;
 }
         JsonObject var4 = AbyssCommandConfig.read(var3);
