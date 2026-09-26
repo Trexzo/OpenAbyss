@@ -28,6 +28,13 @@ function Require([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
 
+function Get-Prop([object]$Object, [string]$Name) {
+    if ($null -eq $Object) { return $null }
+    $prop = $Object.PSObject.Properties[$Name]
+    if ($null -eq $prop) { return $null }
+    return $prop.Value
+}
+
 function Test-Java8([string]$Candidate) {
     if (-not $Candidate) { return $null }
     $exe = $Candidate
@@ -96,10 +103,15 @@ function Maven-Path([string]$Coordinate, [string]$LibraryRoot) {
 
 function Add-ClasspathLibrary([object]$Lib, [string]$LibraryRoot, [System.Collections.Generic.List[string]]$List) {
     $path = $null
-    if ($Lib.downloads -and $Lib.downloads.artifact -and $Lib.downloads.artifact.path) {
-        $path = Join-Path $LibraryRoot ([string]$Lib.downloads.artifact.path).Replace('/', '\')
-    } elseif ($Lib.name) {
-        $path = Maven-Path ([string]$Lib.name) $LibraryRoot
+    $downloads = Get-Prop $Lib 'downloads'
+    $artifactDownload = Get-Prop $downloads 'artifact'
+    $artifactPath = Get-Prop $artifactDownload 'path'
+    $name = Get-Prop $Lib 'name'
+
+    if ($artifactPath) {
+        $path = Join-Path $LibraryRoot ([string]$artifactPath).Replace('/', '\')
+    } elseif ($name) {
+        $path = Maven-Path ([string]$name) $LibraryRoot
     }
     if ($path -and (Test-Path -LiteralPath $path -PathType Leaf) -and -not $List.Contains($path)) {
         $List.Add($path)
@@ -107,19 +119,27 @@ function Add-ClasspathLibrary([object]$Lib, [string]$LibraryRoot, [System.Collec
 }
 
 function Get-NativeJar([object]$Lib, [string]$LibraryRoot) {
-    if (-not $Lib.natives -or -not $Lib.natives.windows) { return $null }
-    $classifier = ([string]$Lib.natives.windows).Replace('${arch}','64')
+    $natives = Get-Prop $Lib 'natives'
+    $windowsNative = Get-Prop $natives 'windows'
+    if (-not $windowsNative) { return $null }
 
-    if ($Lib.downloads -and $Lib.downloads.classifiers) {
-        $prop = $Lib.downloads.classifiers.PSObject.Properties[$classifier]
-        if ($prop -and $prop.Value.path) {
-            $candidate = Join-Path $LibraryRoot ([string]$prop.Value.path).Replace('/', '\')
-            if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    $classifier = ([string]$windowsNative).Replace('${arch}','64')
+    $downloads = Get-Prop $Lib 'downloads'
+    $classifiers = Get-Prop $downloads 'classifiers'
+    if ($classifiers) {
+        $prop = $classifiers.PSObject.Properties[$classifier]
+        if ($prop) {
+            $downloadPath = Get-Prop $prop.Value 'path'
+            if ($downloadPath) {
+                $candidate = Join-Path $LibraryRoot ([string]$downloadPath).Replace('/', '\')
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+            }
         }
     }
 
-    if ($Lib.name) {
-        $base = ([string]$Lib.name).Split(':')
+    $name = Get-Prop $Lib 'name'
+    if ($name) {
+        $base = ([string]$name).Split(':')
         if ($base.Length -ge 3) {
             $candidate = Maven-Path ($base[0] + ':' + $base[1] + ':' + $base[2] + ':' + $classifier) $LibraryRoot
             if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $candidate }
@@ -204,8 +224,10 @@ $libraryRoot = Join-Path $MinecraftDir 'libraries'
 Require (Test-Path -LiteralPath $libraryRoot -PathType Container) 'Minecraft libraries directory is missing.'
 
 $allLibraries = @()
-if ($forgeJson.libraries) { $allLibraries += @($forgeJson.libraries) }
-if ($baseJson.libraries) { $allLibraries += @($baseJson.libraries) }
+$forgeLibraries = Get-Prop $forgeJson 'libraries'
+$baseLibraries = Get-Prop $baseJson 'libraries'
+if ($forgeLibraries) { $allLibraries += @($forgeLibraries) }
+if ($baseLibraries) { $allLibraries += @($baseLibraries) }
 
 $classPath = New-Object System.Collections.Generic.List[string]
 foreach ($lib in $allLibraries) {
@@ -220,14 +242,16 @@ Require ((Get-ChildItem -LiteralPath $NativesDir -Filter '*.dll' -File -ErrorAct
 Log "Classpath entries: $($classPath.Count)"
 Log "Native library archives extracted: $nativeCount"
 
-$modJar = Join-Path (Join-Path $GameDir 'mods') 'abyss.jar'
-Copy-Item -LiteralPath $Jar -Destination $modJar -Force
+$staleModJar = Join-Path (Join-Path $GameDir 'mods') 'abyss.jar'
+Remove-Item -LiteralPath $staleModJar -Force -ErrorAction SilentlyContinue
+Log 'Using packaged JAR from the classpath/coremod path; no duplicate copy is placed in game\mods.'
 
 $assets = Join-Path $MinecraftDir 'assets'
 Require (Test-Path -LiteralPath $assets -PathType Container) 'Minecraft assets directory is missing.'
 
 $uuid = [Guid]::NewGuid().ToString('N')
-$mainClass = if ($forgeJson.mainClass) { [string]$forgeJson.mainClass } else { 'net.minecraft.launchwrapper.Launch' }
+$forgeMainClass = Get-Prop $forgeJson 'mainClass'
+$mainClass = if ($forgeMainClass) { [string]$forgeMainClass } else { 'net.minecraft.launchwrapper.Launch' }
 
 $jvmArgs = @(
     "-Xmx${RamMB}M",
