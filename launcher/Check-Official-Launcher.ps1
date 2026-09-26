@@ -12,6 +12,7 @@ $Runtime = Join-Path $GameDir 'abyss-runtime-stage.txt'
 $Bootstrap = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
 $EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
+$ConfigFailure = Join-Path $GameDir 'abyss-config-failure.txt'
 $Diag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
 $LatestLog = Join-Path $GameDir 'logs\latest.log'
@@ -56,6 +57,7 @@ $runtimeText = Read-All $Runtime
 $bootstrapText = Read-All $Bootstrap
 $moduleFailureText = Read-All $ModuleFailure
 $eventFailureText = Read-All $EventFailure
+$configFailureText = Read-All $ConfigFailure
 $diagText = Read-All $Diag
 
 $sessionStartUtc = $null
@@ -94,6 +96,7 @@ $checks = [ordered]@{
     ModuleLifecycleComplete = $runtimeText.Contains('world-module-lifecycle-complete')
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
+    ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     ModuleCensus112 = $false
 }
 
@@ -126,6 +129,7 @@ $pass = $checks.GameDirectoryExists -and
         $checks.ModuleLifecycleComplete -and
         (-not $checks.ModuleLifecycleFailure) -and
         (-not $checks.EventCallbackFailure) -and
+        (-not $checks.ConfigSaveFailure) -and
         $checks.ModuleCensus112 -and
         ($crashFiles -eq 0)
 
@@ -141,6 +145,7 @@ $lines.Add('RUNTIME_STAGE=' + $(if (Test-Path -LiteralPath $Runtime -PathType Le
 $lines.Add('BOOTSTRAP_STAGE=' + $(if (Test-Path -LiteralPath $Bootstrap -PathType Leaf) { $Bootstrap } else { '<none>' }))
 $lines.Add('MODULE_FAILURE=' + $(if (Test-Path -LiteralPath $ModuleFailure -PathType Leaf) { $ModuleFailure } else { '<none>' }))
 $lines.Add('EVENT_FAILURE=' + $(if (Test-Path -LiteralPath $EventFailure -PathType Leaf) { $EventFailure } else { '<none>' }))
+$lines.Add('CONFIG_FAILURE=' + $(if (Test-Path -LiteralPath $ConfigFailure -PathType Leaf) { $ConfigFailure } else { '<none>' }))
 
 $lines | Set-Content -LiteralPath $Verdict -Encoding UTF8
 $lines | ForEach-Object { Write-Host $_ }
