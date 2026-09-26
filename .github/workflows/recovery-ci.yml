@@ -102,12 +102,156 @@ jobs:
           $zip = [System.IO.Compression.ZipFile]::OpenRead($package)
           try {
             $names = @($zip.Entries | ForEach-Object { $_.FullName })
-            foreach ($required in @('abyss.jar','Launcher.bat','launch_abyss.ps1','Prepare-Official-Launcher.bat','Prepare-Official-Launcher.ps1','README.txt')) {
+            foreach ($required in @('abyss.jar','BUILD-INFO.txt','Launcher.bat','launch_abyss.ps1','Prepare-Official-Launcher.bat','Prepare-Official-Launcher.ps1','README.txt')) {
               if ($names -notcontains $required) { throw "Standalone launcher package missing: $required" }
             }
             $jar = $zip.GetEntry('abyss.jar')
             if ($jar.Length -lt 10000000) { throw "Packaged abyss.jar unexpectedly small: $($jar.Length)" }
-            Write-Host "WINDOWS_LAUNCHER_PACKAGE_CONTRACT=PASS entries=$($zip.Entries.Count) jar_bytes=$($jar.Length)"
+
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            try {
+              $jarStream = $jar.Open()
+              try {
+                $jarHashBytes = $sha.ComputeHash($jarStream)
+              }
+              finally {
+                $jarStream.Dispose()
+              }
+            }
+            finally {
+              $sha.Dispose()
+            }
+            $jarHash = ([BitConverter]::ToString($jarHashBytes)).Replace('-','')
+
+            $infoEntry = $zip.GetEntry('BUILD-INFO.txt')
+            $reader = New-Object System.IO.StreamReader($infoEntry.Open())
+            try { $infoText = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            $info = @{}
+            foreach ($line in ($infoText -split "`r?`n")) {
+              if ($line -match '^([^=]+)=(.*)
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+      - name: Validate JAR contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $jars = @(Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File)
+          if ($jars.Count -ne 1) { throw "Expected exactly one OpenAbyss JAR, found $($jars.Count)." }
+          $jar = $jars[0]
+          $jarHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            $entries = @($zip.Entries)
+            $names = @($entries | ForEach-Object { $_.FullName })
+            $classCount = @($names | Where-Object { $_ -like '*.class' }).Count
+            $javaCount = @($names | Where-Object { $_ -like '*.java' }).Count
+            if ($classCount -lt 1300) { throw "Unexpectedly low class count: $classCount" }
+            if ($javaCount -ne 0) { throw "Source .java files leaked into JAR: $javaCount" }
+            foreach ($required in @(
+              'META-INF/MANIFEST.MF',
+              'Abyss/ASM/CoreMod.class',
+              'mcmod.info',
+              'assets/abyss/asm/mcp-notch.srg',
+              'assets/abyss/asm/mcp-srg.srg',
+              'ssl.jks',
+              'accountmanager-ssl.jks'
+            )) {
+              if ($names -notcontains $required) { throw "Missing required JAR entry: $required" }
+            }
+            function Read-ZipText([string]$name) {
+              $entry = $zip.GetEntry($name)
+              $reader = New-Object System.IO.StreamReader($entry.Open())
+              try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+            $manifest = Read-ZipText 'META-INF/MANIFEST.MF'
+            foreach ($line in @(
+              'ModSide: CLIENT',
+              'FMLCorePluginContainsFMLMod: true',
+              'ForceLoadAsMod: true',
+              'FMLCorePlugin: Abyss.ASM.CoreMod'
+            )) {
+              if ($manifest.IndexOf($line, [System.StringComparison]::Ordinal) -lt 0) {
+                throw "Manifest contract missing: $line"
+              }
+            }
+            $mcmod = (Read-ZipText 'mcmod.info') | ConvertFrom-Json
+            if ($mcmod[0].modid -ne 'abyss') { throw "Unexpected mcmod modid: $($mcmod[0].modid)" }
+            if ($mcmod[0].mcversion -ne '1.8.9') { throw "Unexpected mcmod mcversion: $($mcmod[0].mcversion)" }
+            $notch = $zip.GetEntry('assets/abyss/asm/mcp-notch.srg')
+            $srg = $zip.GetEntry('assets/abyss/asm/mcp-srg.srg')
+            if ($notch.Length -lt 1000000) { throw "mcp-notch.srg unexpectedly small: $($notch.Length)" }
+            if ($srg.Length -lt 2000000) { throw "mcp-srg.srg unexpectedly small: $($srg.Length)" }
+            Write-Host "JAR_CONTRACT_PASS classes=$classCount entries=$($entries.Count) sha256=$jarHash"
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+          $ksDir = Join-Path $env:RUNNER_TEMP 'openabyss-keystores'
+          New-Item -ItemType Directory -Force -Path $ksDir | Out-Null
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            foreach ($name in @('ssl.jks','accountmanager-ssl.jks')) {
+              $entry = $zip.GetEntry($name)
+              $out = Join-Path $ksDir $name
+              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $out, $true)
+            }
+          }
+          finally { $zip.Dispose() }
+          $sslHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'ssl.jks')).Hash
+          $acctHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'accountmanager-ssl.jks')).Hash
+          if ($sslHash -ne $acctHash) { throw 'Bundled truststores differ unexpectedly.' }
+          $keytoolOut = @(& keytool -list -v -keystore (Join-Path $ksDir 'ssl.jks') -storepass changeit 2>&1)
+          if ($LASTEXITCODE -ne 0) { throw 'keytool could not read bundled truststore.' }
+          $trusted = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: trustedCertEntry' }).Count
+          $private = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: PrivateKeyEntry' }).Count
+          if ($trusted -ne 152) { throw "Unexpected truststore certificate count: $trusted" }
+          if ($private -ne 0) { throw "Private-key entries found in bundled truststore: $private" }
+          Write-Host "TRUSTSTORE_CONTRACT_PASS trustedCertEntry=$trusted privateKeyEntry=$private sha256=$sslHash"
+
+      - name: Inspect built JARs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = '.\build\libs'
+          $jars = @(Get-ChildItem -LiteralPath $dir -Filter '*.jar' -File -ErrorAction Stop)
+          if ($jars.Count -eq 0) { throw 'No JAR artifacts found in build\libs.' }
+          Write-Host '=== BUILD ARTIFACTS ==='
+          $report = Join-Path $dir 'openabyss-artifacts.txt'
+          $lines = @()
+          foreach ($jar in $jars) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+            Write-Host ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+            $lines += ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+          }
+          [System.IO.File]::WriteAllLines($report, $lines)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-R38-build
+          path: |
+            build/libs/*.jar
+            build/libs/openabyss-artifacts.txt
+            build/distributions/OpenAbyss-Windows-Launcher.zip
+          if-no-files-found: error
+          retention-days: 14
+) { $info[$matches[1]] = $matches[2] }
+            }
+            if ($info['SOURCE_HEAD'] -ne $env:GITHUB_SHA) {
+              throw "BUILD-INFO SOURCE_HEAD mismatch: $($info['SOURCE_HEAD']) != $env:GITHUB_SHA"
+            }
+            if ($info['JAR_SHA256'] -ne $jarHash) {
+              throw "BUILD-INFO JAR_SHA256 mismatch: $($info['JAR_SHA256']) != $jarHash"
+            }
+            if ([int64]$info['JAR_BYTES'] -ne $jar.Length) {
+              throw "BUILD-INFO JAR_BYTES mismatch: $($info['JAR_BYTES']) != $($jar.Length)"
+            }
+            Write-Host "WINDOWS_LAUNCHER_PACKAGE_CONTRACT=PASS entries=$($zip.Entries.Count) jar_bytes=$($jar.Length) jar_sha256=$jarHash"
           }
           finally {
             $zip.Dispose()
