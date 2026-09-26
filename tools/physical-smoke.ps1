@@ -155,6 +155,7 @@ try {
     }
     $P = Start-Process -FilePath $Gradle -ArgumentList $RunArgs -WorkingDirectory $Root -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
 
+    $UnexpectedExitCode = $null
     if ($KeepOpen) {
         while (-not $P.HasExited) {
             Start-Sleep -Seconds 2
@@ -163,6 +164,9 @@ try {
         $P.WaitForExit()
         $P.Refresh()
         Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+        if ($P.ExitCode -ne 0) {
+            $UnexpectedExitCode = $P.ExitCode
+        }
     } else {
         $Deadline = (Get-Date).AddSeconds($RunSeconds)
         while (-not $P.HasExited -and (Get-Date) -lt $Deadline) {
@@ -178,7 +182,22 @@ try {
             $P.WaitForExit()
             $P.Refresh()
             Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+            if ($P.ExitCode -ne 0) {
+                $UnexpectedExitCode = $P.ExitCode
+            }
         }
+    }
+
+    $CrashEvidence = Join-Path $Evidence 'crash-evidence'
+    Remove-Item -LiteralPath $CrashEvidence -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $CrashEvidence | Out-Null
+
+    foreach ($CrashFile in @(
+        Get-ChildItem -LiteralPath (Join-Path $Root 'run\crash-reports') -File -ErrorAction SilentlyContinue
+        Get-ChildItem -LiteralPath (Join-Path $Root 'run') -Filter 'hs_err_pid*.log' -File -ErrorAction SilentlyContinue
+        Get-ChildItem -LiteralPath $Root -Filter 'hs_err_pid*.log' -File -ErrorAction SilentlyContinue
+    )) {
+        Copy-Item -LiteralPath $CrashFile.FullName -Destination $CrashEvidence -Force
     }
 
     $Sources = @(
@@ -246,6 +265,11 @@ try {
         }
     }
     $Graphics | Set-Content -LiteralPath (Join-Path $Evidence 'graphics-session.txt') -Encoding UTF8
+
+    if ($UnexpectedExitCode -ne $null) {
+        ("RUNCLIENT_UNEXPECTED_EXIT=" + $UnexpectedExitCode) | Set-Content -LiteralPath (Join-Path $Evidence 'FAILED-runtime-exit.txt') -Encoding UTF8
+        throw ("Minecraft/OpenAbyss exited unexpectedly with code " + $UnexpectedExitCode + ". Crash evidence was captured under " + $CrashEvidence)
+    }
 
     if ($Failures.Count -gt 0) {
         $Failures | Set-Content -LiteralPath (Join-Path $Evidence 'FAILED-contracts.txt') -Encoding UTF8
