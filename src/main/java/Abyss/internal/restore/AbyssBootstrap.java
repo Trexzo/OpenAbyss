@@ -264,6 +264,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] module selftest    = ").append(Module.selfTest()).append('\n');
             b.append("[ABYSSDIAG] config selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssConfig.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
+            b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
             b.append("[ABYSSDIAG] ctorcache        = built ").append(AbyssCtorCache.built).append(" failed ").append(AbyssCtorCache.failed).append('\n');
             b.append("[ABYSSDIAG] module count     = ").append(ModuleManager.S == null ? -1 : ModuleManager.S.size()).append(" of ").append(AbyssModuleRegistry.expectedModuleCount()).append(' ').append(AbyssModuleRegistry.countGateGreen ? "OK" : "REGRESSION").append(AbyssModuleRegistry.MISSING.isEmpty() ? "" : " missing " + AbyssModuleRegistry.MISSING).append('\n');
             for (String c : AbyssCtorCache.LOG) {
