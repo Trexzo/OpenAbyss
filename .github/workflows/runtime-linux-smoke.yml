@@ -221,8 +221,8 @@ jobs:
 
           CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
           echo "MODULE_CENSUS_COUNT=$CENSUS_COUNT"
-          if [ "$CENSUS_COUNT" -ne 97 ]; then
-            echo "Unexpected module census count: $CENSUS_COUNT (expected 97)."
+          if [ "$CENSUS_COUNT" -ne 103 ]; then
+            echo "Unexpected module census count: $CENSUS_COUNT (expected 103)."
             exit 1
           fi
 
@@ -253,6 +253,12 @@ jobs:
           require_setting_count Gadgets 3
           require_setting_count Language 8
           require_setting_count Theme 7
+          require_setting_count InputFix 0
+          require_setting_count NoObfuscation 0
+          require_setting_count RawInput 0
+          require_setting_count VisualSpoof 4
+          require_setting_count CaveXray 2
+          require_setting_count ItemScale 7
           require_setting_count BlockHit 26
           require_setting_count BedNuker 21
           require_setting_count BlocksESP 17
@@ -267,7 +273,7 @@ jobs:
             echo 'Bootstrap diagnostic report was not produced.'
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] module count     = 97 of 97 OK' "$DIAG"; then
+          if ! grep -Fq '[ABYSSDIAG] module count     = 103 of 103 OK' "$DIAG"; then
             echo 'Bootstrap diagnostic module-count gate is not green.'
             cat "$DIAG"
             exit 1
@@ -282,8 +288,8 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 97' "$DIAG"; then
-            echo 'Published module-list size is not 97.'
+          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 103' "$DIAG"; then
+            echo 'Published module-list size is not 103.'
             cat "$DIAG"
             exit 1
           fi
@@ -297,6 +303,30 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          for GUI_LINE in \
+            '[ABYSSDIAG] zu_3.B VESTIGE   = live' \
+            '[ABYSSDIAG] zu_3.Y STUDIO    = live' \
+            '[ABYSSDIAG] zu_3.F RAVEN     = live' \
+            '[ABYSSDIAG] zu_3 open bind   = RSHIFT'
+          do
+            if ! grep -Fq "$GUI_LINE" "$DIAG"; then
+              echo "Recovered ClickGUI contract failed: $GUI_LINE"
+              cat "$DIAG"
+              exit 1
+            fi
+          done
+          if ! grep -Fq '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=9, Movement=8, Player=12, Visual=16, Visual_utility=15, World=11}' "$DIAG"; then
+            echo 'Recovered module category census is not the expected 103-module layout.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq 'RavenClickGuiScreen (RAVEN theme) published into zu_3.F' "$DIAG" || ! grep -Fq '103 module rows' "$DIAG"; then
+            echo 'Raven ClickGUI did not publish all 103 active module rows.'
+            cat "$DIAG"
+            exit 1
+          fi
+          echo 'CLICKGUI_PUBLICATION_CONTRACT=PASS'
+          echo 'MODULE_CATEGORY_CENSUS_CONTRACT=PASS'
 
           for SUBSCRIBER in \
             Abyss.internal.MiningEngine \

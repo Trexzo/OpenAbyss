@@ -175,11 +175,11 @@ jobs:
             $censusLines = @(Get-Content -LiteralPath $censusPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
             $censusCount = $censusLines.Count
             Write-Host "MODULE_CENSUS_COUNT=$censusCount"
-            if ($censusCount -ne 97) {
-              throw "Unexpected OpenAbyss module census count: $censusCount (expected 97)."
+            if ($censusCount -ne 103) {
+              throw "Unexpected OpenAbyss module census count: $censusCount (expected 103)."
             }
 
-            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme')
+            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme','InputFix','NoObfuscation','RawInput','VisualSpoof','CaveXray','ItemScale')
             foreach ($module in $requiredModules) {
               if (-not ($censusLines -match ("\t" + [regex]::Escape($module) + "\t"))) {
                 throw "Required module missing from census: $module"
@@ -199,6 +199,12 @@ jobs:
               Gadgets     = 3
               Language    = 8
               Theme       = 7
+              InputFix    = 0
+              NoObfuscation = 0
+              RawInput    = 0
+              VisualSpoof = 4
+              CaveXray    = 2
+              ItemScale   = 7
               BlockHit   = 26
               BedNuker   = 21
               BlocksESP  = 17
@@ -224,7 +230,7 @@ jobs:
               throw 'Bootstrap diagnostic report was not produced.'
             }
             $diagText = [IO.File]::ReadAllText($diagPath)
-            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 97 of 97 OK')) {
+            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 103 of 103 OK')) {
               throw 'Bootstrap diagnostic module-count gate is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
@@ -233,8 +239,8 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
-            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 97')) {
-              throw 'Published module-list size is not 97.'
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 103')) {
+              throw 'Published module-list size is not 103.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] tD.o (byClass)   = 113')) {
               throw 'By-class module registry size is not 113.'
@@ -242,6 +248,25 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] t6.L (commands)  = 19')) {
               throw 'Recovered command registry size is not 19.'
             }
+            foreach ($guiLine in @(
+              '[ABYSSDIAG] zu_3.B VESTIGE   = live',
+              '[ABYSSDIAG] zu_3.Y STUDIO    = live',
+              '[ABYSSDIAG] zu_3.F RAVEN     = live',
+              '[ABYSSDIAG] zu_3 open bind   = RSHIFT'
+            )) {
+              if (-not $diagText.Contains($guiLine)) {
+                throw "Recovered ClickGUI contract failed: $guiLine"
+              }
+            }
+            $expectedCategories = '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=9, Movement=8, Player=12, Visual=16, Visual_utility=15, World=11}'
+            if (-not $diagText.Contains($expectedCategories)) {
+              throw 'Recovered module category census is not the expected 103-module layout.'
+            }
+            if (-not ($diagText.Contains('RavenClickGuiScreen (RAVEN theme) published into zu_3.F') -and $diagText.Contains('103 module rows'))) {
+              throw 'Raven ClickGUI did not publish all 103 active module rows.'
+            }
+            Write-Host 'CLICKGUI_PUBLICATION_CONTRACT=PASS'
+            Write-Host 'MODULE_CATEGORY_CENSUS_CONTRACT=PASS'
 
             $requiredSubscribers = @(
               'Abyss.internal.MiningEngine',

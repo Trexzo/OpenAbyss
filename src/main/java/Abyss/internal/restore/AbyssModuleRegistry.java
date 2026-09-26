@@ -504,13 +504,7 @@ public final class AbyssModuleRegistry {
         RETIRED = new HashSet<String>();
         RETIRED.add("AntiNick");
         RETIRED.add("ContainerKeeper");
-        RETIRED.add("InputFix");
-        RETIRED.add("NoObfuscation");
-        RETIRED.add("RawInput");
-        RETIRED.add("VisualSpoof");
         RETIRED.add("BindGUI");
-        RETIRED.add("CaveXray");
-        RETIRED.add("ItemScale");
         RETIRED.add("KeyStrokes");
         RETIRED.add("TeamInvisible");
         RETIRED.add("ClosestPlayerHUD");
