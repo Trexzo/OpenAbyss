@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -205,6 +206,8 @@ extends Command {
                     // empty catch block
 }
 }
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "suffix-visible", "q");
             var12 += AbyssCommandConfig.applySettingValues(var8, var10);
 }
         AbyssBootstrap.forceEnableCommandLine();
@@ -253,6 +256,8 @@ extends Command {
             if (var7) {
                 var11.addProperty("keyBind", (Number)var9.h());
 }
+            var11.addProperty("visible", Boolean.valueOf(var9.D()));
+            var11.addProperty("suffix-visible", Boolean.valueOf(var9.r()));
             var13 += AbyssCommandConfig.writeSettingValues(var9, var11);
             ++var5;
 }
@@ -360,6 +365,26 @@ extends Command {
     }
     private static boolean gate() {
         return AbyssCommandBind.gateOk();
+}
+    private static void applyModuleBoolean(Module module, JsonObject block, String key, String fieldName) {
+        if (module == null || block == null || !block.has(key)) {
+            return;
+}
+        try {
+            JsonElement value = block.get(key);
+            if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+                return;
+}
+            Field field = Module.class.getDeclaredField(fieldName);
+            if (field.getType() != Boolean.TYPE) {
+                return;
+}
+            field.setAccessible(true);
+            field.setBoolean(module, value.getAsBoolean());
+}
+        catch (Throwable throwable) {
+            // malformed or incompatible config metadata is ignored
+}
 }
     private static int writeSettingValues(Module var0, JsonObject var1) {
         List<Setting> var2;
