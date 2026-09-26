@@ -3,7 +3,8 @@ param(
     [string]$MinecraftDir = "",
     [string]$Java8 = "",
     [string]$Username = "Player",
-    [int]$RamMB = 4096
+    [int]$RamMB = 4096,
+    [switch]$ResolverSelfTest
 )
 
 Set-StrictMode -Version 2.0
@@ -210,6 +211,42 @@ function Quote-Arg([string]$Value) {
     if ($null -eq $Value) { return '""' }
     if ($Value -notmatch '[\s"]') { return $Value }
     return '"' + ($Value -replace '"','\"') + '"'
+}
+
+if ($ResolverSelfTest) {
+    $selfRoot = Join-Path $env:TEMP 'openabyss-launcher-resolver-selftest'
+    Remove-Item -LiteralPath $selfRoot -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $selfRoot | Out-Null
+    try {
+        $legacy = [pscustomobject]@{ name = 'example.group:legacy-lib:1.2.3' }
+        $legacyPath = Maven-Path $legacy.name $selfRoot
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $legacyPath) | Out-Null
+        Set-Content -LiteralPath $legacyPath -Value 'fixture'
+
+        $list = New-Object System.Collections.Generic.List[string]
+        $missing = New-Object System.Collections.Generic.List[string]
+        Add-ClasspathLibrary $legacy $selfRoot $list $missing
+        Require ($list.Count -eq 1) 'Resolver self-test failed legacy Maven coordinate resolution.'
+        Require ($missing.Count -eq 0) 'Resolver self-test incorrectly marked existing legacy library missing.'
+
+        $windowsAllowed = ConvertFrom-Json '{"name":"example:win:1","rules":[{"action":"allow","os":{"name":"windows"}}]}'
+        $linuxOnly = ConvertFrom-Json '{"name":"example:linux:1","rules":[{"action":"allow","os":{"name":"linux"}}]}'
+        Require (Test-LibraryAllowed $windowsAllowed) 'Resolver self-test failed Windows allow rule.'
+        Require (-not (Test-LibraryAllowed $linuxOnly)) 'Resolver self-test failed non-Windows exclusion rule.'
+
+        $classifierFixture = ConvertFrom-Json '{"name":"org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209","natives":{"windows":"natives-windows-${arch}"}}'
+        $nativePath = Maven-Path 'org.lwjgl.lwjgl:lwjgl-platform:2.9.4-nightly-20150209:natives-windows-64' $selfRoot
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $nativePath) | Out-Null
+        Set-Content -LiteralPath $nativePath -Value 'fixture'
+        $resolvedNative = Get-NativeJar $classifierFixture $selfRoot
+        Require ($resolvedNative -eq $nativePath) 'Resolver self-test failed native classifier substitution.'
+
+        Write-Host 'OPENABYSS_LAUNCHER_RESOLVER_SELFTEST=PASS'
+        exit 0
+    }
+    finally {
+        Remove-Item -LiteralPath $selfRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Set-Content -LiteralPath $Log -Value ('OpenAbyss standalone launcher ' + (Get-Date -Format o)) -Encoding UTF8
