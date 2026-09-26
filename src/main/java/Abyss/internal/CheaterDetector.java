@@ -128,7 +128,7 @@ implements EventSubscriber {
         int[] var12 = new int[var11.length];
         float[] var13 = new float[var11.length];
         float[] var14 = new float[var11.length];
-        block0: for (CheaterDetectionSample var16 : (Iterable<CheaterDetectionSample>)(var3)) {
+        for (CheaterDetectionSample var16 : (Iterable<CheaterDetectionSample>)(var3)) {
             if (CheaterDetectionSample.u(var16) < var5) continue;
             if (CheaterDetectionSample.u(var16) > var7) break;
             if (CheaterDetectionSample.h(var16) != DetectedAction.ROTATION || CheaterDetectionSample.R(var16) < 24.0f) continue;
@@ -142,7 +142,7 @@ implements EventSubscriber {
                 var13[n3] = var13[n3] + CheaterDetectionSample.R(var16);
                 int n4 = var17;
                 var14[n4] = var14[n4] + CheaterDetectionSample.R(var16) * CheaterDetectionSample.R(var16);
-                continue block0;
+                break;
 }
 }
         for (int var19 = 0; var19 < var11.length; ++var19) {
