@@ -374,6 +374,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] command line      = READY' "$DIAG"; then
+            echo 'Recovered CommandLine module is not enabled.'
+            cat "$DIAG"
+            exit 1
+          fi
           for GUI_LINE in \
             '[ABYSSDIAG] zu_3.B VESTIGE   = live' \
             '[ABYSSDIAG] zu_3.Y STUDIO    = live' \
