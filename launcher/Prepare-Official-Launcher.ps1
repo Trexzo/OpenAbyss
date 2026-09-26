@@ -18,6 +18,8 @@ if (-not (Test-Path -LiteralPath $Jar -PathType Leaf)) {
 
 New-Item -ItemType Directory -Force -Path $ModsDir | Out-Null
 
+Remove-Item -LiteralPath (Join-Path $GameDir 'crash-reports') -Recurse -Force -ErrorAction SilentlyContinue
+
 foreach ($evidenceName in @(
     'abyss-bootstrap-stage.txt',
     'abyss-runtime-stage.txt',
