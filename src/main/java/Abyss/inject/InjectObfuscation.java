@@ -178,9 +178,6 @@ final class InjectObfuscation {
         private static boolean isSrgName(String name) {
             return name.startsWith("func_") || name.startsWith("field_");
 }
-        /*
-         * WARNING - Removed try catching itself - possible behaviour change.
-         */
         static Tables load(MappingKind target) throws IOException {
             Tables out = new Tables(target);
             boolean notch = target == MappingKind.NOTCH;
