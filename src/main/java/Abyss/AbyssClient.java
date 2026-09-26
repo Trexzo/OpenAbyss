@@ -283,18 +283,23 @@ implements EventSubscriber {
     }
 
     private static Method a(Class var0, String var1, Class var2, int var3, Class[] var4) {
-        label33:
         for (Method var8 : var0.getDeclaredMethods()) {
-            if (var8.getName().equals(var1) && var8.getReturnType() == var2) {
-                Class[] var9 = var8.getParameterTypes();
-                if (var9.length == var3) {
-                    for (int var10 = 0; var10 < var3; var10++) {
-                        if (var9[var10] != var4[var10]) {
-                            continue label33;
-                        }
-                    }
-                    return var8;
+            if (!var8.getName().equals(var1) || var8.getReturnType() != var2) {
+                continue;
+            }
+            Class[] var9 = var8.getParameterTypes();
+            if (var9.length != var3) {
+                continue;
+            }
+            boolean matches = true;
+            for (int var10 = 0; var10 < var3; var10++) {
+                if (var9[var10] != var4[var10]) {
+                    matches = false;
+                    break;
                 }
+            }
+            if (matches) {
+                return var8;
             }
         }
         return null;
