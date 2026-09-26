@@ -709,18 +709,24 @@ def main():
     for native_path, native_count in sorted(native_files.items()):
         class_name = Path(native_path).stem
         external = []
+        constructor_refs = []
         token = re.compile(r"\b" + re.escape(class_name) + r"\b")
+        ctor = re.compile(r"\bnew\s+" + re.escape(class_name) + r"\s*\(")
         for rel, body in source_text.items():
             if rel == native_path:
                 continue
             if token.search(body):
                 external.append(rel)
+            if ctor.search(body):
+                constructor_refs.append(rel)
         native_reachability.append({
             "path": native_path,
             "class": class_name,
             "native_methods": native_count,
             "external_reference_files": len(external),
+            "constructor_reference_files": len(constructor_refs),
             "references": external[:100],
+            "constructor_references": constructor_refs[:100],
         })
 
     payload = {
@@ -764,11 +770,11 @@ def main():
     md.append("## Native reachability")
     md.append("")
     if native_reachability:
-        md.append("| Native class | Native methods | Referencing files |")
-        md.append("|---|---:|---:|")
+        md.append("| Native class | Native methods | Referencing files | Constructor refs |")
+        md.append("|---|---:|---:|---:|")
         for item in sorted(native_reachability, key=lambda x: (-x["external_reference_files"], -x["native_methods"], x["path"]))[:40]:
             md.append(
-                f'| `{item["path"]}` | {item["native_methods"]} | {item["external_reference_files"]} |'
+                f'| `{item["path"]}` | {item["native_methods"]} | {item["external_reference_files"]} | {item["constructor_reference_files"]} |'
             )
     else:
         md.append("No native declarations.")
