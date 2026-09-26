@@ -218,6 +218,8 @@ task packageWindowsLauncher(type: Zip, dependsOn: [jar, writeLauncherBuildInfo])
         include 'launch_abyss.ps1'
         include 'Prepare-Official-Launcher.bat'
         include 'Prepare-Official-Launcher.ps1'
+        include 'Check-Official-Launcher.bat'
+        include 'Check-Official-Launcher.ps1'
         include 'README.txt'
     }
 }
