@@ -312,6 +312,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] module selftest    = PASS' "$DIAG"; then
+            echo 'Module state-machine self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
