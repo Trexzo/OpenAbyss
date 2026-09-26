@@ -379,9 +379,6 @@ public class Module {
     public final String description() {
         return this.W;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public final List<Setting> settings() {
         if (!this.settingsScanned) {
             List<Setting> list = this.l;
