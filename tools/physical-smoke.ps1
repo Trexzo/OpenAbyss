@@ -181,7 +181,9 @@ try {
     $RuntimeStageRun = Join-Path $Root 'run\abyss-runtime-stage.txt'
     $ModuleFailure = Join-Path $Root 'abyss-module-failure.txt'
     $ModuleFailureRun = Join-Path $Root 'run\abyss-module-failure.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun -Force -ErrorAction SilentlyContinue
+    $EventFailure = Join-Path $Root 'abyss-event-failure.txt'
+    $EventFailureRun = Join-Path $Root 'run\abyss-event-failure.txt'
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$EventFailure,$EventFailureRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -256,6 +258,8 @@ try {
         (Join-Path $Root 'abyss-runtime-stage.txt'),
         (Join-Path $Root 'run\abyss-module-failure.txt'),
         (Join-Path $Root 'abyss-module-failure.txt'),
+        (Join-Path $Root 'run\abyss-event-failure.txt'),
+        (Join-Path $Root 'abyss-event-failure.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
     )
     foreach ($Source in $Sources) {
@@ -367,6 +371,19 @@ try {
         }
     }
 
+    $EventFailureCandidates = @(
+        (Join-Path $Root 'run\abyss-event-failure.txt'),
+        (Join-Path $Root 'abyss-event-failure.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $EventFailureFile = $EventFailureCandidates | Select-Object -First 1
+    $LastEventFailure = '<none>'
+    if ($EventFailureFile) {
+        $EventFailureLines = @(Get-Content -LiteralPath $EventFailureFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($EventFailureLines.Count -gt 0) {
+            $LastEventFailure = $EventFailureLines[-1]
+        }
+    }
+
     $CrashCount = @(Get-ChildItem -LiteralPath $CrashEvidence -File -ErrorAction SilentlyContinue).Count
     @(
         "HEAD=$Head"
@@ -381,6 +398,7 @@ try {
         "LAST_BOOTSTRAP_STAGE=$LastStage"
         "LAST_RUNTIME_STAGE=$LastRuntimeStage"
         "LAST_MODULE_FAILURE=$LastModuleFailure"
+        "LAST_EVENT_FAILURE=$LastEventFailure"
         "CRASH_EVIDENCE_FILES=$CrashCount"
     ) | Set-Content -LiteralPath (Join-Path $Evidence 'RESULT.txt') -Encoding UTF8
 
