@@ -103,6 +103,7 @@ public final class AbyssBootstrap {
         AbyssBootstrap.sub(var2, "Abyss.ui.screen.MainMenuTheme", new MainMenuTheme(0L));
         AbyssSettingStatics.apply(PENDING);
         AbyssModuleSettings.apply(PENDING);
+        AbyssModuleSettings.applyByName(PENDING);
         AbyssTruthNames.apply(PENDING);
         AbyssBootstrap.runOrphanedStaticInit();
         AbyssClickGui.install(PENDING);
