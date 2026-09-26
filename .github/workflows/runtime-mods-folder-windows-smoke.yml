@@ -99,7 +99,7 @@ jobs:
 
           $stdout = Join-Path $env:RUNNER_TEMP 'openabyss-modsfolder-win-runClient.stdout.log'
           $stderr = Join-Path $env:RUNNER_TEMP 'openabyss-modsfolder-win-runClient.stderr.log'
-          $args = @('--offline','--no-daemon','-PabyssModsFolder=true','runClient')
+          $args = @('--offline','--no-daemon','-PabyssModsFolder=true','runClient','-x','getAssets')
           $p = Start-Process -FilePath $env:OPENABYSS_GRADLE -ArgumentList $args -WorkingDirectory $env:GITHUB_WORKSPACE -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
           Write-Host "RUNCLIENT_PID=$($p.Id)"
 
