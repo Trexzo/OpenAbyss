@@ -1,5 +1,5 @@
 param(
-    [string]$Jdk8 = $env:JAVA_HOME,
+    [string]$Jdk8,
     [int]$RunSeconds = 180,
     [switch]$SkipBuild,
     [switch]$KeepOpen
@@ -30,14 +30,52 @@ try {
     $Head = (& git rev-parse HEAD).Trim()
     Require ($LASTEXITCODE -eq 0 -and $Head) 'git rev-parse HEAD failed.'
 
-    if (-not $Jdk8) {
-        throw 'JDK 8 is required. Pass -Jdk8 "C:\Path\To\jdk8" or set JAVA_HOME.'
+    function Get-Java8Version([string]$Home) {
+        if (-not $Home) { return $null }
+        $Exe = Join-Path $Home 'bin\java.exe'
+        if (-not (Test-Path -LiteralPath $Exe -PathType Leaf)) { return $null }
+        try {
+            $Version = (& $Exe -version 2>&1 | Out-String)
+            if ($Version -match 'version "1\.8\.0_') { return $Version }
+        }
+        catch {
+        }
+        return $null
     }
-    $Java = Join-Path $Jdk8 'bin\java.exe'
-    Require (Test-Path -LiteralPath $Java) "java.exe not found under JDK path: $Jdk8"
 
-    $JavaVersion = (& $Java -version 2>&1 | Out-String)
-    Require ($JavaVersion -match 'version "1\.8\.0_') ("Expected Java 8, got:" + [Environment]::NewLine + $JavaVersion)
+    if (-not $Jdk8) {
+        $Candidates = New-Object System.Collections.Generic.List[string]
+        if ($env:JAVA_HOME) { $Candidates.Add($env:JAVA_HOME) }
+
+        foreach ($Pattern in @(
+            (Join-Path $env:ProgramFiles 'Eclipse Adoptium\jdk-8*'),
+            (Join-Path $env:ProgramFiles 'Amazon Corretto\jdk8*'),
+            (Join-Path $env:ProgramFiles 'BellSoft\LibericaJDK-8*'),
+            (Join-Path $env:ProgramFiles 'Java\jdk1.8*')
+        )) {
+            foreach ($Dir in @(Get-ChildItem -Path $Pattern -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending)) {
+                $Candidates.Add($Dir.FullName)
+            }
+        }
+
+        foreach ($Candidate in $Candidates) {
+            if (Get-Java8Version $Candidate) {
+                $Jdk8 = $Candidate
+                break
+            }
+        }
+    }
+
+    if (-not $Jdk8) {
+        throw 'No JDK 8 installation was found. Install Temurin/Corretto/Liberica JDK 8 or pass -Jdk8 "C:\Path\To\jdk8".'
+    }
+
+    $Java = Join-Path $Jdk8 'bin\java.exe'
+    Require (Test-Path -LiteralPath $Java -PathType Leaf) "java.exe not found under JDK path: $Jdk8"
+
+    $JavaVersion = Get-Java8Version $Jdk8
+    Require ($null -ne $JavaVersion) ("Expected Java 8 under " + $Jdk8)
+    Write-Host "JDK8=$Jdk8"
 
     if (-not (Test-Path -LiteralPath $Gradle)) {
         Write-Host 'Downloading Gradle 2.14.1...'
