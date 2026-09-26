@@ -209,6 +209,7 @@ public final class AbyssBootstrap {
         int stockDisabled = 0;
         int invalid = 0;
         int nullSettings = 0;
+        List<String> stockDisabledNames = new ArrayList<String>();
         if (ModuleManager.S != null) {
             for (Module m2 : ModuleManager.S) {
                 if (m2 == null) {
@@ -231,6 +232,7 @@ public final class AbyssBootstrap {
                         ++toggleable;
                     } else {
                         ++stockDisabled;
+                        stockDisabledNames.add(name);
 }
 }
                 catch (Throwable throwable) {
@@ -241,7 +243,8 @@ public final class AbyssBootstrap {
         return "[ABYSSDIAG] module usability   = toggleable=" + toggleable
                 + " stockDisabled=" + stockDisabled
                 + " invalid=" + invalid
-                + " nullSettings=" + nullSettings + "\n";
+                + " nullSettings=" + nullSettings
+                + " stockDisabledNames=" + stockDisabledNames + "\n";
 }
     private static void diag$dump() {
         try {
