@@ -407,6 +407,71 @@ public class Module {
 }
         return this.l;
 }
+    public static String selfTest() {
+        try {
+            class ProbeModule extends Module {
+                int enables;
+                int disables;
+                int resets;
+
+                ProbeModule() {
+                    super(0L);
+                    this.declare("SelfTest", Category.Misc, "Module state-machine probe", new Setting[0]);
+}
+
+                @Override
+                public void i(long seed) {
+                    ++this.enables;
+}
+
+                @Override
+                public void A(long seed) {
+                    ++this.disables;
+}
+
+                @Override
+                public void P(long seed) {
+                    ++this.resets;
+}
+            }
+            ProbeModule probe = new ProbeModule();
+            if (probe.o() || probe.l() || probe.K()) {
+                return "FAIL initial";
+}
+            probe.u((short)0, 139350548161835L);
+            if (!probe.o() || !probe.l() || probe.K()) {
+                return "FAIL enable-request";
+}
+            if (probe.l()) {
+                probe.i(17998201765264L);
+                probe.n(false);
+}
+            if (probe.enables != 1 || probe.l()) {
+                return "FAIL enable-hook";
+}
+            probe.u((short)0, 139350548161835L);
+            if (probe.o() || !probe.K()) {
+                return "FAIL disable-request";
+}
+            if (probe.K()) {
+                probe.A(94287625739397L);
+                probe.E(false);
+}
+            if (probe.disables != 1 || probe.K()) {
+                return "FAIL disable-hook";
+}
+            if (!probe.o()) {
+                probe.P(11128156246666L);
+}
+            if (probe.resets != 1) {
+                return "FAIL disabled-reset";
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     public Module(long var1) {
 }
     public void n(boolean var1) {
