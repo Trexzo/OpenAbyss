@@ -324,6 +324,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] session selftest   = PASS' "$DIAG"; then
+            echo 'Minecraft session swap self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
             echo 'Persisted command-data loader did not run.'
             cat "$DIAG"
