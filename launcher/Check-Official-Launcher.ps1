@@ -13,6 +13,7 @@ $Bootstrap = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
 $EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
 $ConfigFailure = Join-Path $GameDir 'abyss-config-failure.txt'
+$RendererFailure = Join-Path $GameDir 'abyss-renderer-failure.txt'
 $Diag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
 $Census = Join-Path $GameDir 'abyss-census.tsv'
 $LatestLog = Join-Path $GameDir 'logs\latest.log'
@@ -58,6 +59,7 @@ $bootstrapText = Read-All $Bootstrap
 $moduleFailureText = Read-All $ModuleFailure
 $eventFailureText = Read-All $EventFailure
 $configFailureText = Read-All $ConfigFailure
+$rendererFailureText = Read-All $RendererFailure
 $diagText = Read-All $Diag
 
 $sessionStartUtc = $null
@@ -97,6 +99,7 @@ $checks = [ordered]@{
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
+    RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
     ModuleCensus112 = $false
 }
 
@@ -130,6 +133,7 @@ $pass = $checks.GameDirectoryExists -and
         (-not $checks.ModuleLifecycleFailure) -and
         (-not $checks.EventCallbackFailure) -and
         (-not $checks.ConfigSaveFailure) -and
+        (-not $checks.RendererReloadFailure) -and
         $checks.ModuleCensus112 -and
         ($crashFiles -eq 0)
 
@@ -146,6 +150,7 @@ $lines.Add('BOOTSTRAP_STAGE=' + $(if (Test-Path -LiteralPath $Bootstrap -PathTyp
 $lines.Add('MODULE_FAILURE=' + $(if (Test-Path -LiteralPath $ModuleFailure -PathType Leaf) { $ModuleFailure } else { '<none>' }))
 $lines.Add('EVENT_FAILURE=' + $(if (Test-Path -LiteralPath $EventFailure -PathType Leaf) { $EventFailure } else { '<none>' }))
 $lines.Add('CONFIG_FAILURE=' + $(if (Test-Path -LiteralPath $ConfigFailure -PathType Leaf) { $ConfigFailure } else { '<none>' }))
+$lines.Add('RENDERER_FAILURE=' + $(if (Test-Path -LiteralPath $RendererFailure -PathType Leaf) { $RendererFailure } else { '<none>' }))
 
 $lines | Set-Content -LiteralPath $Verdict -Encoding UTF8
 $lines | ForEach-Object { Write-Host $_ }
