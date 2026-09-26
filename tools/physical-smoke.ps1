@@ -140,7 +140,9 @@ try {
 
     $Stdout = Join-Path $Evidence 'runClient.stdout.log'
     $Stderr = Join-Path $Evidence 'runClient.stderr.log'
-    Remove-Item -LiteralPath $Stdout,$Stderr -Force -ErrorAction SilentlyContinue
+    $BootstrapStage = Join-Path $Root 'abyss-bootstrap-stage.txt'
+    $BootstrapStageRun = Join-Path $Root 'run\abyss-bootstrap-stage.txt'
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -206,6 +208,8 @@ try {
         (Join-Path $Root 'abyss-bootstrap-diagnostics.txt'),
         (Join-Path $Root 'run\abyss-census.tsv'),
         (Join-Path $Root 'abyss-census.tsv'),
+        (Join-Path $Root 'run\abyss-bootstrap-stage.txt'),
+        (Join-Path $Root 'abyss-bootstrap-stage.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
     )
     foreach ($Source in $Sources) {
