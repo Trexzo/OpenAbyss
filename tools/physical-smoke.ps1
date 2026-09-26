@@ -177,7 +177,11 @@ try {
     $RuntimeExit = 'RUNNING_OR_TIMEOUT'
     $BootstrapStage = Join-Path $Root 'abyss-bootstrap-stage.txt'
     $BootstrapStageRun = Join-Path $Root 'run\abyss-bootstrap-stage.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun -Force -ErrorAction SilentlyContinue
+    $RuntimeStage = Join-Path $Root 'abyss-runtime-stage.txt'
+    $RuntimeStageRun = Join-Path $Root 'run\abyss-runtime-stage.txt'
+    $ModuleFailure = Join-Path $Root 'abyss-module-failure.txt'
+    $ModuleFailureRun = Join-Path $Root 'run\abyss-module-failure.txt'
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -248,6 +252,10 @@ try {
         (Join-Path $Root 'abyss-census.tsv'),
         (Join-Path $Root 'run\abyss-bootstrap-stage.txt'),
         (Join-Path $Root 'abyss-bootstrap-stage.txt'),
+        (Join-Path $Root 'run\abyss-runtime-stage.txt'),
+        (Join-Path $Root 'abyss-runtime-stage.txt'),
+        (Join-Path $Root 'run\abyss-module-failure.txt'),
+        (Join-Path $Root 'abyss-module-failure.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
     )
     foreach ($Source in $Sources) {
@@ -333,6 +341,32 @@ try {
             $LastStage = ($StageLines[-1] -split "\t",2)[-1]
         }
     }
+    $RuntimeStageCandidates = @(
+        (Join-Path $Root 'run\abyss-runtime-stage.txt'),
+        (Join-Path $Root 'abyss-runtime-stage.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $RuntimeStageFile = $RuntimeStageCandidates | Select-Object -First 1
+    $LastRuntimeStage = '<none>'
+    if ($RuntimeStageFile) {
+        $RuntimeStageLines = @(Get-Content -LiteralPath $RuntimeStageFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($RuntimeStageLines.Count -gt 0) {
+            $LastRuntimeStage = ($RuntimeStageLines[-1] -split "\t",2)[-1]
+        }
+    }
+
+    $ModuleFailureCandidates = @(
+        (Join-Path $Root 'run\abyss-module-failure.txt'),
+        (Join-Path $Root 'abyss-module-failure.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $ModuleFailureFile = $ModuleFailureCandidates | Select-Object -First 1
+    $LastModuleFailure = '<none>'
+    if ($ModuleFailureFile) {
+        $ModuleFailureLines = @(Get-Content -LiteralPath $ModuleFailureFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($ModuleFailureLines.Count -gt 0) {
+            $LastModuleFailure = $ModuleFailureLines[-1]
+        }
+    }
+
     $CrashCount = @(Get-ChildItem -LiteralPath $CrashEvidence -File -ErrorAction SilentlyContinue).Count
     @(
         "HEAD=$Head"
@@ -345,6 +379,8 @@ try {
         "REGISTRY_TARGET=$RegistryTarget"
         "RUNCLIENT_EXIT=$RuntimeExit"
         "LAST_BOOTSTRAP_STAGE=$LastStage"
+        "LAST_RUNTIME_STAGE=$LastRuntimeStage"
+        "LAST_MODULE_FAILURE=$LastModuleFailure"
         "CRASH_EVIDENCE_FILES=$CrashCount"
     ) | Set-Content -LiteralPath (Join-Path $Evidence 'RESULT.txt') -Encoding UTF8
 
