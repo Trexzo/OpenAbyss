@@ -202,6 +202,45 @@ public final class AbyssBootstrap {
         b.append("[ABYSSDIAG] census per-cat     = ").append(perCat).append('\n');
         return b.toString();
 }
+    private static String moduleUsability() {
+        int toggleable = 0;
+        int stockDisabled = 0;
+        int invalid = 0;
+        int nullSettings = 0;
+        if (ModuleManager.S != null) {
+            for (Module m2 : ModuleManager.S) {
+                if (m2 == null) {
+                    ++invalid;
+                    continue;
+}
+                try {
+                    String name = m2.b();
+                    Category category = m2.f();
+                    List<Setting> settings = m2.w();
+                    if (name == null || name.trim().isEmpty() || category == null || settings == null) {
+                        ++invalid;
+                        continue;
+}
+                    for (Setting setting : settings) {
+                        if (setting != null) continue;
+                        ++nullSettings;
+}
+                    if (m2.I()) {
+                        ++toggleable;
+                    } else {
+                        ++stockDisabled;
+}
+}
+                catch (Throwable throwable) {
+                    ++invalid;
+}
+}
+}
+        return "[ABYSSDIAG] module usability   = toggleable=" + toggleable
+                + " stockDisabled=" + stockDisabled
+                + " invalid=" + invalid
+                + " nullSettings=" + nullSettings + "\n";
+}
     private static void diag$dump() {
         try {
             StringBuilder b = new StringBuilder("\n[ABYSSDIAG] ==== bootstrap outcome ====\n");
@@ -236,6 +275,7 @@ public final class AbyssBootstrap {
                 b.append("[ABYSSDIAG] modules enabled   = ").append(on).append('\n');
                 b.append("[ABYSSDIAG] first 12          = ").append((CharSequence)names).append('\n');
                 b.append(AbyssBootstrap.census());
+                b.append(AbyssBootstrap.moduleUsability());
 }
             for (String p : PENDING) {
                 if (!p.contains("ClickGui") && !p.contains("Ts_2") && !p.contains("Ad_2") && !p.contains("REFUSED") && !p.contains("threw")) continue;
