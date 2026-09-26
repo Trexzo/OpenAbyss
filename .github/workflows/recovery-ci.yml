@@ -96,6 +96,17 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify runnable-era resource parity
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for resource parity gate.' }
+          python '.\tools\check_reference_resources.py' --jar $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era resource parity gate failed: $LASTEXITCODE" }
+
       - name: Build standalone Windows launcher package
         shell: powershell
         run: |
