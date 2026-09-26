@@ -27,6 +27,7 @@ import Abyss.command.impl.AbyssCommandStub;
 import Abyss.command.impl.AbyssCommandSuffix;
 import Abyss.command.impl.AbyssCommandToggle;
 import Abyss.command.impl.AbyssCommandVisible;
+import Abyss.command.impl.StockCommandModuleSetting;
 import Abyss.internal.jnic.StockCommandRegistry;
 import Abyss.internal.restore.AbyssCommandData;
 import Abyss.module.Module;
@@ -54,6 +55,7 @@ public final class AbyssCommands {
         if (StockCommandRegistry.L == null) {
             StockCommandRegistry.L = new LinkedHashSet<Command>();
 }
+        StockCommandRegistry.J = new StockCommandModuleSetting();
         StockCommandRegistry.L.add(new AbyssCommandBind());
         StockCommandRegistry.L.add(new AbyssCommandBindChat());
         StockCommandRegistry.L.add(new AbyssCommandChangelog());
@@ -122,8 +124,17 @@ public final class AbyssCommands {
                 return false;
 }
             Command var4 = AbyssCommands.find(var3[0]);
+            boolean moduleSetting = false;
+            if (var4 == null && AbyssCommands.module(var3[0]) != null && StockCommandRegistry.J != null) {
+                var4 = StockCommandRegistry.J;
+                moduleSetting = true;
+}
             if (var4 == null) {
                 AbyssCommands.chat("\u00a7cUnknown command \u00a7f" + var3[0] + "\u00a7c. Known: " + AbyssCommands.names());
+                return true;
+}
+            if (moduleSetting) {
+                var4.j(var3, 0L);
                 return true;
 }
             String[] var5 = new String[var3.length - 1];
@@ -182,6 +193,13 @@ public final class AbyssCommands {
             if (count != 19) {
                 return "FAIL count " + count + "/19";
 }
+            if (StockCommandRegistry.J == null) {
+                return "FAIL module-setting-null";
+}
+            String moduleSettingTest = StockCommandModuleSetting.selfTest();
+            if (!moduleSettingTest.startsWith("PASS")) {
+                return "FAIL module-setting " + moduleSettingTest;
+}
             int placeholders = AbyssCommands.placeholderCount();
             if (placeholders != 0) {
                 return "FAIL module-placeholders " + placeholders;
@@ -193,7 +211,7 @@ public final class AbyssCommands {
             if (!configTest.startsWith("PASS")) {
                 return "FAIL config-metadata " + configTest;
 }
-            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " keybind=TRUSTED config=PASS";
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " moduleSetting=PASS keybind=TRUSTED config=PASS";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
