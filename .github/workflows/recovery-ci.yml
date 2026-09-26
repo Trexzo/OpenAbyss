@@ -213,5 +213,6 @@ jobs:
           path: |
             build/libs/*.jar
             build/libs/openabyss-artifacts.txt
+            build/distributions/OpenAbyss-Windows-Launcher.zip
           if-no-files-found: error
           retention-days: 14
