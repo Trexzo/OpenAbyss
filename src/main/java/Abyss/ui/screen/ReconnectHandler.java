@@ -60,22 +60,22 @@ implements EventSubscriber {
 }
     private static long t(String var0) {
         long var3 = System.currentTimeMillis();
-        block12: for (String var8 : var0.split(" ")) {
+        for (String var8 : var0.split(" ")) {
             if (var8.isEmpty()) continue;
             String var9 = var8.substring(var8.length() - 1);
             long var10 = Long.parseLong(var8.substring(0, var8.length() - 1));
             switch (var9) {
                 case "d": {
                     var3 += var10 * 86400000L;
-                    continue block12;
+                    break;
 }
                 case "h": {
                     var3 += var10 * 3600000L;
-                    continue block12;
+                    break;
 }
                 case "m": {
                     var3 += var10 * 60000L;
-                    continue block12;
+                    break;
 }
                 case "s": {
                     var3 += var10 * 1000L;
