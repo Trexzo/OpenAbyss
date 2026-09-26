@@ -260,6 +260,7 @@ jobs:
           require_setting_count VisualSpoof 4
           require_setting_count CaveXray 2
           require_setting_count ItemScale 7
+          require_setting_count ClickGUI 3
           require_setting_count AntiNick 1
           require_setting_count ContainerKeeper 2
           require_setting_count BindGUI 3
@@ -335,6 +336,11 @@ jobs:
           fi
           if ! grep -Fq '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19' "$DIAG"; then
             echo 'Recovered command resolver self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] clickgui selftest = PASS mode=' "$DIAG"; then
+            echo 'Recovered ClickGUI selector self-test is not green.'
             cat "$DIAG"
             exit 1
           fi
