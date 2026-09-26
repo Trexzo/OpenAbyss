@@ -117,7 +117,6 @@ public final class AbyssBootstrap {
         var2.endBatch();
         AbyssClient.w = var2;
         AbyssConfig.apply(PENDING);
-        AbyssCommandData.load();
         AbyssBootstrap.forceEnableCommandLine();
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
         StallWatchdog.start();
