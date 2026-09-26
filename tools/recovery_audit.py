@@ -112,6 +112,83 @@ AUTHORITY_BACKED_FINDINGS = frozenset({
 })
 
 
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# preserves the same try/catch/finally cleanup structure in these six
+# VisualSpoofRenderer methods. Keep the CFR warning comments in source, but
+# lower only the warning immediately attached to a method whose exact
+# declaration and cleanup shape still match this authority.
+WARNING_METHOD_AUTHORITIES = {
+    "Abyss/util/render/VisualSpoofRenderer.java": (
+        (
+            "private static Framebuffer r(Minecraft var2)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var2, var8);",
+                "GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "public static void l(float var0)",
+            1,
+            1,
+            1,
+            (
+                "Framebuffer var8 = v.getFramebuffer();",
+                "GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.displayWidth, (int)VisualSpoofRenderer.v.displayHeight);",
+                "r = false;",
+            ),
+        ),
+        (
+            "private static Framebuffer i(Minecraft var0)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var0, var8);",
+                "GL11.glViewport((int)0, (int)0, (int)var0.displayWidth, (int)var0.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "private static BufferedImage A(Minecraft var0)",
+            1,
+            1,
+            1,
+            (
+                "var1.unbindFramebuffer();",
+                "GL11.glReadBuffer((int)1029);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "private static BufferedImage C(int var0, int var1)",
+            1,
+            0,
+            1,
+            (
+                "GL15.glUnmapBuffer((int)35051);",
+                "GL15.glBindBuffer((int)35051, (int)0);",
+                "F = true;",
+            ),
+        ),
+        (
+            "private static BufferedImage M(short var0, int var1, Minecraft var2, int var3, int var4, short var5, float var6)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var2, var11);",
+                "GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+    ),
+}
+
+
 REFLECTION_METHOD_DECLARATION = (
     "private static Method a(Class var0, String var1, Class var2, "
     "int var3, Class[] var4)"
@@ -484,6 +561,41 @@ def scan_file(path: Path, root: Path):
                             and method_start_line <= finding["line"] <= method_end_line
                         ):
                             finding["confidence"] = "low"
+
+    warning_method_authorities = WARNING_METHOD_AUTHORITIES.get(authority_path, ())
+    for (
+        declaration,
+        expected_try,
+        expected_catch,
+        expected_finally,
+        required_fragments,
+    ) in warning_method_authorities:
+        declaration_start = text.find(declaration)
+        if (
+            declaration_start < 0
+            or text.find(declaration, declaration_start + 1) != -1
+        ):
+            continue
+        open_brace = text.find("{", declaration_start + len(declaration))
+        method_body = java_brace_block(text, open_brace)
+        if method_body is None:
+            continue
+        if method_body.count("try {") != expected_try:
+            continue
+        if method_body.count("catch (Throwable") != expected_catch:
+            continue
+        if method_body.count("finally {") != expected_finally:
+            continue
+        if any(fragment not in method_body for fragment in required_fragments):
+            continue
+
+        method_start_line = line_number(text, declaration_start)
+        for finding in findings:
+            if (
+                finding["category"] == "decompiler_warning_marker"
+                and method_start_line - 4 <= finding["line"] < method_start_line
+            ):
+                finding["confidence"] = "low"
 
     # ZKM static decoders deserve extra attention only when the synthetic
     # label/control-transfer is actually inside zkm$clinit(). A file-level
