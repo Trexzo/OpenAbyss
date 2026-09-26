@@ -19,7 +19,7 @@ public class GuiContainerHooks {
     private static final Minecraft A;
 
     public static void cancelDrawChest(CallbackInfo var0) {
-        if ((GuiContainerHooks.A.field_71462_r instanceof GuiChest || ChestStealer.y) && ModuleManager.q != null && ModuleManager.q.o() && ChestStealer.silent != null && ChestStealer.silent.c() && ChestStealer.chestIntegrityCheck != null && BlockUtil.o(ChestStealer.chestIntegrityCheck.c())) {
+        if ((GuiContainerHooks.A.currentScreen instanceof GuiChest || ChestStealer.y) && ModuleManager.q != null && ModuleManager.q.o() && ChestStealer.silent != null && ChestStealer.silent.c() && ChestStealer.chestIntegrityCheck != null && BlockUtil.o(ChestStealer.chestIntegrityCheck.c())) {
             var0.cancel();
 }
 }

@@ -13,7 +13,7 @@ public class PlayerGetNameEvent
 extends Event {
     private String q = "";
     public final String h;
-    private static final long public final NetworkPlayerInfo u;
+    public final NetworkPlayerInfo u;
     private String n = "";
 
     public void N(String var1) {

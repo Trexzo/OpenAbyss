@@ -11,7 +11,7 @@ import Abyss.event.invoker.IndicatorsRender2DInvoker;
 import Abyss.module.impl.visual_utility.Indicators;
 
 public final class IndicatorsBinder {
-    private static final long private IndicatorsBinder() {
+    private IndicatorsBinder() {
 }
     public static void J(EventBus var0, Indicators var3) {
         var0.R(var3, PostTickEvent.class, 3, new IndicatorsPostTickInvoker(var3));

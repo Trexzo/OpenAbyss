@@ -11,7 +11,7 @@ import Abyss.event.invoker.TabGUISetKeyBindStateInvoker;
 import Abyss.module.impl.visual.TabGUI;
 
 public final class TabGUIBinder {
-    private static final long public static void z(EventBus var0, TabGUI var1) {
+    public static void z(EventBus var0, TabGUI var1) {
         var0.R(var1, Render2DEvent.class, 3, new TabGUIRender2DInvoker(var1));
         var0.R(var1, SetKeyBindStateEvent.class, 3, new TabGUISetKeyBindStateInvoker(var1));
 }

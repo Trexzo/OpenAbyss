@@ -23,7 +23,7 @@ extends Event {
     private final ItemStack R;
     private final EnumFacing i;
     private final BlockPos M;
-    private static final long private final WorldClient y;
+    private final WorldClient y;
 
     public PlayerRightClickEvent(WorldClient var3, ItemStack var4, BlockPos var5, EnumFacing var6, Vec3 var7) {
         this.y = var3;

@@ -16,6 +16,8 @@ import net.minecraft.util.ResourceLocation;
 
 public class CustomCape
 extends Module {
+    private static long a;
+
     
         
     public static HashMap<String, String> O;
@@ -29,6 +31,7 @@ extends Module {
         this.declare("CustomCape", Category.Configuration, "Get a fake better cape", new Setting[0]);
 }
     static {
+        a = 38052850158322L;
         O = new HashMap();
         cape = new ModeSetting("Cape", "NONE", "2011", "2012", "2013", "2015", "2016", "MJ", "MJ_STUDIOS", "MJ_CLASSIC", "REALMS", "TRANSLATOR", "MOJIRA", "COBALT", "SCROLLS", "BIRTHDAY", "MILLIONTH", "DB", "OXEYE", "PRISMARINE", "SIZE_M", "SNOWMAN", "SPADE", "TURTLE", "VALENTINE");
 }

@@ -144,18 +144,18 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new HUD(0L), HUD.class, "HUD", true);
         AbyssModuleRegistry.reg(ModuleManager.r, HitBox.class, "HitBox", true);
         AbyssModuleRegistry.reg(new Macro1(0L), Macro1.class, "Macro1", true);
-        AbyssModuleRegistry.reg(new Macro2(0, 0, 0), Macro2.class, "Macro2", true);
+        AbyssModuleRegistry.reg(new Macro2(0, 0, (short)0), Macro2.class, "Macro2", true);
         AbyssModuleRegistry.reg(new AimAssist(0L), AimAssist.class, "AimAssist", true);
-        AbyssModuleRegistry.reg(new AutoProjectiles(0L, 0), AutoProjectiles.class, "AutoProjectiles", true);
+        AbyssModuleRegistry.reg(new AutoProjectiles(0L, (short)0), AutoProjectiles.class, "AutoProjectiles", true);
         AbyssModuleRegistry.reg(new Macro3(0L), Macro3.class, "Macro3", true);
         AbyssModuleRegistry.reg(new Macro4(0L), Macro4.class, "Macro4", true);
         AbyssModuleRegistry.reg(new Macro5(0L), Macro5.class, "Macro5", true);
-        AbyssModuleRegistry.reg(new ItemESP(0, '\u0000', 0), ItemESP.class, "ItemESP", true);
+        AbyssModuleRegistry.reg(new ItemESP((short)0, '\u0000', 0), ItemESP.class, "ItemESP", true);
         AbyssModuleRegistry.reg(new Indicators(0L), Indicators.class, "Indicators", true);
         AbyssModuleRegistry.reg(new ChestESP(0L), ChestESP.class, "ChestESP", true);
         AbyssModuleRegistry.reg(new NameTags(0L), NameTags.class, "NameTags", true);
         AbyssModuleRegistry.reg(new ESP(0L), ESP.class, "ESP", true);
-        AbyssModuleRegistry.reg(new SpeedMine(0, 0L), SpeedMine.class, "SpeedMine", true);
+        AbyssModuleRegistry.reg(new SpeedMine((short)0, 0L), SpeedMine.class, "SpeedMine", true);
         AbyssModuleRegistry.reg(ModuleManager.h, ViewClip.class, "ViewClip", true);
         AbyssModuleRegistry.reg(new BedESP(0L), BedESP.class, "BedESP", true);
         ModuleManager.y = new TeamInvisible('\u0000', 0L);
@@ -171,7 +171,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new FastPlace(0L), FastPlace.class, "FastPlace", true);
         AbyssModuleRegistry.reg(new ClosestPlayerHUD(0L), ClosestPlayerHUD.class, "ClosestPlayerHUD", true);
         AbyssModuleRegistry.reg(new ScoreBoard(0L), ScoreBoard.class, "ScoreBoard", true);
-        AbyssModuleRegistry.reg(new Teams(0L, 0), Teams.class, "Teams", true);
+        AbyssModuleRegistry.reg(new Teams(0L, (short)0), Teams.class, "Teams", true);
         AbyssModuleRegistry.reg(new Ambience(0L), Ambience.class, "Ambience", true);
         AbyssModuleRegistry.reg(ModuleManager.g, NoHurtCam.class, "NoHurtCam", true);
         AbyssModuleRegistry.reg(new FastFall(0L), FastFall.class, "FastFall", true);
@@ -194,19 +194,19 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.reg(new Theme(0, '\u0000', 0), Theme.class, "Theme", true);
         ModuleManager.f = new AntiNick(0L);
         AbyssModuleRegistry.reg(ModuleManager.f, AntiNick.class, "AntiNick", true);
-        AbyssModuleRegistry.reg(new InputFix(0, 0, 0), InputFix.class, "InputFix", true);
-        AbyssModuleRegistry.reg(new KeyStrokes(0, 0, 0), KeyStrokes.class, "KeyStrokes", true);
+        AbyssModuleRegistry.reg(new InputFix((short)0, 0, 0), InputFix.class, "InputFix", true);
+        AbyssModuleRegistry.reg(new KeyStrokes((byte)0, 0, 0), KeyStrokes.class, "KeyStrokes", true);
         AbyssModuleRegistry.reg(ModuleManager.q, ChestStealer.class, "ChestStealer", true);
-        AbyssModuleRegistry.reg(new Sprint(0, 0, 0), Sprint.class, "Sprint", true);
+        AbyssModuleRegistry.reg(new Sprint((short)0, 0, (short)0), Sprint.class, "Sprint", true);
         AbyssModuleRegistry.reg(new Denick(0L), Denick.class, "Denick", true);
         AbyssModuleRegistry.reg(new Fly(0L), Fly.class, "Fly", true);
         AbyssModuleRegistry.reg(new FullBright(0L), FullBright.class, "FullBright", true);
-        ModuleManager.c = new AntiBot(0, 0, 0);
+        ModuleManager.c = new AntiBot(0, 0, (short)0);
         AbyssModuleRegistry.reg(ModuleManager.c, AntiBot.class, "AntiBot", true);
         AbyssModuleRegistry.reg(new FreeCam(0L), FreeCam.class, "FreeCam", true);
         AbyssModuleRegistry.reg(new Language('\u0000', 0, 0), Language.class, "Language", true);
         AbyssModuleRegistry.reg(new CommandLine(0L), CommandLine.class, "CommandLine", true);
-        AbyssModuleRegistry.reg(new VisualSpoof(0, 0, 0), VisualSpoof.class, "VisualSpoof", true);
+        AbyssModuleRegistry.reg(new VisualSpoof((short)0, (short)0, 0), VisualSpoof.class, "VisualSpoof", true);
         AbyssModuleRegistry.reg(new NoInteract(0L), NoInteract.class, "NoInteract", true);
         ModuleManager.J = new NameHider(0L);
         AbyssModuleRegistry.reg(ModuleManager.J, NameHider.class, "NameHider", true);
@@ -222,7 +222,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.publishAnchoredCarriers();
         AbyssModuleRegistry.publishCachePrepopulated();
         PENDING.add("AbyssModuleRegistry  DENOMINATOR: the original registers 112 modules (qux capture modules.count=112, name set identical to the 112 config blocks).  Abyss/internal/CheaterDetector (twin Abyss/xq) and Abyss/module/unregistered/q8 (twin Abyss/KI) are leaf Module classes that the original does NOT register, so they have no name and no config block; \"AntiCheat\" is absent from the shipped config too.  This build registers zG_3, i.e. one module more than the original.");
-        PENDING.add("AbyssModuleRegistry  THREE COUNTS, THREE MEANINGS -- do not gate on the wrong one.  tD.S = 112 is the registration truth (= ORIGINAL_MODULE_COUNT, what the original publishes and what AbyssConfig.save walks).  tD.o = 113 is tD.S plus Abyss/internal/CheaterDetector, which is put in the by-class map on purpose and held out of the list.  115 is the class census: every concrete leaf subclass of Abyss/module/Module in the artifact, i.e. the 112 plus CheaterDetector plus Abyss/module/unregistered/q8 (never instantiated) plus Abyss/internal/restore/AbyssSweepCanary (added by this project).  The old LEAF_MODULE_CLASSES = 114 was that census taken before AbyssSweepCanary existed, and isConfigWritable() compared tD.S against it, so the predicate could never be true; it now compares against ORIGINAL_MODULE_COUNT.  Nothing called it, so no save was ever actually refused.");
+        PENDING.add("AbyssModuleRegistry  THREE COUNTS, THREE MEANINGS -- do not gate on the wrong one.  The original registration denominator is 112 (= ORIGINAL_MODULE_COUNT).  This recovery keeps those original module classes class-addressable but intentionally retires " + retired + " from the active ModuleManager.S list, so the current active-list gate is " + AbyssModuleRegistry.expectedModuleCount() + ".  tD.o = 113 is the 112 original module classes (including retired ones) plus Abyss/internal/CheaterDetector, which is held out of the active list.  115 is the concrete leaf-class census: the 112 plus CheaterDetector plus Abyss/module/unregistered/q8 (never instantiated) plus Abyss/internal/restore/AbyssSweepCanary (added by this project).  isConfigWritable() therefore compares the active list against expectedModuleCount(), not against the original 112 or the leaf-class census.");
         PENDING.add("Abyss.module.impl.world.AutoDigPlace / Abyss.module.impl.world.AutoTool / Abyss.module.impl.misc.Timer / Abyss.module.impl.visual.Chams / Abyss.module.impl.movement.InvMove  no longer HELD: all five moved to AbyssCtorCache.plans() with values derived from well-formedness of their own code, not from the twin-instance matcher (which is NOMATCH for iK/ij_2/zU_2/zV_3 and a cheap 1-boolean match for zF_3).  Each plan comment names the two independent sites it rests on.  Slot feasibility pre-flighted by work/last10-agent/tool/slotfeas.py: 4 of 4 must-fail inputs rejected, and it is VACUOUS for iK and zF_3.");
         PENDING.add("Abyss.module.impl.world.BedNuker  ctor (SJ)V  carrier SOLVED (short)0,33171000103266 -- PUBLISHED.  The upstream NullPointerException is neutralised by one DECLARED DEVIATION in Abyss/ik_2.W: var12 now starts with !var10 (this.Do != null).  That edit is PROVABLY behaviour-preserving, not merely minimal: in the original bytecode var12 is stored at pc243 and loaded exactly once, at pc255, on the far side of pc245 'iload 10; ifne 317', so whenever Do == null the value of var12 is never consumed -- only the exception thrown while computing it is.  Everything the skipped call would have run before throwing is pure: aG_3.Y -> aG_3.p -> aG_3.n(.., Af_2.D(Do)) evaluates aG_3.f() (mc.thePlayer.getPositionEyes) and then Af_2.c derefs the null BlockPos at its first offset.  Upstream verified verbatim in abyss-plain.jar: Abyss/ik.W(J,Abyss/bo) pc196-243 computes var12 unconditionally and pc29-45 computes var10 = (Do == null) first, and Abyss/Af.c(BlockPos,Vec3) pc42-48 has no guard.  The event only reaches ik_2 while BedNuker is subscribed, i.e. enabled, so the throw was only ever reachable from the sweep; EventBus.e caught it per-binding, so no other listener was affected.");
         PENDING.add("Abyss.module.unregistered.q8  ctor (J)V  carrier LIVE: 29 invokestatic Abyss/module/unregistered/q8.b(IJ)I  -- NOT A MODULE, so nothing to solve: the CONTRADICTION (twin Abyss/KI's cache g[2] has 0 live entries) has a mechanism.  Abyss/KI is absent from the 112 modules the qux capture enumerates, so the twin never constructs it and its ctor decryptor never ran.  q8's own two fields (y:Z idx 4351, N:Z idx 29439) are also absent from the capture for the same reason.  This class is outside the 112 and must not be published.");
@@ -320,7 +320,7 @@ public final class AbyssModuleRegistry {
 }
         AutoBlock var1 = null;
         try {
-            var1 = new AutoBlock(0, 43254310455398L);
+            var1 = new AutoBlock((byte)0, 43254310455398L);
 }
         catch (Throwable var5) {
             PENDING.add("Abyss.module.impl.combat.AutoBlock  solved carrier (0,43254310455398) threw at publish(): " + var5);
@@ -373,7 +373,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var2, BlockHit.class, "BlockHit", var0);
         AutoClicker var3 = null;
         try {
-            var3 = new AutoClicker(0, '\u3539', 150955398);
+            var3 = new AutoClicker((short)0, '\u3539', 150955398);
 }
         catch (Throwable var10) {
             PENDING.add("Abyss.module.impl.combat.AutoClicker  anchored carrier (0,13625,150955398) threw at publish(): " + var10);
@@ -389,7 +389,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var5, InvManager.class, "InvManager", var0);
         FakeLag var6 = null;
         try {
-            var6 = new FakeLag(0, 0, 0);
+            var6 = new FakeLag(0, 0, (short)0);
 }
         catch (Throwable var13) {
             PENDING.add("Abyss.module.impl.combat.FakeLag  carrier-free constructor threw at publish(): " + var13);
@@ -397,7 +397,7 @@ public final class AbyssModuleRegistry {
         AbyssModuleRegistry.anchored(var6, FakeLag.class, "FakeLag", var0);
         BedNuker var4 = null;
         try {
-            var4 = new BedNuker(0, 33171000103266L);
+            var4 = new BedNuker((short)0, 33171000103266L);
 }
         catch (Throwable var11) {
             PENDING.add("Abyss.module.impl.world.BedNuker  anchored carrier (0,33171000103266) threw at publish(): " + var11);
@@ -502,26 +502,6 @@ public final class AbyssModuleRegistry {
         PERSISTABLE = new HashSet<Class<? extends Module>>();
         PERSISTABLE_NAMES = new LinkedHashSet<String>();
         RETIRED = new HashSet<String>();
-        RETIRED.add("AntiNick");
-        RETIRED.add("ContainerKeeper");
-        RETIRED.add("InputFix");
-        RETIRED.add("NoObfuscation");
-        RETIRED.add("RawInput");
-        RETIRED.add("CustomCape");
-        RETIRED.add("Font");
-        RETIRED.add("Gadgets");
-        RETIRED.add("Language");
-        RETIRED.add("Theme");
-        RETIRED.add("VisualSpoof");
-        RETIRED.add("BindGUI");
-        RETIRED.add("CaveXray");
-        RETIRED.add("ItemScale");
-        RETIRED.add("KeyStrokes");
-        RETIRED.add("TeamInvisible");
-        RETIRED.add("ClosestPlayerHUD");
-        RETIRED.add("FKCounter");
-        RETIRED.add("FallIndicator");
-        RETIRED.add("LeapModeHUD");
         MISSING = new ArrayList<String>();
         DISABLED_UPSTREAM = new String[]{"Abyss.module.impl.combat.AutoProjectiles", "Abyss.module.impl.player.NoFall", "Abyss.module.impl.player.FreeCam"};
 }

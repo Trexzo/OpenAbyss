@@ -19,6 +19,8 @@ import net.minecraft.client.renderer.GlStateManager;
 
 public class DracuRiotMenuButton
 extends GuiButton {
+    private static Map e;
+
     private static String b;
     public int v = 20;
     private boolean o = false;
@@ -27,23 +29,23 @@ extends GuiButton {
     private float B = 1.0f;
     
     private void l(FontRenderer var1, String var2, float var3, float var4, int var5) {
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)this.B, (float)this.B, (float)1.0f);
-        var1.func_175065_a(var2, var3 / this.B, var4 / this.B, var5, false);
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)this.B, (float)this.B, (float)1.0f);
+        var1.drawString(var2, var3 / this.B, var4 / this.B, var5, false);
+        GlStateManager.popMatrix();
 }
-    public void func_146112_a(Minecraft var1, int var2, int var3) {
-        if (this.field_146125_m) {
-            FontRenderer var10 = var1.field_71466_p;
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-            boolean bl = this.field_146123_n = var2 >= this.field_146128_h && var3 >= this.field_146129_i && var2 < this.field_146128_h + this.field_146120_f && var3 < this.field_146129_i + this.v;
-            if (this.o && !this.field_146123_n) {
+    public void drawButton(Minecraft var1, int var2, int var3) {
+        if (this.visible) {
+            FontRenderer var10 = var1.fontRendererObj;
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            boolean bl = this.hovered = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.width && var3 < this.yPosition + this.v;
+            if (this.o && !this.hovered) {
                 this.o = false;
 }
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179112_b((int)770, (int)771);
-            this.func_146119_b(var1, var2, var3);
-            if (this.field_146123_n) {
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc((int)770, (int)771);
+            this.mouseDragged(var1, var2, var3);
+            if (this.hovered) {
                 if (!this.o) {
                     this.o = true;
                     SoundEngine.y(59424967409495L, b);
@@ -59,20 +61,20 @@ extends GuiButton {
 }
     public void U(int var1) {
         this.v = var1;
-        this.field_146121_g = var1;
+        this.height = var1;
 }
     private void C(FontRenderer var1, boolean var4) {
-        int var5 = (int)((float)var1.func_78256_a(this.field_146126_j) * this.B);
-        float var6 = this.field_146128_h + this.field_146120_f - var5;
-        float var7 = this.field_146129_i;
+        int var5 = (int)((float)var1.getStringWidth(this.displayString) * this.B);
+        float var6 = this.xPosition + this.width - var5;
+        float var7 = this.yPosition;
         int var8 = var4 ? -2003125 : -6402497;
         int var10 = var4 ? -3898 : -9790;
-        this.l(var1, this.field_146126_j, var6 + this.B, var7 + this.B, -10014421);
-        this.l(var1, this.field_146126_j, var6 - this.B, var7, var8);
-        this.l(var1, this.field_146126_j, var6 + this.B, var7, var8);
-        this.l(var1, this.field_146126_j, var6, var7 - this.B, var8);
-        this.l(var1, this.field_146126_j, var6, var7 + this.B, var8);
-        this.l(var1, this.field_146126_j, var6, var7, var10);
+        this.l(var1, this.displayString, var6 + this.B, var7 + this.B, -10014421);
+        this.l(var1, this.displayString, var6 - this.B, var7, var8);
+        this.l(var1, this.displayString, var6 + this.B, var7, var8);
+        this.l(var1, this.displayString, var6, var7 - this.B, var8);
+        this.l(var1, this.displayString, var6, var7 + this.B, var8);
+        this.l(var1, this.displayString, var6, var7, var10);
 }
     public void k(float var1) {
         this.B = var1;

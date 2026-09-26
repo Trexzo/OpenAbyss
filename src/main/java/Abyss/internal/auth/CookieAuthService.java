@@ -102,12 +102,13 @@ import org.apache.http.util.EntityUtils;
 
 public class CookieAuthService {
     private static long[] h;
-        
+    private static String[] b;
+    private static long a;
     private static List<String> N;
     private static Map g;
     private static Map k;
-    
-    
+    private static String[] c;
+    private static Map d;
     private static String u;
     private static RequestConfig K;
     private static long[] e;
@@ -142,7 +143,7 @@ public class CookieAuthService {
                             AltManager.Q.add(new Account("", var21.m, var22.g, var22.z, 0L, AccountType.MINECRAFT));
                             AltManager.O(11006179144378L);
                             SessionAccessor.k(var23);
-                            var1.x("&aSuccessfully logged in as " + var23.func_111285_a() + "&r");
+                            var1.x("&aSuccessfully logged in as " + var23.getUsername() + "&r");
                             return true;
 }
                         var1.x("&cFailed to get Minecraft profile&r");
@@ -227,7 +228,6 @@ public class CookieAuthService {
      * Enabled aggressive exception aggregation
      */
     private static Map p(short var0, char var1, String var2, int var3) throws Exception, Throwable {
-        IOException iOException;
         long var4 = ((long)var0 << 48 | (long)var1 << 48 >>> 16 | (long)var3 << 32 >>> 32) ^ a;
         long var6 = (var4 ^ 0x5CC8F43D683FL) >>> 8;
         int var8 = (int)((var4 ^ 0x5CC8F43D683FL) << 56 >>> 56);
@@ -268,12 +268,7 @@ public class CookieAuthService {
                 var9 = var36;
 }
 }
-        if (var9 != null) {
-            iOException = var9;
-            throw iOException;
-}
-        iOException = new IOException("Xbox Live authentication failed");
-        throw iOException;
+        throw var9 != null ? var9 : new IOException("Xbox Live authentication failed");
 }
     private static String H(String var2) {
         String var3 = var2;
@@ -338,8 +333,8 @@ public class CookieAuthService {
                     var1.x("&fAuthenticating with Microsoft...&r");
                     CookieAuthService.R(var9, var1).whenComplete((var2xx, var3x) -> {
                         if (var3x != null) {
-                            System.err.println("[CookieAuth] Authentication failed: " + var3x.getMessage());
-                            var1.x("&cAuthentication failed: " + var3x.getMessage() + "&r");
+                            System.err.println("[CookieAuth] Authentication failed: " + ((Throwable)var3x).getMessage());
+                            var1.x("&cAuthentication failed: " + ((Throwable)var3x).getMessage() + "&r");
                             var2.complete(false);
                         } else {
                             var2.complete((Boolean)var2xx);
@@ -538,7 +533,7 @@ public class CookieAuthService {
     private static String K(int var0, char var1, char var2, Map var3, List var4) {
         long var5 = ((long)var0 << 32 | (long)var1 << 48 >>> 32 | (long)var2 << 48 >>> 48) ^ a;
         ArrayList<String> var7 = new ArrayList<String>(var4);
-        for (String var9 : var3.keySet()) {
+        for (String var9 : (Iterable<String>)(var3.keySet())) {
             if (var7.contains(var9)) continue;
             var7.add(var9);
 }
@@ -607,7 +602,38 @@ public class CookieAuthService {
 }
         return var10;
 }
-                Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }    private static void zkm$clinit() {
+        try {
+            long var31 = a ^ 80069987178142L;
+            d = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var31 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var23 = 1; var23 < 8; ++var23) {
+                var10003[var23] = (byte)(var31 << var23 * 8 >>> 56);
+            }
+            Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var22.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var29 = new String[174];
             int var27 = 0;
@@ -702,7 +728,6 @@ public class CookieAuthService {
                                         var57 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var61 = 0;
 }
-                                    break;
 }
 }
                             var25 = var26.charAt(var36);
@@ -723,7 +748,6 @@ public class CookieAuthService {
                     var37 = var26.substring(++var36, var36 + var25);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var33) {
@@ -731,5 +755,7 @@ public class CookieAuthService {
 }
 }
     static {
+        a = 78731209098125L;
+        zkm$clinit();
 }
 }

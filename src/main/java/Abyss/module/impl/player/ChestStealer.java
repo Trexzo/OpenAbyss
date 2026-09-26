@@ -69,6 +69,11 @@ import net.minecraft.item.ItemSpade;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.ItemTool;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ChestStealer
 extends Module
@@ -109,20 +114,20 @@ implements EventSubscriber {
 }
     private List z(long var1) {
         ArrayList<Integer> var5 = new ArrayList<Integer>();
-        ContainerChest var6 = (ContainerChest)ChestStealer.f.field_71439_g.field_71070_bA;
-        IInventory var7 = var6.func_85151_d();
+        ContainerChest var6 = (ContainerChest)ChestStealer.f.thePlayer.openContainer;
+        IInventory var7 = var6.getLowerChestInventory();
         ArrayList<Integer> var8 = new ArrayList<Integer>();
-        for (int var9 = 0; var9 < var7.func_70302_i_(); ++var9) {
-            ItemStack var10 = var7.func_70301_a(var9);
-            if (var10 == null || var10.func_77973_b() == null || var5.contains(var9)) continue;
-            Item var11 = var10.func_77973_b();
+        for (int var9 = 0; var9 < var7.getSizeInventory(); ++var9) {
+            ItemStack var10 = var7.getStackInSlot(var9);
+            if (var10 == null || var10.getItem() == null || var5.contains(var9)) continue;
+            Item var11 = var10.getItem();
             boolean var12 = this.y(var10, var9, var7);
             if (ignoreTrash.c() && var12) continue;
             if (armor.c() && var11 instanceof ItemArmor) {
                 var5.add(var9);
             } else if (blocks.c() && ItemUtil.u(var10)) {
                 var5.add(var9);
-            } else if (!bow.c() || !(var11 instanceof ItemBow) && var11 != Items.field_151032_g) {
+            } else if (!bow.c() || !(var11 instanceof ItemBow) && var11 != Items.arrow) {
                 if (food.c() && var11 instanceof ItemFood) {
                     var5.add(var9);
                 } else if (potions.c() && var11 instanceof ItemPotion) {
@@ -148,10 +153,10 @@ implements EventSubscriber {
         return var8.isEmpty() ? var5 : var5;
 }
     public void onRender2D(long var1, Render2DEvent var3) {
-        if (silent.c() && BlockUtil.o(chestIntegrityCheck.c()) && (ChestStealer.f.field_71462_r instanceof GuiChest || y)) {
+        if (silent.c() && BlockUtil.o(chestIntegrityCheck.c()) && (ChestStealer.f.currentScreen instanceof GuiChest || y)) {
             CustomFont var10 = Font.s(0L);
             ScaledResolution var11 = var3.C;
-            var10.T(37697014677608L, "Stealing...", (float)var11.func_78326_a() / 2.0f - var10.R("Stealing...", 52019766876817L) / 2.0f, var11.func_78328_b() / 2 + 75, 0xFFFFFF);
+            var10.T(37697014677608L, "Stealing...", (float)var11.getScaledWidth() / 2.0f - var10.R("Stealing...", 52019766876817L) / 2.0f, var11.getScaledHeight() / 2 + 75, 0xFFFFFF);
 }
 }
     @Override
@@ -164,21 +169,21 @@ implements EventSubscriber {
 }
     private boolean y(ItemStack var1, int var2, IInventory var5) {
         boolean var18 = false;
-        Item var19 = var1.func_77973_b();
+        Item var19 = var1.getItem();
         if (var19 instanceof ItemArmor) {
-            if (((ItemArmor)var19).field_77881_a == 0) {
+            if (((ItemArmor)var19).armorType == 0) {
                 if (((Pair)ItemUtil.O(0L, var5).get(0)).p() != null && (Integer)((Pair)ItemUtil.O(0L, var5).get(0)).p() != var2) {
                     var18 = true;
 }
-            } else if (((ItemArmor)var19).field_77881_a == 1) {
+            } else if (((ItemArmor)var19).armorType == 1) {
                 if (((Pair)ItemUtil.O(0L, var5).get(1)).p() != null && (Integer)((Pair)ItemUtil.O(0L, var5).get(1)).p() != var2) {
                     var18 = true;
 }
-            } else if (((ItemArmor)var19).field_77881_a == 2) {
+            } else if (((ItemArmor)var19).armorType == 2) {
                 if (((Pair)ItemUtil.O(0L, var5).get(2)).p() != null && (Integer)((Pair)ItemUtil.O(0L, var5).get(2)).p() != var2) {
                     var18 = true;
 }
-            } else if (((ItemArmor)var19).field_77881_a == 3 && ((Pair)ItemUtil.O(0L, var5).get(3)).p() != null && (Integer)((Pair)ItemUtil.O(0L, var5).get(3)).p() != var2) {
+            } else if (((ItemArmor)var19).armorType == 3 && ((Pair)ItemUtil.O(0L, var5).get(3)).p() != null && (Integer)((Pair)ItemUtil.O(0L, var5).get(3)).p() != var2) {
                 var18 = true;
 }
         } else if (var19 instanceof ItemSword) {
@@ -186,7 +191,7 @@ implements EventSubscriber {
                 var18 = true;
 }
         } else if (var19 instanceof ItemFood) {
-            if (ItemUtil.k(var5).a().func_77973_b() == Items.field_151153_ao && var19 != Items.field_151153_ao) {
+            if (ItemUtil.k(var5).a().getItem() == Items.golden_apple && var19 != Items.golden_apple) {
                 var18 = true;
 }
         } else if (var19 instanceof ItemBow) {
@@ -205,50 +210,50 @@ implements EventSubscriber {
             } else if (var19 instanceof ItemSpade && (Integer)((Pair)ItemUtil.D(var5, (short)0).get(2)).p() != var2) {
                 var18 = true;
 }
-        } else if (var19 instanceof ItemFishingRod && ItemUtil.X((Item)Items.field_151112_aM, var5)) {
+        } else if (var19 instanceof ItemFishingRod && ItemUtil.X((Item)Items.fishing_rod, var5)) {
             var18 = true;
 }
         for (int var20 = 0; var20 < 40; ++var20) {
-            ItemStack var21 = ChestStealer.f.field_71439_g.field_71071_by.func_70301_a(var20);
+            ItemStack var21 = ChestStealer.f.thePlayer.inventory.getStackInSlot(var20);
             if (var21 == null) continue;
-            if (var19 instanceof ItemArmor && var21.func_77973_b() instanceof ItemArmor) {
-                if (ItemUtil.M(var1) > ItemUtil.M(var21) || ((ItemArmor)var21.func_77973_b()).field_77881_a != ((ItemArmor)var19).field_77881_a) continue;
+            if (var19 instanceof ItemArmor && var21.getItem() instanceof ItemArmor) {
+                if (ItemUtil.M(var1) > ItemUtil.M(var21) || ((ItemArmor)var21.getItem()).armorType != ((ItemArmor)var19).armorType) continue;
                 var18 = true;
                 continue;
 }
-            if (var19 instanceof ItemSword && var21.func_77973_b() instanceof ItemSword) {
+            if (var19 instanceof ItemSword && var21.getItem() instanceof ItemSword) {
                 if (!(ItemUtil.p((short)0, var1, '\u1a4f') <= ItemUtil.p((short)0, var21, '\u1a4f'))) continue;
                 var18 = true;
                 continue;
 }
-            if (var19 instanceof ItemFood && var21.func_77973_b() instanceof ItemFood) {
-                if (ItemUtil.k((IInventory)ChestStealer.f.field_71439_g.field_71071_by).p() == null || ItemUtil.k((IInventory)ChestStealer.f.field_71439_g.field_71071_by).a().func_77973_b() != Items.field_151153_ao || var19 == Items.field_151153_ao) continue;
+            if (var19 instanceof ItemFood && var21.getItem() instanceof ItemFood) {
+                if (ItemUtil.k((IInventory)ChestStealer.f.thePlayer.inventory).p() == null || ItemUtil.k((IInventory)ChestStealer.f.thePlayer.inventory).a().getItem() != Items.golden_apple || var19 == Items.golden_apple) continue;
                 var18 = true;
                 continue;
 }
-            if (var19 instanceof ItemBow && var21.func_77973_b() instanceof ItemBow) {
+            if (var19 instanceof ItemBow && var21.getItem() instanceof ItemBow) {
                 if (!(ItemUtil.b(var1) <= ItemUtil.b(var21))) continue;
                 var18 = true;
                 continue;
 }
-            if (!(var19 instanceof ItemTool) || !(var21.func_77973_b() instanceof ItemTool)) continue;
-            if (var19 instanceof ItemPickaxe && var21.func_77973_b() instanceof ItemPickaxe) {
-                if (((Pair)ItemUtil.D((IInventory)ChestStealer.f.field_71439_g.field_71071_by, (short)0).get(0)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
+            if (!(var19 instanceof ItemTool) || !(var21.getItem() instanceof ItemTool)) continue;
+            if (var19 instanceof ItemPickaxe && var21.getItem() instanceof ItemPickaxe) {
+                if (((Pair)ItemUtil.D((IInventory)ChestStealer.f.thePlayer.inventory, (short)0).get(0)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
                 var18 = true;
                 continue;
 }
-            if (var19 instanceof ItemAxe && var21.func_77973_b() instanceof ItemAxe) {
-                if (((Pair)ItemUtil.D((IInventory)ChestStealer.f.field_71439_g.field_71071_by, (short)0).get(1)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
+            if (var19 instanceof ItemAxe && var21.getItem() instanceof ItemAxe) {
+                if (((Pair)ItemUtil.D((IInventory)ChestStealer.f.thePlayer.inventory, (short)0).get(1)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
                 var18 = true;
                 continue;
 }
-            if (!(var19 instanceof ItemSpade) || !(var21.func_77973_b() instanceof ItemSpade) || ((Pair)ItemUtil.D((IInventory)ChestStealer.f.field_71439_g.field_71071_by, (short)0).get(2)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
+            if (!(var19 instanceof ItemSpade) || !(var21.getItem() instanceof ItemSpade) || ((Pair)ItemUtil.D((IInventory)ChestStealer.f.thePlayer.inventory, (short)0).get(2)).p() == null || !(ItemUtil.Y(0L, var1) <= ItemUtil.Y(0L, var21))) continue;
             var18 = true;
 }
         return var18;
 }
     public void onPreUpdate(long var1, PreUpdateEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (!(ChestStealer.f.field_71439_g.field_71070_bA instanceof ContainerChest)) {
+        if (!(ChestStealer.f.thePlayer.openContainer instanceof ContainerChest)) {
             this.resetStealState();
             return;
 }
@@ -269,7 +274,7 @@ implements EventSubscriber {
                 this.D = this.z(0L);
                 if (this.D.isEmpty() || ItemUtil.H(51268148435703L)) {
                     if (autoClose.c()) {
-                        ChestStealer.f.field_71439_g.func_71053_j();
+                        ChestStealer.f.thePlayer.closeScreen();
 }
                     return;
 }
@@ -296,14 +301,14 @@ implements EventSubscriber {
 }
                 if (this.stealIndex >= this.D.size()) {
                     if (autoClose.c()) {
-                        ChestStealer.f.field_71439_g.func_71053_j();
+                        ChestStealer.f.thePlayer.closeScreen();
 }
                     this.resetStealState();
                     return;
 }
                 int slot = this.D.get(this.stealIndex);
                 try {
-                    ChestStealer.f.field_71442_b.func_78753_a(ChestStealer.f.field_71439_g.field_71070_bA.field_75152_c, slot, 0, 1, (EntityPlayer)ChestStealer.f.field_71439_g);
+                    ChestStealer.f.playerController.windowClick(ChestStealer.f.thePlayer.openContainer.windowId, slot, 0, 1, (EntityPlayer)ChestStealer.f.thePlayer);
 }
                 catch (Throwable throwable) {
                     // empty catch block
@@ -312,7 +317,7 @@ implements EventSubscriber {
                 this.stealNextActionAt = now + (long)MathUtil.h(minDelay.L(), maxDelay.L());
                 if (this.stealIndex < this.D.size()) break;
                 if (autoClose.c()) {
-                    ChestStealer.f.field_71439_g.func_71053_j();
+                    ChestStealer.f.thePlayer.closeScreen();
 }
                 this.resetStealState();
 }
@@ -324,7 +329,7 @@ implements EventSubscriber {
         y = false;
 }
     private boolean V(long var1) {
-        if (this.o() && ChestStealer.f.field_71439_g.field_71070_bA instanceof ContainerChest) {
+        if (this.o() && ChestStealer.f.thePlayer.openContainer instanceof ContainerChest) {
             return false;
 }
         y = false;

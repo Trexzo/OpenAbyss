@@ -49,9 +49,9 @@ extends Command {
     public List g(String[] var1, int var2, long var3) {
         Minecraft var6;
         ArrayList<String> var5 = new ArrayList<String>();
-        if (var2 <= 1 && (var6 = Minecraft.func_71410_x()) != null && var6.field_71441_e != null) {
-            for (EntityPlayer var8 : var6.field_71441_e.field_73010_i) {
-                var5.add(var8.func_70005_c_());
+        if (var2 <= 1 && (var6 = Minecraft.getMinecraft()) != null && var6.theWorld != null) {
+            for (EntityPlayer var8 : var6.theWorld.playerEntities) {
+                var5.add(var8.getName());
 }
 }
         return var5;

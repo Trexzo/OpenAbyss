@@ -13,6 +13,8 @@ import Abyss.util.TimerUtil;
 
 public class AutoProjectiles
 extends Module {
+    private static long a;
+
     public static NumberSetting disableRange;
     public static BooleanSetting allowAutoblock;
     private final TimerUtil x;
@@ -31,6 +33,7 @@ extends Module {
         this.c = new TimerUtil();
 }
     static {
+        a = 75155036336937L;
         allowAutoblock = new BooleanSetting("Allow-autoblock", true);
         onlyUsePacketWhileAutoblocking = new BooleanSetting("Only-use-packet-while-autoblocking", true);
         disableRange = new NumberSetting("Disable-range", 3.0f, 0.0f, 800.0f, 0.050000004f);

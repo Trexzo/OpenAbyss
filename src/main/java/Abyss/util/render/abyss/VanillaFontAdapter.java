@@ -17,22 +17,22 @@ implements FontRenderer {
     private VanillaFontAdapter() {
 }
     private net.minecraft.client.gui.FontRenderer mc() {
-        return Minecraft.func_71410_x().field_71466_p;
+        return Minecraft.getMinecraft().fontRendererObj;
 }
     @Override
     public int drawString(String text, float x, float y, int color) {
-        return this.mc().func_175065_a(text, x, y, color, false);
+        return this.mc().drawString(text, x, y, color, false);
 }
     @Override
     public int drawStringWithShadow(String text, float x, float y, int color) {
-        return this.mc().func_175065_a(text, x, y, color, true);
+        return this.mc().drawString(text, x, y, color, true);
 }
     @Override
     public float getWidth(String text) {
-        return this.mc().func_78256_a(text);
+        return this.mc().getStringWidth(text);
 }
     @Override
     public float getHeight(String text) {
-        return this.mc().field_78288_b;
+        return this.mc().FONT_HEIGHT;
 }
 }

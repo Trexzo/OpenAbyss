@@ -14,10 +14,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ModeSetting
 extends Setting {
-    private static long protected String Y;
+    private static long a;
+    private static Map h;
+    static {
+        a = 62652152538766L;
+    }
+    protected String Y;
     private static String[] g;
         private static long i;
     private static String[] f;

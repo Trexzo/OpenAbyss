@@ -129,7 +129,7 @@ public final class AccountLookupService {
         }, var1);
 }
     public static CompletableFuture<Account> Y(String var0, Executor var1) {
-        return AccountLookupService.m(var0, var1).thenComposeAsync(var1x -> AccountLookupService.C((String)var1x.get("access_token"), var1).thenComposeAsync(var2x -> AccountLookupService.w((String)var2x.get("Token"), var1).thenComposeAsync(var3x -> AccountLookupService.g((String)var3x.get("Token"), (String)var2x.get("uhs"), var1).thenComposeAsync(var2xxx -> AuthService.i(var2xxx, var1).thenApply(var2xxxx -> new Account((String)var1x.get("refresh_token"), (String)var2xxx, var2xxxx.func_111285_a(), var2xxxx.func_148255_b(), 0L, AccountType.MINECRAFT))))), var1);
+        return AccountLookupService.m(var0, var1).thenComposeAsync(var1x -> AccountLookupService.C((String)var1x.get("access_token"), var1).thenComposeAsync(var2x -> AccountLookupService.w((String)var2x.get("Token"), var1).thenComposeAsync(var3x -> AccountLookupService.g((String)var3x.get("Token"), (String)var2x.get("uhs"), var1).thenComposeAsync(var2xxx -> AuthService.i(var2xxx, var1).thenApply(var2xxxx -> new Account((String)var1x.get("refresh_token"), (String)var2xxx, var2xxxx.getUsername(), var2xxxx.getPlayerID(), 0L, AccountType.MINECRAFT))))), var1);
 }
     private static CompletableFuture<Map<String, String>> m(String var0, Executor var1) {
         return CompletableFuture.supplyAsync(() -> {

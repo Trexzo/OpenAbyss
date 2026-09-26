@@ -12,9 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 public class CheaterRegistry {
+    private static long a = 85887610707744L;
     public List<CheaterDetectionSample> G;
     public final Map<DetectedCheat, Boolean> e;
-    private static long public boolean I;
+    public boolean I;
     public float p;
     public long R;
     private boolean m;

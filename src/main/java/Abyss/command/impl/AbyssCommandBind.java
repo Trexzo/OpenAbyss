@@ -251,7 +251,7 @@ extends Command {
         String var1 = Keyboard.getKeyName((int)var0);
         return var1 == null ? String.valueOf(var0) : var1;
 }
-    static synchronized boolean gateOk() {
+    public static synchronized boolean gateOk() {
         String var1;
         if (trusted != null) {
             return trusted;
@@ -286,7 +286,7 @@ extends Command {
         trusted = var0;
         return var0;
 }
-    static String gateNote() {
+    public static String gateNote() {
         return gateNote;
 }
     static {

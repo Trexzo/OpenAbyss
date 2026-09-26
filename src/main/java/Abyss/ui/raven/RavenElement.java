@@ -8,6 +8,11 @@ import Abyss.ui.raven.RavenClickGuiScreen;
 import Abyss.ui.raven.RavenModuleRow;
 import Abyss.util.render.CustomFont;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public interface RavenElement {
     public static final long e = 66652673112161L;

@@ -32,49 +32,49 @@ extends GuiSlot {
     private static long[] h;
     
 
-    public int func_148139_c() {
+    public int getListWidth() {
         return 308;
 }
-    protected int func_148127_b() {
+    protected int getSize() {
         return AltManager.Q.size();
 }
-    protected int func_148138_e() {
+    protected int getContentHeight() {
         return AltManager.Q.size() * 16;
 }
-    protected void func_148123_a() {
-        this.u.func_146276_q_();
+    protected void drawBackground() {
+        this.u.drawDefaultBackground();
 }
-    protected void func_148144_a(int var1, boolean var2, int var3, int var4) {
+    protected void elementClicked(int var1, boolean var2, int var3, int var4) {
         AccountManagerScreen.C(this.u, var1);
-        this.u.func_73876_c();
+        this.u.updateScreen();
         if (var2) {
-            this.u.func_146284_a(AccountManagerScreen.L(this.u));
+            this.u.actionPerformed(AccountManagerScreen.L(this.u));
 }
 }
-    protected void func_180791_a(int var1, int var2, int var3, int var4, int var5, int var6) {
+    protected void drawSlot(int var1, int var2, int var3, int var4, int var5, int var6) {
         String var12;
         FontRenderer var13 = AccountManagerScreen.p(this.u);
         Account var14 = AltManager.Q.get(var1);
-        if (this.func_148131_a(var1)) {
-            Gui.func_73734_a((int)(var2 - 4), (int)(var3 - 2), (int)(var2 - 2), (int)(var3 + var4 - 2), (int)AccountListSlot.accent());
+        if (this.isSelected(var1)) {
+            Gui.drawRect((int)(var2 - 4), (int)(var3 - 2), (int)(var2 - 2), (int)(var3 + var4 - 2), (int)AccountListSlot.accent());
 }
-        Gui.func_73734_a((int)(var2 - 2), (int)(var3 + var4 - 1), (int)(var2 + this.func_148139_c() - 4), (int)(var3 + var4), (int)0x30FFFFFF);
+        Gui.drawRect((int)(var2 - 2), (int)(var3 + var4 - 1), (int)(var2 + this.getListWidth() - 4), (int)(var3 + var4), (int)0x30FFFFFF);
         String var15 = var14.h();
         if (StringUtils.isBlank((CharSequence)var15)) {
             var15 = "&7&l?";
 }
         if (SessionAccessor.d() != null) {
-            if (var14.v() == AccountType.OFFLINE && var15.equals(SessionAccessor.d().func_111285_a())) {
+            if (var14.v() == AccountType.OFFLINE && var15.equals(SessionAccessor.d().getUsername())) {
                 var15 = String.format("&a&l%s", var15);
-            } else if (var14.v() == AccountType.MINECRAFT && var14.h().equals(SessionAccessor.d().func_111285_a())) {
+            } else if (var14.v() == AccountType.MINECRAFT && var14.h().equals(SessionAccessor.d().getUsername())) {
                 var15 = String.format("&a&l%s", var15);
 }
 }
         String var16 = var14.v() == AccountType.OFFLINE ? " &7(Offline)" : " &7(Minecraft)";
         String var17 = ChatFormatting.y(String.format("&r%s", var15));
         String var18 = ChatFormatting.y(var16);
-        this.u.func_73731_b(var13, var17, var2 + 2, var3 + 2, -1);
-        this.u.func_73731_b(var13, var18, var2 + 2 + var13.func_78256_a(var17), var3 + 2, -1);
+        this.u.drawString(var13, var17, var2 + 2, var3 + 2, -1);
+        this.u.drawString(var13, var18, var2 + 2 + var13.getStringWidth(var17), var3 + 2, -1);
         long var19 = System.currentTimeMillis();
         long var21 = var14.F();
         if (var21 < 0L) {
@@ -92,9 +92,9 @@ extends GuiSlot {
             var12 = String.format("%s &c&l\u26a0", var12);
 }
         var12 = ChatFormatting.y(String.format("&r%s&r", var12));
-        this.u.func_73731_b(var13, var12, var2 + this.func_148139_c() - 5 - var13.func_78256_a(var12), var3 + 2, -1);
+        this.u.drawString(var13, var12, var2 + this.getListWidth() - 5 - var13.getStringWidth(var12), var3 + 2, -1);
 }
-    protected boolean func_148131_a(int var1) {
+    protected boolean isSelected(int var1) {
         return var1 == AccountManagerScreen.W(this.u);
 }
     private static int accent() {
@@ -105,11 +105,11 @@ extends GuiSlot {
             return -8761857;
 }
 }
-    protected int func_148137_d() {
-        return (this.field_148155_a + this.func_148139_c()) / 2 + 2;
+    protected int getScrollBarX() {
+        return (this.width + this.getListWidth()) / 2 + 2;
 }
     public AccountListSlot(long var1, AccountManagerScreen var3, Minecraft var4) {
-        super(var4, var3.field_146294_l, var3.field_146295_m, 46, var3.field_146295_m - 64, 16);
+        super(var4, var3.width, var3.height, 46, var3.height - 64, 16);
         this.u = var3;
 }
     static {

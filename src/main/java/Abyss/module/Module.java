@@ -138,7 +138,6 @@ public class Module {
                                     var43 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                     var46 = 0;
 }
-                                break;
 }
 }
                         var14 = var15.charAt(var27);
@@ -159,9 +158,9 @@ public class Module {
                 var28 = var15.substring(++var27, var27 + var14);
                 var10001 = 0;
 }
-            break;
 }
 }
+    // R12_SEMANTIC_RECOVERY_MARKER
     public int x(Setting var1) {
         return this.l.indexOf(var1);
 }
@@ -313,23 +312,30 @@ public class Module {
 }
     public void i(long var1) throws UnsupportedEncodingException, Throwable, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     public Module g(String var1, char var2, Boolean var3, Category var4, Boolean var5, long var6, String var8, boolean var9, boolean var10, Setting ... var11) {
         long var12 = ((long)var2 << 48 | var6 << 16 >>> 16) ^ cb;
         long var14 = var12 ^ 0x5697E5AFD69FL;
@@ -400,6 +406,71 @@ public class Module {
 }
 }
         return this.l;
+}
+    public static String selfTest() {
+        try {
+            class ProbeModule extends Module {
+                int enables;
+                int disables;
+                int resets;
+
+                ProbeModule() {
+                    super(0L);
+                    this.declare("SelfTest", Category.Misc, "Module state-machine probe", new Setting[0]);
+}
+
+                @Override
+                public void i(long seed) {
+                    ++this.enables;
+}
+
+                @Override
+                public void A(long seed) {
+                    ++this.disables;
+}
+
+                @Override
+                public void P(long seed) {
+                    ++this.resets;
+}
+            }
+            ProbeModule probe = new ProbeModule();
+            if (probe.o() || probe.l() || probe.K()) {
+                return "FAIL initial";
+}
+            probe.u((short)0, 139350548161835L);
+            if (!probe.o() || !probe.l() || probe.K()) {
+                return "FAIL enable-request";
+}
+            if (probe.l()) {
+                probe.i(17998201765264L);
+                probe.n(false);
+}
+            if (probe.enables != 1 || probe.l()) {
+                return "FAIL enable-hook";
+}
+            probe.u((short)0, 139350548161835L);
+            if (probe.o() || !probe.K()) {
+                return "FAIL disable-request";
+}
+            if (probe.K()) {
+                probe.A(94287625739397L);
+                probe.E(false);
+}
+            if (probe.disables != 1 || probe.K()) {
+                return "FAIL disable-hook";
+}
+            if (!probe.o()) {
+                probe.P(11128156246666L);
+}
+            if (probe.resets != 1) {
+                return "FAIL disabled-reset";
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
 }
     public Module(long var1) {
 }

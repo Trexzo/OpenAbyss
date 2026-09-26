@@ -34,29 +34,38 @@ import net.minecraft.scoreboard.Team;
 import net.minecraft.util.StringUtils;
 
 public class TeamPrefixUtil {
+    private static long a;
+
     private static Pattern j;
         private static Minecraft A;
 
     private static String g(String var0) {
         return var0 == null ? "" : j.matcher(var0).replaceAll("");
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     public static MegaWallsClass F(long var0, String var2) {
         return MegaWallsClass.s(var2, 126433336288858L);
 }
@@ -64,9 +73,9 @@ public class TeamPrefixUtil {
         return HypixelGameState.F();
 }
     public static String n(String var0) {
-        if (A != null && A.func_147114_u() != null) {
-            NetworkPlayerInfo var1 = A.func_147114_u().func_175104_a(var0);
-            return var1 == null ? var0 : TeamPrefixUtil.s((Team)var1.func_178850_i(), var1.func_178845_a().getName());
+        if (A != null && A.getNetHandler() != null) {
+            NetworkPlayerInfo var1 = A.getNetHandler().getPlayerInfo(var0);
+            return var1 == null ? var0 : TeamPrefixUtil.s((Team)var1.getPlayerTeam(), var1.getGameProfile().getName());
 }
         return var0;
 }
@@ -80,7 +89,7 @@ public class TeamPrefixUtil {
         if (var0 == null) {
             return var1;
 }
-        return var0 instanceof ScorePlayerTeam ? TeamPrefixUtil.g(((ScorePlayerTeam)var0).func_96668_e()) + var1 + ((ScorePlayerTeam)var0).func_96663_f() : TeamPrefixUtil.g(var0.func_142053_d(var1));
+        return var0 instanceof ScorePlayerTeam ? TeamPrefixUtil.g(((ScorePlayerTeam)var0).getColorPrefix()) + var1 + ((ScorePlayerTeam)var0).getColorSuffix() : TeamPrefixUtil.g(var0.formatString(var1));
 }
     private TeamPrefixUtil() {
 }
@@ -88,9 +97,10 @@ public class TeamPrefixUtil {
         return HypixelGameState.L().O();
 }
     public static String u(String var0) {
-        return var0 == null ? "" : StringUtils.func_76338_a((String)var0);
+        return var0 == null ? "" : StringUtils.stripControlCodes((String)var0);
 }
     static {
+        a = 33284923163101L;
         try {
             long var4 = a ^ 0x442AFED65A64L;
             int var6 = (int)((var4 ^ 0x131E9D109275L) >>> 56);

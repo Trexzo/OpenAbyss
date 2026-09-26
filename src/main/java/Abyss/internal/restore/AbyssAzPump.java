@@ -5,6 +5,8 @@ package Abyss.internal.restore;
 
 import Abyss.AbyssClient;
 import Abyss.event.EventBus;
+import Abyss.module.impl.configuration.VisualSpoof;
+import Abyss.module.impl.visual.Freelook;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,12 +30,25 @@ public final class AbyssAzPump {
             var2.add("Abyss.AbyssClient");
 }
         DEGRADED.clear();
-        DEGRADED.add("Abyss/zT_3.F : LAbyss/ModeSetting; -- 3 getstatic / 0 putstatic; read unguarded at AZ.java:476 (AZ.q@150, AZ.r@534)");
-        DEGRADED.add("Abyss/zo_4.t : LAbyss/qD; and Abyss/zo_4.x : LAbyss/qk; -- 0 putstatic; read at AZ.java:482 behind zo_4.n(long)");
-        if (var3 != null) {
-            var3.add("Abyss.AbyssClient    SUBSCRIBED (module pump live). DEGRADED: zT_3.F and zo_4.t/.x are native-written statics that are still null (stage1 item 8), so AZ.r throws a caught, rate-limited NPE after the module loop; the pump itself completes. Fill them to clear this.");
-}
+        AbyssAzPump.requireRecoveredStatics();
         return var4;
+}
+    private static void requireRecoveredStatics() {
+        ArrayList<String> missing = new ArrayList<String>();
+        if (Freelook.mode == null) {
+            missing.add("Freelook.mode");
+}
+        if (VisualSpoof.t == null) {
+            missing.add("VisualSpoof.t");
+}
+        if (VisualSpoof.keybindToggleRenderVisual == null) {
+            missing.add("VisualSpoof.keybindToggleRenderVisual");
+}
+        if (!missing.isEmpty()) {
+            String note = "Abyss.AbyssClient recovered-static regression: " + missing;
+            DEGRADED.add(note);
+            throw new IllegalStateException(note);
+}
 }
     static {
         DEGRADED = new ArrayList<String>();

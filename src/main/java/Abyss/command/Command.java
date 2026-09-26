@@ -5,6 +5,11 @@ package Abyss.command;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Command {
     public native boolean J();

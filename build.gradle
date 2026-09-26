@@ -1,47 +1,31 @@
-plugins {
-    id 'java'
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'forge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+    }
+
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT'
+    }
 }
+
+apply plugin: 'net.minecraftforge.gradle.forge'
 
 group = 'abyss'
 version = '1.0.0'
+archivesBaseName = 'OpenAbyss'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-repositories {
-    mavenCentral()
-    maven {
-        name = 'MinecraftForge'
-        url = 'https://maven.minecraftforge.net/'
-    }
-    maven {
-        name = 'SpongePowered'
-        url = 'https://repo.spongepowered.org/maven/'
-    }
-    maven {
-        name = 'Mojang'
-        url = 'https://libraries.minecraft.net/'
-    }
-}
-
-dependencies {
-    // Compile-time references against local Minecraft Forge libraries if present
-    compileOnly fileTree(dir: 'E:/minecraft/libraries', include: ['**/*.jar'])
-    compileOnly fileTree(dir: 'E:/minecraft/versions/1.8.9', include: ['**/*.jar'])
-    
-    // Core dependencies
-    compileOnly 'net.minecraft:launchwrapper:1.12'
-    compileOnly 'org.ow2.asm:asm-all:5.0.3'
-    compileOnly 'com.google.code.gson:gson:2.2.4'
-    compileOnly 'com.google.guava:guava:17.0'
-    compileOnly 'org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209'
-    compileOnly 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209'
-    compileOnly 'io.netty:netty-all:4.0.23.Final'
-    compileOnly 'org.apache.logging.log4j:log4j-api:2.0-beta9'
-    compileOnly 'org.apache.logging.log4j:log4j-core:2.0-beta9'
-    compileOnly 'commons-io:commons-io:2.4'
-    compileOnly 'org.apache.commons:commons-lang3:3.3.2'
-    compileOnly 'net.sf.jopt-simple:jopt-simple:4.6'
+minecraft {
+    version = '1.8.9-11.15.1.2318-1.8.9'
+    runDir = 'run'
+    mappings = 'stable_22'
+    makeObfSourceJar = false
 }
 
 tasks.withType(JavaCompile) {
@@ -53,7 +37,6 @@ jar {
     manifest {
         attributes(
             'Manifest-Version': '1.0',
-            'Main-Class': 'net.minecraft.launchwrapper.Launch',
             'FMLCorePlugin': 'Abyss.ASM.CoreMod',
             'FMLCorePluginContainsFMLMod': 'true',
             'ModSide': 'CLIENT',
@@ -61,3 +44,9 @@ jar {
         )
     }
 }
+
+def abyssRunClient = tasks.getByName('runClient')
+abyssRunClient.jvmArgs([
+    '-Dfml.coreMods.load=Abyss.ASM.CoreMod',
+    '-Xmx2G'
+])

@@ -23,6 +23,8 @@ import javax.swing.Timer;
 
 class tt_2
 extends MouseAdapter {
+    private static long a;
+
     private static long b;
     final ConfigManagerWindow K;
     
@@ -37,6 +39,7 @@ extends MouseAdapter {
         new Timer((int)b, this::lambda$mouseReleased$0).start();
 }
     static {
+        a = 81768748997297L;
         try {
             long var0 = a ^ 0x1FB42356600DL;
             byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};

@@ -17,6 +17,10 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 
 public final class FieldRef {
+    private static long a;
+    static {
+        a = 75098664684037L;
+    }
     private static long b;
     private final String Z;
     private final String H;

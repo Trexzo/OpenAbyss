@@ -62,7 +62,7 @@ public final class AbyssArrayListVisibility {
     private static File file() {
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable throwable) {
             // empty catch block

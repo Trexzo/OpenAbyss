@@ -92,11 +92,11 @@ public class MiscHooks {
         return (List)MiscHooks.readField(var0, GuiScreen.class, "buttonList", "field_146292_n", "n");
 }
     public static boolean entityPlayerSPIsUsingItem(EntityPlayerSP var0) {
-        if (var0.func_71039_bw() && !var0.func_70115_ae()) {
+        if (var0.isUsingItem() && !var0.isRiding()) {
             EntityHookDispatch.EntityPlayerSP$redirectIsUsingItem(var0);
             return false;
 }
-        return var0.func_71039_bw();
+        return var0.isUsingItem();
 }
     /*
      * WARNING - Removed try catching itself - possible behaviour change.
@@ -112,7 +112,7 @@ public class MiscHooks {
 }
             Minecraft var13 = MinecraftRef.c((byte)0, 0L);
             DynamicTexture var14 = new DynamicTexture(256, 256);
-            ResourceLocation var15 = var13.func_110434_K().func_110578_a("background", var14);
+            ResourceLocation var15 = var13.getTextureManager().getDynamicTextureLocation("background", var14);
             MiscHooks.writeField(var0, GuiMainMenu.class, var14, "viewportTexture", "field_73977_n", "u");
             MiscHooks.writeField(var0, GuiMainMenu.class, var15, "backgroundTexture", "field_110351_G", "J");
             Calendar var16 = Calendar.getInstance();
@@ -124,25 +124,25 @@ public class MiscHooks {
             } else if (var16.get(2) + 1 == 10 && var16.get(5) == 31) {
                 MiscHooks.writeField(var0, GuiMainMenu.class, "OOoooOOOoooo! Spooky!", "splashText", "field_73975_c", "r");
 }
-            MainMenuTheme.r(var0.field_146294_l, var0.field_146295_m, 3666, (byte)89, var12, 4438180);
+            MainMenuTheme.r(var0.width, var0.height, 3666, (byte)89, var12, 4438180);
             Object object = MiscHooks.readField(var0, GuiMainMenu.class, "threadLock", "field_104025_t", "w");
             synchronized (object) {
                 String var19 = (String)MiscHooks.readField(var0, GuiMainMenu.class, "openGLWarning1", "field_92025_p", "x");
                 String var20 = (String)MiscHooks.readField(var0, GuiMainMenu.class, "openGLWarning2", "field_146972_A", "y");
-                int var21 = var13.field_71466_p.func_78256_a(var19);
-                int var22 = var13.field_71466_p.func_78256_a(var20);
+                int var21 = var13.fontRendererObj.getStringWidth(var19);
+                int var22 = var13.fontRendererObj.getStringWidth(var20);
                 int var24 = Math.max(var21, var22);
-                int var25 = var12.isEmpty() ? 0 : var12.get((int)0).field_146129_i;
+                int var25 = var12.isEmpty() ? 0 : var12.get((int)0).yPosition;
                 MiscHooks.writeField(var0, GuiMainMenu.class, var21, "field_92023_s", "E");
                 MiscHooks.writeField(var0, GuiMainMenu.class, var22, "field_92024_r", "D");
-                MiscHooks.writeField(var0, GuiMainMenu.class, (var0.field_146294_l - var24) / 2, "field_92022_t", "F");
+                MiscHooks.writeField(var0, GuiMainMenu.class, (var0.width - var24) / 2, "field_92022_t", "F");
                 MiscHooks.writeField(var0, GuiMainMenu.class, var25 - 24, "field_92021_u", "G");
-                MiscHooks.writeField(var0, GuiMainMenu.class, (var0.field_146294_l - var24) / 2 + var24, "field_92020_v", "H");
+                MiscHooks.writeField(var0, GuiMainMenu.class, (var0.width - var24) / 2 + var24, "field_92020_v", "H");
                 MiscHooks.writeField(var0, GuiMainMenu.class, var25, "field_92019_w", "I");
 }
-            var13.func_181537_a(false);
+            var13.setConnectedToRealms(false);
             boolean var18 = (Boolean)MiscHooks.readField(var0, GuiMainMenu.class, "field_183502_L", "L");
-            if (var13.field_71474_y.func_74308_b(GameSettings.Options.REALMS_NOTIFICATIONS) && !var18) {
+            if (var13.gameSettings.getOptionOrdinalValue(GameSettings.Options.REALMS_NOTIFICATIONS) && !var18) {
                 RealmsBridge var27 = new RealmsBridge();
                 GuiScreenRealmsProxy var29 = var27.getNotificationScreen((GuiScreen)var0);
                 MiscHooks.writeField(var0, GuiMainMenu.class, var29, "field_183503_M", "M");
@@ -150,8 +150,8 @@ public class MiscHooks {
 }
             if (MiscHooks.guiMainMenuHasRealms(var0)) {
                 GuiScreen var28 = (GuiScreen)MiscHooks.readField(var0, GuiMainMenu.class, "field_183503_M", "M");
-                var28.func_183500_a(var0.field_146294_l, var0.field_146295_m);
-                var28.func_73866_w_();
+                var28.setGuiSize(var0.width, var0.height);
+                var28.initGui();
 }
             var1.cancel();
 }
@@ -166,14 +166,14 @@ public class MiscHooks {
 }
             Minecraft var17 = MinecraftRef.c((byte)0, 0L);
             List<GuiButton> var18 = MiscHooks.buttonList((GuiScreen)var0);
-            MainMenuTheme.S(var0.field_146294_l, var0.field_146295_m);
-            MainMenuTheme.F(var0.field_146294_l, 16138, 3806336253L, var0.field_146295_m, var18);
+            MainMenuTheme.S(var0.width, var0.height);
+            MainMenuTheme.F(var0.width, 16138, 3806336253L, var0.height, var18);
             for (GuiButton var20 : var18) {
-                var20.func_146112_a(var17, var1, var2);
+                var20.drawButton(var17, var1, var2);
 }
             if (MiscHooks.guiMainMenuHasRealms(var0)) {
                 GuiScreen var22 = (GuiScreen)MiscHooks.readField(var0, GuiMainMenu.class, "field_183503_M", "M");
-                var22.func_73863_a(var1, var2, var3);
+                var22.drawScreen(var1, var2, var3);
 }
             var4.cancel();
 }
@@ -186,7 +186,7 @@ public class MiscHooks {
 }
     public static void guiMainMenuPostInit(GuiMainMenu var0) {
         try {
-            GuiMainMenuHooks.onPostInitGUI(MiscHooks.buttonList((GuiScreen)var0), var0.field_146294_l, var0.field_146295_m);
+            GuiMainMenuHooks.onPostInitGUI(MiscHooks.buttonList((GuiScreen)var0), var0.width, var0.height);
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -213,13 +213,13 @@ public class MiscHooks {
             ItemStack var6 = (ItemStack)MiscHooks.readField(var0, ItemRenderer.class, "itemToRender", "field_78453_b", "d");
             int var7 = (Integer)MiscHooks.readField(var0, ItemRenderer.class, "equippedItemSlot", "field_78450_g", "i");
             MiscHooks.writeField(var0, ItemRenderer.class, Float.valueOf(var5), "prevEquippedProgress", "field_78451_d", "f");
-            EntityPlayerSP var8 = var4.field_71439_g;
-            ItemStack var9 = ItemRendererHooks.spoofScaffoldItemStack(var4, var8.field_71071_by.func_70448_g());
-            int var10 = ItemRendererHooks.spoofScaffoldItemSlot(var4, var8.field_71071_by.field_70461_c);
+            EntityPlayerSP var8 = var4.thePlayer;
+            ItemStack var9 = ItemRendererHooks.spoofScaffoldItemStack(var4, var8.inventory.getCurrentItem());
+            int var10 = ItemRendererHooks.spoofScaffoldItemSlot(var4, var8.inventory.currentItem);
             boolean var11 = false;
             if (var6 != null && var9 != null) {
-                if (!var6.func_179549_c(var9)) {
-                    if (!MethodAccessors.n(var6.func_77973_b(), var6, var9, var7 != var10)) {
+                if (!var6.getIsItemStackEqual(var9)) {
+                    if (!MethodAccessors.n(var6.getItem(), var6, var9, var7 != var10)) {
                         MiscHooks.writeField(var0, ItemRenderer.class, var9, "itemToRender", "field_78453_b", "d");
                         MiscHooks.writeField(var0, ItemRenderer.class, var10, "equippedItemSlot", "field_78450_g", "i");
                         var1.cancel();
@@ -232,7 +232,7 @@ public class MiscHooks {
 }
             float var12 = 0.4f;
             float var13 = var11 ? 0.0f : 1.0f;
-            float var14 = MathHelper.func_76131_a((float)(var13 - var5), (float)(-var12), (float)var12);
+            float var14 = MathHelper.clamp_float((float)(var13 - var5), (float)(-var12), (float)var12);
             MiscHooks.writeField(var0, ItemRenderer.class, Float.valueOf(var5 += var14), "equippedProgress", "field_78454_c", "e");
             if (ItemRendererHooks.onUpdateEquippedItemLastPart(var5)) {
                 MiscHooks.writeField(var0, ItemRenderer.class, var9, "itemToRender", "field_78453_b", "d");

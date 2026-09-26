@@ -28,6 +28,7 @@ import org.lwjgl.opengl.GL11;
 public class Chams
 extends Module
 implements EventSubscriber {
+    private static long a = 4220396465040L;
     private boolean I;
     public static BooleanSetting bosses;
     public static BooleanSetting bots;

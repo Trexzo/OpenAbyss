@@ -46,35 +46,14 @@ public class FontUtils {
 }
 }
     public static boolean installFont(URL url) {
-        boolean bl;
-        block8: {
-            InputStream in = url.openStream();
-            try {
-                Font font = Font.createFont(0, in);
-                bl = GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-                if (in == null) break block8;
-}
-            catch (Throwable throwable) {
-                try {
-                    if (in != null) {
-                        try {
-                            in.close();
-}
-                        catch (Throwable throwable2) {
-                            throwable.addSuppressed(throwable2);
-}
-}
-                    throw throwable;
-}
-                catch (FontFormatException | IOException ex) {
-                    LoggingFacade.INSTANCE.logSevere("FlatLaf: Failed to install font " + url, ex);
-                    return false;
-}
-}
-            in.close();
-}
-        return bl;
-}
+        try (InputStream in = url.openStream()) {
+            Font font = Font.createFont(Font.TRUETYPE_FONT, in);
+            return GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+        } catch (FontFormatException | IOException ex) {
+            LoggingFacade.INSTANCE.logSevere("FlatLaf: Failed to install font " + url, ex);
+            return false;
+        }
+    }
     public static String[] getAvailableFontFamilyNames() {
         String[] availableFontFamilyNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         if (!FontUtils.hasLoaders()) {

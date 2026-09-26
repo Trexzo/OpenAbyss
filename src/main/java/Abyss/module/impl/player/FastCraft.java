@@ -67,6 +67,12 @@ import org.lwjgl.input.Mouse;
 public class FastCraft
 extends Module
 implements EventSubscriber {
+    private static Map h;
+    private static Map d;
+    private static String[] c;
+    private static long a;
+    private static Integer[] g;
+    private static String[] b;
     private final int[] J;
     private static long[] e;
     private final int[] s;
@@ -107,10 +113,10 @@ implements EventSubscriber {
         FastCraft.n[17] = "R4\u0019\u0013H=\u0016%\u0016\u001a/5\u00149\u0012<\u0010kVbB<F[Sb\u0019TB8\u0016:\u0004\u0004/aT?F\u0006L$\f\"\u0016k\u0015f\t`\u0014\bP>\u00140yQ\u0012;V2\u001a\u0014J&\u0006_ESU+\u001b FP\u00142ic\u0014\u0004MeP6\u0004\u0017\u0014[";
 }
     private int w(Item var1, int var4) {
-        Container var5 = FastCraft.f.field_71439_g.field_71070_bA;
-        for (int var6 = 10; var6 < var5.field_75151_b.size(); ++var6) {
-            Slot var7 = (Slot)var5.field_75151_b.get(var6);
-            if (!var7.func_75216_d() || var7.func_75211_c().func_77973_b() != var1 || var7.func_75211_c().field_77994_a < var4) continue;
+        Container var5 = FastCraft.f.thePlayer.openContainer;
+        for (int var6 = 10; var6 < var5.inventorySlots.size(); ++var6) {
+            Slot var7 = (Slot)var5.inventorySlots.get(var6);
+            if (!var7.getHasStack() || var7.getStack().getItem() != var1 || var7.getStack().stackSize < var4) continue;
             return var6;
 }
         return -1;
@@ -128,12 +134,12 @@ implements EventSubscriber {
         if (var8 == -1) {
             return false;
 }
-        FastCraft.f.field_71442_b.func_78753_a(var1.field_75152_c, var8, 0, 0, (EntityPlayer)FastCraft.f.field_71439_g);
+        FastCraft.f.playerController.windowClick(var1.windowId, var8, 0, 0, (EntityPlayer)FastCraft.f.thePlayer);
         for (int var12 : var4) {
-            FastCraft.f.field_71442_b.func_78753_a(var1.field_75152_c, var12, 1, 0, (EntityPlayer)FastCraft.f.field_71439_g);
+            FastCraft.f.playerController.windowClick(var1.windowId, var12, 1, 0, (EntityPlayer)FastCraft.f.thePlayer);
 }
-        FastCraft.f.field_71442_b.func_78753_a(var1.field_75152_c, var8, 0, 0, (EntityPlayer)FastCraft.f.field_71439_g);
-        FastCraft.f.field_71442_b.func_78753_a(var1.field_75152_c, 0, 0, 1, (EntityPlayer)FastCraft.f.field_71439_g);
+        FastCraft.f.playerController.windowClick(var1.windowId, var8, 0, 0, (EntityPlayer)FastCraft.f.thePlayer);
+        FastCraft.f.playerController.windowClick(var1.windowId, 0, 0, 1, (EntityPlayer)FastCraft.f.thePlayer);
         return true;
 }
     private boolean U(int[] var1, Item var4) {
@@ -169,14 +175,14 @@ implements EventSubscriber {
         return g[var3];
 }
     public void onPreUpdate(long var1, PreUpdateEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (FastCraft.f.field_71462_r instanceof GuiCrafting) {
-            Container var10 = FastCraft.f.field_71439_g.field_71070_bA;
+        if (FastCraft.f.currentScreen instanceof GuiCrafting) {
+            Container var10 = FastCraft.f.thePlayer.openContainer;
             ContainerWorkbench var11 = (ContainerWorkbench)var10;
             if (!this.k.isEmpty()) {
                 this.N = true;
                 switch (this.k.get(0)) {
                     case "helmet": {
-                        if (this.isWindowClick(var11, this.J, Items.field_151042_j)) {
+                        if (this.isWindowClick(var11, this.J, Items.iron_ingot)) {
                             ClientUtil.t(48081174263320L, "\u00a7a\u00a7lSuccess \u00a7rCrafted an iron helmet");
                             break;
 }
@@ -184,7 +190,7 @@ implements EventSubscriber {
                         break;
 }
                     case "chestplate": {
-                        if (this.isWindowClick(var11, this.s, Items.field_151042_j)) {
+                        if (this.isWindowClick(var11, this.s, Items.iron_ingot)) {
                             ClientUtil.t(48081174263320L, "\u00a7a\u00a7lSuccess \u00a7rCrafted an iron chestplate");
                             break;
 }
@@ -192,7 +198,7 @@ implements EventSubscriber {
                         break;
 }
                     case "leggings": {
-                        if (this.isWindowClick(var11, this.G, Items.field_151042_j)) {
+                        if (this.isWindowClick(var11, this.G, Items.iron_ingot)) {
                             ClientUtil.t(48081174263320L, "\u00a7a\u00a7lSuccess \u00a7rCrafted an iron leggings");
                             break;
 }
@@ -200,7 +206,7 @@ implements EventSubscriber {
                         break;
 }
                     case "boots": {
-                        if (this.isWindowClick(var11, this.m, Items.field_151042_j)) {
+                        if (this.isWindowClick(var11, this.m, Items.iron_ingot)) {
                             ClientUtil.t(48081174263320L, "\u00a7a\u00a7lSuccess \u00a7rCrafted an iron boots");
                             break;
 }
@@ -208,7 +214,7 @@ implements EventSubscriber {
                         break;
 }
                     case "ladders": {
-                        if (this.isWindowClick(var11, this.t, Items.field_151055_y)) {
+                        if (this.isWindowClick(var11, this.t, Items.stick)) {
                             ClientUtil.t(48081174263320L, "\u00a7a\u00a7lSuccess \u00a7rCrafted 3 ladders");
                             break;
 }
@@ -216,10 +222,10 @@ implements EventSubscriber {
 }
 }
                 this.k.clear();
-            } else if (this.N && FastCraft.f.field_71439_g.field_71071_by.func_70445_o() != null) {
-                GuiContainerAccessor.S((GuiContainer)((GuiCrafting)FastCraft.f.field_71462_r), null);
-                FastCraft.f.field_71439_g.field_71071_by.func_70437_b(null);
-                FastCraft.f.field_71462_r.func_73876_c();
+            } else if (this.N && FastCraft.f.thePlayer.inventory.getItemStack() != null) {
+                GuiContainerAccessor.S((GuiContainer)((GuiCrafting)FastCraft.f.currentScreen), null);
+                FastCraft.f.thePlayer.inventory.setItemStack(null);
+                FastCraft.f.currentScreen.updateScreen();
                 this.N = false;
 }
         } else {
@@ -227,23 +233,30 @@ implements EventSubscriber {
             this.N = false;
 }
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     public FastCraft(short var1, short var2, int var3) {
         super(((long)var1 << 48 | (long)var2 << 48 >>> 16 | (long)var3 << 32 >>> 32) ^ a ^ 0x658DA168DA3EL);
         this.declare("FastCraft", Category.Player, "Craft some MegaWalls items faster", new Setting[0]);
@@ -264,56 +277,56 @@ implements EventSubscriber {
         if (var1.C instanceof GuiCrafting) {
             this.v = Mouse.isButtonDown((int)0);
             boolean var12 = !var11 && this.v;
-            GuiCrafting var13 = (GuiCrafting)FastCraft.f.field_71462_r;
-            int var14 = Mouse.getEventX() * var13.field_146294_l / FastCraft.f.field_71443_c;
-            int var15 = var13.field_146295_m - Mouse.getEventY() * var13.field_146295_m / FastCraft.f.field_71440_d - 1;
+            GuiCrafting var13 = (GuiCrafting)FastCraft.f.currentScreen;
+            int var14 = Mouse.getEventX() * var13.width / FastCraft.f.displayWidth;
+            int var15 = var13.height - Mouse.getEventY() * var13.height / FastCraft.f.displayHeight - 1;
             ScaledResolution var16 = var1.s;
-            float var17 = (float)var16.func_78326_a() / 2.0f + (float)(35 * var16.func_78325_e());
-            float var18 = (float)var16.func_78328_b() / 2.0f - 25.0f * (float)var16.func_78325_e();
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179140_f();
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-            this.f((byte)0, var17, 4759559, var18, (Item)Items.field_151028_Y, 3568500);
+            float var17 = (float)var16.getScaledWidth() / 2.0f + (float)(35 * var16.getScaleFactor());
+            float var18 = (float)var16.getScaledHeight() / 2.0f - 25.0f * (float)var16.getScaleFactor();
+            GlStateManager.pushMatrix();
+            GlStateManager.disableLighting();
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            this.f((byte)0, var17, 4759559, var18, (Item)Items.iron_helmet, 3568500);
             float var19 = var18;
             float var20 = var18 + 18.0f;
-            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.field_151030_Z, 3568500);
+            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.iron_chestplate, 3568500);
             float var21 = var18;
             float var22 = var18 + 18.0f;
-            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.field_151165_aa, 3568500);
+            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.iron_leggings, 3568500);
             float var23 = var18;
             float var24 = var18 + 18.0f;
-            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.field_151167_ab, 3568500);
+            this.f((byte)0, var17, 4759559, var18 += 25.0f, (Item)Items.iron_boots, 3568500);
             float var25 = var18;
             float var26 = var18 + 18.0f;
-            this.f((byte)0, var17, 4759559, var18 += 25.0f, Item.func_150898_a((Block)Blocks.field_150468_ap), 3568500);
+            this.f((byte)0, var17, 4759559, var18 += 25.0f, Item.getItemFromBlock((Block)Blocks.ladder), 3568500);
             float var27 = var18;
             float var28 = var18 + 18.0f;
             float var29 = var17;
             float var30 = var17 + 18.0f;
-            GlStateManager.func_179121_F();
+            GlStateManager.popMatrix();
             if ((float)var14 >= var29 && (float)var14 <= var30) {
                 if ((float)var15 >= var19 && (float)var15 <= var20) {
-                    this.getRGB(var17, var19, (Item)Items.field_151028_Y, 105412507962817L, this.U(this.J, Items.field_151042_j) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
+                    this.getRGB(var17, var19, (Item)Items.iron_helmet, 105412507962817L, this.U(this.J, Items.iron_ingot) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
                     if (var12) {
                         this.k.add("helmet");
 }
                 } else if ((float)var15 >= var21 && (float)var15 <= var22) {
-                    this.getRGB(var17, var21, (Item)Items.field_151030_Z, 105412507962817L, this.U(this.s, Items.field_151042_j) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
+                    this.getRGB(var17, var21, (Item)Items.iron_chestplate, 105412507962817L, this.U(this.s, Items.iron_ingot) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
                     if (var12) {
                         this.k.add("chestplate");
 }
                 } else if ((float)var15 >= var23 && (float)var15 <= var24) {
-                    this.getRGB(var17, var23, (Item)Items.field_151165_aa, 105412507962817L, this.U(this.G, Items.field_151042_j) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
+                    this.getRGB(var17, var23, (Item)Items.iron_leggings, 105412507962817L, this.U(this.G, Items.iron_ingot) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
                     if (var12) {
                         this.k.add("leggings");
 }
                 } else if ((float)var15 >= var25 && (float)var15 <= var26) {
-                    this.getRGB(var17, var25, (Item)Items.field_151167_ab, 105412507962817L, this.U(this.m, Items.field_151042_j) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
+                    this.getRGB(var17, var25, (Item)Items.iron_boots, 105412507962817L, this.U(this.m, Items.iron_ingot) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
                     if (var12) {
                         this.k.add("boots");
 }
                 } else if ((float)var15 >= var27 && (float)var15 <= var28) {
-                    this.getRGB(var17, var27, Item.func_150898_a((Block)Blocks.field_150468_ap), 105412507962817L, this.U(this.t, Items.field_151055_y) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
+                    this.getRGB(var17, var27, Item.getItemFromBlock((Block)Blocks.ladder), 105412507962817L, this.U(this.t, Items.stick) ? (this.v ? Color.ORANGE : Color.GREEN) : Color.RED);
                     if (var12) {
                         this.k.add("ladders");
 }
@@ -337,7 +350,12 @@ implements EventSubscriber {
         this.N = false;
         this.k.clear();
 }
-                Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            n = new Object[18]; o = new String[18]; a(); d = new HashMap(13); long var11 = a ^ 10213001497440L;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var14 = 1; var14 < 8; ++var14) { var10003[var14] = (byte)(var11 << var14 * 8 >>> 56); }
+            Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var13.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var20 = new String[20];
             int var18 = 0;
@@ -403,7 +421,6 @@ implements EventSubscriber {
                                         var41 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                         var44 = 0;
 }
-                                    break;
 }
 }
                             var16 = var17.charAt(var25);
@@ -424,7 +441,6 @@ implements EventSubscriber {
                     var26 = var17.substring(++var25, var25 + var16);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var22) {
@@ -432,5 +448,7 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 78584124819214L;
+        zkm$clinit();
 }
 }

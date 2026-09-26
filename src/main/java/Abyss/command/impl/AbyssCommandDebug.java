@@ -79,9 +79,9 @@ extends Command {
         ArrayList<String> var5 = new ArrayList<String>();
         if (var2 <= 1) {
             var5.addAll(Arrays.asList("true", "false", "status", "dumpscoreboard", "dumpdisplayname", "username", "nickname", "token", "userid"));
-        } else if (var2 == 2 && var1.length > 0 && "dumpdisplayname".equalsIgnoreCase(var1[0]) && (var6 = Minecraft.func_71410_x()) != null && var6.field_71441_e != null) {
-            for (EntityPlayer var8 : var6.field_71441_e.field_73010_i) {
-                var5.add(var8.func_70005_c_());
+        } else if (var2 == 2 && var1.length > 0 && "dumpdisplayname".equalsIgnoreCase(var1[0]) && (var6 = Minecraft.getMinecraft()) != null && var6.theWorld != null) {
+            for (EntityPlayer var8 : var6.theWorld.playerEntities) {
+                var5.add(var8.getName());
 }
 }
         return var5;
@@ -148,16 +148,16 @@ extends Command {
         AbyssCommands.chat("\u00a7a" + var0.size() + " line(s) -> \u00a7f" + var1.toAbsolutePath());
 }
     private static void dumpDisplayName(String var0) {
-        Minecraft var1 = Minecraft.func_71410_x();
-        if (var1 == null || var1.field_71441_e == null) {
+        Minecraft var1 = Minecraft.getMinecraft();
+        if (var1 == null || var1.theWorld == null) {
             AbyssCommands.chat("\u00a7cNot in a world.");
             return;
 }
-        for (EntityPlayer var3 : var1.field_71441_e.field_73010_i) {
+        for (EntityPlayer var3 : var1.theWorld.playerEntities) {
             boolean var7;
-            if (var3 == null || !var0.equalsIgnoreCase(var3.func_70005_c_())) continue;
-            String var4 = var3.func_145748_c_() == null ? "" : var3.func_145748_c_().func_150254_d();
-            String var5 = var3.func_70005_c_() + "\n" + var4;
+            if (var3 == null || !var0.equalsIgnoreCase(var3.getName())) continue;
+            String var4 = var3.getDisplayName() == null ? "" : var3.getDisplayName().getFormattedText();
+            String var5 = var3.getName() + "\n" + var4;
             Path var6 = AbyssCommandData.resolve(DISPLAYNAME_DUMP);
             try {
                 Files.write(var6, var5.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
@@ -166,11 +166,11 @@ extends Command {
             catch (Throwable var9) {
                 var7 = false;
 }
-            AbyssCommands.chat("\u00a77name \u00a7f" + var3.func_70005_c_());
+            AbyssCommands.chat("\u00a77name \u00a7f" + var3.getName());
             AbyssCommands.chat("\u00a77display \u00a7r" + var4);
             AbyssCommands.chat("\u00a77raw \u00a7f" + var4.replace('\u00a7', '&'));
             try {
-                GuiScreen.func_146275_d((String)var4);
+                GuiScreen.setClipboardString((String)var4);
 }
             catch (Throwable throwable) {
                 // empty catch block

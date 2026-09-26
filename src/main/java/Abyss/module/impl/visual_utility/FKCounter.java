@@ -54,6 +54,8 @@ import net.minecraft.util.EnumChatFormatting;
 public class FKCounter
 extends Module
 implements EventSubscriber {
+    private static String[] c;
+    private static String[] m;
     private static Map t;
     private final List<Map<String, Integer>> N;
     
@@ -88,23 +90,30 @@ implements EventSubscriber {
     public String g(long var1) {
         return TeamPrefixUtil.z() ? "DM" : "WAIT";
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private String m(int var1) {
         return "\u00a7" + this.J[var1];
 }
@@ -136,8 +145,8 @@ implements EventSubscriber {
 }
     public void onHandleChat(HandleChatEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         String var8;
-        if (this.E() && (var8 = var1.A.func_150260_c()) != null && !var8.isEmpty()) {
-            String var9 = var1.A.func_150254_d();
+        if (this.E() && (var8 = var1.A.getUnformattedText()) != null && !var8.isEmpty()) {
+            String var9 = var1.A.getFormattedText();
             for (int var10 = 0; var10 < I.length; ++var10) {
                 Matcher var11 = I[var10].matcher(var8);
                 if (!var11.matches()) continue;
@@ -252,7 +261,7 @@ implements EventSubscriber {
         for (int var3 = 0; var3 < 4; ++var3) {
             this.e.add(new FKCounterTeamEntry(var3, this.D[var3], null));
 }
-        this.e.sort(Comparator.comparingInt(var0 -> FKCounterTeamEntry.h(var0)).reversed().thenComparingInt(var0 -> FKCounterTeamEntry.f(var0)));
+        this.e.sort(Comparator.<FKCounterTeamEntry>comparingInt(var0 -> FKCounterTeamEntry.h(var0)).reversed().thenComparingInt(var0 -> FKCounterTeamEntry.f(var0)));
         StringBuilder var7 = new StringBuilder();
         for (int var4 = 0; var4 < this.e.size(); ++var4) {
             FKCounterTeamEntry var5 = this.e.get(var4);
@@ -262,7 +271,7 @@ implements EventSubscriber {
             var7.append(this.m(FKCounterTeamEntry.p(var5))).append(FKCounterTeamEntry.O(var5));
 }
         this.B = var7.toString();
-        this.n = FKCounter.f.field_71466_p == null ? 0 : FKCounter.f.field_71466_p.func_78256_a(this.B);
+        this.n = FKCounter.f.fontRendererObj == null ? 0 : FKCounter.f.fontRendererObj.getStringWidth(this.B);
 }
     @Override
     public void A(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
@@ -300,18 +309,23 @@ implements EventSubscriber {
             float var5 = offsetX.L();
             float var6 = offsetY.L();
             int var7 = backgroundOpacity.k() * 255 / 100;
-            int var8 = FKCounter.f.field_71466_p.field_78288_b;
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179109_b((float)var5, (float)var6, (float)0.0f);
-            GlStateManager.func_179152_a((float)var4, (float)var4, (float)1.0f);
+            int var8 = FKCounter.f.fontRendererObj.FONT_HEIGHT;
+            GlStateManager.pushMatrix();
+            GlStateManager.translate((float)var5, (float)var6, (float)0.0f);
+            GlStateManager.scale((float)var4, (float)var4, (float)1.0f);
             if (var7 > 0) {
-                Gui.func_73734_a((int)-2, (int)-2, (int)(this.n + 2), (int)(var8 + 1), (int)new Color(0, 0, 0, var7).getRGB());
+                Gui.drawRect((int)-2, (int)-2, (int)(this.n + 2), (int)(var8 + 1), (int)new Color(0, 0, 0, var7).getRGB());
 }
-            FKCounter.f.field_71466_p.func_175063_a(this.B, 0.0f, 0.0f, 0xFFFFFF);
-            GlStateManager.func_179121_F();
+            FKCounter.f.fontRendererObj.drawStringWithShadow(this.B, 0.0f, 0.0f, 0xFFFFFF);
+            GlStateManager.popMatrix();
 }
 }
-                Cipher var11 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            long var20 = d ^ 132487852058117L; u = new Object[7]; v = new String[7]; a(); o = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var20 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var12 = 1; var12 < 8; ++var12) { var10003[var12] = (byte)(var20 << var12 * 8 >>> 56); }
+            Cipher var11 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var11.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var18 = new String[89];
             int var16 = 0;
@@ -385,7 +399,6 @@ implements EventSubscriber {
                                         var43 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                         var46 = 0;
 }
-                                    break;
 }
 }
                             var14 = var15.charAt(var26);
@@ -406,7 +419,6 @@ implements EventSubscriber {
                     var27 = var15.substring(++var26, var26 + var14);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var23) {
@@ -415,6 +427,7 @@ implements EventSubscriber {
 }
     static {
         d = 28874700161329L;
+        zkm$clinit();
         offsetX = new NumberSetting("Offset-X", 4.0f, 0.0f, 1000.0f, 1.0f);
         scale = new NumberSetting("Scale", 1.0f, 0.5f, 3.0f, 0.01f);
         backgroundOpacity = new PercentageSetting("Background-opacity", 40);

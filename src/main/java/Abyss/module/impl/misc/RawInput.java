@@ -16,18 +16,18 @@ public class RawInput
 extends Module {
     public static MouseHelper T;
     private SmoothMouseHelper M;
-    private static final long @Override
+    @Override
     public void A(long var1) {
         this.M.M();
         this.M = null;
         MouseHelper var3 = T;
-        RawInput.f.field_71417_B = var3 != null ? var3 : new MouseHelper();
+        RawInput.f.mouseHelper = var3 != null ? var3 : new MouseHelper();
 }
     @Override
     public void i(long var1) {
         long var3 = var1 ^ 0x211DEAB4B5AL;
         long var5 = var1 ^ 0x8588AD55DAFL;
-        MouseHelper var7 = RawInput.f.field_71417_B;
+        MouseHelper var7 = RawInput.f.mouseHelper;
         if (!(var7 instanceof SmoothMouseHelper)) {
             T = var7;
 }

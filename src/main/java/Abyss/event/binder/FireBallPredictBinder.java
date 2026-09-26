@@ -11,7 +11,7 @@ import Abyss.event.invoker.FireBallPredictRender3DInvoker;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 
 public final class FireBallPredictBinder {
-    private static final long private FireBallPredictBinder() {
+    private FireBallPredictBinder() {
 }
     public static void P(EventBus var2, FireBallPredict var3) {
         var2.R(var3, PostTickEvent.class, 3, new FireBallPredictPostTickInvoker(var3));

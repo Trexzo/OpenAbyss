@@ -13,7 +13,7 @@ import net.minecraft.client.gui.ScaledResolution;
 
 public class PostDrawScreenEvent
 extends Event {
-    private static final long public final ScaledResolution s;
+    public final ScaledResolution s;
     public final GuiScreen C;
 
     public PostDrawScreenEvent(GuiScreen var1, ScaledResolution var4) {

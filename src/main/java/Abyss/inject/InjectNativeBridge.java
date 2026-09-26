@@ -443,20 +443,16 @@ public final class InjectNativeBridge {
             InjectLog.throwable("warm-up failed", t2);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static Set<String> readOwnJar() {
         HashSet<String> found = new HashSet<String>();
-        JarFile jar = null;
-        try {
-            jar = new JarFile(InjectNativeBridge.ownJarPath());
+        try (JarFile jar = new JarFile(InjectNativeBridge.ownJarPath());) {
             int shaded = 0;
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
                 String name = entries.nextElement().getName();
                 if (!name.endsWith(".class")) continue;
-                if ((name = name.substring(0, name.length() - ".class".length())).startsWith("org/") || name.startsWith("com/") || name.startsWith("io/") || name.startsWith("net/")) {
+                name = name.substring(0, name.length() - ".class".length());
+                if (name.startsWith("org/") || name.startsWith("com/") || name.startsWith("io/") || name.startsWith("net/")) {
                     ++shaded;
                     continue;
 }
@@ -468,44 +464,30 @@ public final class InjectNativeBridge {
             try {
                 InjectLog.line("cannot list own jar (" + t2 + ") -- falling back to the Abyss/ prefix");
 }
-            catch (Throwable throwable) {
-                InjectNativeBridge.close(jar);
-                throw throwable;
+            catch (Throwable ignored) {
+                // logging must not interfere with the fallback
 }
-            InjectNativeBridge.close(jar);
 }
-        InjectNativeBridge.close(jar);
         return found;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Loose catch block
-     */
     private static byte[] readOwn(String entry) {
-        JarFile jar = null;
-        try {
-            jar = new JarFile(InjectNativeBridge.ownJarPath());
+        try (JarFile jar = new JarFile(InjectNativeBridge.ownJarPath());) {
             JarEntry found = jar.getJarEntry(entry);
             if (found == null) {
                 return null;
 }
-            InputStream in = jar.getInputStream(found);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] chunk = new byte[8192];
-            int read = in.read(chunk);
-            while (read > 0) {
-                out.write(chunk, 0, read);
-                read = in.read(chunk);
+            try (InputStream in = jar.getInputStream(found);) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] chunk = new byte[8192];
+                int read;
+                while ((read = in.read(chunk)) > 0) {
+                    out.write(chunk, 0, read);
 }
-            byte[] byArray = out.toByteArray();
-            in.close();
-            return byArray;
+                return out.toByteArray();
+}
 }
         catch (Throwable throwable) {
             return null;
-}
-        finally {
-            InjectNativeBridge.close(jar);
 }
 }
     private static File ownJarPath() throws Exception {

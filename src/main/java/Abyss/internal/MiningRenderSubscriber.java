@@ -11,7 +11,7 @@ import Abyss.internal.MiningEngine;
 
 public class MiningRenderSubscriber
 implements EventSubscriber {
-    private static final long @Override
+    @Override
     public final void x(long var1, EventBus var3) {
         MiningRenderSubscriberBinder.n(var3, this);
 }

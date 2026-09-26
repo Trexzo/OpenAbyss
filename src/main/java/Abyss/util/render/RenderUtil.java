@@ -91,6 +91,18 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 public class RenderUtil {
+    private static String[] c;
+
+    private static Map h;
+
+    private static Long[] j;
+
+    private static Map e;
+
+    private static String[] d;
+
+    private static long[] f;
+
     private static Frustum Z;
     
     private static RenderItem R;
@@ -110,15 +122,15 @@ public class RenderUtil {
     public static void s(EntityLivingBase var0, double var1, int var3, float var4, int var5, int var6, char var7, char var8) {
         long var9 = ((long)var6 << 32 | (long)var7 << 48 >>> 32 | (long)var8 << 48 >>> 48) ^ b;
         long var11 = var9 ^ 0xF8175622B6FL;
-        double var13 = var0.field_70142_S + (var0.field_70165_t - var0.field_70142_S) * (double)ClientUtil.b((long)var11).field_74281_c - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var15 = var0.field_70137_T + (var0.field_70163_u - var0.field_70137_T) * (double)ClientUtil.b((long)var11).field_74281_c - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var17 = var0.field_70136_U + (var0.field_70161_v - var0.field_70136_U) * (double)ClientUtil.b((long)var11).field_74281_c - RenderUtil.T.func_175598_ae().field_78728_n;
-        GlStateManager.func_179094_E();
+        double var13 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * (double)ClientUtil.b((long)var11).renderPartialTicks - RenderUtil.T.getRenderManager().viewerPosX;
+        double var15 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * (double)ClientUtil.b((long)var11).renderPartialTicks - RenderUtil.T.getRenderManager().viewerPosY;
+        double var17 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * (double)ClientUtil.b((long)var11).renderPartialTicks - RenderUtil.T.getRenderManager().viewerPosZ;
+        GlStateManager.pushMatrix();
         float var19 = (float)(var5 >> 24 & 0xFF) / 255.0f;
         float var20 = (float)(var5 >> 16 & 0xFF) / 255.0f;
         float var21 = (float)(var5 >> 8 & 0xFF) / 255.0f;
         float var22 = (float)(var5 & 0xFF) / 255.0f;
-        RenderUtil.T.field_71460_t.func_175072_h();
+        RenderUtil.T.entityRenderer.disableLightmap();
         GL11.glDisable((int)3553);
         GL11.glEnable((int)3042);
         GL11.glBlendFunc((int)770, (int)771);
@@ -139,8 +151,8 @@ public class RenderUtil {
         GL11.glEnable((int)2929);
         GL11.glDisable((int)3042);
         GL11.glEnable((int)3553);
-        RenderUtil.T.field_71460_t.func_180436_i();
-        GlStateManager.func_179121_F();
+        RenderUtil.T.entityRenderer.enableLightmap();
+        GlStateManager.popMatrix();
 }
     public static Color x(int var0, long var1) {
         Color var3 = new Color(var0);
@@ -164,7 +176,7 @@ public class RenderUtil {
         float var11 = (float)(var1 & 0xFF) / 255.0f;
         if (var4) {
             GL11.glColor4f((float)var9, (float)var10, (float)var11, (float)1.0f);
-            RenderGlobal.func_181561_a((AxisAlignedBB)var0);
+            RenderGlobal.drawSelectionBoundingBox((AxisAlignedBB)var0);
 }
         if (var5) {
             GL11.glColor4f((float)var9, (float)var10, (float)var11, (float)var8);
@@ -183,11 +195,11 @@ public class RenderUtil {
         var11 = b ^ var11;
         int var21 = (int)((var11 ^ 0x431FDD0C9BAL) >>> 32);
         int var22 = (int)((var11 ^ 0x431FDD0C9BAL) << 32 >>> 48);
-        float var27 = MinecraftAccessor.o((Minecraft)RenderUtil.T).field_74281_c;
-        double var28 = var1 + (var7 - var1) * (double)var27 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var30 = var3 + (var9 - var3) * (double)var27 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var32 = var5 + (var13 - var5) * (double)var27 - RenderUtil.T.func_175598_ae().field_78728_n;
-        GlStateManager.func_179094_E();
+        float var27 = MinecraftAccessor.o((Minecraft)RenderUtil.T).renderPartialTicks;
+        double var28 = var1 + (var7 - var1) * (double)var27 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var30 = var3 + (var9 - var3) * (double)var27 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var32 = var5 + (var13 - var5) * (double)var27 - RenderUtil.T.getRenderManager().viewerPosZ;
+        GlStateManager.pushMatrix();
         if (var15 == 0) {
             long[] var24 = new long[]{0L};
             var15 = RenderUtil.M(var21, (short)var22, 2L, var24);
@@ -197,7 +209,7 @@ public class RenderUtil {
         float var36 = (float)(var15 >> 8 & 0xFF) / 255.0f;
         float var37 = (float)(var15 & 0xFF) / 255.0f;
         AxisAlignedBB var38 = var0;
-        AxisAlignedBB var39 = new AxisAlignedBB(var38.field_72340_a - var7 + var28, var38.field_72338_b - var9 + var30, var38.field_72339_c - var13 + var32, var38.field_72336_d - var7 + var28, var38.field_72337_e - var9 + var30, var38.field_72334_f - var13 + var32);
+        AxisAlignedBB var39 = new AxisAlignedBB(var38.minX - var7 + var28, var38.minY - var9 + var30, var38.minZ - var13 + var32, var38.maxX - var7 + var28, var38.maxY - var9 + var30, var38.maxZ - var13 + var32);
         GL11.glBlendFunc((int)770, (int)771);
         GL11.glEnable((int)3042);
         GL11.glDisable((int)3553);
@@ -210,37 +222,37 @@ public class RenderUtil {
         GL11.glEnable((int)2929);
         GL11.glDepthMask((boolean)true);
         GL11.glDisable((int)3042);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public static void l(AxisAlignedBB var0, int var1, int var5, int var6, int var7) {
-        Tessellator var10 = Tessellator.func_178181_a();
-        WorldRenderer var11 = var10.func_178180_c();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var1, var5, var6, var7).func_181675_d();
-        var10.func_78381_a();
+        Tessellator var10 = Tessellator.getInstance();
+        WorldRenderer var11 = var10.getWorldRenderer();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var5, var6, var7).endVertex();
+        var10.draw();
 }
     public static void M() {
         GL11.glDisable((int)2929);
@@ -256,11 +268,11 @@ public class RenderUtil {
         GL11.glEnable((int)3089);
 }
     public static void m(ItemStack var0, int var1, int var2) {
-        GlStateManager.func_179094_E();
-        RenderHelper.func_74520_c();
-        R.func_180450_b(var0, var1, var2);
-        RenderHelper.func_74518_a();
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        RenderHelper.enableGUIStandardItemLighting();
+        R.renderItemAndEffectIntoGUI(var0, var1, var2);
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.popMatrix();
 }
     public static void H(float var0, float var1, long var2, float var4, float var5, int var6) {
         var2 = b ^ var2;
@@ -280,26 +292,26 @@ public class RenderUtil {
             float var11 = (float)(var9 >> 16 & 0xFF) / 255.0f;
             float var12 = (float)(var9 >> 8 & 0xFF) / 255.0f;
             float var13 = (float)(var9 & 0xFF) / 255.0f;
-            Tessellator var14 = Tessellator.func_178181_a();
-            WorldRenderer var15 = var14.func_178180_c();
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179090_x();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
+            Tessellator var14 = Tessellator.getInstance();
+            WorldRenderer var15 = var14.getWorldRenderer();
+            GlStateManager.enableBlend();
+            GlStateManager.disableTexture2D();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
             GL11.glColor4f((float)var11, (float)var12, (float)var13, (float)var10);
-            var15.func_181668_a(6, DefaultVertexFormats.field_181705_e);
+            var15.begin(6, DefaultVertexFormats.POSITION);
             for (int var16 = 0; var16 < var8; ++var16) {
                 double var17 = Math.PI * 2 * (double)var16 / (double)var8 + Math.toRadians(180.0);
-                var15.func_181662_b(var0 + Math.sin(var17) * var4, var2 + Math.cos(var17) * var4, 0.0).func_181675_d();
+                var15.pos(var0 + Math.sin(var17) * var4, var2 + Math.cos(var17) * var4, 0.0).endVertex();
 }
-            var14.func_78381_a();
-            GlStateManager.func_179098_w();
-            GlStateManager.func_179084_k();
+            var14.draw();
+            GlStateManager.enableTexture2D();
+            GlStateManager.disableBlend();
 }
 }
     public static void O(double var0, double var2, double var4, long var6, double var8, double var10, double var12, int var14, boolean var15, boolean var16) {
-        double var19 = var0 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var21 = var2 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var23 = var4 - RenderUtil.T.func_175598_ae().field_78728_n;
+        double var19 = var0 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var21 = var2 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var23 = var4 - RenderUtil.T.getRenderManager().viewerPosZ;
         AxisAlignedBB var25 = new AxisAlignedBB(var19, var21, var23, var19 + var8, var21 + var10, var23 + var12);
         RenderUtil.j(var25, var14, 137192391982620L, var15, var16);
 }
@@ -317,24 +329,24 @@ public class RenderUtil {
         GL11.glDisable((int)3089);
 }
     public static void q(ItemStack var0, int var1, int var2, String var3) {
-        GlStateManager.func_179094_E();
-        RenderHelper.func_74520_c();
-        R.func_180450_b(var0, var1, var2);
-        R.func_180453_a(RenderUtil.T.field_71466_p, var0, var1, var2, var3);
-        RenderHelper.func_74518_a();
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        RenderHelper.enableGUIStandardItemLighting();
+        R.renderItemAndEffectIntoGUI(var0, var1, var2);
+        R.renderItemOverlayIntoGUI(RenderUtil.T.fontRendererObj, var0, var1, var2, var3);
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.popMatrix();
 }
     public static void w() {
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179089_o();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179084_k();
+        GlStateManager.enableDepth();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableCull();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
 }
     public static void C(BlockPos var0, double var1, int var3, long var4, int var6, int var7, int var8) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         var4 = b ^ var4;
         int var16 = (int)((var4 ^ 0x7E94D6A0A712L) >>> 32);
-        RenderUtil.l(new AxisAlignedBB((double)var0.func_177958_n(), (double)var0.func_177956_o(), (double)var0.func_177952_p(), (double)var0.func_177958_n() + 1.0, (double)var0.func_177956_o() + var1, (double)var0.func_177952_p() + 1.0).func_72317_d(-RenderManagerAccessor.k(0L, T.func_175598_ae()), -RenderManagerAccessor.y(var16, T.func_175598_ae()), -RenderManagerAccessor.W(0L, T.func_175598_ae())), var3, var6, var7, var8);
+        RenderUtil.l(new AxisAlignedBB((double)var0.getX(), (double)var0.getY(), (double)var0.getZ(), (double)var0.getX() + 1.0, (double)var0.getY() + var1, (double)var0.getZ() + 1.0).offset(-RenderManagerAccessor.k(0L, T.getRenderManager()), -RenderManagerAccessor.y(var16, T.getRenderManager()), -RenderManagerAccessor.W(0L, T.getRenderManager())), var3, var6, var7, var8);
 }
     public static void h(AxisAlignedBB var0, int var1, int var2, int var3, int var4, long var5, boolean var7, boolean var8) {
         var5 = b ^ var5;
@@ -351,7 +363,7 @@ public class RenderUtil {
         GL11.glDepthMask((boolean)false);
         if (var7) {
             GL11.glColor4f((float)((float)var1 / 255.0f), (float)((float)var2 / 255.0f), (float)((float)var3 / 255.0f), (float)1.0f);
-            RenderGlobal.func_181561_a((AxisAlignedBB)var0);
+            RenderGlobal.drawSelectionBoundingBox((AxisAlignedBB)var0);
 }
         if (var8) {
             GL11.glColor4f((float)((float)var1 / 255.0f), (float)((float)var2 / 255.0f), (float)((float)var3 / 255.0f), (float)((float)var4 / 255.0f));
@@ -370,18 +382,18 @@ public class RenderUtil {
         RenderUtil.O(var0, (float)(var0 >> 24 & 0xFF) / 255.0f, 0L);
 }
     public static void R(Entity var0, long var1, int var3, float var4) {
-        double var8 = var0.field_70142_S + (var0.field_70165_t - var0.field_70142_S) * (double)var4 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var10 = var0.field_70137_T + (var0.field_70163_u - var0.field_70137_T) * (double)var4 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var12 = var0.field_70136_U + (var0.field_70161_v - var0.field_70136_U) * (double)var4 - RenderUtil.T.func_175598_ae().field_78728_n;
+        double var8 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var10 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var12 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosZ;
         float var14 = (float)(var3 >> 24 & 0xFF) / 255.0f;
         float var15 = (float)(var3 >> 16 & 0xFF) / 255.0f;
         float var16 = (float)(var3 >> 8 & 0xFF) / 255.0f;
         float var17 = (float)(var3 & 0xFF) / 255.0f;
         double var18 = 0.45;
         double var20 = 0.1;
-        double var22 = (double)var0.field_70131_O + 0.1 - (var0.func_70093_af() ? 0.2 : 0.0);
+        double var22 = (double)var0.height + 0.1 - (var0.isSneaking() ? 0.2 : 0.0);
         AxisAlignedBB var24 = new AxisAlignedBB(var8 - var18, var10 + var22, var12 - var18, var8 + var18, var10 + var22 + var20, var12 + var18);
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         GL11.glBlendFunc((int)770, (int)771);
         GL11.glEnable((int)3042);
         GL11.glDisable((int)3553);
@@ -389,25 +401,25 @@ public class RenderUtil {
         GL11.glDepthMask((boolean)false);
         GL11.glLineWidth((float)2.0f);
         GL11.glColor4f((float)var15, (float)var16, (float)var17, (float)var14);
-        RenderGlobal.func_181561_a((AxisAlignedBB)var24);
+        RenderGlobal.drawSelectionBoundingBox((AxisAlignedBB)var24);
         RenderUtil.D(var24, var15, var16, var17, var14);
         GL11.glEnable((int)3553);
         GL11.glEnable((int)2929);
         GL11.glDepthMask((boolean)true);
         GL11.glDisable((int)3042);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public static boolean p(AxisAlignedBB var0, double var1) {
-        l.func_78547_a(RenderUtil.T.func_175606_aa().field_70165_t, RenderUtil.T.func_175606_aa().field_70163_u, RenderUtil.T.func_175606_aa().field_70161_v);
-        return l.func_78546_a(var0.func_72314_b(var1, var1, var1));
+        l.setPosition(RenderUtil.T.getRenderViewEntity().posX, RenderUtil.T.getRenderViewEntity().posY, RenderUtil.T.getRenderViewEntity().posZ);
+        return l.isBoundingBoxInFrustum(var0.expand(var1, var1, var1));
 }
     public static void V(BlockPos var0, long var1, int var3, int var4) {
-        RenderUtil.r(var0.func_177958_n(), var0.func_177956_o(), var0.func_177952_p(), 1.0, 1.0, 1.0, var3, var4);
+        RenderUtil.r(var0.getX(), var0.getY(), var0.getZ(), 1.0, 1.0, 1.0, var3, var4);
 }
     public static void k(float var0, float var1, byte var2, float var3, float var4, float var5, long var6) {
         int var12;
         ScaledResolution var10 = new ScaledResolution(T);
-        int var11 = var10.func_78325_e();
+        int var11 = var10.getScaleFactor();
         switch (var11) {
             case 2: {
                 var12 = 540;
@@ -422,15 +434,23 @@ public class RenderUtil {
                 break;
 }
             default: {
-                var12 = var10.func_78328_b();
+                var12 = var10.getScaledHeight();
 }
 }
         GL11.glScissor((int)((int)(var0 * (float)var11 * var5)), (int)((int)(((float)var12 - var1) * (float)var11 * var5)), (int)((int)(var3 * (float)var11 * var5)), (int)((int)(var4 * (float)var11 * var5)));
 }
+    public static void a(long var0) {
+        GL11.glEnable(3553);
+        GL11.glDisable(3042);
+        GL11.glEnable(2929);
+        GL11.glDisable(2848);
+        GL11.glHint(3154, 4352);
+        GL11.glHint(3155, 4352);
+    }
     public static void P(double var0, double var2, double var4, double var6) {
         ScaledResolution var8 = new ScaledResolution(T);
-        int var9 = var8.func_78325_e();
-        int var10 = var8.func_78328_b();
+        int var9 = var8.getScaleFactor();
+        int var10 = var8.getScaledHeight();
         GL11.glScissor((int)((int)(var0 * (double)var9)), (int)((int)(((double)var10 - var2 - var6) * (double)var9)), (int)((int)(var4 * (double)var9)), (int)((int)(var6 * (double)var9)));
 }
     public static void R(AxisAlignedBB var0, int var1, long var2) {
@@ -438,75 +458,75 @@ public class RenderUtil {
         int var13 = ColorUtil.U(0L, var1);
         int var14 = ColorUtil.d(0L, var1);
         int var15 = ColorUtil.g(0L, var1);
-        Tessellator var16 = Tessellator.func_178181_a();
-        WorldRenderer var17 = var16.func_178180_c();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
-        var17.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var17.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181669_b(var12, var13, var14, var15).func_181675_d();
-        var16.func_78381_a();
+        Tessellator var16 = Tessellator.getInstance();
+        WorldRenderer var17 = var16.getWorldRenderer();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
+        var17.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var17.pos(var0.minX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.minX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.minZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.maxY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var17.pos(var0.maxX, var0.minY, var0.maxZ).color(var12, var13, var14, var15).endVertex();
+        var16.draw();
 }
     public static void G(float var0, float var1, float var2, char var3, float var4, char var5, Color var6) {
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179097_i();
+        GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableDepth();
         GL11.glLineWidth((float)2.5f);
         GL11.glColor4f((float)((float)var6.getRed() / 255.0f), (float)((float)var6.getGreen() / 255.0f), (float)((float)var6.getBlue() / 255.0f), (float)((float)var6.getAlpha() / 255.0f));
         GL11.glBegin((int)2);
@@ -515,28 +535,28 @@ public class RenderUtil {
         GL11.glVertex2f((float)var2, (float)var4);
         GL11.glVertex2f((float)var0, (float)var4);
         GL11.glEnd();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179084_k();
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableDepth();
+        GlStateManager.disableBlend();
         GL11.glColor4f((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public static void A(Entity var0, long var1, int var3, float var4, double var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         var1 = b ^ var1;
         int var22 = (int)((var1 ^ 0x2E3D5F2D780BL) >>> 32);
-        double var25 = MathUtil.h(var0.field_70165_t, var0.field_70142_S, ClientUtil.H(0L));
-        double var27 = MathUtil.h(var0.field_70163_u, var0.field_70137_T, ClientUtil.H(0L));
-        double var29 = MathUtil.h(var0.field_70161_v, var0.field_70136_U, ClientUtil.H(0L));
-        RenderUtil.r(var0.func_174813_aQ().func_72314_b(var5, var5, var5).func_72317_d(var25 - var0.field_70165_t, var27 - var0.field_70163_u, var29 - var0.field_70161_v).func_72317_d(-RenderManagerAccessor.k(0L, T.func_175598_ae()), -RenderManagerAccessor.y(var22, T.func_175598_ae()), -RenderManagerAccessor.W(0L, T.func_175598_ae())), ColorUtil.l(var3, 0L), ColorUtil.U(0L, var3), ColorUtil.d(0L, var3), var4);
+        double var25 = MathUtil.h(var0.posX, var0.lastTickPosX, ClientUtil.H(0L));
+        double var27 = MathUtil.h(var0.posY, var0.lastTickPosY, ClientUtil.H(0L));
+        double var29 = MathUtil.h(var0.posZ, var0.lastTickPosZ, ClientUtil.H(0L));
+        RenderUtil.r(var0.getEntityBoundingBox().expand(var5, var5, var5).offset(var25 - var0.posX, var27 - var0.posY, var29 - var0.posZ).offset(-RenderManagerAccessor.k(0L, T.getRenderManager()), -RenderManagerAccessor.y(var22, T.getRenderManager()), -RenderManagerAccessor.W(0L, T.getRenderManager())), ColorUtil.l(var3, 0L), ColorUtil.U(0L, var3), ColorUtil.d(0L, var3), var4);
 }
     public static void A$fill(Entity var0, long var1, int var3, float var4, double var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         double[][] var16;
         RenderUtil.A(var0, var1, var3, var4, var5);
         int var8 = (int)((var1 ^ b ^ 0x2E3D5F2D780BL) >>> 32);
-        double var9 = MathUtil.h(var0.field_70165_t, var0.field_70142_S, ClientUtil.H(0L));
-        double var11 = MathUtil.h(var0.field_70163_u, var0.field_70137_T, ClientUtil.H(0L));
-        double var13 = MathUtil.h(var0.field_70161_v, var0.field_70136_U, ClientUtil.H(0L));
-        AxisAlignedBB var15 = var0.func_174813_aQ().func_72314_b(var5, var5, var5).func_72317_d(var9 - var0.field_70165_t, var11 - var0.field_70163_u, var13 - var0.field_70161_v).func_72317_d(-RenderManagerAccessor.k(0L, T.func_175598_ae()), -RenderManagerAccessor.y(var8, T.func_175598_ae()), -RenderManagerAccessor.W(0L, T.func_175598_ae()));
+        double var9 = MathUtil.h(var0.posX, var0.lastTickPosX, ClientUtil.H(0L));
+        double var11 = MathUtil.h(var0.posY, var0.lastTickPosY, ClientUtil.H(0L));
+        double var13 = MathUtil.h(var0.posZ, var0.lastTickPosZ, ClientUtil.H(0L));
+        AxisAlignedBB var15 = var0.getEntityBoundingBox().expand(var5, var5, var5).offset(var9 - var0.posX, var11 - var0.posY, var13 - var0.posZ).offset(-RenderManagerAccessor.k(0L, T.getRenderManager()), -RenderManagerAccessor.y(var8, T.getRenderManager()), -RenderManagerAccessor.W(0L, T.getRenderManager()));
         GL11.glPushMatrix();
         GL11.glDisable((int)3553);
         GL11.glDisable((int)2929);
@@ -545,28 +565,28 @@ public class RenderUtil {
         GL11.glDepthMask((boolean)false);
         GL11.glColor4f((float)((float)ColorUtil.l(var3, 0L) / 255.0f), (float)((float)ColorUtil.U(0L, var3) / 255.0f), (float)((float)ColorUtil.d(0L, var3) / 255.0f), (float)0.25f);
         GL11.glBegin((int)7);
-        for (double[] var20 : var16 = new double[][]{{var15.field_72340_a, var15.field_72338_b, var15.field_72339_c, var15.field_72336_d, var15.field_72337_e, var15.field_72339_c}, {var15.field_72340_a, var15.field_72338_b, var15.field_72334_f, var15.field_72336_d, var15.field_72337_e, var15.field_72334_f}}) {
+        for (double[] var20 : var16 = new double[][]{{var15.minX, var15.minY, var15.minZ, var15.maxX, var15.maxY, var15.minZ}, {var15.minX, var15.minY, var15.maxZ, var15.maxX, var15.maxY, var15.maxZ}}) {
             GL11.glVertex3d((double)var20[0], (double)var20[1], (double)var20[2]);
             GL11.glVertex3d((double)var20[3], (double)var20[1], (double)var20[2]);
             GL11.glVertex3d((double)var20[3], (double)var20[4], (double)var20[5]);
             GL11.glVertex3d((double)var20[0], (double)var20[4], (double)var20[5]);
 }
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72338_b, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72338_b, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72337_e, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72337_e, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72338_b, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72338_b, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72337_e, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72337_e, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72338_b, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72338_b, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72338_b, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72338_b, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72337_e, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72337_e, (double)var15.field_72339_c);
-        GL11.glVertex3d((double)var15.field_72336_d, (double)var15.field_72337_e, (double)var15.field_72334_f);
-        GL11.glVertex3d((double)var15.field_72340_a, (double)var15.field_72337_e, (double)var15.field_72334_f);
+        GL11.glVertex3d((double)var15.minX, (double)var15.minY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.minY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.maxY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.maxY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.minY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.minY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.maxY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.maxY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.minY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.minY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.minY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.minY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.maxY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.maxY, (double)var15.minZ);
+        GL11.glVertex3d((double)var15.maxX, (double)var15.maxY, (double)var15.maxZ);
+        GL11.glVertex3d((double)var15.minX, (double)var15.maxY, (double)var15.maxZ);
         GL11.glEnd();
         GL11.glDepthMask((boolean)true);
         GL11.glDisable((int)3042);
@@ -600,7 +620,7 @@ public class RenderUtil {
         float var6 = (float)(var1 >> 8 & 0xFF) / 255.0f;
         float var7 = (float)(var1 & 0xFF) / 255.0f;
         GL11.glColor4f((float)var5, (float)var6, (float)var7, (float)((float)var2 / 255.0f));
-        RenderGlobal.func_181561_a((AxisAlignedBB)var0);
+        RenderGlobal.drawSelectionBoundingBox((AxisAlignedBB)var0);
         GL11.glColor4f((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
         GL11.glEnable((int)3553);
         GL11.glEnable((int)2929);
@@ -618,33 +638,33 @@ public class RenderUtil {
         float var13 = (float)(var5 >> 16 & 0xFF) / 255.0f;
         float var14 = (float)(var5 >> 8 & 0xFF) / 255.0f;
         float var15 = (float)(var5 & 0xFF) / 255.0f;
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179131_c((float)var13, (float)var14, (float)var15, (float)var12);
-        Tessellator var16 = Tessellator.func_178181_a();
-        WorldRenderer var17 = var16.func_178180_c();
-        var17.func_181668_a(6, DefaultVertexFormats.field_181705_e);
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.color((float)var13, (float)var14, (float)var15, (float)var12);
+        Tessellator var16 = Tessellator.getInstance();
+        WorldRenderer var17 = var16.getWorldRenderer();
+        var17.begin(6, DefaultVertexFormats.POSITION);
         int var18 = Math.max(24, (int)((double)var9 * 1.5));
         double var19 = Math.PI * 2 / (double)var18;
         for (int var21 = 0; var21 <= var18; ++var21) {
             double var22 = (double)var21 * var19;
             float var24 = (float)((double)var10 + Math.sin(var22) * (double)var9);
             float var25 = (float)((double)var11 + Math.cos(var22) * (double)var9);
-            var17.func_181662_b((double)var24, (double)var25, 0.0).func_181675_d();
+            var17.pos((double)var24, (double)var25, 0.0).endVertex();
 }
-        var16.func_78381_a();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        var16.draw();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void u(float var0, float var1, float var2, ResourceLocation var5) {
         GL11.glPushMatrix();
         GL11.glEnable((int)3042);
         GL11.glBlendFunc((int)770, (int)771);
         GL11.glDisable((int)2929);
-        T.func_110434_K().func_110577_a(var5);
-        Gui.func_146110_a((int)((int)var0), (int)((int)var1), (float)0.0f, (float)0.0f, (int)((int)var2), (int)((int)var2), (float)((int)var2), (float)((int)var2));
+        T.getTextureManager().bindTexture(var5);
+        Gui.drawModalRectWithCustomSizedTexture((int)((int)var0), (int)((int)var1), (float)0.0f, (float)0.0f, (int)((int)var2), (int)((int)var2), (float)((int)var2), (float)((int)var2));
         GL11.glEnable((int)2929);
         GL11.glDisable((int)3042);
         GL11.glPopMatrix();
@@ -653,7 +673,7 @@ public class RenderUtil {
         GL11.glLineWidth((float)var7);
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
-        RenderGlobal.func_181563_a((AxisAlignedBB)var0, (int)var3, (int)var4, (int)var5, (int)var6);
+        RenderGlobal.drawOutlinedBoundingBox((AxisAlignedBB)var0, (int)var3, (int)var4, (int)var5, (int)var6);
         GL11.glDisable((int)2848);
         GL11.glLineWidth((float)2.0f);
 }
@@ -725,16 +745,16 @@ public class RenderUtil {
         GL11.glPopAttrib();
         GL11.glLineWidth((float)1.0f);
         GL11.glShadeModel((int)7424);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void g(char var0, char var1, ResourceLocation var2, int var3, float var4, float var5, float var6, float var7, int var8) {
         GL11.glPushMatrix();
         GL11.glEnable((int)3042);
         GL11.glBlendFunc((int)770, (int)771);
         GL11.glDisable((int)2929);
-        T.func_110434_K().func_110577_a(var2);
+        T.getTextureManager().bindTexture(var2);
         GL11.glColor4f((float)(var8 >> 16 & 0xFF), (float)(var8 >> 8 & 0xFF), (float)(var8 & 0xFF), (float)1.0f);
-        Gui.func_146110_a((int)((int)var4), (int)((int)var5), (float)0.0f, (float)0.0f, (int)((int)(var6 / var7)), (int)((int)(var6 / var7)), (float)((int)(var6 / var7)), (float)((int)(var6 / var7)));
+        Gui.drawModalRectWithCustomSizedTexture((int)((int)var4), (int)((int)var5), (float)0.0f, (float)0.0f, (int)((int)(var6 / var7)), (int)((int)(var6 / var7)), (float)((int)(var6 / var7)), (float)((int)(var6 / var7)));
         GL11.glEnable((int)2929);
         GL11.glDisable((int)3042);
         GL11.glPopMatrix();
@@ -743,89 +763,89 @@ public class RenderUtil {
         float var5 = (float)(var0 >> 16 & 0xFF) / 255.0f;
         float var6 = (float)(var0 >> 8 & 0xFF) / 255.0f;
         float var7 = (float)(var0 & 0xFF) / 255.0f;
-        GlStateManager.func_179131_c((float)var5, (float)var6, (float)var7, (float)((float)var1));
+        GlStateManager.color((float)var5, (float)var6, (float)var7, (float)((float)var1));
 }
     public static void c(long var0, double var2, double var4, double var6, double var8, int var10) {
         float var11 = (float)(var10 >> 24 & 0xFF) / 255.0f;
         float var12 = (float)(var10 >> 16 & 0xFF) / 255.0f;
         float var13 = (float)(var10 >> 8 & 0xFF) / 255.0f;
         float var14 = (float)(var10 & 0xFF) / 255.0f;
-        GlStateManager.func_179094_E();
-        Tessellator var15 = Tessellator.func_178181_a();
-        WorldRenderer var16 = var15.func_178180_c();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179131_c((float)var12, (float)var13, (float)var14, (float)var11);
-        var16.func_181668_a(7, DefaultVertexFormats.field_181705_e);
-        var16.func_181662_b(var2, var8, 0.0).func_181675_d();
-        var16.func_181662_b(var6, var8, 0.0).func_181675_d();
-        var16.func_181662_b(var6, var4, 0.0).func_181675_d();
-        var16.func_181662_b(var2, var4, 0.0).func_181675_d();
-        var15.func_78381_a();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179117_G();
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        Tessellator var15 = Tessellator.getInstance();
+        WorldRenderer var16 = var15.getWorldRenderer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.color((float)var12, (float)var13, (float)var14, (float)var11);
+        var16.begin(7, DefaultVertexFormats.POSITION);
+        var16.pos(var2, var8, 0.0).endVertex();
+        var16.pos(var6, var8, 0.0).endVertex();
+        var16.pos(var6, var4, 0.0).endVertex();
+        var16.pos(var2, var4, 0.0).endVertex();
+        var15.draw();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
+        GlStateManager.resetColor();
+        GlStateManager.popMatrix();
 }
     public static void J(Vec3 var0, double var1, double var3, double var5, int var7, float var8, long var9) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         float var20 = (float)(var7 >> 24 & 0xFF) / 255.0f;
         float var21 = (float)(var7 >> 16 & 0xFF) / 255.0f;
         float var22 = (float)(var7 >> 8 & 0xFF) / 255.0f;
         float var23 = (float)(var7 & 0xFF) / 255.0f;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179131_c((float)var21, (float)var22, (float)var23, (float)var20);
-        boolean var24 = RenderUtil.T.field_71474_y.field_74336_f;
-        RenderUtil.T.field_71474_y.field_74336_f = false;
-        EntityRendererAccessor.k(RenderUtil.T.field_71460_t, ClientUtil.H(0L), 2);
-        RenderUtil.T.field_71474_y.field_74336_f = var24;
+        GlStateManager.pushMatrix();
+        GlStateManager.color((float)var21, (float)var22, (float)var23, (float)var20);
+        boolean var24 = RenderUtil.T.gameSettings.viewBobbing;
+        RenderUtil.T.gameSettings.viewBobbing = false;
+        EntityRendererAccessor.k(RenderUtil.T.entityRenderer, ClientUtil.H(0L), 2);
+        RenderUtil.T.gameSettings.viewBobbing = var24;
         GL11.glLineWidth((float)var8);
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
         GL11.glBegin((int)1);
-        GL11.glVertex3d((double)var0.field_72450_a, (double)var0.field_72448_b, (double)var0.field_72449_c);
-        GL11.glVertex3d((double)(var1 - RenderManagerAccessor.k(0L, T.func_175598_ae())), (double)(var3 - RenderManagerAccessor.y(19146, T.func_175598_ae())), (double)(var5 - RenderManagerAccessor.W(0L, T.func_175598_ae())));
+        GL11.glVertex3d((double)var0.xCoord, (double)var0.yCoord, (double)var0.zCoord);
+        GL11.glVertex3d((double)(var1 - RenderManagerAccessor.k(0L, T.getRenderManager())), (double)(var3 - RenderManagerAccessor.y(19146, T.getRenderManager())), (double)(var5 - RenderManagerAccessor.W(0L, T.getRenderManager())));
         GL11.glEnd();
         GL11.glDisable((int)2848);
         GL11.glLineWidth((float)2.0f);
-        GlStateManager.func_179117_G();
-        GlStateManager.func_179121_F();
+        GlStateManager.resetColor();
+        GlStateManager.popMatrix();
 }
     public static void P(long var0, int var2) {
         GL11.glColor4f((float)((float)(var2 >> 16 & 0xFF) / 255.0f), (float)((float)(var2 >> 8 & 0xFF) / 255.0f), (float)((float)(var2 & 0xFF) / 255.0f), (float)((float)(var2 >> 24 & 0xFF) / 255.0f));
 }
     public static void c(BlockPos var0, long var1, int var3, boolean var4, boolean var5) {
-        RenderUtil.O(var0.func_177958_n(), var0.func_177956_o(), var0.func_177952_p(), 25559446473706L, 1.0, 1.0, 1.0, var3, var4, var5);
+        RenderUtil.O(var0.getX(), var0.getY(), var0.getZ(), 25559446473706L, 1.0, 1.0, 1.0, var3, var4, var5);
 }
     public static void v(EntityLivingBase var0, int var1, double var2, float var4, long var5) {
         var5 = b ^ var5;
         int var11 = (int)((var5 ^ 0x17B708D67688L) >>> 56);
         if (RenderUtil.l((Entity)var0)) {
             Minecraft var14 = MinecraftRef.c((byte)var11, 0L);
-            EntityRendererAccessor.k(var14.field_71460_t, ClientUtil.H(0L), 0);
+            EntityRendererAccessor.k(var14.entityRenderer, ClientUtil.H(0L), 0);
             ScaledResolution var15 = new ScaledResolution(var14);
-            double var16 = var0.field_70142_S + (var0.field_70165_t - var0.field_70142_S) * (double)var4 - var14.func_175598_ae().field_78730_l;
-            double var18 = var0.field_70137_T + (var0.field_70163_u - var0.field_70137_T) * (double)var4 - var14.func_175598_ae().field_78731_m;
-            double var20 = var0.field_70136_U + (var0.field_70161_v - var0.field_70136_U) * (double)var4 - var14.func_175598_ae().field_78728_n;
-            AxisAlignedBB var22 = var0.func_174813_aQ().func_72314_b(0.1 + var2, 0.1 + var2, 0.1 + var2);
-            AxisAlignedBB var23 = new AxisAlignedBB(var22.field_72340_a - var0.field_70165_t + var16, var22.field_72338_b - var0.field_70163_u + var18, var22.field_72339_c - var0.field_70161_v + var20, var22.field_72336_d - var0.field_70165_t + var16, var22.field_72337_e - var0.field_70163_u + var18, var22.field_72334_f - var0.field_70161_v + var20);
-            Vec3[] var24 = new Vec3[]{new Vec3(var23.field_72340_a, var23.field_72338_b, var23.field_72339_c), new Vec3(var23.field_72340_a, var23.field_72338_b, var23.field_72334_f), new Vec3(var23.field_72340_a, var23.field_72337_e, var23.field_72339_c), new Vec3(var23.field_72340_a, var23.field_72337_e, var23.field_72334_f), new Vec3(var23.field_72336_d, var23.field_72338_b, var23.field_72339_c), new Vec3(var23.field_72336_d, var23.field_72338_b, var23.field_72334_f), new Vec3(var23.field_72336_d, var23.field_72337_e, var23.field_72339_c), new Vec3(var23.field_72336_d, var23.field_72337_e, var23.field_72334_f)};
+            double var16 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * (double)var4 - var14.getRenderManager().viewerPosX;
+            double var18 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * (double)var4 - var14.getRenderManager().viewerPosY;
+            double var20 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * (double)var4 - var14.getRenderManager().viewerPosZ;
+            AxisAlignedBB var22 = var0.getEntityBoundingBox().expand(0.1 + var2, 0.1 + var2, 0.1 + var2);
+            AxisAlignedBB var23 = new AxisAlignedBB(var22.minX - var0.posX + var16, var22.minY - var0.posY + var18, var22.minZ - var0.posZ + var20, var22.maxX - var0.posX + var16, var22.maxY - var0.posY + var18, var22.maxZ - var0.posZ + var20);
+            Vec3[] var24 = new Vec3[]{new Vec3(var23.minX, var23.minY, var23.minZ), new Vec3(var23.minX, var23.minY, var23.maxZ), new Vec3(var23.minX, var23.maxY, var23.minZ), new Vec3(var23.minX, var23.maxY, var23.maxZ), new Vec3(var23.maxX, var23.minY, var23.minZ), new Vec3(var23.maxX, var23.minY, var23.maxZ), new Vec3(var23.maxX, var23.maxY, var23.minZ), new Vec3(var23.maxX, var23.maxY, var23.maxZ)};
             double var25 = Double.MAX_VALUE;
             double var27 = Double.MAX_VALUE;
             double var29 = Double.MIN_VALUE;
             double var31 = Double.MIN_VALUE;
             boolean var33 = false;
             for (Vec3 var37 : var24) {
-                double var38 = var37.field_72450_a;
-                double var40 = var37.field_72448_b;
-                double var42 = var37.field_72449_c;
-                Vec3 var44 = RenderUtil.I(var15.func_78325_e(), var38, var40, var42);
-                if (var44 == null || var44.field_72449_c >= 1.0003684 || var44.field_72449_c <= 0.0) continue;
+                double var38 = var37.xCoord;
+                double var40 = var37.yCoord;
+                double var42 = var37.zCoord;
+                Vec3 var44 = RenderUtil.I(var15.getScaleFactor(), var38, var40, var42);
+                if (var44 == null || var44.zCoord >= 1.0003684 || var44.zCoord <= 0.0) continue;
                 var33 = true;
-                double var45 = var44.field_72450_a;
-                double var47 = var44.field_72448_b;
+                double var45 = var44.xCoord;
+                double var47 = var44.yCoord;
                 if (var45 < var25) {
                     var25 = var45;
 }
@@ -839,10 +859,10 @@ public class RenderUtil {
                 var31 = var47;
 }
             if (var33) {
-                var14.field_71460_t.func_78478_c();
+                var14.entityRenderer.setupOverlayRendering();
                 ScaledResolution var54 = new ScaledResolution(var14);
-                int var55 = var54.func_78326_a();
-                int var56 = var54.func_78328_b();
+                int var55 = var54.getScaledWidth();
+                int var56 = var54.getScaledHeight();
                 var25 = Math.max(0.0, var25);
                 var27 = Math.max(0.0, var27);
                 var29 = Math.min((double)var55, var29);
@@ -893,28 +913,52 @@ public class RenderUtil {
         float var20 = (float)(var11 >> 16 & 0xFF) / 255.0f;
         float var21 = (float)(var11 >> 8 & 0xFF) / 255.0f;
         float var22 = (float)(var11 & 0xFF) / 255.0f;
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179103_j((int)7425);
-        Tessellator var23 = Tessellator.func_178181_a();
-        WorldRenderer var24 = var23.func_178180_c();
-        var24.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var24.func_181662_b(var6, var4, (double)X).func_181666_a(var16, var17, var18, var15).func_181675_d();
-        var24.func_181662_b(var2, var4, (double)X).func_181666_a(var16, var17, var18, var15).func_181675_d();
-        var24.func_181662_b(var2, var8, (double)X).func_181666_a(var20, var21, var22, var19).func_181675_d();
-        var24.func_181662_b(var6, var8, (double)X).func_181666_a(var20, var21, var22, var19).func_181675_d();
-        var23.func_78381_a();
-        GlStateManager.func_179103_j((int)7424);
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179098_w();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.shadeModel((int)7425);
+        Tessellator var23 = Tessellator.getInstance();
+        WorldRenderer var24 = var23.getWorldRenderer();
+        var24.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var24.pos(var6, var4, (double)X).color(var16, var17, var18, var15).endVertex();
+        var24.pos(var2, var4, (double)X).color(var16, var17, var18, var15).endVertex();
+        var24.pos(var2, var8, (double)X).color(var20, var21, var22, var19).endVertex();
+        var24.pos(var6, var8, (double)X).color(var20, var21, var22, var19).endVertex();
+        var23.draw();
+        GlStateManager.shadeModel((int)7424);
+        GlStateManager.disableBlend();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
 }
     public static void U(long var0) {
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179112_b((int)770, (int)771);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc((int)770, (int)771);
 }
+    public static void a(EntityLivingBase var0, long var1, double var3, float var5, int var6) {
+        float var11 = ClientUtil.H(0L);
+        double var12 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * var11 - T.getRenderManager().viewerPosX;
+        double var14 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * var11 - T.getRenderManager().viewerPosY;
+        double var16 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * var11 - T.getRenderManager().viewerPosZ;
+        GlStateManager.pushMatrix();
+        double var18 = MathHelper.clamp_double(var0.getHealth() / var0.getMaxHealth(), 0.0, 1.0);
+        double var20 = var0.getEntityBoundingBox().maxY - var0.getEntityBoundingBox().minY;
+        double var22 = var20 * 40.0;
+        var22 = MathHelper.clamp_double(var22, 30.0, 120.0);
+        int var24 = (int)var22;
+        int var25 = (int)(var22 * var18);
+        int var26 = var18 < 0.3 ? Color.red.getRGB() : (var18 < 0.5 ? Color.orange.getRGB() : (var18 < 0.7 ? Color.yellow.getRGB() : Color.green.getRGB()));
+        GL11.glTranslated(var12, var14 - 0.2, var16);
+        GL11.glRotated(-T.getRenderManager().playerViewY, 0.0, 1.0, 0.0);
+        GlStateManager.disableDepth();
+        GL11.glScalef(0.03F, 0.03F, 0.03F);
+        int var27 = (int)(var6 + var3 * 2.0);
+        c(0L, var27, -1.0, var27 + var5, var24 + 1, Color.black.getRGB());
+        c(0L, var27 + 1, var25, var27 + var5 - 1.0F, var24, Color.darkGray.getRGB());
+        c(0L, var27 + 1, 0.0, var27 + var5 - 1.0F, var25, var26);
+        GlStateManager.enableDepth();
+        GlStateManager.popMatrix();
+    }
     public static void q(AxisAlignedBB var0, long var1, float var3, float var4, float var5) {
         RenderUtil.D(var0, var3, var4, var5, 0.25f);
 }
@@ -923,106 +967,106 @@ public class RenderUtil {
         float var9 = (float)(var7 >> 16 & 0xFF) / 255.0f;
         float var10 = (float)(var7 >> 8 & 0xFF) / 255.0f;
         float var11 = (float)(var7 & 0xFF) / 255.0f;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.pushMatrix();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
         GL11.glLineWidth((float)var6);
         GL11.glColor4f((float)var9, (float)var10, (float)var11, (float)var8);
         GL11.glBegin((int)1);
         GL11.glVertex2f((float)var0, (float)var1);
         GL11.glVertex2f((float)var2, (float)var3);
         GL11.glEnd();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179121_F();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.popMatrix();
 }
     public static Color t(Color var0, Color var1) {
         return RenderUtil.s(var0, var1, 0.5);
 }
     private static void e(WorldRenderer var0, BakedQuad var1, float var2, float var5, float var6, float var7, Tessellator var8) {
-        int[] var9 = var1.func_178209_a();
+        int[] var9 = var1.getVertexData();
         int var11 = var9.length / 4;
-        var0.func_181668_a(7, DefaultVertexFormats.field_181706_f);
+        var0.begin(7, DefaultVertexFormats.POSITION_COLOR);
         for (int var12 = 0; var12 < 4; ++var12) {
             int var13 = var12 * var11;
             float var14 = Float.intBitsToFloat(var9[var13]);
             float var15 = Float.intBitsToFloat(var9[var13 + 1]);
             float var16 = Float.intBitsToFloat(var9[var13 + 2]);
-            var0.func_181662_b((double)var14, (double)var15, (double)var16).func_181666_a(var2, var5, var6, var7).func_181675_d();
+            var0.pos((double)var14, (double)var15, (double)var16).color(var2, var5, var6, var7).endVertex();
 }
-        var8.func_78381_a();
+        var8.draw();
 }
     public static void D(AxisAlignedBB var0, float var1, float var4, float var5, float var6) {
-        Tessellator var10 = Tessellator.func_178181_a();
-        WorldRenderer var11 = var10.func_178180_c();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
-        var11.func_181668_a(7, DefaultVertexFormats.field_181706_f);
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72340_a, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72339_c).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72337_e, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var11.func_181662_b(var0.field_72336_d, var0.field_72338_b, var0.field_72334_f).func_181666_a(var1, var4, var5, var6).func_181675_d();
-        var10.func_78381_a();
+        Tessellator var10 = Tessellator.getInstance();
+        WorldRenderer var11 = var10.getWorldRenderer();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
+        var11.begin(7, DefaultVertexFormats.POSITION_COLOR);
+        var11.pos(var0.minX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.minX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.minZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.maxY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var11.pos(var0.maxX, var0.minY, var0.maxZ).color(var1, var4, var5, var6).endVertex();
+        var10.draw();
 }
     public static void l(int var0, long var1) {
         float var3 = (float)(var0 >> 24 & 0xFF) / 255.0f;
         float var4 = (float)(var0 >> 16 & 0xFF) / 255.0f;
         float var5 = (float)(var0 >> 8 & 0xFF) / 255.0f;
         float var6 = (float)(var0 & 0xFF) / 255.0f;
-        GlStateManager.func_179131_c((float)var4, (float)var5, (float)var6, (float)var3);
+        GlStateManager.color((float)var4, (float)var5, (float)var6, (float)var3);
 }
     private static long c(int var0, long var1) {
         int var3 = var0 ^ (int)(var1 & 0x7FFFL) ^ 0x3B89;
@@ -1054,7 +1098,7 @@ public class RenderUtil {
 }
     public static void l(long var0, AxisAlignedBB var2, int var3) {
         var0 = b ^ var0;
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         float var7 = (float)(var3 >> 24 & 0xFF) / 255.0f;
         float var8 = (float)(var3 >> 16 & 0xFF) / 255.0f;
         float var9 = (float)(var3 >> 8 & 0xFF) / 255.0f;
@@ -1071,10 +1115,10 @@ public class RenderUtil {
         GL11.glEnable((int)2929);
         GL11.glDepthMask((boolean)true);
         GL11.glDisable((int)3042);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public static boolean l(Entity var0) {
-        return RenderUtil.F(var0.func_174813_aQ());
+        return RenderUtil.F(var0.getEntityBoundingBox());
 }
     public static void P(float var0, float var1, float var2, float var3, float var4, float var5, float var6, float var8, int var11) {
         if (!(var2 <= var0) && !(var3 <= var1)) {
@@ -1088,45 +1132,45 @@ public class RenderUtil {
             float var17 = (float)(var11 >> 16 & 0xFF) / 255.0f;
             float var18 = (float)(var11 >> 8 & 0xFF) / 255.0f;
             float var19 = (float)(var11 & 0xFF) / 255.0f;
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179090_x();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-            GlStateManager.func_179131_c((float)var17, (float)var18, (float)var19, (float)var16);
-            Tessellator var20 = Tessellator.func_178181_a();
-            WorldRenderer var21 = var20.func_178180_c();
-            var21.func_181668_a(9, DefaultVertexFormats.field_181705_e);
+            GlStateManager.enableBlend();
+            GlStateManager.disableTexture2D();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+            GlStateManager.color((float)var17, (float)var18, (float)var19, (float)var16);
+            Tessellator var20 = Tessellator.getInstance();
+            WorldRenderer var21 = var20.getWorldRenderer();
+            var21.begin(9, DefaultVertexFormats.POSITION);
             for (int var23 = 0; var23 <= 90; var23 += 6) {
                 double var24 = Math.toRadians(var23);
-                var21.func_181662_b((double)(var0 + var4) - Math.sin(var24) * (double)var4, (double)(var1 + var4) - Math.cos(var24) * (double)var4, 0.0).func_181675_d();
+                var21.pos((double)(var0 + var4) - Math.sin(var24) * (double)var4, (double)(var1 + var4) - Math.cos(var24) * (double)var4, 0.0).endVertex();
 }
             for (int var30 = 90; var30 <= 180; var30 += 6) {
                 double var33 = Math.toRadians(var30);
-                var21.func_181662_b((double)(var0 + var6) - Math.sin(var33) * (double)var6, (double)(var3 - var6) - Math.cos(var33) * (double)var6, 0.0).func_181675_d();
+                var21.pos((double)(var0 + var6) - Math.sin(var33) * (double)var6, (double)(var3 - var6) - Math.cos(var33) * (double)var6, 0.0).endVertex();
 }
             for (int var31 = 0; var31 <= 90; var31 += 6) {
                 double var34 = Math.toRadians(var31);
-                var21.func_181662_b((double)(var2 - var8) + Math.sin(var34) * (double)var8, (double)(var3 - var8) + Math.cos(var34) * (double)var8, 0.0).func_181675_d();
+                var21.pos((double)(var2 - var8) + Math.sin(var34) * (double)var8, (double)(var3 - var8) + Math.cos(var34) * (double)var8, 0.0).endVertex();
 }
             for (int var32 = 90; var32 <= 180; var32 += 6) {
                 double var35 = Math.toRadians(var32);
-                var21.func_181662_b((double)(var2 - var5) + Math.sin(var35) * (double)var5, (double)(var1 + var5) + Math.cos(var35) * (double)var5, 0.0).func_181675_d();
+                var21.pos((double)(var2 - var5) + Math.sin(var35) * (double)var5, (double)(var1 + var5) + Math.cos(var35) * (double)var5, 0.0).endVertex();
 }
-            var20.func_78381_a();
-            GlStateManager.func_179098_w();
-            GlStateManager.func_179084_k();
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            var20.draw();
+            GlStateManager.enableTexture2D();
+            GlStateManager.disableBlend();
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
 }
     public static void r(double var0, double var2, double var6, double var8, double var10, double var12, int var14, int var15) {
-        double var18 = var0 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var20 = var2 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var22 = var6 - RenderUtil.T.func_175598_ae().field_78728_n;
+        double var18 = var0 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var20 = var2 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var22 = var6 - RenderUtil.T.getRenderManager().viewerPosZ;
         AxisAlignedBB var24 = new AxisAlignedBB(var18, var20, var22, var18 + var8, var20 + var10, var22 + var12);
         RenderUtil.Y(var24, var14, var15, 0L);
 }
     private static boolean F(AxisAlignedBB var0) {
-        Z.func_78547_a(RenderUtil.T.func_175606_aa().field_70165_t, RenderUtil.T.func_175606_aa().field_70163_u, RenderUtil.T.func_175606_aa().field_70161_v);
-        return Z.func_78546_a(var0);
+        Z.setPosition(RenderUtil.T.getRenderViewEntity().posX, RenderUtil.T.getRenderViewEntity().posY, RenderUtil.T.getRenderViewEntity().posZ);
+        return Z.isBoundingBoxInFrustum(var0);
 }
     public static Vec3 I(int var0, double var3, double var5, double var7) {
         GL11.glGetFloat((int)2982, (FloatBuffer)D);
@@ -1153,7 +1197,7 @@ public class RenderUtil {
         float var13 = (float)var4 / 255.0f;
         if (var5) {
             GL11.glColor4f((float)var10, (float)var11, (float)var12, (float)1.0f);
-            RenderGlobal.func_181561_a((AxisAlignedBB)var0);
+            RenderGlobal.drawSelectionBoundingBox((AxisAlignedBB)var0);
 }
         if (var6) {
             GL11.glColor4f((float)var10, (float)var11, (float)var12, (float)var13);
@@ -1169,12 +1213,12 @@ public class RenderUtil {
         GL11.glPopMatrix();
 }
     public static void X() {
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void N(double var0, double var2, long var4, double var6, double var8, float var10) {
         int var13;
         ScaledResolution var11 = new ScaledResolution(T);
-        int var12 = var11.func_78325_e();
+        int var12 = var11.getScaleFactor();
         switch (var12) {
             case 2: {
                 var13 = 540;
@@ -1189,17 +1233,17 @@ public class RenderUtil {
                 break;
 }
             default: {
-                var13 = var11.func_78328_b();
+                var13 = var11.getScaledHeight();
 }
 }
         GL11.glScissor((int)((int)(var0 * (double)var12 * (double)var10)), (int)((int)(((double)var13 - var2 - var8) * (double)var12 * (double)var10)), (int)((int)(var6 * (double)var12 * (double)var10)), (int)((int)(var8 * (double)var12 * (double)var10)));
 }
     public static void N(EntityLivingBase var0, long var1, int var3) {
-        float var15 = MinecraftAccessor.o((Minecraft)RenderUtil.T).field_74281_c;
-        double var16 = var0.field_70142_S + (var0.field_70165_t - var0.field_70142_S) * (double)var15 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var18 = var0.field_70137_T + (var0.field_70163_u - var0.field_70137_T) * (double)var15 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var20 = var0.field_70136_U + (var0.field_70161_v - var0.field_70136_U) * (double)var15 - RenderUtil.T.func_175598_ae().field_78728_n;
-        GlStateManager.func_179094_E();
+        float var15 = MinecraftAccessor.o((Minecraft)RenderUtil.T).renderPartialTicks;
+        double var16 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * (double)var15 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var18 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * (double)var15 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var20 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * (double)var15 - RenderUtil.T.getRenderManager().viewerPosZ;
+        GlStateManager.pushMatrix();
         if (var3 == 0) {
             long[] var12 = new long[]{0L};
             var3 = RenderUtil.M(21658, (short)-14239, 2L, var12);
@@ -1208,8 +1252,8 @@ public class RenderUtil {
         float var23 = (float)(var3 >> 16 & 0xFF) / 255.0f;
         float var24 = (float)(var3 >> 8 & 0xFF) / 255.0f;
         float var25 = (float)(var3 & 0xFF) / 255.0f;
-        AxisAlignedBB var26 = var0.func_174813_aQ().func_72314_b(0.1, 0.1, 0.1);
-        AxisAlignedBB var27 = new AxisAlignedBB(var26.field_72340_a - var0.field_70165_t + var16, var26.field_72338_b - var0.field_70163_u + var18, var26.field_72339_c - var0.field_70161_v + var20, var26.field_72336_d - var0.field_70165_t + var16, var26.field_72337_e - var0.field_70163_u + var18, var26.field_72334_f - var0.field_70161_v + var20);
+        AxisAlignedBB var26 = var0.getEntityBoundingBox().expand(0.1, 0.1, 0.1);
+        AxisAlignedBB var27 = new AxisAlignedBB(var26.minX - var0.posX + var16, var26.minY - var0.posY + var18, var26.minZ - var0.posZ + var20, var26.maxX - var0.posX + var16, var26.maxY - var0.posY + var18, var26.maxZ - var0.posZ + var20);
         GL11.glBlendFunc((int)770, (int)771);
         GL11.glEnable((int)3042);
         GL11.glDisable((int)3553);
@@ -1222,7 +1266,7 @@ public class RenderUtil {
         GL11.glEnable((int)2929);
         GL11.glDepthMask((boolean)true);
         GL11.glDisable((int)3042);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public static Color s(Color var0, Color var1, double var2) {
         float var4 = (float)var2;
@@ -1235,54 +1279,112 @@ public class RenderUtil {
 }
     public static void N(int var0, Entity var2, int var3, float var4) {
         if (var2 instanceof EntityLivingBase) {
-            double var8 = var2.field_70142_S + (var2.field_70165_t - var2.field_70142_S) * (double)var4 - RenderUtil.T.func_175598_ae().field_78730_l;
-            double var10 = var2.field_70137_T + (var2.field_70163_u - var2.field_70137_T) * (double)var4 - RenderUtil.T.func_175598_ae().field_78731_m;
-            double var12 = var2.field_70136_U + (var2.field_70161_v - var2.field_70136_U) * (double)var4 - RenderUtil.T.func_175598_ae().field_78728_n;
-            GlStateManager.func_179094_E();
+            double var8 = var2.lastTickPosX + (var2.posX - var2.lastTickPosX) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosX;
+            double var10 = var2.lastTickPosY + (var2.posY - var2.lastTickPosY) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosY;
+            double var12 = var2.lastTickPosZ + (var2.posZ - var2.lastTickPosZ) * (double)var4 - RenderUtil.T.getRenderManager().viewerPosZ;
+            GlStateManager.pushMatrix();
             GL11.glTranslated((double)var8, (double)(var10 - 0.2), (double)var12);
-            GL11.glRotated((double)(-RenderUtil.T.func_175598_ae().field_78735_i), (double)0.0, (double)1.0, (double)0.0);
-            GlStateManager.func_179097_i();
+            GL11.glRotated((double)(-RenderUtil.T.getRenderManager().playerViewY), (double)0.0, (double)1.0, (double)0.0);
+            GlStateManager.disableDepth();
             GL11.glScalef((float)0.03f, (float)0.03f, (float)0.03f);
             int var14 = Color.black.getRGB();
-            Gui.func_73734_a((int)-18, (int)-1, (int)-21, (int)74, (int)var14);
-            Gui.func_73734_a((int)18, (int)-1, (int)21, (int)74, (int)var14);
-            Gui.func_73734_a((int)-18, (int)-1, (int)21, (int)2, (int)var14);
-            Gui.func_73734_a((int)-18, (int)71, (int)21, (int)74, (int)var14);
-            Gui.func_73734_a((int)-19, (int)0, (int)-20, (int)73, (int)var3);
-            Gui.func_73734_a((int)19, (int)0, (int)20, (int)73, (int)var3);
-            Gui.func_73734_a((int)-19, (int)0, (int)20, (int)1, (int)var3);
-            Gui.func_73734_a((int)-19, (int)72, (int)20, (int)73, (int)var3);
-            GlStateManager.func_179126_j();
-            GlStateManager.func_179121_F();
+            Gui.drawRect((int)-18, (int)-1, (int)-21, (int)74, (int)var14);
+            Gui.drawRect((int)18, (int)-1, (int)21, (int)74, (int)var14);
+            Gui.drawRect((int)-18, (int)-1, (int)21, (int)2, (int)var14);
+            Gui.drawRect((int)-18, (int)71, (int)21, (int)74, (int)var14);
+            Gui.drawRect((int)-19, (int)0, (int)-20, (int)73, (int)var3);
+            Gui.drawRect((int)19, (int)0, (int)20, (int)73, (int)var3);
+            Gui.drawRect((int)-19, (int)0, (int)20, (int)1, (int)var3);
+            Gui.drawRect((int)-19, (int)72, (int)20, (int)73, (int)var3);
+            GlStateManager.enableDepth();
+            GlStateManager.popMatrix();
 }
 }
     public static void r(Vec3 var0, long var1, double var3, double var5, double var7, float var9, float var10, float var11, float var12, float var13) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179131_c((float)var9, (float)var10, (float)var11, (float)var12);
-        boolean var23 = RenderUtil.T.field_71474_y.field_74336_f;
-        RenderUtil.T.field_71474_y.field_74336_f = false;
-        EntityRendererAccessor.k(RenderUtil.T.field_71460_t, ClientUtil.H(0L), 2);
-        RenderUtil.T.field_71474_y.field_74336_f = var23;
+        GlStateManager.pushMatrix();
+        GlStateManager.color((float)var9, (float)var10, (float)var11, (float)var12);
+        boolean var23 = RenderUtil.T.gameSettings.viewBobbing;
+        RenderUtil.T.gameSettings.viewBobbing = false;
+        EntityRendererAccessor.k(RenderUtil.T.entityRenderer, ClientUtil.H(0L), 2);
+        RenderUtil.T.gameSettings.viewBobbing = var23;
         GL11.glLineWidth((float)var13);
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
         GL11.glBegin((int)1);
-        GL11.glVertex3d((double)var0.field_72450_a, (double)var0.field_72448_b, (double)var0.field_72449_c);
-        GL11.glVertex3d((double)(var3 - RenderManagerAccessor.k(0L, T.func_175598_ae())), (double)(var5 - RenderManagerAccessor.y(13236, T.func_175598_ae())), (double)(var7 - RenderManagerAccessor.W(0L, T.func_175598_ae())));
+        GL11.glVertex3d((double)var0.xCoord, (double)var0.yCoord, (double)var0.zCoord);
+        GL11.glVertex3d((double)(var3 - RenderManagerAccessor.k(0L, T.getRenderManager())), (double)(var5 - RenderManagerAccessor.y(13236, T.getRenderManager())), (double)(var7 - RenderManagerAccessor.W(0L, T.getRenderManager())));
         GL11.glEnd();
         GL11.glDisable((int)2848);
         GL11.glLineWidth((float)2.0f);
-        GlStateManager.func_179117_G();
-        GlStateManager.func_179121_F();
+        GlStateManager.resetColor();
+        GlStateManager.popMatrix();
 }
     public static void L() {
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179112_b((int)770, (int)771);
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179129_p();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179097_i();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc((int)770, (int)771);
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableCull();
+        GlStateManager.disableAlpha();
+        GlStateManager.disableDepth();
 }
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+
+        for (int var4 = 0; var4 < var2; var4++) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << '\f');
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+
+        return new String(var3, 0, var1);
+    }
+
+    private static String a(int var0, long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        int var5 = var0 ^ (int)(var1 & 32767L) ^ 3731;
+        if (d[var5] == null) {
+            Object[] var4;
+            try {
+                Long var3 = Thread.currentThread().getId();
+                var4 = (Object[])e.get(var3);
+                if (var4 == null) {
+                    var4 = new Object[]{Cipher.getInstance("DES/CBC/PKCS5Padding"), SecretKeyFactory.getInstance("DES"), new IvParameterSpec(new byte[8])};
+                    e.put(var3, var4);
+                }
+            } catch (Exception var10) {
+                throw new RuntimeException("Abyss/util/render/RenderUtil", var10);
+            }
+
+            byte[] var6 = new byte[8];
+            var6[0] = (byte)(var1 >>> 56);
+            for (int var7 = 1; var7 < 8; var7++) {
+                var6[var7] = (byte)(var1 << var7 * 8 >>> 56);
+            }
+
+            DESKeySpec var11 = new DESKeySpec(var6);
+            SecretKey var8 = ((SecretKeyFactory)var4[1]).generateSecret(var11);
+            ((Cipher)var4[0]).init(2, var8, (IvParameterSpec)var4[2]);
+            byte[] var9 = c[var5].getBytes("ISO-8859-1");
+            d[var5] = a(((Cipher)var4[0]).doFinal(var9));
+        }
+
+        return d[var5];
+    }
+    // R18_RENDER_FLATLAF_RECOVERY_MARKER
     public static Color R(Color var0, float var1) {
         float var2 = 0.003921569f * (float)var0.getRed();
         float var3 = 0.003921569f * (float)var0.getGreen();
@@ -1320,30 +1422,30 @@ public class RenderUtil {
     public static void n(String var0, float var1, long var2, float var4, int var5, int var6) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         var2 = b ^ var2;
         String var7 = var0.replaceAll(RenderUtil.a(15291, 0x17FD313439485986L ^ var2), "");
-        RenderUtil.T.field_71466_p.func_175065_a(var7, var1 + 1.0f, var4, var6, false);
-        RenderUtil.T.field_71466_p.func_175065_a(var7, var1 - 1.0f, var4, var6, false);
-        RenderUtil.T.field_71466_p.func_175065_a(var7, var1, var4 + 1.0f, var6, false);
-        RenderUtil.T.field_71466_p.func_175065_a(var7, var1, var4 - 1.0f, var6, false);
-        RenderUtil.T.field_71466_p.func_175065_a(var0, var1, var4, var5, false);
+        RenderUtil.T.fontRendererObj.drawString(var7, var1 + 1.0f, var4, var6, false);
+        RenderUtil.T.fontRendererObj.drawString(var7, var1 - 1.0f, var4, var6, false);
+        RenderUtil.T.fontRendererObj.drawString(var7, var1, var4 + 1.0f, var6, false);
+        RenderUtil.T.fontRendererObj.drawString(var7, var1, var4 - 1.0f, var6, false);
+        RenderUtil.T.fontRendererObj.drawString(var0, var1, var4, var5, false);
 }
     public static void o(short var0, double var1, double var3, double var5, double var7, double var9, double var11, int var13, int var14, char var15, boolean var16, int var17, boolean var18) {
         long var19 = ((long)var0 << 48 | (long)var15 << 48 >>> 16 | (long)var17 << 32 >>> 32) ^ b;
         long var21 = var19 ^ 0x76950FE04E44L;
-        double var23 = var1 - RenderUtil.T.func_175598_ae().field_78730_l;
-        double var25 = var3 - RenderUtil.T.func_175598_ae().field_78731_m;
-        double var27 = var5 - RenderUtil.T.func_175598_ae().field_78728_n;
+        double var23 = var1 - RenderUtil.T.getRenderManager().viewerPosX;
+        double var25 = var3 - RenderUtil.T.getRenderManager().viewerPosY;
+        double var27 = var5 - RenderUtil.T.getRenderManager().viewerPosZ;
         AxisAlignedBB var29 = new AxisAlignedBB(var23, var25, var27, var23 + var7, var25 + var9, var27 + var11);
         RenderUtil.W(var29, var21, var13, var14, var16, var18);
 }
     private static void p(IBakedModel var0, float var1, float var2, float var3, float var4) {
-        Tessellator var9 = Tessellator.func_178181_a();
-        WorldRenderer var10 = var9.func_178180_c();
+        Tessellator var9 = Tessellator.getInstance();
+        WorldRenderer var10 = var9.getWorldRenderer();
         for (EnumFacing var14 : EnumFacing.values()) {
-            for (BakedQuad var16 : var0.func_177551_a(var14)) {
+            for (BakedQuad var16 : var0.getFaceQuads(var14)) {
                 RenderUtil.e(var10, var16, var1, var2, var3, var4, var9);
 }
 }
-        for (BakedQuad var19 : var0.func_177550_a()) {
+        for (BakedQuad var19 : var0.getGeneralQuads()) {
             RenderUtil.e(var10, var19, var1, var2, var3, var4, var9);
 }
 }
@@ -1415,40 +1517,40 @@ public class RenderUtil {
         GL11.glPopAttrib();
         GL11.glLineWidth((float)1.0f);
         GL11.glShadeModel((int)7424);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void G() {
-        GlStateManager.func_179084_k();
+        GlStateManager.disableBlend();
 }
     public static void I(double var3, double var5, double var7, double var9, int var11, int var12) {
         float var15 = (float)var12 / 255.0f;
         float var16 = (float)(var11 >> 16 & 0xFF) / 255.0f;
         float var17 = (float)(var11 >> 8 & 0xFF) / 255.0f;
         float var18 = (float)(var11 & 0xFF) / 255.0f;
-        GlStateManager.func_179094_E();
-        Tessellator var19 = Tessellator.func_178181_a();
-        WorldRenderer var20 = var19.func_178180_c();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-        GlStateManager.func_179131_c((float)var16, (float)var17, (float)var18, (float)var15);
-        var20.func_181668_a(7, DefaultVertexFormats.field_181705_e);
-        var20.func_181662_b(var3, var9, 0.0).func_181675_d();
-        var20.func_181662_b(var7, var9, 0.0).func_181675_d();
-        var20.func_181662_b(var7, var5, 0.0).func_181675_d();
-        var20.func_181662_b(var3, var5, 0.0).func_181675_d();
-        var19.func_78381_a();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        Tessellator var19 = Tessellator.getInstance();
+        WorldRenderer var20 = var19.getWorldRenderer();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.color((float)var16, (float)var17, (float)var18, (float)var15);
+        var20.begin(7, DefaultVertexFormats.POSITION);
+        var20.pos(var3, var9, 0.0).endVertex();
+        var20.pos(var7, var9, 0.0).endVertex();
+        var20.pos(var7, var5, 0.0).endVertex();
+        var20.pos(var3, var5, 0.0).endVertex();
+        var19.draw();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
 }
     public static Color n(int var0, int var1, long var2) {
         return RenderUtil.s(RenderUtil.x(var0, 0L), RenderUtil.x(var1, 0L), 0.5);
 }
     public static void V(float var0, float var1, float var2, float var3) {
         ScaledResolution var4 = new ScaledResolution(T);
-        int var5 = var4.func_78325_e();
-        int var6 = var4.func_78328_b();
+        int var5 = var4.getScaleFactor();
+        int var6 = var4.getScaledHeight();
         GL11.glScissor((int)((int)(var0 * (float)var5)), (int)((int)(((float)var6 - var1) * (float)var5)), (int)((int)(var2 * (float)var5)), (int)((int)(var3 * (float)var5)));
 }
     public static void m(int var0, String var1, int var2, int var3, short var4, int var5) {
@@ -1473,10 +1575,10 @@ public class RenderUtil {
         GL11.glLineWidth((float)var7);
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
-        RenderGlobal.func_181563_a((AxisAlignedBB)var2, (int)var3, (int)var4, (int)var6, (int)255);
+        RenderGlobal.drawOutlinedBoundingBox((AxisAlignedBB)var2, (int)var3, (int)var4, (int)var6, (int)255);
         GL11.glDisable((int)2848);
         GL11.glLineWidth((float)2.0f);
-        GlStateManager.func_179117_G();
+        GlStateManager.resetColor();
         RenderUtil.w();
 }
     public static void J(long var0, CustomFont var2, String var3, float var4, float var5, int var6, int var7) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
@@ -1493,28 +1595,28 @@ public class RenderUtil {
         int var7 = (int)((var1 ^ 0x792E905E0B0CL) >>> 48);
         int var8 = (int)((var1 ^ 0x792E905E0B0CL) << 16 >>> 48);
         int var9 = (int)((var1 ^ 0x792E905E0B0CL) << 32 >>> 32);
-        RenderUtil.o((short)var7, var0.func_177958_n(), var0.func_177956_o(), var0.func_177952_p(), 1.0, 1.0, 1.0, var3, var4, (char)var8, var5, var9, var6);
+        RenderUtil.o((short)var7, var0.getX(), var0.getY(), var0.getZ(), 1.0, 1.0, 1.0, var3, var4, (char)var8, var5, var9, var6);
 }
     public static void O(int var0, float var1, long var2) {
         float var4 = (float)(var0 >> 16 & 0xFF) / 255.0f;
         float var5 = (float)(var0 >> 8 & 0xFF) / 255.0f;
         float var6 = (float)(var0 & 0xFF) / 255.0f;
-        GlStateManager.func_179131_c((float)var4, (float)var5, (float)var6, (float)var1);
+        GlStateManager.color((float)var4, (float)var5, (float)var6, (float)var1);
 }
     public static void m(float var0, float var1, float var2, float var3, long var4, float var6, float var7, float var8, float var9, float var10) {
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.pushMatrix();
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
         GL11.glLineWidth((float)var6);
         GL11.glColor4f((float)var7, (float)var8, (float)var9, (float)var10);
         GL11.glBegin((int)1);
         GL11.glVertex2f((float)var0, (float)var1);
         GL11.glVertex2f((float)var2, (float)var3);
         GL11.glEnd();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179121_F();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.popMatrix();
 }
     public static int M(int var0, short var1, long var2, long ... var5) {
         long var8 = System.currentTimeMillis() + (var5.length > 0 ? var5[0] : 0L);
@@ -1523,11 +1625,11 @@ public class RenderUtil {
     public static void n(BlockPos var0, double var1, int var3, int var4, int var5, long var6, int var8, float var9) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         var6 = b ^ var6;
         int var16 = (int)((var6 ^ 0x4EBAC0EC0AC9L) >>> 32);
-        RenderUtil.X(new AxisAlignedBB((double)var0.func_177958_n(), (double)var0.func_177956_o(), (double)var0.func_177952_p(), (double)var0.func_177958_n() + 1.0, (double)var0.func_177956_o() + var1, (double)var0.func_177952_p() + 1.0).func_72317_d(-RenderManagerAccessor.k(0L, T.func_175598_ae()), -RenderManagerAccessor.y(var16, T.func_175598_ae()), -RenderManagerAccessor.W(0L, T.func_175598_ae())), var3, var4, var5, var8, var9);
+        RenderUtil.X(new AxisAlignedBB((double)var0.getX(), (double)var0.getY(), (double)var0.getZ(), (double)var0.getX() + 1.0, (double)var0.getY() + var1, (double)var0.getZ() + 1.0).offset(-RenderManagerAccessor.k(0L, T.getRenderManager()), -RenderManagerAccessor.y(var16, T.getRenderManager()), -RenderManagerAccessor.W(0L, T.getRenderManager())), var3, var4, var5, var8, var9);
 }
     public static void V(EntityLivingBase var0, long var1, double var3, double var5, double var7, int var9) {
         long var10 = var1 ^ 0x63892D801643L;
-        RenderUtil.Z(var0.func_174813_aQ().func_72314_b(0.1, 0.1, 0.1), var0.field_70142_S, var0.field_70137_T, var0.field_70136_U, var3, var5, var10, var7, var9);
+        RenderUtil.Z(var0.getEntityBoundingBox().expand(0.1, 0.1, 0.1), var0.lastTickPosX, var0.lastTickPosY, var0.lastTickPosZ, var3, var5, var10, var7, var9);
 }
     static {
         b = 23109265913955L;
@@ -1539,7 +1641,7 @@ public class RenderUtil {
         Y = BufferUtils.createFloatBuffer((int)3);
         Z = new Frustum();
         l = new Frustum();
-        R = MinecraftRef.c((byte)0, 0L).func_175599_af();
+        R = MinecraftRef.c((byte)0, 0L).getRenderItem();
         T = MinecraftRef.c((byte)0, 0L);
         e = new HashMap(13);
         c = new String[]{"\u00cb\u0081\u00af\u00b3\u0096\u00e4\u00c1\u00e1\u0081\u00efC\u00e5\u00c3R\u008a0", "\u0012pl\u00e7\u0087O\u0006F-n\u008b\u0010\u001d\u008bX\u00f8"};

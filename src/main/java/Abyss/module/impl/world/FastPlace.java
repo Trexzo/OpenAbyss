@@ -30,10 +30,16 @@ import net.minecraft.item.ItemEgg;
 import net.minecraft.item.ItemSnowball;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3i;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class FastPlace
 extends Module
 implements EventSubscriber {
+    private static long a = 93753003014134L;
     private static Object[] d;
     private static String[] e;
     public static NumberSetting projectilesDelay;
@@ -52,37 +58,37 @@ implements EventSubscriber {
         this.H = new TimerUtil();
         this.U = null;
 }
-    public void onPreUpdate(PreUpdateEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (!(disableWhenBedInRange.L() <= 0.0f) && this.H.L(c, true)) {
-            BlockPos found;
-            block22: {
-                int range = (int)disableWhenBedInRange.L();
-                found = null;
-                try {
-                    if (FastPlace.f.field_71441_e == null || FastPlace.f.field_71439_g == null) break block22;
-                    int px = (int)FastPlace.f.field_71439_g.field_70165_t;
-                    int py = (int)FastPlace.f.field_71439_g.field_70163_u;
-                    int pz = (int)FastPlace.f.field_71439_g.field_70161_v;
-                    for (int dy = range; dy >= -range; --dy) {
-                        for (int dx = -range; dx <= range; ++dx) {
-                            for (int dz = -range; dz <= range; ++dz) {
-                                this.scanPos.func_181079_c(px + dx, py + dy, pz + dz);
-                                if (FastPlace.f.field_71441_e.func_180495_p((BlockPos)this.scanPos).func_177230_c() != Blocks.field_150324_C) continue;
-                                found = new BlockPos((Vec3i)this.scanPos);
-                                break block22;
-}
-}
-}
-}
-                catch (Throwable throwable) {
-                    // empty catch block
-}
-}
-            this.U = found;
+    private BlockPos findBedInRange(int range) {
+        if (FastPlace.f.theWorld == null || FastPlace.f.thePlayer == null) {
+            return null;
 }
         try {
-            if (FastPlace.f.field_71415_G) {
-                if (FastPlace.f.field_71439_g.func_70694_bm() != null && FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemBlock) {
+            int px = (int)FastPlace.f.thePlayer.posX;
+            int py = (int)FastPlace.f.thePlayer.posY;
+            int pz = (int)FastPlace.f.thePlayer.posZ;
+            for (int dy = range; dy >= -range; --dy) {
+                for (int dx = -range; dx <= range; ++dx) {
+                    for (int dz = -range; dz <= range; ++dz) {
+                        this.scanPos.set(px + dx, py + dy, pz + dz);
+                        if (FastPlace.f.theWorld.getBlockState((BlockPos)this.scanPos).getBlock() == Blocks.bed) {
+                            return new BlockPos((Vec3i)this.scanPos);
+}
+}
+}
+}
+}
+        catch (Throwable throwable) {
+            // Keep the original fail-closed scan behavior.
+}
+        return null;
+}
+    public void onPreUpdate(PreUpdateEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        if (!(disableWhenBedInRange.L() <= 0.0f) && this.H.L(c, true)) {
+            this.U = this.findBedInRange((int)disableWhenBedInRange.L());
+}
+        try {
+            if (FastPlace.f.inGameHasFocus) {
+                if (FastPlace.f.thePlayer.getHeldItem() != null && FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemBlock) {
                     if (this.U != null) {
                         return;
 }
@@ -98,7 +104,7 @@ implements EventSubscriber {
                             MinecraftAccessor.j(0L, f, var13);
 }
 }
-                } else if (FastPlace.f.field_71439_g.func_70694_bm() != null && (FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSnowball || FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemEgg)) {
+                } else if (FastPlace.f.thePlayer.getHeldItem() != null && (FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemSnowball || FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemEgg)) {
                     if (this.U != null) {
                         return;
 }
@@ -131,7 +137,7 @@ implements EventSubscriber {
 }
     public void onPostRightClick(PostRightClickEvent var1, long var2) {
         try {
-            if (FastPlace.f.field_71439_g.func_70694_bm() != null && FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemBlock) {
+            if (FastPlace.f.thePlayer.getHeldItem() != null && FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemBlock) {
                 if (this.U != null) {
                     return;
 }
@@ -139,7 +145,7 @@ implements EventSubscriber {
                 if (var9 == 0) {
                     MinecraftAccessor.j(0L, f, 0);
 }
-            } else if (FastPlace.f.field_71439_g.func_70694_bm() != null && (FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSnowball || FastPlace.f.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemEgg)) {
+            } else if (FastPlace.f.thePlayer.getHeldItem() != null && (FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemSnowball || FastPlace.f.thePlayer.getHeldItem().getItem() instanceof ItemEgg)) {
                 if (this.U != null) {
                     return;
 }

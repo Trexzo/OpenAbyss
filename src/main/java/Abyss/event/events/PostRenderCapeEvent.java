@@ -11,7 +11,7 @@ import net.minecraft.client.entity.AbstractClientPlayer;
 
 public class PostRenderCapeEvent
 extends StoppableEvent {
-    private static final long public final AbstractClientPlayer U;
+    public final AbstractClientPlayer U;
 
     public PostRenderCapeEvent(AbstractClientPlayer var3) {
         this.U = var3;

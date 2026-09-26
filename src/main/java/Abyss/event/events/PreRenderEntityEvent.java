@@ -12,7 +12,7 @@ import net.minecraft.entity.Entity;
 public class PreRenderEntityEvent
 extends StoppableEvent {
     public final Entity O;
-    private static final long public PreRenderEntityEvent(int var1, byte var2, int var3, Entity var4) {
+    public PreRenderEntityEvent(int var1, byte var2, int var3, Entity var4) {
         this.O = var4;
 }
 }

@@ -13,7 +13,7 @@ import Abyss.event.invoker.BackTrackRender2DInvoker;
 import Abyss.module.impl.combat.BackTrack;
 
 public final class BackTrackBinder {
-    private static final long public static void P(EventBus var2, BackTrack var3) {
+    public static void P(EventBus var2, BackTrack var3) {
         var2.R(var3, PreUpdateEvent.class, 3, new BackTrackPreUpdateInvoker(var3));
         var2.R(var3, AttackEntityEvent.class, 3, new BackTrackAttackEntityInvoker(var3));
         var2.R(var3, Render2DEvent.class, 3, new BackTrackRender2DInvoker(var3));

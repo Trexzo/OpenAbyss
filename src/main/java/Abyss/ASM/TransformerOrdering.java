@@ -66,18 +66,12 @@ public class TransformerOrdering {
         Object var4 = TransformerOrdering.A(var0, "parent");
         return var4 != null && var4 != var0 && TransformerOrdering.I(var4);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static void L() throws Throwable {
-        Class<TransformerOrdering> clazz = TransformerOrdering.class;
         synchronized (TransformerOrdering.class) {
             if (System.getProperty("Abyss.bootstrap.done") == null) {
                 System.setProperty("Abyss.bootstrap.done", "true");
                 TransformerOrdering.E();
 }
-            // ** MonitorExit[var0] (shouldn't be in output)
-            return;
 }
 }
     private static Field f(Class<?> var0, String var1) throws NoSuchFieldException {

@@ -37,7 +37,7 @@ implements EventSubscriber {
 }
             List<String> var9 = var8.i();
             for (int var10 = 0; var10 < var9.size(); ++var10) {
-                ModuleTagRenderer.f.field_71466_p.func_175063_a(var9.get(var10), 20.0f, (float)(20 + var10 * ModuleTagRenderer.f.field_71466_p.field_78288_b), -1);
+                ModuleTagRenderer.f.fontRendererObj.drawStringWithShadow(var9.get(var10), 20.0f, (float)(20 + var10 * ModuleTagRenderer.f.fontRendererObj.FONT_HEIGHT), -1);
 }
 }
 }

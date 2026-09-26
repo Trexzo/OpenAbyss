@@ -11,7 +11,7 @@ import net.minecraft.client.gui.ScaledResolution;
 
 public class Render2DEvent
 extends Event {
-    private static final long public float r;
+    public float r;
     public final ScaledResolution C;
 
     public Render2DEvent(int var1, short var2, float var3, short var4, ScaledResolution var5) {

@@ -52,6 +52,8 @@ import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 public class LagRange
 extends Module
 implements EventSubscriber {
+    private static long a = 120211912914588L;
+
     public static NumberSetting disableRange;
     public static BooleanSetting s;
     public static HeaderSetting M;
@@ -102,7 +104,7 @@ implements EventSubscriber {
     public void onPostTick(int var1, int var2, char var3, PostTickEvent var4) {
         long var5 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ a;
         long var7 = var5 ^ 0x306C00AD8BEEL;
-        if (LagRange.f.field_71439_g.field_70128_L) {
+        if (LagRange.f.thePlayer.isDead) {
             this.H(var7);
 }
 }
@@ -115,7 +117,7 @@ implements EventSubscriber {
 }
 }
     public void onRender2D(short var1, Render2DEvent var2, long var3) {
-        if (!(LagRange.f.field_71439_g.func_71039_bw() && !LagRange.f.field_71439_g.func_70632_aY() || s.c() && !ItemUtil.d())) {
+        if (!(LagRange.f.thePlayer.isUsingItem() && !LagRange.f.thePlayer.isBlocking() || s.c() && !ItemUtil.d())) {
             if (this.E.isEmpty()) {
                 this.H(111406552585898L);
             } else {
@@ -134,13 +136,13 @@ implements EventSubscriber {
             return true;
 }
         if (var1 instanceof C07PacketPlayerDigging) {
-            return ((C07PacketPlayerDigging)var1).func_180762_c() != C07PacketPlayerDigging.Action.RELEASE_USE_ITEM;
+            return ((C07PacketPlayerDigging)var1).getStatus() != C07PacketPlayerDigging.Action.RELEASE_USE_ITEM;
 }
         if (!(var1 instanceof C08PacketPlayerBlockPlacement)) {
             return false;
 }
-        ItemStack var2 = ((C08PacketPlayerBlockPlacement)var1).func_149574_g();
-        return var2 == null || !(var2.func_77973_b() instanceof ItemSword);
+        ItemStack var2 = ((C08PacketPlayerBlockPlacement)var1).getStack();
+        return var2 == null || !(var2.getItem() instanceof ItemSword);
 }
     @Override
     public void A(long var1) {

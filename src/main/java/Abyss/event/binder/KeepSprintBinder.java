@@ -15,7 +15,7 @@ import Abyss.event.invoker.KeepSprintPreUpdateInvoker;
 import Abyss.module.impl.combat.KeepSprint;
 
 public final class KeepSprintBinder {
-    private static final long private KeepSprintBinder() {
+    private KeepSprintBinder() {
 }
     public static void O(EventBus var0, short var1, short var2, KeepSprint var4) {
         var0.R(var4, PreTickEvent.class, 3, new KeepSprintPreTickInvoker(var4));

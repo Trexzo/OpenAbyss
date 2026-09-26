@@ -31,7 +31,7 @@ class JsonParser {
         if (handler == null) {
             throw new NullPointerException("handler is null");
 }
-        this.handler = handler;
+        this.handler = (JsonHandler<Object, Object>)handler;
         handler.parser = this;
 }
     public void parse(String string) {

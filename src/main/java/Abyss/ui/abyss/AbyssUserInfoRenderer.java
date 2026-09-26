@@ -64,10 +64,10 @@ public final class AbyssUserInfoRenderer {
 }
                 plain.append(user).append(" [").append(uid).append("]");
 }
-            int screenX = resolution.func_78326_a();
-            int screenY = resolution.func_78328_b();
+            int screenX = resolution.getScaledWidth();
+            int screenY = resolution.getScaledHeight();
             float startX = (float)screenX - font.getWidth(plain.toString()) - 2.0f;
-            boolean chatOpen = Minecraft.func_71410_x().field_71462_r instanceof GuiChat;
+            boolean chatOpen = Minecraft.getMinecraft().currentScreen instanceof GuiChat;
             float buildY = screenY - (chatOpen ? 24 : 11);
             float x = startX;
             if (showVersion) {

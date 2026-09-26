@@ -13,7 +13,7 @@ import Abyss.event.invoker.FKCounterRender2DInvoker;
 import Abyss.module.impl.visual_utility.FKCounter;
 
 public final class FKCounterBinder {
-    private static final long private FKCounterBinder() {
+    private FKCounterBinder() {
 }
     public static void p(EventBus var0, FKCounter var1) {
         var0.R(var1, PostTickEvent.class, 3, new FKCounterPostTickInvoker(var1));

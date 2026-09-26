@@ -1,0 +1,726 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import collections
+import json
+import re
+from pathlib import Path
+
+WARNING_STRINGS = (
+    "Unable to fully structure code",
+    "Loose catch block",
+    "Removed try catching itself",
+    "Could not reconstruct switch",
+    "Could not resolve type clashes",
+    "Exception decompiling",
+    "Decompilation failed",
+)
+
+LINE_PATTERNS = {
+    "synthetic_block_label": re.compile(r"^\s*block\d+\s*:"),
+    "labelled_break_continue": re.compile(r"\b(?:break|continue)\s+block\d+\s*;"),
+    "monitor_exit_artifact": re.compile(r"MonitorExit\[|shouldn't be in output"),
+    "void_declaration_warning": re.compile(r"WARNING\s*-\s*void declaration", re.IGNORECASE),
+    "cfr_warning_comment": re.compile(
+        r"(?i)(?:\\bCFR\\b|decompil|unable to fully structure|loose catch block|removed try catching itself|could not reconstruct switch)"
+    ),
+    "suspicious_throwaway_ternary_assignment": re.compile(
+        r"\b(?:double|float|int|long|boolean)\s+\w+\s*=.*\?[^;]*:\s*\(\w+\s*="
+    ),
+}
+
+FINALLY_CONTROL = re.compile(
+    r"finally\s*\{(?P<body>.{0,1600}?)\}",
+    re.DOTALL,
+)
+
+EMPTY_HANDLER_THEN_BLOCK = re.compile(
+    r"(?:catch\s*\([^)]*\)|finally)\s*\{\s*\}\s*\{",
+    re.DOTALL,
+)
+
+CATCH_THROWABLE = re.compile(r"catch\s*\(\s*Throwable\b")
+
+# Proven CFR failure shape from the original StallWatchdog drainer: two
+# Throwable catch clauses emitted directly adjacent to one another for the
+# same try. Keep this deliberately narrow so legitimate nested handlers remain
+# review-only under nearby_duplicate_throwable_catches.
+ADJACENT_DUPLICATE_THROWABLE_CATCH = re.compile(
+    r"catch\s*\(\s*Throwable\s+\w+\s*\)\s*\{"
+    r"[^{}]{0,500}"
+    r"\}\s*catch\s*\(\s*Throwable\s+\w+\s*\)",
+    re.DOTALL,
+)
+
+
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# contains the same labelled zkm$clinit control-flow shape for these files.
+# This does not make OpenExpo's encrypted data authoritative; it only proves
+# that decoder-local labels/transfers are not themselves evidence of damage.
+ZKM_LABEL_AUTHORITY_PATHS = frozenset({
+    "Abyss/internal/BrokenBlockTracker.java",
+    "Abyss/internal/CheaterDetector.java",
+    "Abyss/internal/MiningEngine.java",
+    "Abyss/internal/auth/CookieAuthService.java",
+    "Abyss/internal/auth/TrustAllSslContext.java",
+    "Abyss/module/ModulePriority.java",
+    "Abyss/module/impl/combat/AimAssist.java",
+    "Abyss/module/impl/combat/AutoBlock.java",
+    "Abyss/module/impl/combat/BlockHit.java",
+    "Abyss/module/impl/combat/JumpReset.java",
+    "Abyss/module/impl/configuration/Font.java",
+    "Abyss/module/impl/player/FastCraft.java",
+    "Abyss/module/impl/visual/ArrayList.java",
+    "Abyss/module/impl/visual/BindGUI.java",
+    "Abyss/module/impl/visual/HUD.java",
+    "Abyss/module/impl/visual/KeyStrokes.java",
+    "Abyss/module/impl/visual/KillEffect.java",
+    "Abyss/module/impl/visual_utility/BedESP.java",
+    "Abyss/module/impl/visual_utility/BedPlates.java",
+    "Abyss/module/impl/visual_utility/BlocksESP.java",
+    "Abyss/module/impl/visual_utility/ESP.java",
+    "Abyss/module/impl/visual_utility/FKCounter.java",
+    "Abyss/module/impl/visual_utility/FallIndicator.java",
+    "Abyss/module/impl/world/BridgeAssist.java",
+    "Abyss/util/MiningConstants.java",
+    "Abyss/util/MoveUtil.java",
+    "Abyss/util/RotationManager.java",
+    "Abyss/util/render/ShaderRenderer.java",
+})
+
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# also preserves the labelled decoder-loop structure in Module.$jnicClinit().
+# Require the exact observed label/transfer shape before lowering confidence so
+# a future structural change becomes review-visible again.
+LABELLED_METHOD_AUTHORITIES = {
+    "Abyss/module/Module.java": ("$jnicClinit", 2, 2),
+    "Abyss/ui/studio/StudioClickGuiScreen.java": ("$jnicClinit", 2, 2),
+    "Abyss/module/impl/world/BlockIn.java": ("$jnicClinit", 1, 1),
+}
+
+
+# These warning sites were individually checked against source/cross-build
+# authority. Preserve the warning comments for provenance, but do not treat
+# their presence alone as an unresolved semantic-risk signal.
+AUTHORITY_BACKED_FINDINGS = frozenset({
+    ("Abyss/ASM/ClassNameFilterTransformer.java", "decompiler_warning_marker"),
+    ("Abyss/ASM/Util/BytecodeHelper.java", "decompiler_warning_marker"),
+    ("Abyss/inject/InjectNativeBridge.java", "void_declaration_warning"),
+    ("Abyss/internal/auth/MojangApiClient.java", "decompiler_warning_marker"),
+    ("Abyss/module/impl/visual_utility/FireBallPredict.java", "decompiler_warning_marker"),
+})
+
+
+# Pinned NoHackClient/OpenExpo @ c21317cd9e6a09f4fd3391361b13e3b9d7990dae
+# preserves the same try/catch/finally cleanup structure in these six
+# VisualSpoofRenderer methods. Keep the CFR warning comments in source, but
+# lower only the warning immediately attached to a method whose exact
+# declaration and cleanup shape still match this authority.
+WARNING_METHOD_AUTHORITIES = {
+    "Abyss/util/render/VisualSpoofRenderer.java": (
+        (
+            "private static Framebuffer r(Minecraft var2)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var2, var8);",
+                "GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "public static void l(float var0)",
+            1,
+            1,
+            1,
+            (
+                "Framebuffer var8 = v.getFramebuffer();",
+                "GL11.glViewport((int)0, (int)0, (int)VisualSpoofRenderer.v.displayWidth, (int)VisualSpoofRenderer.v.displayHeight);",
+                "r = false;",
+            ),
+        ),
+        (
+            "private static Framebuffer i(Minecraft var0)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var0, var8);",
+                "GL11.glViewport((int)0, (int)0, (int)var0.displayWidth, (int)var0.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "private static BufferedImage A(Minecraft var0)",
+            1,
+            1,
+            1,
+            (
+                "var1.unbindFramebuffer();",
+                "GL11.glReadBuffer((int)1029);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+        (
+            "private static BufferedImage C(int var0, int var1)",
+            1,
+            0,
+            1,
+            (
+                "GL15.glUnmapBuffer((int)35051);",
+                "GL15.glBindBuffer((int)35051, (int)0);",
+                "F = true;",
+            ),
+        ),
+        (
+            "private static BufferedImage M(short var0, int var1, Minecraft var2, int var3, int var4, short var5, float var6)",
+            1,
+            1,
+            1,
+            (
+                "MinecraftAccessor.K(var2, var11);",
+                "GL11.glViewport((int)0, (int)0, (int)var2.displayWidth, (int)var2.displayHeight);",
+                "VisualSpoofRenderer.G();",
+            ),
+        ),
+    ),
+}
+
+
+REFLECTION_METHOD_DECLARATION = (
+    "private static Method a(Class var0, String var1, Class var2, "
+    "int var3, Class[] var4)"
+)
+
+# Pinned OpenExpo preserves one labelled outer-method loop and one labelled
+# continue in this exact reflection-signature matcher in each of these files.
+LABELLED_DECLARATION_AUTHORITIES = {
+    "Abyss/module/impl/combat/AutoBlock.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/combat/BlockHit.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/combat/JumpReset.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/world/BridgeAssist.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/util/RotationManager.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+}
+
+
+# Silent semantic-loss families recovered elsewhere in this tree.
+# These are intentionally narrow so that they complement, rather than
+# duplicate, the broad CFR comment/label inventory.
+HASH_SELECTOR_BLOCK = re.compile(
+    r"(?P<decl>\bint\s+(?P<selector>\w+)\s*=\s*(?:-?1|0)\s*;)"
+    r"(?P<body>.{0,2600}?switch\s*\(\s*(?P<textvar>\w+)\.hashCode\(\)\s*\)"
+    r".{0,2200}?switch\s*\(\s*(?P=selector)\s*\))",
+    re.DOTALL,
+)
+
+PARTIAL_TERNARY_INIT = re.compile(
+    r"\b(?P<type>double|float|int|long|boolean)\s+(?P<target>\w+)\s*;\s*"
+    r"(?P<gap>.{0,700}?)"
+    r"\b(?:double|float|int|long|boolean)\s+\w+\s*=\s*[^;?]+\?[^:;]+:"
+    r"\s*\(\s*(?P=target)\s*=",
+    re.DOTALL,
+)
+
+COLLAPSED_ARRAY_LOOP = re.compile(
+    r"\bint\s+(?P<idx>\w+)\s*=\s*0\s*;\s*"
+    r"(?P<array_type>[\w.$<>?]+(?:\[\])+)\s+(?P<array>\w+)\s*=\s*[^;]+;\s*"
+    r"int\s+(?P<len>\w+)\s*=\s*(?P=array)\.length\s*;\s*"
+    r"if\s*\(\s*(?P=idx)\s*>=\s*(?P=len)\s*\)\s*(?:continue|break|return)\b",
+    re.DOTALL,
+)
+
+EMPTY_IF_BODY = re.compile(
+    r"if\s*\((?P<cond>[^{}\n]{1,220})\)\s*\{\s*\}",
+    re.MULTILINE,
+)
+
+READ_ASSIGNMENT = re.compile(
+    r"(?P<var>\w+)\s*=\s*[^;\n]*\.read\s*\(",
+)
+
+
+def add(findings, category, path, line, excerpt, confidence="high"):
+    findings.append(
+        {
+            "category": category,
+            "path": path.as_posix(),
+            "line": int(line),
+            "confidence": confidence,
+            "excerpt": excerpt.strip()[:500],
+        }
+    )
+
+
+def line_number(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def java_brace_block(text: str, open_brace: int):
+    """Return the Java block starting at open_brace, ignoring braces in literals/comments."""
+    if open_brace < 0 or open_brace >= len(text) or text[open_brace] != "{":
+        return None
+
+    depth = 0
+    i = open_brace
+    state = "code"
+    escaped = False
+
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                state = "code"
+        elif state == "block_comment":
+            if ch == "*" and nxt == "/":
+                state = "code"
+                i += 1
+        elif state in {"string", "char"}:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif state == "string" and ch == '"':
+                state = "code"
+            elif state == "char" and ch == "'":
+                state = "code"
+        else:
+            if ch == "/" and nxt == "/":
+                state = "line_comment"
+                i += 1
+            elif ch == "/" and nxt == "*":
+                state = "block_comment"
+                i += 1
+            elif ch == '"':
+                state = "string"
+            elif ch == "'":
+                state = "char"
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[open_brace : i + 1]
+
+        i += 1
+
+    return None
+
+
+def scan_file(path: Path, root: Path):
+    rel = path.relative_to(root)
+    authority_path = rel.as_posix()
+    if authority_path.startswith("src/main/java/"):
+        authority_path = authority_path[len("src/main/java/"):]
+    text = path.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    findings = []
+
+    for idx, line in enumerate(lines, 1):
+        warning_marker = next((marker for marker in WARNING_STRINGS if marker in line), None)
+        for category, pattern in LINE_PATTERNS.items():
+            if pattern.search(line):
+                # Do not double-count a concrete CFR warning line as both a broad
+                # comment hit and a warning marker. The marker category is more precise.
+                if category == "cfr_warning_comment" and warning_marker is not None:
+                    continue
+                if category == "cfr_warning_comment" and "Decompiled with CFR" in line:
+                    # Proven origin metadata, not evidence of semantic loss by itself.
+                    confidence = "low"
+                elif category in {
+                    "synthetic_block_label",
+                    "labelled_break_continue",
+                    "suspicious_throwaway_ternary_assignment",
+                    "void_declaration_warning",
+                }:
+                    # OpenExpo authority contains legitimate CFR/ZKM labels in working
+                    # decoders, and a surviving CFR void-declaration warning records
+                    # decompiler uncertainty rather than proving the recovered postimage
+                    # is wrong. Keep these as review signals instead of source failures.
+                    confidence = "medium"
+                else:
+                    confidence = "high"
+                if (authority_path, category) in AUTHORITY_BACKED_FINDINGS:
+                    confidence = "low"
+                add(findings, category, rel, idx, line, confidence)
+
+        if warning_marker is not None:
+            # A decompiler warning is evidence that the original decompilation was
+            # uncertain, but it is not proof the current recovered postimage is wrong.
+            warning_confidence = (
+                "low"
+                if (authority_path, "decompiler_warning_marker")
+                in AUTHORITY_BACKED_FINDINGS
+                else "medium"
+            )
+            add(
+                findings,
+                "decompiler_warning_marker",
+                rel,
+                idx,
+                line,
+                warning_confidence,
+            )
+
+    for m in FINALLY_CONTROL.finditer(text):
+        body = m.group("body")
+        hit = re.search(r"\b(return|break|continue)\b", body)
+        if hit:
+            off = m.start("body") + hit.start()
+            add(
+                findings,
+                "finally_control_transfer",
+                rel,
+                line_number(text, off),
+                body[max(0, hit.start()-100):hit.end()+180],
+                "medium",
+            )
+
+    for m in EMPTY_HANDLER_THEN_BLOCK.finditer(text):
+        add(
+            findings,
+            "empty_handler_followed_by_bare_block",
+            rel,
+            line_number(text, m.start()),
+            m.group(0),
+        )
+
+    # A string hash-switch followed by a numeric selector switch is normal
+    # only when the selector is actually assigned by the hash cases. BedPlates
+    # lost those assignments and silently selected case 0 forever.
+    for m in HASH_SELECTOR_BLOCK.finditer(text):
+        selector = m.group("selector")
+        body = m.group("body")
+        assignments = len(re.findall(r"\b" + re.escape(selector) + r"\s*=", body))
+        if assignments == 0:
+            add(
+                findings,
+                "hash_switch_selector_never_assigned",
+                rel,
+                line_number(text, m.start()),
+                m.group(0)[:900],
+            )
+
+    # MoveUtil's forward/backward ternary declared the real variable first,
+    # then assigned it only in the false branch while storing the full ternary
+    # in a throwaway local.
+    for m in PARTIAL_TERNARY_INIT.finditer(text):
+        add(
+            findings,
+            "partial_ternary_initialization",
+            rel,
+            line_number(text, m.start()),
+            m.group(0)[:900],
+        )
+
+    # CFR can collapse a for/array iteration into an index declaration plus one
+    # element access and no increment/loop-back. AbyssSettingStatics exhibited
+    # this exact family.
+    for m in COLLAPSED_ARRAY_LOOP.finditer(text):
+        add(
+            findings,
+            "collapsed_array_iteration",
+            rel,
+            line_number(text, m.start()),
+            m.group(0)[:900],
+        )
+
+    # Empty condition bodies are common enough to be noisy, so only promote
+    # stream-termination shapes that have already proven semantic.
+    read_vars = {m.group("var") for m in READ_ASSIGNMENT.finditer(text)}
+    for m in EMPTY_IF_BODY.finditer(text):
+        cond = m.group("cond")
+        cond_compact = re.sub(r"\s+", " ", cond).strip()
+        eos_like = re.search(r"\.eos\s*\(\s*\)\s*!=\s*0", cond) is not None
+        eof_vars = [
+            name for name in read_vars
+            if re.search(r"\b" + re.escape(name) + r"\s*<=\s*0", cond)
+        ]
+        if eos_like:
+            add(
+                findings,
+                "empty_stream_eos_branch",
+                rel,
+                line_number(text, m.start()),
+                cond_compact,
+            )
+        elif eof_vars:
+            tail = text[m.end():m.end()+220]
+            same_feed = any(
+                re.search(r"\.wrote\s*\(\s*" + re.escape(name) + r"\s*\)", tail)
+                for name in eof_vars
+            )
+            if same_feed:
+                add(
+                    findings,
+                    "empty_stream_eof_branch",
+                    rel,
+                    line_number(text, m.start()),
+                    cond_compact + " -> " + tail[:140].strip(),
+                )
+
+    # The original StallWatchdog drainer contained directly adjacent duplicate
+    # Throwable catch clauses: a concrete, compile-breaking CFR reconstruction
+    # failure. Unlike the broad proximity heuristic below, this exact shape is
+    # a high-confidence regression.
+    for m in ADJACENT_DUPLICATE_THROWABLE_CATCH.finditer(text):
+        add(
+            findings,
+            "adjacent_duplicate_throwable_catches",
+            rel,
+            line_number(text, m.start()),
+            m.group(0),
+            "high",
+        )
+
+    # Throwable catches that merely occur near one another are too broad to
+    # support a source-failure claim: many legitimate nested handlers and
+    # neighboring methods satisfy this shape. Keep the inventory for forensic
+    # review, but leave executable gating to the exact adjacent-catch detector
+    # above, which captures the proven StallWatchdog CFR failure family.
+    throwable_lines = [i for i, line in enumerate(lines, 1) if CATCH_THROWABLE.search(line)]
+    for a, b in zip(throwable_lines, throwable_lines[1:]):
+        if b - a <= 35:
+            excerpt = "\n".join(lines[max(0, a-2):min(len(lines), b+2)])
+            add(findings, "nearby_duplicate_throwable_catches", rel, a, excerpt, "low")
+
+    # Cross-build-authorized labelled decoder methods outside zkm$clinit().
+    authority_path = rel.as_posix()
+    if authority_path.startswith("src/main/java/"):
+        authority_path = authority_path[len("src/main/java/"):]
+
+    method_authority = LABELLED_METHOD_AUTHORITIES.get(authority_path)
+    if method_authority is not None:
+        method_name, expected_labels, expected_transfers = method_authority
+        method_match = re.search(
+            r"\b(?:private\s+|protected\s+|public\s+)?static\s+void\s+"
+            + re.escape(method_name)
+            + r"\s*\([^)]*\)(?:\s+throws\s+[^\{]+)?\s*\{",
+            text,
+        )
+        if method_match is not None:
+            open_brace = text.find("{", method_match.start())
+            method_body = java_brace_block(text, open_brace)
+            if method_body is not None:
+                label_count = len(
+                    re.findall(r"^\s*block\d+\s*:", method_body, re.MULTILINE)
+                )
+                transfer_count = len(
+                    re.findall(
+                        r"\b(?:break|continue)\s+block\d+\s*;",
+                        method_body,
+                    )
+                )
+                if (
+                    label_count == expected_labels
+                    and transfer_count == expected_transfers
+                ):
+                    method_start_line = line_number(text, method_match.start())
+                    method_end_line = method_start_line + method_body.count("\n")
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and method_start_line <= finding["line"] <= method_end_line
+                        ):
+                            finding["confidence"] = "low"
+
+    declaration_authority = LABELLED_DECLARATION_AUTHORITIES.get(authority_path)
+    if declaration_authority is not None:
+        declaration, expected_labels, expected_transfers = declaration_authority
+        declaration_start = text.find(declaration)
+        if (
+            declaration_start >= 0
+            and text.find(declaration, declaration_start + 1) == -1
+        ):
+            open_brace = text.find("{", declaration_start + len(declaration))
+            method_body = java_brace_block(text, open_brace)
+            if method_body is not None:
+                label_count = len(
+                    re.findall(r"^\s*block\d+\s*:", method_body, re.MULTILINE)
+                )
+                transfer_count = len(
+                    re.findall(
+                        r"\b(?:break|continue)\s+block\d+\s*;",
+                        method_body,
+                    )
+                )
+                if (
+                    label_count == expected_labels
+                    and transfer_count == expected_transfers
+                ):
+                    method_start_line = line_number(text, declaration_start)
+                    method_end_line = method_start_line + method_body.count("\n")
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and method_start_line <= finding["line"] <= method_end_line
+                        ):
+                            finding["confidence"] = "low"
+
+    warning_method_authorities = WARNING_METHOD_AUTHORITIES.get(authority_path, ())
+    for (
+        declaration,
+        expected_try,
+        expected_catch,
+        expected_finally,
+        required_fragments,
+    ) in warning_method_authorities:
+        declaration_start = text.find(declaration)
+        if (
+            declaration_start < 0
+            or text.find(declaration, declaration_start + 1) != -1
+        ):
+            continue
+        open_brace = text.find("{", declaration_start + len(declaration))
+        method_body = java_brace_block(text, open_brace)
+        if method_body is None:
+            continue
+        if method_body.count("try {") != expected_try:
+            continue
+        if method_body.count("catch (Throwable") != expected_catch:
+            continue
+        if method_body.count("finally {") != expected_finally:
+            continue
+        if any(fragment not in method_body for fragment in required_fragments):
+            continue
+
+        method_start_line = line_number(text, declaration_start)
+        for finding in findings:
+            if (
+                finding["category"] == "decompiler_warning_marker"
+                and method_start_line - 4 <= finding["line"] < method_start_line
+            ):
+                finding["confidence"] = "low"
+
+    # ZKM static decoders deserve extra attention only when the synthetic
+    # label/control-transfer is actually inside zkm$clinit(). A file-level
+    # association produced false positives when unrelated methods in the same
+    # class retained CFR block labels.
+    zkm_match = re.search(
+        r"\b(?:private\s+)?static\s+void\s+zkm\$clinit\s*\(\s*\)\s*\{",
+        text,
+    )
+    if zkm_match is not None:
+        open_brace = text.find("{", zkm_match.start())
+        zkm_body = java_brace_block(text, open_brace)
+        if zkm_body is not None:
+            has_label = re.search(r"^\s*block\d+\s*:", zkm_body, re.MULTILINE) is not None
+            has_transfer = (
+                re.search(r"\b(?:break|continue)\s+block\d+\s*;", zkm_body) is not None
+            )
+            if has_label or has_transfer:
+                zkm_start_line = line_number(text, zkm_match.start())
+                zkm_end_line = zkm_start_line + zkm_body.count("\n")
+                authority_path = rel.as_posix()
+                if authority_path.startswith("src/main/java/"):
+                    authority_path = authority_path[len("src/main/java/"):]
+                authority_backed = authority_path in ZKM_LABEL_AUTHORITY_PATHS
+
+                if authority_backed:
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and zkm_start_line <= finding["line"] <= zkm_end_line
+                        ):
+                            finding["confidence"] = "low"
+
+                add(
+                    findings,
+                    "zkm_decoder_with_synthetic_control_flow",
+                    rel,
+                    zkm_start_line,
+                    (
+                        "zkm$clinit labelled control flow matches pinned OpenExpo "
+                        "cross-build structure"
+                        if authority_backed
+                        else "zkm$clinit contains synthetic block-label/control-transfer remnants"
+                    ),
+                    "low" if authority_backed else "medium",
+                )
+
+    return findings
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", default="src/main/java")
+    ap.add_argument("--out", default="build/recovery-audit")
+    args = ap.parse_args()
+
+    root = Path(".").resolve()
+    source = (root / args.source).resolve()
+    out = (root / args.out).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+
+    java_files = sorted(source.rglob("*.java"))
+    findings = []
+    for path in java_files:
+        findings.extend(scan_file(path, root))
+
+    findings.sort(key=lambda x: (x["path"], x["line"], x["category"]))
+    counts = collections.Counter(f["category"] for f in findings)
+    by_file = collections.Counter(f["path"] for f in findings)
+    confidence = collections.Counter(f["confidence"] for f in findings)
+
+    payload = {
+        "java_files_scanned": len(java_files),
+        "finding_count": len(findings),
+        "counts_by_category": dict(sorted(counts.items())),
+        "counts_by_confidence": dict(sorted(confidence.items())),
+        "top_files": by_file.most_common(50),
+        "findings": findings,
+    }
+    (out / "recovery-audit.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    with (out / "recovery-audit.tsv").open("w", encoding="utf-8", newline="") as fh:
+        fh.write("confidence\tcategory\tpath\tline\texcerpt\n")
+        for f in findings:
+            excerpt = f["excerpt"].replace("\t", " ").replace("\r", " ").replace("\n", "\\n")
+            fh.write(
+                f'{f["confidence"]}\t{f["category"]}\t{f["path"]}\t{f["line"]}\t{excerpt}\n'
+            )
+
+    md = []
+    md.append("# OpenAbyss recovery audit")
+    md.append("")
+    md.append(f"- Java files scanned: **{len(java_files)}**")
+    md.append(f"- Findings: **{len(findings)}**")
+    md.append(f"- High confidence: **{confidence.get('high', 0)}**")
+    md.append(f"- Medium confidence: **{confidence.get('medium', 0)}**")
+    md.append(f"- Low confidence / provenance-only: **{confidence.get('low', 0)}**")
+    md.append("")
+    md.append("## Categories")
+    md.append("")
+    if counts:
+        md.append("| Category | Count |")
+        md.append("|---|---:|")
+        for category, count in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
+            md.append(f"| {category} | {count} |")
+    else:
+        md.append("No heuristic findings.")
+    md.append("")
+    md.append("## Top files")
+    md.append("")
+    if by_file:
+        md.append("| File | Findings |")
+        md.append("|---|---:|")
+        for path, count in by_file.most_common(30):
+            md.append(f"| `{path}` | {count} |")
+    else:
+        md.append("No files flagged.")
+
+    summary = "\n".join(md) + "\n"
+    (out / "summary.md").write_text(summary, encoding="utf-8")
+    print(summary)
+    print("RECOVERY_AUDIT_REPORT=" + str(out / "recovery-audit.json"))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

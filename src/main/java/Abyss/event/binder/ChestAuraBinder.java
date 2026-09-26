@@ -15,7 +15,7 @@ import Abyss.event.invoker.ChestAuraPreMouseInputInvoker;
 import Abyss.module.impl.player.ChestAura;
 
 public final class ChestAuraBinder {
-    private static final long private ChestAuraBinder() {
+    private ChestAuraBinder() {
 }
     public static void E(EventBus var0, ChestAura var1) {
         var0.R(var1, CloseScreenEvent.class, 3, new ChestAuraCloseScreenInvoker(var1));

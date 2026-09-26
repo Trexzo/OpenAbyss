@@ -41,10 +41,17 @@ import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.util.ResourceLocation;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Notifications
 extends Module
 implements EventSubscriber {
+    private static long a = 123782199563812L;
+
     private static List<NotificationToast> s;
     private static int F;
     private static Minecraft Y;
@@ -91,8 +98,8 @@ implements EventSubscriber {
         String title = split < 0 ? var0 : var0.substring(0, split);
         String body = split < 0 ? null : var0.substring(split + 1);
         float var14 = body != null && body.length() > 0 ? Math.max(FontManager.getMedium().getWidth(title), FontManager.getSmall().getWidth(body)) + 12.0f : FontManager.getMedium().getWidth(title) + 12.0f;
-        float var15 = var3 ? Math.max(2.0f, (float)var10.func_78326_a() - var14 - 2.0f - offsetX.L()) : 2.0f + offsetX.L();
-        float var16 = var3 ? (float)var10.func_78326_a() : -var14;
+        float var15 = var3 ? Math.max(2.0f, (float)var10.getScaledWidth() - var14 - 2.0f - offsetX.L()) : 2.0f + offsetX.L();
+        float var16 = var3 ? (float)var10.getScaledWidth() : -var14;
         return new NotificationToast(title, body, System.currentTimeMillis(), var15, var16, var14, var11, var5);
 }
     private static float b(float var0) {
@@ -131,10 +138,10 @@ implements EventSubscriber {
 }
             case "PLATE": {
                 if (var4) {
-                    Y.func_147118_V().func_147682_a((ISound)PositionedSoundRecord.func_147674_a((ResourceLocation)new ResourceLocation("random.click"), (float)0.6f));
+                    Y.getSoundHandler().playSound((ISound)PositionedSoundRecord.create((ResourceLocation)new ResourceLocation("random.click"), (float)0.6f));
                     break;
 }
-                Y.func_147118_V().func_147682_a((ISound)PositionedSoundRecord.func_147674_a((ResourceLocation)new ResourceLocation("random.click"), (float)0.5f));
+                Y.getSoundHandler().playSound((ISound)PositionedSoundRecord.create((ResourceLocation)new ResourceLocation("random.click"), (float)0.5f));
                 break;
 }
             case "SIGMA": {
@@ -278,7 +285,7 @@ implements EventSubscriber {
             float var32 = leaveTime.L();
             float var33 = Notifications.F(var11);
             float var34 = var33 + 4.0f;
-            float var35 = (float)var51.func_78328_b() - offsetY.L() - var34;
+            float var35 = (float)var51.getScaledHeight() - offsetY.L() - var34;
             s.removeIf(var5x -> var5x.c(var28, var30, var31, var32));
             ArrayList<NotificationToast> var36 = new ArrayList<NotificationToast>();
             for (int var37 = 0; var37 < s.size(); ++var37) {
@@ -308,30 +315,37 @@ implements EventSubscriber {
                     int var47 = 0x50000000;
                     int var48 = -1;
                     int var49 = var25 | 0xFF000000;
-                    float var54 = MathUtil.q(var42, 2.0f, Math.max(2.0f, (float)var51.func_78328_b() - var33 - 2.0f));
+                    float var54 = MathUtil.q(var42, 2.0f, Math.max(2.0f, (float)var51.getScaledHeight() - var33 - 2.0f));
                     Notifications.n(var50, var40, var43, var54, NotificationToast.f(var40), NotificationToast.c(var40), var45, var46, var47, var13, var48, var49);
                     var52 = var42 - var34;
 }
 }
 }
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private static void a() {
         Notifications.v[0] = "/\u0014)q9#2";
         Notifications.v[1] = "u[?\u0007tyBL;\r9]UGa\u0011";

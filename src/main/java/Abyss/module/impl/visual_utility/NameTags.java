@@ -69,10 +69,17 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class NameTags
 extends Module
 implements EventSubscriber {
+    private static long a = 110449242857023L;
+
     public static BooleanSetting onlyName;
     private static String[] E;
     private static long[] s;
@@ -122,14 +129,14 @@ implements EventSubscriber {
             if (!armorMode.R("NONE")) {
                 ArrayList<ItemStack> var12 = new ArrayList<ItemStack>();
                 for (int var13 = 4; var13 >= 0; --var13) {
-                    ItemStack var14 = var13 == 0 ? var1.func_70694_bm() : ((EntityPlayer)var1).field_71071_by.field_70460_b[var13 - 1];
+                    ItemStack var14 = var13 == 0 ? var1.getHeldItem() : ((EntityPlayer)var1).inventory.armorInventory[var13 - 1];
                     if (var14 == null) continue;
                     var12.add(var14);
 }
                 if (!var12.isEmpty()) {
                     boolean var25;
                     String var24 = armorMode.Y();
-                    boolean bl = var25 = var1 == NameTags.f.field_71439_g;
+                    boolean bl = var25 = var1 == NameTags.f.thePlayer;
                     if (var24.equals("LEFT") || var25 && var24.equals("SELF_LEFT")) {
                         this.armorColumn(var12, -26, 114286643707769L);
                     } else if (var24.equals("RIGHT") || var25 && var24.equals("SELF_RIGHT")) {
@@ -145,45 +152,45 @@ implements EventSubscriber {
 }
             if (showEffects.c()) {
                 ArrayList<PotionEffect> var17 = new ArrayList<PotionEffect>();
-                for (PotionEffect var22 : var1.func_70651_bq()) {
-                    Potion var15 = Potion.field_76425_a[var22.func_76456_a()];
-                    if (var15 == null || !var15.func_76400_d()) continue;
+                for (PotionEffect var22 : var1.getActivePotionEffects()) {
+                    Potion var15 = Potion.potionTypes[var22.getPotionID()];
+                    if (var15 == null || !var15.hasStatusIcon()) continue;
                     var17.add(var22);
 }
                 if (!var17.isEmpty()) {
-                    GlStateManager.func_179094_E();
-                    GlStateManager.func_179152_a((float)0.5f, (float)0.5f, (float)1.0f);
+                    GlStateManager.pushMatrix();
+                    GlStateManager.scale((float)0.5f, (float)0.5f, (float)1.0f);
                     int var20 = var17.size() * -9;
                     for (int var23 = 0; var23 < var17.size(); ++var23) {
                         this.F((PotionEffect)var17.get(var23), var20 + var23 * 18, (int)(-(var11 * 2.0f) - 18.0f));
 }
-                    GlStateManager.func_179121_F();
+                    GlStateManager.popMatrix();
 }
 }
 }
 }
     private void armorColumn(List var1, int var2, long var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         for (int var5 = 0; var5 < var1.size(); ++var5) {
             this.h((ItemStack)var1.get(var5), var2, var3, -8 + var5 * 16);
 }
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private void F(PotionEffect var1, int var2, int var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        int var6 = Potion.field_76425_a[var1.func_76456_a()].func_76392_e();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179132_a((boolean)true);
-        GlStateManager.func_179086_m((int)256);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)1.0f, (float)1.0f, (float)-0.01f);
-        f.func_110434_K().func_110577_a(new ResourceLocation("textures/gui/container/inventory.png"));
-        Gui.func_146110_a((int)var2, (int)var3, (float)(var6 % 8 * 18), (float)(198 + var6 / 8 * 18), (int)18, (int)18, (float)256.0f, (float)256.0f);
-        GlStateManager.func_179121_F();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179121_F();
+        int var6 = Potion.potionTypes[var1.getPotionID()].getStatusIconIndex();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.pushMatrix();
+        GlStateManager.depthMask((boolean)true);
+        GlStateManager.clear((int)256);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)1.0f, (float)1.0f, (float)-0.01f);
+        f.getTextureManager().bindTexture(new ResourceLocation("textures/gui/container/inventory.png"));
+        Gui.drawModalRectWithCustomSizedTexture((int)var2, (int)var3, (float)(var6 % 8 * 18), (float)(198 + var6 / 8 * 18), (int)18, (int)18, (float)256.0f, (float)256.0f);
+        GlStateManager.popMatrix();
+        GlStateManager.enableAlpha();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.popMatrix();
 }
     @Override
     public void A(long var1) {
@@ -199,19 +206,19 @@ implements EventSubscriber {
             if (!RenderUtil.l((Entity)var12)) continue;
             this.A(2009537843L, var12, var10, '\udfa8', var9);
 }
-        if (showSelf.c() && NameTags.f.field_71474_y.field_74320_O != 0) {
-            this.A(2009537843L, (EntityLivingBase)NameTags.f.field_71439_g, var10, '\udfa8', var9);
+        if (showSelf.c() && NameTags.f.gameSettings.thirdPersonView != 0) {
+            this.A(2009537843L, (EntityLivingBase)NameTags.f.thePlayer, var10, '\udfa8', var9);
 }
 }
     private float y() {
-        return NameTags.f.field_71474_y.field_74320_O == 2 ? -1.0f : 1.0f;
+        return NameTags.f.gameSettings.thirdPersonView == 2 ? -1.0f : 1.0f;
 }
     private void O(EntityLivingBase var1, double var2, double var4, double var8, double var10) {
-        GlStateManager.func_179137_b((double)var2, (double)(var4 + (var1.func_70093_af() ? 0.225 : 0.4)), (double)var8);
-        GlStateManager.func_179114_b((float)(NameTags.f.func_175598_ae().field_78735_i * -1.0f), (float)0.0f, (float)1.0f, (float)0.0f);
-        GlStateManager.func_179114_b((float)NameTags.f.func_175598_ae().field_78732_j, (float)(LunarClientDetector.q(0L) ? 1.0f : this.y()), (float)0.0f, (float)0.0f);
+        GlStateManager.translate((double)var2, (double)(var4 + (var1.isSneaking() ? 0.225 : 0.4)), (double)var8);
+        GlStateManager.rotate((float)(NameTags.f.getRenderManager().playerViewY * -1.0f), (float)0.0f, (float)1.0f, (float)0.0f);
+        GlStateManager.rotate((float)NameTags.f.getRenderManager().playerViewX, (float)(LunarClientDetector.q(0L) ? 1.0f : this.y()), (float)0.0f, (float)0.0f);
         double var14 = Math.pow(Math.min(Math.max(autoScale.c() ? var10 : 0.0, 6.0), 128.0), 0.75) * 0.0075;
-        GlStateManager.func_179139_a((double)(-var14 * (double)scale.L()), (double)(-var14 * (double)scale.L()), (double)1.0);
+        GlStateManager.scale((double)(-var14 * (double)scale.L()), (double)(-var14 * (double)scale.L()), (double)1.0);
 }
     private String u(int var1, byte var2, int var3, EntityLivingBase var4, double var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var7 = ((long)var1 << 32 | (long)var2 << 56 >>> 32 | (long)var3 << 40 >>> 40) ^ a;
@@ -221,13 +228,13 @@ implements EventSubscriber {
         long var15 = var7 ^ 0x4F6DE81DED7DL;
         StringBuilder var17 = new StringBuilder();
         if (onlyName.c()) {
-            var17.append(var4.func_70005_c_());
+            var17.append(var4.getName());
         } else {
-            var17.append(var4.func_145748_c_().func_150254_d());
+            var17.append(var4.getDisplayName().getFormattedText());
 }
         if (showHealth.c()) {
             float var18 = CombatUtil.h(var4);
-            float var19 = var4.func_110138_aP();
+            float var19 = var4.getMaxHealth();
             var17.append(" ").append(CombatUtil.h(var18, var19, var9)).append(MathUtil.W(var18));
             float var20 = CombatUtil.D(var4);
             if (var20 != 0.0f) {
@@ -235,9 +242,9 @@ implements EventSubscriber {
 }
 }
         if (showHitsToKill.c()) {
-            var17.append(" ").append(CombatUtil.h(var4, var13, NameTags.f.field_71439_g.field_71071_by.func_70301_a(AutoWeapon.M(var11))));
+            var17.append(" ").append(CombatUtil.h(var4, var13, NameTags.f.thePlayer.inventory.getStackInSlot(AutoWeapon.M(var11))));
 }
-        if (showDistance.c() && var4 != NameTags.f.field_71439_g) {
+        if (showDistance.c() && var4 != NameTags.f.thePlayer) {
             int var21 = (int)MathUtil.W(var5);
             String var22 = "";
             if (var5 <= 8.0) {
@@ -249,43 +256,43 @@ implements EventSubscriber {
 }
             var17.insert(0, "\u00a7b[\u00a7r" + var22 + var21 + "\u00a7b] \u00a7r");
 }
-        if (showIndicator.c() && var4 != NameTags.f.field_71439_g) {
+        if (showIndicator.c() && var4 != NameTags.f.thePlayer) {
             var17.append(" ").append(CombatUtil.s(var15, var4) ? "\u00a76[\u00a7a+\u00a76]\u00a7r" : "\u00a76[\u00a7c-\u00a76]\u00a7r");
 }
         return var17.toString();
 }
     private void h(ItemStack var1, int var2, long var3, int var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var6 = 64928077817138L;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179132_a((boolean)true);
-        GlStateManager.func_179086_m((int)256);
-        RenderHelper.func_74520_c();
+        GlStateManager.pushMatrix();
+        GlStateManager.depthMask((boolean)true);
+        GlStateManager.clear((int)256);
+        RenderHelper.enableGUIStandardItemLighting();
         GL11.glDisable((int)2896);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)1.0f, (float)1.0f, (float)-0.01f);
-        NameTags.f.func_175599_af().field_77023_b = -150.0f;
-        f.func_175599_af().func_180450_b(var1, var2, var5);
-        f.func_175599_af().func_175030_a(NameTags.f.field_71466_p, var1, var2, var5);
-        NameTags.f.func_175599_af().field_77023_b = 0.0f;
-        GlStateManager.func_179121_F();
-        RenderHelper.func_74518_a();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179121_F();
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)0.5f, (float)0.5f, (float)0.5f);
-        GlStateManager.func_179097_i();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)1.0f, (float)1.0f, (float)-0.01f);
+        NameTags.f.getRenderItem().zLevel = -150.0f;
+        f.getRenderItem().renderItemAndEffectIntoGUI(var1, var2, var5);
+        f.getRenderItem().renderItemOverlays(NameTags.f.fontRendererObj, var1, var2, var5);
+        NameTags.f.getRenderItem().zLevel = 0.0f;
+        GlStateManager.popMatrix();
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.enableAlpha();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.popMatrix();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)0.5f, (float)0.5f, (float)0.5f);
+        GlStateManager.disableDepth();
         if (enchant.c()) {
             this.W(var6, var1, var2, var5, 0.5f);
 }
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179152_a((float)2.0f, (float)2.0f, (float)2.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.enableDepth();
+        GlStateManager.scale((float)2.0f, (float)2.0f, (float)2.0f);
+        GlStateManager.popMatrix();
 }
     private void l(long var1, EntityLivingBase var3, CustomFont var4, String var5) {
         float var18 = var4.R(var5, 52019766876817L);
-        Color var19 = !var3.func_70093_af() && !var3.func_82150_aj() ? new Color(0.0f, 0.0f, 0.0f, (float)backgroundOpacity.k() / 100.0f) : new Color(0.33f, 0.0f, 0.33f, (float)backgroundOpacity.k() / 100.0f);
+        Color var19 = !var3.isSneaking() && !var3.isInvisible() ? new Color(0.0f, 0.0f, 0.0f, (float)backgroundOpacity.k() / 100.0f) : new Color(0.33f, 0.0f, 0.33f, (float)backgroundOpacity.k() / 100.0f);
         RenderUtil.L();
         float var24 = backgroundSpacing.L();
         float var20 = -var18 / 2.0f - var24;
@@ -299,9 +306,9 @@ implements EventSubscriber {
             RenderUtil.m(var20, var21, 91446790430251L, var22, var23, 1.0f, Color.RED.getRGB());
 }
         RenderUtil.w();
-        GlStateManager.func_179097_i();
+        GlStateManager.disableDepth();
         var4.v(var5, -var18 / 2.0f, -var4.o(60714858652844L), -1, 88827598794260L, textShadow.c());
-        GlStateManager.func_179126_j();
+        GlStateManager.enableDepth();
 }
     private void A(long var1, EntityLivingBase var3, float var4, char var5, CustomFont var6) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var7 = (0x77C71D330000L | (long)var5 << 48 >>> 48) ^ a;
@@ -314,21 +321,21 @@ implements EventSubscriber {
         long var21 = var7 ^ 0x296781349226L;
         long var23 = var7 ^ 0x1B46EE82A849L;
         x.add(var3);
-        RenderManager var25 = f.func_175598_ae();
+        RenderManager var25 = f.getRenderManager();
         double var26 = RenderManagerAccessor.k(0L, var25);
         double var28 = RenderManagerAccessor.y(var18, var25);
         double var30 = RenderManagerAccessor.W(0L, var25);
-        double var32 = (var3.field_70165_t - var3.field_70142_S) * (double)var4 + var3.field_70142_S - var26;
-        double var34 = (var3.field_70163_u - var3.field_70137_T) * (double)var4 + var3.field_70137_T - var28 + (double)var3.func_70047_e();
-        double var36 = (var3.field_70161_v - var3.field_70136_U) * (double)var4 + var3.field_70136_U - var30;
-        EntityPlayerSP var38 = NameTags.f.field_71439_g;
-        double var39 = var38 == null ? 0.0 : (double)var38.func_70032_d((Entity)var3);
-        GlStateManager.func_179094_E();
+        double var32 = (var3.posX - var3.lastTickPosX) * (double)var4 + var3.lastTickPosX - var26;
+        double var34 = (var3.posY - var3.lastTickPosY) * (double)var4 + var3.lastTickPosY - var28 + (double)var3.getEyeHeight();
+        double var36 = (var3.posZ - var3.lastTickPosZ) * (double)var4 + var3.lastTickPosZ - var30;
+        EntityPlayerSP var38 = NameTags.f.thePlayer;
+        double var39 = var38 == null ? 0.0 : (double)var38.getDistanceToEntity((Entity)var3);
+        GlStateManager.pushMatrix();
         this.O(var3, var32, var34, var36, var39);
         String var41 = this.u(var11, (byte)var12, var13, var3, var39);
         this.l(var21, var3, var6, var41);
         this.c(var3, var6, var23);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     public NameTags(long var1) {
         super(a ^ var1 ^ 0x6D21FFF04784L);
@@ -381,19 +388,19 @@ implements EventSubscriber {
         List var19 = EntityUtil.U(var18);
         for (int var20 = 0; var20 < var19.size(); ++var20) {
             EntityLivingBase var21 = (EntityLivingBase)var19.get(var20);
-            if (var21 instanceof EntityPlayerSP || var21.func_145748_c_() == null || !(var18 ? EntityUtil.c(30808997819832L, (EntityPlayer)var21, var14, var15, var16, var17) : EntityUtil.q((Entity)var21, var10, var11, var12, var13, var14, var15, var16, var17, 21816078198602L))) continue;
+            if (var21 instanceof EntityPlayerSP || var21.getDisplayName() == null || !(var18 ? EntityUtil.c(30808997819832L, (EntityPlayer)var21, var14, var15, var16, var17) : EntityUtil.q((Entity)var21, var10, var11, var12, var13, var14, var15, var16, var17, 21816078198602L))) continue;
             this.Y.add(var21);
 }
 }
     private void W(long var1, ItemStack var3, float var4, float var5, float var6) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         NBTTagList var11;
         long var9 = var1 ^ 0x77E6104822E8L;
-        NBTTagList nBTTagList = var11 = var3.func_77973_b() == Items.field_151134_bR ? Items.field_151134_bR.func_92110_g(var3) : var3.func_77986_q();
+        NBTTagList nBTTagList = var11 = var3.getItem() == Items.enchanted_book ? Items.enchanted_book.getEnchantments(var3) : var3.getEnchantmentTagList();
         if (var11 != null) {
-            for (int var12 = 0; var12 < var11.func_74745_c(); ++var12) {
-                EnchantmentAbbreviation var13 = c.get(var11.func_150305_b(var12).func_74762_e("id"));
+            for (int var12 = 0; var12 < var11.tagCount(); ++var12) {
+                EnchantmentAbbreviation var13 = c.get(var11.getCompoundTagAt(var12).getInteger("id"));
                 if (var13 == null) continue;
-                short var14 = var11.func_150305_b(var12).func_74765_d("lvl");
+                short var14 = var11.getCompoundTagAt(var12).getShort("lvl");
                 MinecraftColor var15 = NameTags.y(var14, var13.L);
                 this.replaceAll(MinecraftColor.C(String.format("&r%s%s%d&r", new Object[]{var13.S, var15, (int)var14})), var9, var4 * (1.0f / var6), (var5 + (float)var12 * 4.0f) * (1.0f / var6));
 }

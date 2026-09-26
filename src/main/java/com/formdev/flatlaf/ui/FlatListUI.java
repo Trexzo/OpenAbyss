@@ -221,14 +221,8 @@ implements FlatStylingSupport.StyleableUI {
             class RoundedSelectionGraphics
             extends Graphics2DProxy {
                 private boolean inPaintSelection;
-                final /* synthetic */ Rectangle val$rowBounds;
-                final /* synthetic */ Component val$rendererComponent;
-                final /* synthetic */ int val$row;
 
                 RoundedSelectionGraphics(Graphics delegate) {
-                    this.val$rowBounds = rectangle;
-                    this.val$rendererComponent = component;
-                    this.val$row = n2;
                     super((Graphics2D)delegate);
 }
                 @Override
@@ -241,9 +235,9 @@ implements FlatStylingSupport.StyleableUI {
 }
                 @Override
                 public void fillRect(int x, int y, int width, int height) {
-                    if (!this.inPaintSelection && x == 0 && y == 0 && width == this.val$rowBounds.width && height == this.val$rowBounds.height && this.getColor() == this.val$rendererComponent.getBackground()) {
+                    if (!this.inPaintSelection && x == 0 && y == 0 && width == rowBounds.width && height == rowBounds.height && this.getColor() == rendererComponent.getBackground()) {
                         this.inPaintSelection = true;
-                        FlatListUI.this.paintCellSelection(this, this.val$row, x, y, width, height);
+                        FlatListUI.this.paintCellSelection(this, row, x, y, width, height);
                         this.inPaintSelection = false;
                     } else {
                         super.fillRect(x, y, width, height);

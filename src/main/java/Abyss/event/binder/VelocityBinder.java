@@ -19,7 +19,7 @@ import Abyss.event.invoker.VelocityWorldLoadInvoker;
 import Abyss.module.impl.combat.Velocity;
 
 public final class VelocityBinder {
-    private static final long private VelocityBinder() {
+    private VelocityBinder() {
 }
     public static void T(EventBus var0, Velocity var1) {
         var0.R(var1, KnockbackEvent.class, 3, new VelocityKnockbackInvoker(var1));

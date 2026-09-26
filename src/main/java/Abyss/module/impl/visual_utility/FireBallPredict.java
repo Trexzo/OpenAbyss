@@ -47,10 +47,16 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class FireBallPredict
 extends Module
 implements EventSubscriber {
+    private static long a = 56662069471346L;
     private static String[] k;
     private static long[] c;
     public static NumberSetting renderRadius;
@@ -86,9 +92,9 @@ implements EventSubscriber {
         return this.J(Math.round(255.0f * (1.0f - var8)), 255, 0);
 }
     private FireBallPredictImpact I(long var1) {
-        WorldClient var3 = FireBallPredict.f.field_71441_e;
-        List var4 = var3.field_73010_i;
-        Vec3 var5 = new Vec3(FireBallPredict.f.field_71439_g.field_70165_t, FireBallPredict.f.field_71439_g.field_70163_u, FireBallPredict.f.field_71439_g.field_70161_v);
+        WorldClient var3 = FireBallPredict.f.theWorld;
+        List var4 = var3.playerEntities;
+        Vec3 var5 = new Vec3(FireBallPredict.f.thePlayer.posX, FireBallPredict.f.thePlayer.posY, FireBallPredict.f.thePlayer.posZ);
         FireBallPredictImpact var6 = null;
         double var7 = Double.MAX_VALUE;
         for (int var9 = 0; var9 < var4.size(); ++var9) {
@@ -96,13 +102,13 @@ implements EventSubscriber {
             Vec3 var17;
             double var18;
             EntityPlayer var10 = (EntityPlayer)var4.get(var9);
-            ItemStack var11 = var10.func_70694_bm();
-            if (var11 == null || var11.func_77973_b() != Items.field_151059_bz) continue;
-            Vec3 var12 = var10.func_174824_e(1.0f);
-            Vec3 var13 = var10.func_70676_i(1.0f);
-            Vec3 var14 = var12.func_72441_c(var13.field_72450_a * (double)predictRange.L(), var13.field_72448_b * (double)predictRange.L(), var13.field_72449_c * (double)predictRange.L());
-            MovingObjectPosition var15 = var3.func_147447_a(var12, var14, false, true, false);
-            if (var15 == null || var15.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK || (var18 = var5.func_72436_e(var17 = new Vec3((double)(var16 = var15.func_178782_a()).func_177958_n() + 0.5, (double)var16.func_177956_o() + 0.5, (double)var16.func_177952_p() + 0.5))) >= var7) continue;
+            ItemStack var11 = var10.getHeldItem();
+            if (var11 == null || var11.getItem() != Items.fire_charge) continue;
+            Vec3 var12 = var10.getPositionEyes(1.0f);
+            Vec3 var13 = var10.getLook(1.0f);
+            Vec3 var14 = var12.addVector(var13.xCoord * (double)predictRange.L(), var13.yCoord * (double)predictRange.L(), var13.zCoord * (double)predictRange.L());
+            MovingObjectPosition var15 = var3.rayTraceBlocks(var12, var14, false, true, false);
+            if (var15 == null || var15.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || (var18 = var5.squareDistanceTo(var17 = new Vec3((double)(var16 = var15.getBlockPos()).getX() + 0.5, (double)var16.getY() + 0.5, (double)var16.getZ() + 0.5))) >= var7) continue;
             var7 = var18;
             var6 = new FireBallPredictImpact(var16, 0xFFFF00, null);
 }
@@ -119,7 +125,7 @@ implements EventSubscriber {
         for (int var14 = -var2; var14 <= var2; ++var14) {
             for (int var15 = -var2; var15 <= var2; ++var15) {
                 for (int var16 = -var2; var16 <= var2; ++var16) {
-                    BlockPos var17 = this.o.func_177982_a(var14, var15, var16);
+                    BlockPos var17 = this.o.add(var14, var15, var16);
                     if (!this.e(var1, var17)) continue;
                     if (var9) {
                         RenderUtil.C(var17, 1.0, var5, var12, var6, var7, var8);
@@ -137,9 +143,9 @@ implements EventSubscriber {
         return var4 > 200 && var5 < 96 && var6 < 96 ? 0xFFB000 : var1;
 }
     private FireBallPredictImpact G(long var1) {
-        WorldClient var5 = FireBallPredict.f.field_71441_e;
-        List var6 = var5.field_72996_f;
-        Vec3 var7 = new Vec3(FireBallPredict.f.field_71439_g.field_70165_t, FireBallPredict.f.field_71439_g.field_70163_u, FireBallPredict.f.field_71439_g.field_70161_v);
+        WorldClient var5 = FireBallPredict.f.theWorld;
+        List var6 = var5.loadedEntityList;
+        Vec3 var7 = new Vec3(FireBallPredict.f.thePlayer.posX, FireBallPredict.f.thePlayer.posY, FireBallPredict.f.thePlayer.posZ);
         FireBallPredictImpact var8 = null;
         double var9 = Double.MAX_VALUE;
         for (int var11 = 0; var11 < var6.size(); ++var11) {
@@ -149,15 +155,15 @@ implements EventSubscriber {
             Entity var12 = (Entity)var6.get(var11);
             if (!(var12 instanceof EntityFireball) || var12 instanceof EntityWitherSkull) continue;
             EntityFireball var13 = (EntityFireball)var12;
-            double var14 = var13.field_70159_w * var13.field_70159_w + var13.field_70181_x * var13.field_70181_x + var13.field_70179_y * var13.field_70179_y;
+            double var14 = var13.motionX * var13.motionX + var13.motionY * var13.motionY + var13.motionZ * var13.motionZ;
             if (var14 < 1.0E-4) continue;
-            Vec3 var16 = new Vec3(var13.field_70165_t, var13.field_70163_u, var13.field_70161_v);
-            Vec3 var17 = new Vec3(var13.field_70159_w, var13.field_70181_x, var13.field_70179_y).func_72432_b();
-            Vec3 var18 = var16.func_72441_c(var17.field_72450_a * (double)predictRange.L(), var17.field_72448_b * (double)predictRange.L(), var17.field_72449_c * (double)predictRange.L());
-            MovingObjectPosition var19 = var5.func_147447_a(var16, var18, false, true, false);
-            if (var19 == null || var19.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK || (var22 = var7.func_72436_e(var21 = new Vec3((double)(var20 = var19.func_178782_a()).func_177958_n() + 0.5, (double)var20.func_177956_o() + 0.5, (double)var20.func_177952_p() + 0.5))) >= var9) continue;
+            Vec3 var16 = new Vec3(var13.posX, var13.posY, var13.posZ);
+            Vec3 var17 = new Vec3(var13.motionX, var13.motionY, var13.motionZ).normalize();
+            Vec3 var18 = var16.addVector(var17.xCoord * (double)predictRange.L(), var17.yCoord * (double)predictRange.L(), var17.zCoord * (double)predictRange.L());
+            MovingObjectPosition var19 = var5.rayTraceBlocks(var16, var18, false, true, false);
+            if (var19 == null || var19.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || (var22 = var7.squareDistanceTo(var21 = new Vec3((double)(var20 = var19.getBlockPos()).getX() + 0.5, (double)var20.getY() + 0.5, (double)var20.getZ() + 0.5))) >= var9) continue;
             var9 = var22;
-            var8 = new FireBallPredictImpact(var20, this.I(118876068591149L, var16.func_72438_d(var19.field_72307_f)), null);
+            var8 = new FireBallPredictImpact(var20, this.I(118876068591149L, var16.distanceTo(var19.hitVec)), null);
 }
         return var8;
 }
@@ -165,11 +171,11 @@ implements EventSubscriber {
         return Math.max(1, Math.min(2, (int)renderRadius.L()));
 }
     private boolean e(World var1, BlockPos var2) {
-        if (var1.func_175623_d(var2)) {
+        if (var1.isAirBlock(var2)) {
             return false;
 }
-        Block var3 = var1.func_180495_p(var2).func_177230_c();
-        return var3.func_149686_d();
+        Block var3 = var1.getBlockState(var2).getBlock();
+        return var3.isFullCube();
 }
     public void onPostTick(long var1, PostTickEvent var3) {
         FireBallPredictImpact var11 = null;
@@ -194,7 +200,7 @@ implements EventSubscriber {
         this.C(var3, (char)var4, (char)var5);
 }
     public void onRender3D(long var1, Render3DEvent var3) throws Throwable {
-        if (FireBallPredict.f.field_71441_e != null && FireBallPredict.f.field_71439_g != null && this.o != null) {
+        if (FireBallPredict.f.theWorld != null && FireBallPredict.f.thePlayer != null && this.o != null) {
             this.c('\u0000', 204245502, (short)-10313);
 }
 }
@@ -219,7 +225,7 @@ implements EventSubscriber {
         long var4 = ((long)var1 << 48 | (long)var2 << 32 >>> 16 | (long)var3 << 48 >>> 48) ^ a;
         long var8 = var4 ^ 0x57AEADE9DADAL;
         long var12 = var4 ^ 0x5548988C9AFEL;
-        WorldClient var14 = FireBallPredict.f.field_71441_e;
+        WorldClient var14 = FireBallPredict.f.theWorld;
         int var15 = this.X();
         int var16 = this.j(this.b);
         boolean var17 = var16 == 0xFFB000;

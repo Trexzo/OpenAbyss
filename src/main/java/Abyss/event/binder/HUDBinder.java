@@ -9,7 +9,7 @@ import Abyss.event.invoker.HUDRender2DInvoker;
 import Abyss.module.impl.visual.HUD;
 
 public final class HUDBinder {
-    private static final long private HUDBinder() {
+    private HUDBinder() {
 }
     public static void H(EventBus var0, HUD var3) {
         var0.R(var3, Render2DEvent.class, 3, new HUDRender2DInvoker(var3));

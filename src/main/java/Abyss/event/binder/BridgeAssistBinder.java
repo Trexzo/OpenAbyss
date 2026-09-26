@@ -13,7 +13,7 @@ import Abyss.event.invoker.BridgeAssistSendPacketInvoker;
 import Abyss.module.impl.world.BridgeAssist;
 
 public final class BridgeAssistBinder {
-    private static final long public static void v(EventBus var0, BridgeAssist var3) {
+    public static void v(EventBus var0, BridgeAssist var3) {
         var0.R(var3, MoveInputEvent.class, 3, new BridgeAssistMoveInputInvoker(var3));
         var0.R(var3, SendPacketEvent.class, 3, new BridgeAssistSendPacketInvoker(var3));
         var0.R(var3, PreMouseInputEvent.class, 3, new BridgeAssistPreMouseInputInvoker(var3));

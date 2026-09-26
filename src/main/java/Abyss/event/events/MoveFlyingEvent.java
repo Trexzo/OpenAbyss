@@ -10,7 +10,7 @@ extends Event {
     private float U;
     private float c;
     private float r;
-    private static final long public void a(float var1) {
+    public void a(float var1) {
         this.c = var1;
 }
     public void T(float var1) {

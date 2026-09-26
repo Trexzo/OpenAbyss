@@ -158,6 +158,47 @@ public final class AbyssCommands {
 }
         return null;
 }
+    public static String selfTest() {
+        try {
+            if (StockCommandRegistry.L == null) {
+                return "FAIL registry-null";
+}
+            int count = 0;
+            int primaryResolved = 0;
+            for (Command command : StockCommandRegistry.L) {
+                if (command == null) {
+                    return "FAIL null-command";
+}
+                String[] aliases = command.e(0L);
+                if (aliases == null || aliases.length == 0 || aliases[0] == null || aliases[0].trim().isEmpty()) {
+                    return "FAIL aliases " + command.getClass().getName();
+}
+                ++count;
+                if (AbyssCommands.find(aliases[0]) != command) {
+                    return "FAIL resolve " + aliases[0] + " -> " + command.getClass().getName();
+}
+                ++primaryResolved;
+}
+            if (count != 19) {
+                return "FAIL count " + count + "/19";
+}
+            int placeholders = AbyssCommands.placeholderCount();
+            if (placeholders != 0) {
+                return "FAIL module-placeholders " + placeholders;
+}
+            if (!AbyssCommandBind.gateOk()) {
+                return "FAIL keybind-gate " + AbyssCommandBind.gateNote();
+}
+            String configTest = AbyssCommandConfig.selfTest();
+            if (!configTest.startsWith("PASS")) {
+                return "FAIL config-metadata " + configTest;
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " keybind=TRUSTED config=PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     private static String names() {
         StringBuilder var0 = new StringBuilder();
         if (StockCommandRegistry.L != null) {
@@ -181,8 +222,8 @@ public final class AbyssCommands {
             if (ConfigManagerWindow.D == null) {
                 ConfigManagerWindow.D = new ArrayList<String>();
 }
-            if ((var1 = Minecraft.func_71410_x()) != null && var1.field_71456_v != null) {
-                var1.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText(var0));
+            if ((var1 = Minecraft.getMinecraft()) != null && var1.ingameGUI != null) {
+                var1.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText(var0));
 }
             ConfigManagerWindow.D.add(var0);
 }

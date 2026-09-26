@@ -15,7 +15,7 @@ import Abyss.event.invoker.ChestESPRender3DInvoker;
 import Abyss.module.impl.visual_utility.ChestESP;
 
 public final class ChestESPBinder {
-    private static final long public static void N(EventBus var2, ChestESP var3) {
+    public static void N(EventBus var2, ChestESP var3) {
         var2.R(var3, PostTickEvent.class, 3, new ChestESPPostTickInvoker(var3));
         var2.R(var3, Render3DEvent.class, 3, new ChestESPRender3DInvoker(var3));
         var2.R(var3, PlayerRightClickEvent.class, 3, new ChestESPPlayerRightClickInvoker(var3));

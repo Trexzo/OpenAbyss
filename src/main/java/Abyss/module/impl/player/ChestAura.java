@@ -46,10 +46,17 @@ import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.BlockPos;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ChestAura
 extends PriorityModule
 implements EventSubscriber {
+    private static Map e;
+    private static String[] d;
     private long g;
     private final TimerUtil O;
     private static long b = 34799082319422L;
@@ -73,7 +80,7 @@ implements EventSubscriber {
     private boolean s;
 
     private void l(BlockPos var1) {
-        if (ChestAura.f.field_71441_e != null && ChestAura.f.field_71441_e.func_180495_p(var1).func_177230_c() instanceof BlockChest) {
+        if (ChestAura.f.theWorld != null && ChestAura.f.theWorld.getBlockState(var1).getBlock() instanceof BlockChest) {
             this.T(var1);
 }
 }
@@ -85,13 +92,13 @@ implements EventSubscriber {
         BlockPos var11 = null;
         double var12 = Double.MAX_VALUE;
         double var14 = var2 * var2;
-        BlockPos var16 = new BlockPos(ChestAura.f.field_71439_g.field_70165_t, ChestAura.f.field_71439_g.field_70163_u, ChestAura.f.field_71439_g.field_70161_v);
+        BlockPos var16 = new BlockPos(ChestAura.f.thePlayer.posX, ChestAura.f.thePlayer.posY, ChestAura.f.thePlayer.posZ);
         for (int var17 = -var10; var17 <= var10; ++var17) {
             for (int var18 = -var10; var18 <= var10; ++var18) {
                 for (int var19 = -var10; var19 <= var10; ++var19) {
                     double var21;
-                    BlockPos var20 = var16.func_177982_a(var17, var18, var19);
-                    if (!this.p(var8, var9, var20) || !((var21 = ChestAura.f.field_71439_g.func_174831_c(var20)) <= var14) || !(var21 < var12)) continue;
+                    BlockPos var20 = var16.add(var17, var18, var19);
+                    if (!this.p(var8, var9, var20) || !((var21 = ChestAura.f.thePlayer.getDistanceSqToCenter(var20)) <= var14) || !(var21 < var12)) continue;
                     var12 = var21;
                     var11 = var20;
 }
@@ -102,10 +109,10 @@ implements EventSubscriber {
     private void b(BlockPos var1) {
         if (var1 != null) {
             this.T(var1);
-            this.l(var1.func_177978_c());
-            this.l(var1.func_177968_d());
-            this.l(var1.func_177974_f());
-            this.l(var1.func_177976_e());
+            this.l(var1.north());
+            this.l(var1.south());
+            this.l(var1.east());
+            this.l(var1.west());
 }
 }
     private void T(BlockPos var1) {
@@ -113,32 +120,39 @@ implements EventSubscriber {
             H.add(var1);
 }
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void p(byte var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var4 = ((long)var1 << 56 | 0x57045DF7C2D1L) ^ b;
         int var6 = (int)((var4 ^ 0x3409E1DE6331L) >>> 56);
         int var7 = (int)((var4 ^ 0x3409E1DE6331L) << 8 >>> 32);
-        for (TileEntity var10 : ChestAura.f.field_71441_e.field_147482_g) {
+        for (TileEntity var10 : ChestAura.f.theWorld.loadedTileEntityList) {
             if (!(var10 instanceof TileEntityChest)) continue;
             TileEntityChest var11 = (TileEntityChest)var10;
-            BlockPos var12 = var11.func_174877_v();
-            if (!H.contains(var12) && var11.field_145987_o > 0) {
+            BlockPos var12 = var11.getPos();
+            if (!H.contains(var12) && var11.numPlayersUsing > 0) {
                 this.b(var12);
 }
             if (H.contains(var12) || !BlockUtil.Y((byte)var6, var12, var7)) continue;
@@ -147,7 +161,7 @@ implements EventSubscriber {
 }
     public void onPlayerRightClick(short var1, int var2, short var3, PlayerRightClickEvent var4) {
         BlockPos var7;
-        if (ChestAura.f.field_71441_e != null && ChestAura.f.field_71441_e.func_180495_p(var7 = var4.a$r2()).func_177230_c() instanceof BlockChest) {
+        if (ChestAura.f.theWorld != null && ChestAura.f.theWorld.getBlockState(var7 = var4.a$r2()).getBlock() instanceof BlockChest) {
             this.N = var7;
             this.p = true;
             this.Y = System.currentTimeMillis();
@@ -253,13 +267,13 @@ implements EventSubscriber {
         int var7 = (int)((var4 ^ 0x72CB430F1ED9L) << 8 >>> 32);
         int var9 = (int)((var4 ^ 0x3FFAF8D07E8CL) >>> 48);
         long var10 = (var4 ^ 0x3FFAF8D07E8CL) << 16 >>> 16;
-        if (var3 == null || ChestAura.f.field_71441_e == null) {
+        if (var3 == null || ChestAura.f.theWorld == null) {
             return false;
 }
         if (H.contains(var3)) {
             return false;
 }
-        Block var12 = ChestAura.f.field_71441_e.func_180495_p(var3).func_177230_c();
+        Block var12 = ChestAura.f.theWorld.getBlockState(var3).getBlock();
         if (!(var12 instanceof BlockChest)) {
             return false;
 }
@@ -276,9 +290,9 @@ implements EventSubscriber {
     public void onPreMouseInput(long var1, PreMouseInputEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         int var8 = 19661;
         int var17 = 36958;
-        if (ChestAura.f.field_71441_e != null && ChestAura.f.field_71439_g != null) {
+        if (ChestAura.f.theWorld != null && ChestAura.f.thePlayer != null) {
             this.p((byte)0, 95676268004049L);
-            if (ChestAura.f.field_71462_r instanceof GuiChest) {
+            if (ChestAura.f.currentScreen instanceof GuiChest) {
                 if (this.N != null) {
                     this.b(this.N);
 }

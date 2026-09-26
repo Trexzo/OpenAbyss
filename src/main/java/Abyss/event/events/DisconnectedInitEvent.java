@@ -13,7 +13,7 @@ import net.minecraft.util.IChatComponent;
 
 public class DisconnectedInitEvent
 extends Event {
-    private static final long public final IChatComponent X;
+    public final IChatComponent X;
     public final GuiScreen O;
 
     public DisconnectedInitEvent(GuiScreen var3, IChatComponent var4) {

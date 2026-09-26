@@ -43,6 +43,10 @@ import net.minecraft.util.EnumChatFormatting;
 
 public class ScoreBoard
 extends Module {
+    private static Map h;
+
+    private static long a;
+
         public static BooleanSetting textShadow;
     public static NumberSetting offsetX;
     public static BooleanSetting hideScoreboard;
@@ -68,23 +72,23 @@ extends Module {
             boolean var20 = disableScores.c();
             boolean var21 = roundedRectangle.c();
             boolean var22 = textShadow.c();
-            Scoreboard var23 = var0.func_96682_a();
-            Collection var24 = var23.func_96534_i(var0);
-            List var25 = Lists.newArrayList((Iterable)Iterables.filter((Iterable)var24, var0x -> var0x.func_96653_e() != null && !var0x.func_96653_e().startsWith("#")));
+            Scoreboard var23 = var0.getScoreboard();
+            Collection<Score> var24 = var23.getSortedScores(var0);
+            List<Score> var25 = Lists.newArrayList(Iterables.filter(var24, (Score var0x) -> var0x.getPlayerName() != null && !var0x.getPlayerName().startsWith("#")));
             if (var25.size() > 15) {
                 var25 = var25.subList(var25.size() - 15, var25.size());
 }
             CustomFont var26 = Font.J();
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179139_a((double)var16, (double)var16, (double)1.0);
-            int var27 = (int)((double)var3.func_78326_a() / var16);
-            int var28 = (int)((double)var3.func_78328_b() / var16);
-            int var29 = (int)Math.ceil(var26.R(var0.func_96678_d(), 52019766876817L));
+            GlStateManager.pushMatrix();
+            GlStateManager.scale((double)var16, (double)var16, (double)1.0);
+            int var27 = (int)((double)var3.getScaledWidth() / var16);
+            int var28 = (int)((double)var3.getScaledHeight() / var16);
+            int var29 = (int)Math.ceil(var26.R(var0.getDisplayName(), 52019766876817L));
             for (Score var31 : var25) {
-                ScorePlayerTeam var32 = var23.func_96509_i(var31.func_96653_e());
-                String var33 = ScorePlayerTeam.func_96667_a((Team)var32, (String)var31.func_96653_e());
+                ScorePlayerTeam var32 = var23.getPlayersTeam(var31.getPlayerName());
+                String var33 = ScorePlayerTeam.formatPlayerName((Team)var32, (String)var31.getPlayerName());
                 if (!var20) {
-                    var33 = var33 + b + EnumChatFormatting.RED + var31.func_96652_c();
+                    var33 = var33 + b + EnumChatFormatting.RED + var31.getScorePoints();
 }
                 var29 = Math.max(var29, (int)Math.ceil(var26.R(var33, 52019766876817L)));
 }
@@ -103,22 +107,22 @@ extends Module {
                 RenderUtil.j(var34 - 2, var40, var35, var51, 6.0f, 4113131265056L, var37);
                 int var41 = 0;
                 for (Score var43 : var25) {
-                    ScorePlayerTeam var44 = var23.func_96509_i(var43.func_96653_e());
-                    String var45 = ScorePlayerTeam.func_96667_a((Team)var44, (String)var43.func_96653_e());
-                    String var46 = EnumChatFormatting.RED + "" + var43.func_96652_c();
+                    ScorePlayerTeam var44 = var23.getPlayersTeam(var43.getPlayerName());
+                    String var45 = ScorePlayerTeam.formatPlayerName((Team)var44, (String)var43.getPlayerName());
+                    String var46 = EnumChatFormatting.RED + "" + var43.getScorePoints();
                     int var47 = var51 - ++var41 * var49;
                     var26.v(var45, var34, var47, 0xFFFFFF, 88827598794260L, var22);
                     if (var20) continue;
                     var26.v(var46, (float)var35 - var26.R(var46, 52019766876817L), var47, 0xFFFFFF, 88827598794260L, var22);
 }
-                String var56 = var0.func_96678_d();
+                String var56 = var0.getDisplayName();
                 var26.v(var56, (float)var34 + (float)var29 / 2.0f - var26.R(var56, 52019766876817L) / 2.0f, var39 - var49, 0xFFFFFF, 88827598794260L, var22);
             } else {
                 int var53 = 0;
                 for (Score var55 : var25) {
-                    ScorePlayerTeam var57 = var23.func_96509_i(var55.func_96653_e());
-                    String var58 = ScorePlayerTeam.func_96667_a((Team)var57, (String)var55.func_96653_e());
-                    String var59 = EnumChatFormatting.RED + "" + var55.func_96652_c();
+                    ScorePlayerTeam var57 = var23.getPlayersTeam(var55.getPlayerName());
+                    String var58 = ScorePlayerTeam.formatPlayerName((Team)var57, (String)var55.getPlayerName());
+                    String var59 = EnumChatFormatting.RED + "" + var55.getScorePoints();
                     int var60 = var51 - ++var53 * var49;
                     RenderUtil.c(125644905353792L, var34 - 2, var60, var35, var60 + var49, var37);
                     var26.v(var58, var34, var60, 0xFFFFFF, 88827598794260L, var22);
@@ -126,16 +130,17 @@ extends Module {
                         var26.v(var59, (float)var35 - var26.R(var59, 52019766876817L), var60, 0xFFFFFF, 88827598794260L, var22);
 }
                     if (var53 != var25.size()) continue;
-                    String var61 = var0.func_96678_d();
+                    String var61 = var0.getDisplayName();
                     RenderUtil.c(125644905353792L, var34 - 2, var60 - var49 - 1, var35, var60 - 1, var38);
                     RenderUtil.c(125644905353792L, var34 - 2, var60 - 1, var35, var60, var37);
                     var26.v(var61, (float)var34 + (float)var29 / 2.0f - var26.R(var61, 52019766876817L) / 2.0f, var60 - var49, 0xFFFFFF, 88827598794260L, var22);
 }
 }
-            GlStateManager.func_179121_F();
+            GlStateManager.popMatrix();
 }
 }
     static {
+        a = 136735959965016L;
         b = ": ";
         h = new HashMap(13);
         d = new long[]{3694946831705732335L, -1892344913047605889L, -6692344859849378204L, -712116554178381252L};

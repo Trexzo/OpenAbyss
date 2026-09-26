@@ -12,6 +12,10 @@ import java.util.Map;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 
 public class GlyphTexture {
+    private static long a;
+    static {
+        a = 137121052021233L;
+    }
             private final int y;
     private Pair<Integer, Integer> g;
     private final Glyph[] F;

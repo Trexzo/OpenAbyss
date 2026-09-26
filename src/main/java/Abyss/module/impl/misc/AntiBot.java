@@ -30,6 +30,10 @@ import net.minecraft.scoreboard.ScorePlayerTeam;
 public class AntiBot
 extends Module
 implements EventSubscriber {
+    private static long a;
+    static {
+        a = 67041402973696L;
+    }
     public static BooleanSetting tablistCheck;
         private static Minecraft F;
         private static CopyOnWriteArrayList<String> b;
@@ -38,30 +42,30 @@ implements EventSubscriber {
         PlayerInfoCache.refresh();
 }
     public static boolean T(short var0, EntityPlayer var3) {
-        if (F.func_71356_B()) {
+        if (F.isSingleplayer()) {
             return false;
 }
-        if (tablistCheck.c() && !PlayerInfoCache.inTabList(var3.func_70005_c_())) {
+        if (tablistCheck.c() && !PlayerInfoCache.inTabList(var3.getName())) {
             return true;
 }
         if (var3 instanceof EntityPlayerSP) {
             return false;
 }
-        NetworkPlayerInfo var6 = PlayerInfoCache.byName(var3.func_70005_c_());
+        NetworkPlayerInfo var6 = PlayerInfoCache.byName(var3.getName());
         if (var6 == null) {
             return true;
 }
-        if (var3.func_70005_c_().startsWith("\u00a7k")) {
-            return var3.func_82150_aj();
+        if (var3.getName().startsWith("\u00a7k")) {
+            return var3.isInvisible();
 }
-        if (var6.func_178853_c() < 1) {
+        if (var6.getResponseTime() < 1) {
             return true;
 }
-        ScorePlayerTeam var7 = var6.func_178850_i();
+        ScorePlayerTeam var7 = var6.getPlayerTeam();
         if (var7 == null) {
             return false;
 }
-        return !var7.func_96669_c().isEmpty() ? false : var7.func_96668_e().equals("\u00a7c");
+        return !var7.getTeamName().isEmpty() ? false : var7.getColorPrefix().equals("\u00a7c");
 }
     public AntiBot(int var1, int var2, short var3) {
         super(((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ a ^ 0x728E878E8BF4L);

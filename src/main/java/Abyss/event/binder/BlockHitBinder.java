@@ -17,7 +17,7 @@ import Abyss.event.invoker.BlockHitUpdateCameraAndRenderInvoker;
 import Abyss.module.impl.combat.BlockHit;
 
 public final class BlockHitBinder {
-    private static final long private BlockHitBinder() {
+    private BlockHitBinder() {
 }
     public static void s(EventBus var2, BlockHit var3) {
         var2.R(var3, PreMouseInputEvent.class, 2, new BlockHitPreMouseInputInvoker(var3));

@@ -51,8 +51,14 @@ public class MiningConstants {
     public static boolean j;
     public static boolean v;
 
-                Cipher var1 = Cipher.getInstance("DES/CBC/NoPadding");
-            var1.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            Cipher var1;
+            byte[] var10003 = new byte[]{(byte)0L, 0, 0, 0, 0, 0, 0, 0};
+            for (int var2 = 1; var2 < 8; ++var2) {
+                var10003[var2] = (byte)(91462574718829L << var2 * 8 >>> 56);
+            }
+            (var1 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             long[] var0 = new long[8];
             int var4 = 0;
             String var5 = "\u008f\u00b7\u00fa\u00c5\u0097\u00a4C^\u00c3\u00d3\u0098\u0001\u007f\"\u009ds\u009b`\u00d8~w\u00f2\u00e7cF'-B\u00ec\u0086S\u00e4\u001cI\u00b23\u00c6u\u00d8\u00d1g;\u00ccS\u00b4\u00f5\u008e.";
@@ -120,7 +126,6 @@ public class MiningConstants {
                     var18 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                     var20 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var13) {
@@ -128,5 +133,6 @@ public class MiningConstants {
 }
 }
     static {
+        zkm$clinit();
 }
 }

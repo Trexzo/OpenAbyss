@@ -17,16 +17,21 @@ import Abyss.setting.Setting;
 import Abyss.setting.settings.NumberSetting;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.entity.EntityLivingBase;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class NoJumpDelay
 extends Module
 implements EventSubscriber {
-    private static final long public static NumberSetting jumpTicks;
+    public static NumberSetting jumpTicks;
 
     private static void a() {
 }
     public void onPreTick(PreTickEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)NoJumpDelay.f.field_71439_g, Math.min(EntityLivingBaseStateAccessor.C((EntityLivingBase)NoJumpDelay.f.field_71439_g), (int)jumpTicks.L() + 1));
+        EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)NoJumpDelay.f.thePlayer, Math.min(EntityLivingBaseStateAccessor.C((EntityLivingBase)NoJumpDelay.f.thePlayer), (int)jumpTicks.L() + 1));
 }
     public NoJumpDelay(long var1) {
         super(0x27E68309D5DFL ^ var1 ^ 0x754F2FE8E058L);

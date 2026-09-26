@@ -42,6 +42,13 @@ import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.passive.IAnimals;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.Vec3;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class Tracers
 extends Module
@@ -94,7 +101,7 @@ implements EventSubscriber {
     private Vec3 s(float var1) {
         Vec3 var2 = this.q();
         Vec3 var3 = this.G(var2, var1);
-        return new Vec3(var3.field_72450_a, var3.field_72448_b + (double)f.func_175606_aa().func_70047_e(), var3.field_72449_c);
+        return new Vec3(var3.xCoord, var3.yCoord + (double)f.getRenderViewEntity().getEyeHeight(), var3.zCoord);
 }
     private boolean u(long var1, EntityLivingBase var3) {
         var1 = c ^ var1;
@@ -102,7 +109,7 @@ implements EventSubscriber {
         return var3 instanceof EntityPlayer && AntiBot.T((short)var4, (EntityPlayer)var3);
 }
     private boolean B(EntityLivingBase var1) {
-        return var1 == Tracers.f.field_71439_g || var1 == f.func_175606_aa();
+        return var1 == Tracers.f.thePlayer || var1 == f.getRenderViewEntity();
 }
     public void onRender3D(Render3DEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (mode.R("LINE")) {
@@ -149,15 +156,15 @@ implements EventSubscriber {
         return TracersFilterFlags.g(var1) && !TracersFilterFlags.I(var1) && !TracersFilterFlags.c(var1) && !TracersFilterFlags.E(var1);
 }
     private double isSneaking(EntityLivingBase var1) {
-        return var1.func_70093_af() ? 0.125 : 0.0;
+        return var1.isSneaking() ? 0.125 : 0.0;
 }
     private boolean g(EntityLivingBase var1) {
-        return f.func_175606_aa().func_70032_d((Entity)var1) > 512.0f;
+        return f.getRenderViewEntity().getDistanceToEntity((Entity)var1) > 512.0f;
 }
     private Vec3 G(Vec3 var1, float var2) {
         float var3 = this.getRenderViewEntity(var2);
         float var4 = this.B(var2);
-        return var1.func_178789_a((float)(-Math.toRadians(var3))).func_178785_b((float)(-Math.toRadians(var4)));
+        return var1.rotatePitch((float)(-Math.toRadians(var3))).rotateYaw((float)(-Math.toRadians(var4)));
 }
     private TracersFilterFlags s() {
         return new TracersFilterFlags(players.c(), mobs.c(), animals.c(), bosses.c(), friends.c(), enemies.c(), teammates.c(), bots.c(), null);
@@ -194,13 +201,13 @@ implements EventSubscriber {
         this.Y = new ArrayList<TracersTarget>();
 }
     private float B(float var1) {
-        return this.F() ? this.g(Tracers.f.func_175606_aa().field_70126_B, Tracers.f.func_175606_aa().field_70177_z, var1) : this.g(Tracers.f.field_71439_g.field_71107_bF, Tracers.f.field_71439_g.field_71109_bG, var1);
+        return this.F() ? this.g(Tracers.f.getRenderViewEntity().prevRotationYaw, Tracers.f.getRenderViewEntity().rotationYaw, var1) : this.g(Tracers.f.thePlayer.prevCameraYaw, Tracers.f.thePlayer.cameraYaw, var1);
 }
     private boolean Z(int var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         return "TEAM".equals(colorMode.Y());
 }
     private float getRenderViewEntity(float var1) {
-        return this.F() ? this.g(Tracers.f.func_175606_aa().field_70127_C, Tracers.f.func_175606_aa().field_70125_A, var1) : this.g(Tracers.f.field_71439_g.field_70727_aS, Tracers.f.field_71439_g.field_70726_aT, var1);
+        return this.F() ? this.g(Tracers.f.getRenderViewEntity().prevRotationPitch, Tracers.f.getRenderViewEntity().rotationPitch, var1) : this.g(Tracers.f.thePlayer.prevCameraPitch, Tracers.f.thePlayer.cameraPitch, var1);
 }
     @Override
     public final void x(long var1, EventBus var3) {
@@ -208,13 +215,13 @@ implements EventSubscriber {
 }
     private void B(Vec3 var1, long var2, TracersTarget var4, float var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         EntityLivingBase var8 = TracersTarget.L(var4);
-        double var9 = this.D(var8.field_70142_S, var8.field_70165_t, var5);
-        double var11 = this.D(var8.field_70137_T, var8.field_70163_u, var5) - this.isSneaking(var8);
-        double var13 = this.D(var8.field_70136_U, var8.field_70161_v, var5);
-        RenderUtil.J(var1, var9, var11 + (double)var8.func_70047_e(), var13, TracersTarget.Y(var4), 1.5f, 133584403222966L);
+        double var9 = this.D(var8.lastTickPosX, var8.posX, var5);
+        double var11 = this.D(var8.lastTickPosY, var8.posY, var5) - this.isSneaking(var8);
+        double var13 = this.D(var8.lastTickPosZ, var8.posZ, var5);
+        RenderUtil.J(var1, var9, var11 + (double)var8.getEyeHeight(), var13, TracersTarget.Y(var4), 1.5f, 133584403222966L);
 }
     public void onRender2D(long var1, Render2DEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (mode.R("ARROW") && Tracers.f.field_71462_r == null) {
+        if (mode.R("ARROW") && Tracers.f.currentScreen == null) {
             for (int var6 = 0; var6 < this.Y.size(); ++var6) {
                 TracersTarget var7 = this.Y.get(var6);
                 Indicators.F((Entity)TracersTarget.L(var7), TracersTarget.Y(var7), var3.r, 50.0, true);
@@ -222,7 +229,7 @@ implements EventSubscriber {
 }
 }
     private boolean F() {
-        return Tracers.f.field_71474_y.field_74320_O == 0;
+        return Tracers.f.gameSettings.thirdPersonView == 0;
 }
     static {
         try {

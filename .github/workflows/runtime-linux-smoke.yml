@@ -1,0 +1,485 @@
+name: OpenAbyss Linux Headless Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-linux-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-linux-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  linux-headless-runtime:
+    name: Linux Xvfb / Mesa / offline runClient
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install headless OpenGL runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb mesa-utils x11-xserver-utils libgl1-mesa-dri libglx-mesa0 \
+            libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libxrandr2 libxinerama1 libxcursor1 libxxf86vm1
+          glxinfo --version || true
+
+      - name: Install Gradle 2.14.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
+          HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
+          USER_HOME="$RUNNER_TEMP/gradle-user-home-linux"
+          curl -L --fail --silent --show-error \
+            'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
+            -o "$ZIP"
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
+          GRADLE="$HOME_DIR/bin/gradle"
+          test -x "$GRADLE"
+          echo "OPENABYSS_GRADLE=$GRADLE" >> "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=$USER_HOME" >> "$GITHUB_ENV"
+          "$GRADLE" --version
+
+      - name: Prepare Forge runtime while network is available
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$OPENABYSS_GRADLE" --no-daemon clean build
+
+          # ForgeGradle 2.1 uses legacy HTTP object URLs that now return 400 for
+          # many 1.8 assets. The runtime only needs the 1.8 index to get through
+          # Gradle launch preparation; missing objects fall back inside Minecraft.
+          set +e
+          timeout --signal=TERM --kill-after=5s 45s "$OPENABYSS_GRADLE" --no-daemon getAssets
+          GET_ASSETS_EXIT=$?
+          set -e
+          echo "GET_ASSETS_EXIT=$GET_ASSETS_EXIT"
+
+          ASSET_INDEX="$GRADLE_USER_HOME/caches/minecraft/assets/indexes/1.8.json"
+          if [ ! -f "$ASSET_INDEX" ]; then
+            echo "Asset index missing after bounded getAssets preparation: $ASSET_INDEX"
+            exit 1
+          fi
+          echo "ASSET_INDEX_READY=$ASSET_INDEX"
+
+      - name: Verify isolated runtime network namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo unshare --net -- bash -c '
+            ip link set lo up
+            ip link add abyss-dummy type dummy
+            ip addr add 192.0.2.1/32 dev abyss-dummy
+            ip link set abyss-dummy up
+
+            echo "=== isolated network interfaces ==="
+            ip -o addr show
+            echo "=== isolated routes ==="
+            ip route show
+
+            if ip route show default | grep -q .; then
+              echo "Unexpected default route inside runtime network namespace."
+              exit 1
+            fi
+            if ! ip -4 addr show dev abyss-dummy | grep -q "192.0.2.1/32"; then
+              echo "Gradle-local dummy address was not configured."
+              exit 1
+            fi
+          '
+          echo 'RUNTIME_NETWORK_NAMESPACE=PASS'
+
+      - name: Verify Xvfb RandR and Mesa
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v xrandr
+          xvfb-run -a -s "-screen 0 1280x720x24" bash -c '
+            echo "DISPLAY=$DISPLAY"
+            xrandr -q
+            glxinfo -B
+            if ! xrandr -q | grep -q " connected "; then
+              echo "Xvfb exposes no connected RandR screen."
+              exit 1
+            fi
+          '
+          echo 'XVFB_RANDR_MESA=PASS'
+
+      - name: Run headless offline client for up to 120 seconds
+        shell: bash
+        run: |
+          set -uo pipefail
+          STDOUT="$RUNNER_TEMP/openabyss-linux-runClient.stdout.log"
+          STDERR="$RUNNER_TEMP/openabyss-linux-runClient.stderr.log"
+
+          set +e
+          RUNNER_UID="$(id -u)"
+          RUNNER_GID="$(id -g)"
+          timeout --signal=TERM --kill-after=10s 120s \
+            sudo unshare --net -- \
+              bash -c ' \
+                ip link set lo up
+                ip link add abyss-dummy type dummy
+                ip addr add 192.0.2.1/32 dev abyss-dummy
+                ip link set abyss-dummy up
+                test -z "$(ip route show default)"
+                exec "$@"
+              ' _ \
+              setpriv --reuid="$RUNNER_UID" --regid="$RUNNER_GID" --init-groups \
+              env \
+                HOME="$HOME" \
+                JAVA_HOME="$JAVA_HOME" \
+                PATH="$JAVA_HOME/bin:$PATH" \
+                GRADLE_USER_HOME="$GRADLE_USER_HOME" \
+                LIBGL_ALWAYS_SOFTWARE=1 \
+                JAVA_TOOL_OPTIONS='-Dabyss.runtimeSelfTest=true' \
+                GITHUB_TOKEN= \
+                ACTIONS_RUNTIME_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_URL= \
+                ABYSS_PAYLOAD_KEY= \
+                xvfb-run -a -s "-screen 0 1280x720x24" \
+                "$OPENABYSS_GRADLE" --offline --no-daemon runClient \
+                >"$STDOUT" 2>"$STDERR"
+          EXIT_CODE=$?
+          set -e
+
+          echo "RUNCLIENT_EXIT=$EXIT_CODE"
+          if [ "$EXIT_CODE" -eq 124 ] || [ "$EXIT_CODE" -eq 137 ]; then
+            echo "RUNCLIENT_TIMEOUT_EXPECTED=1"
+          fi
+
+          echo '=== runClient stdout tail ==='
+          tail -n 300 "$STDOUT" || true
+          echo '=== runClient stderr tail ==='
+          tail -n 300 "$STDERR" || true
+
+          LATEST="$GITHUB_WORKSPACE/run/logs/latest.log"
+          INJECT="/tmp/abyss-inject.log"
+          CENSUS_ROOT="$GITHUB_WORKSPACE/abyss-census.tsv"
+          CENSUS_RUN="$GITHUB_WORKSPACE/run/abyss-census.tsv"
+          DIAG_ROOT="$GITHUB_WORKSPACE/abyss-bootstrap-diagnostics.txt"
+          DIAG_RUN="$GITHUB_WORKSPACE/run/abyss-bootstrap-diagnostics.txt"
+
+          echo "LATEST_LOG=$([ -f "$LATEST" ] && echo true || echo false)"
+          echo "INJECT_LOG=$([ -f "$INJECT" ] && echo true || echo false)"
+          echo "ROOT_CENSUS=$([ -f "$CENSUS_ROOT" ] && echo true || echo false)"
+          echo "RUN_CENSUS=$([ -f "$CENSUS_RUN" ] && echo true || echo false)"
+
+          COMBINED="$RUNNER_TEMP/openabyss-linux-combined.log"
+          : > "$COMBINED"
+          for F in "$STDOUT" "$STDERR" "$LATEST" "$INJECT"; do
+            if [ -f "$F" ]; then
+              cat "$F" >> "$COMBINED"
+              printf '\n' >> "$COMBINED"
+            fi
+          done
+
+          if grep -q '\[abyss-inject\].*client failed to start' "$COMBINED"; then
+            echo 'Explicit Abyss bootstrap failure marker detected.'
+            exit 1
+          fi
+          if grep -q 'ExceptionInInitializerError' "$COMBINED"; then
+            echo 'Static initializer failure detected.'
+            exit 1
+          fi
+          if grep -q 'ASM transform failed' "$COMBINED"; then
+            echo 'Explicit ASM transform failure detected.'
+            exit 1
+          fi
+
+          CENSUS=''
+          if [ -f "$CENSUS_ROOT" ]; then CENSUS="$CENSUS_ROOT"; fi
+          if [ -z "$CENSUS" ] && [ -f "$CENSUS_RUN" ]; then CENSUS="$CENSUS_RUN"; fi
+          if [ -z "$CENSUS" ]; then
+            echo 'Module census was not produced.'
+            exit 1
+          fi
+
+          CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
+          echo "MODULE_CENSUS_COUNT=$CENSUS_COUNT"
+          if [ "$CENSUS_COUNT" -ne 112 ]; then
+            echo "Unexpected module census count: $CENSUS_COUNT (expected 112)."
+            exit 1
+          fi
+
+          require_setting_count() {
+            NAME="$1"
+            EXPECTED="$2"
+            ROW="$(awk -F '\t' -v name="$NAME" '$2 == name {print $4}' "$CENSUS")"
+            ROWS="$(awk -F '\t' -v name="$NAME" '$2 == name {n++} END {print n+0}' "$CENSUS")"
+            if [ "$ROWS" -ne 1 ]; then
+              echo "Expected exactly one census row for $NAME, found $ROWS."
+              exit 1
+            fi
+            if [ "$ROW" != "$EXPECTED" ]; then
+              echo "Unexpected setting count for $NAME: $ROW (expected $EXPECTED)."
+              exit 1
+            fi
+          }
+
+          require_setting_count Scaffold 30
+          require_setting_count AutoBlock 26
+          require_setting_count KillAura 35
+          require_setting_count InvManager 34
+          require_setting_count Velocity 24
+          require_setting_count ESP 16
+          require_setting_count TargetHUD 26
+          require_setting_count CustomCape 1
+          require_setting_count Font 6
+          require_setting_count Gadgets 3
+          require_setting_count Language 8
+          require_setting_count Theme 7
+          require_setting_count InputFix 0
+          require_setting_count NoObfuscation 0
+          require_setting_count RawInput 0
+          require_setting_count VisualSpoof 4
+          require_setting_count CaveXray 2
+          require_setting_count ItemScale 7
+          require_setting_count ClickGUI 3
+          require_setting_count AntiNick 1
+          require_setting_count ContainerKeeper 2
+          require_setting_count BindGUI 3
+          require_setting_count KeyStrokes 3
+          require_setting_count TeamInvisible 2
+          require_setting_count ClosestPlayerHUD 11
+          require_setting_count FKCounter 4
+          require_setting_count FallIndicator 3
+          require_setting_count LeapModeHUD 4
+          require_setting_count BlockHit 26
+          require_setting_count BedNuker 21
+          require_setting_count BlocksESP 17
+          require_setting_count BedPlates 6
+          require_setting_count BlockIn 5
+          echo 'MODULE_CENSUS_CONTRACT=PASS'
+
+          DIAG=''
+          if [ -f "$DIAG_ROOT" ]; then DIAG="$DIAG_ROOT"; fi
+          if [ -z "$DIAG" ] && [ -f "$DIAG_RUN" ]; then DIAG="$DIAG_RUN"; fi
+          if [ -z "$DIAG" ]; then
+            echo 'Bootstrap diagnostic report was not produced.'
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] module count     = 112 of 112 OK' "$DIAG"; then
+            echo 'Bootstrap diagnostic module-count gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] config writable   = writable=true' "$DIAG"; then
+            echo 'Bootstrap diagnostic config-writable gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq 'retired=0' "$DIAG" || ! grep -Fq 'persistable=112' "$DIAG" || ! grep -Fq 'missing=0' "$DIAG"; then
+            echo 'Full original module registry is not writable/persistable without retired or missing modules.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] census names       = 112 of 112 (truth 112)' "$DIAG"; then
+            echo 'Not all 112 original module names are published.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] module usability   = toggleable=109 stockDisabled=3 invalid=0 nullSettings=0' "$DIAG"; then
+            echo 'Published module usability contract is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] eventbus selftest  = PASS' "$DIAG"; then
+            echo 'EventBus isolated self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] module selftest    = PASS' "$DIAG"; then
+            echo 'Module state-machine self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] config selftest    = PASS' "$DIAG"; then
+            echo 'Config persistence self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] session selftest   = PASS' "$DIAG"; then
+            echo 'Minecraft session swap self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
+            echo 'Persisted command-data loader did not run.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if grep -F '[ABYSSDIAG] command data load = ' "$DIAG" | grep -Fq 'FAILED ('; then
+            echo 'Persisted command-data loader reported a failure.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19' "$DIAG"; then
+            echo 'Recovered command resolver self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] clickgui selftest = PASS mode=' "$DIAG"; then
+            echo 'Recovered ClickGUI selector self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] altmenu selftest  = PASS' "$DIAG"; then
+            echo 'Alt Manager main-menu injection self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
+            echo 'Constructor-cache bootstrap gate is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 112' "$DIAG"; then
+            echo 'Published module-list size is not 112.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] tD.o (byClass)   = 113' "$DIAG"; then
+            echo 'By-class module registry size is not 113.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] t6.L (commands)  = 19' "$DIAG"; then
+            echo 'Recovered command registry size is not 19.'
+            cat "$DIAG"
+            exit 1
+          fi
+          for GUI_LINE in \
+            '[ABYSSDIAG] zu_3.B VESTIGE   = live' \
+            '[ABYSSDIAG] zu_3.Y STUDIO    = live' \
+            '[ABYSSDIAG] zu_3.F RAVEN     = live' \
+            '[ABYSSDIAG] zu_3 open bind   = RSHIFT'
+          do
+            if ! grep -Fq "$GUI_LINE" "$DIAG"; then
+              echo "Recovered ClickGUI contract failed: $GUI_LINE"
+              cat "$DIAG"
+              exit 1
+            fi
+          done
+          if ! grep -Fq '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=11, Movement=8, Player=12, Visual=19, Visual_utility=19, World=11}' "$DIAG"; then
+            echo 'Recovered module category census is not the expected 112-module layout.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq 'RavenClickGuiScreen (RAVEN theme) published into zu_3.F' "$DIAG" || ! grep -Fq '112 module rows' "$DIAG"; then
+            echo 'Raven ClickGUI did not publish all 112 active module rows.'
+            cat "$DIAG"
+            exit 1
+          fi
+          echo 'CLICKGUI_PUBLICATION_CONTRACT=PASS'
+          echo 'MODULE_CATEGORY_CENSUS_CONTRACT=PASS'
+
+          for SUBSCRIBER in \
+            Abyss.internal.MiningEngine \
+            Abyss.internal.BrokenBlockTracker \
+            Abyss.internal.MiningRenderSubscriber \
+            Abyss.util.RotationManager \
+            Abyss.util.packet.PacketManager \
+            Abyss.AbyssClient \
+            Abyss.internal.ChatInputHandler \
+            Abyss.module.impl.misc.Timer \
+            Abyss.internal.CheaterDetector \
+            Abyss.ui.screen.ReconnectHandler
+          do
+            if ! grep -Fq "$SUBSCRIBER" "$DIAG"; then
+              echo "Required recovered subscriber missing from bootstrap diagnostics: $SUBSCRIBER"
+              cat "$DIAG"
+              exit 1
+            fi
+          done
+          echo 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+          echo 'INTERNAL_SUBSCRIBER_CONTRACT=PASS'
+
+          TRANSFORMS="$RUNNER_TEMP/openabyss-linux-transforms.txt"
+          grep -o 'ASM transformed: .*' "$COMBINED" | sed 's/^ASM transformed: //' | sort -u > "$TRANSFORMS" || true
+          TRANSFORM_COUNT="$(grep -cv '^[[:space:]]*$' "$TRANSFORMS" || true)"
+          echo "ASM_TRANSFORM_COUNT=$TRANSFORM_COUNT"
+          if [ "$TRANSFORM_COUNT" -lt 30 ]; then
+            echo "Insufficient successful ASM transform coverage: $TRANSFORM_COUNT"
+            exit 1
+          fi
+
+          for TARGET in \
+            net/minecraft/client/Minecraft \
+            net/minecraft/client/gui/GuiScreen \
+            net/minecraft/client/renderer/ItemRenderer \
+            net/minecraft/client/renderer/EntityRenderer \
+            net/minecraft/client/network/NetHandlerPlayClient \
+            net/minecraft/client/LoadingScreenRenderer
+          do
+            if ! grep -Fxq "$TARGET" "$TRANSFORMS"; then
+              echo "Required ASM transform was not observed: $TARGET"
+              exit 1
+            fi
+          done
+          echo 'ASM_TRANSFORM_CONTRACT=PASS'
+
+          MENU_MUSIC_EVENTS="$(grep -c 'minecraft:music.menu' "$COMBINED" || true)"
+          echo "MENU_LOOP_MUSIC_EVENTS=$MENU_MUSIC_EVENTS"
+          if [ "$MENU_MUSIC_EVENTS" -lt 1 ]; then
+            echo 'Minecraft menu-loop evidence was not observed.'
+            exit 1
+          fi
+          echo 'MINECRAFT_MENU_LOOP_CONTRACT=PASS'
+
+          GL_LINE="$(grep -m1 'OpenGL:' "$COMBINED" || true)"
+          echo "OPENGL_EVIDENCE=$GL_LINE"
+
+          if [ "$EXIT_CODE" -ne 0 ] && [ "$EXIT_CODE" -ne 124 ] && [ "$EXIT_CODE" -ne 137 ]; then
+            if grep -Eq 'Exception in thread|:runClient FAILED|BUILD FAILED|Reported exception' "$COMBINED"; then
+              echo "Headless runtime exited with fatal process evidence: $EXIT_CODE"
+              exit 1
+            fi
+          fi
+
+          echo 'LINUX_HEADLESS_RUNTIME_SMOKE_PASS'
+
+      - name: Upload Linux runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-linux-headless-runtime-smoke
+          path: |
+            run/logs/**
+            run/crash-reports/**
+            run/abyss-census.tsv
+            abyss-census.tsv
+            run/abyss-bootstrap-diagnostics.txt
+            abyss-bootstrap-diagnostics.txt
+            ${{ runner.temp }}/openabyss-linux-runClient.stdout.log
+            ${{ runner.temp }}/openabyss-linux-runClient.stderr.log
+            ${{ runner.temp }}/openabyss-linux-combined.log
+            ${{ runner.temp }}/openabyss-linux-transforms.txt
+            /tmp/abyss-inject.log
+          if-no-files-found: warn
+          retention-days: 7

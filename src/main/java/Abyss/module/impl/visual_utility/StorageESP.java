@@ -71,7 +71,7 @@ implements EventSubscriber {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     public void onRender3D(Render3DEvent event) {
-        if (StorageESP.f.field_71441_e == null) {
+        if (StorageESP.f.theWorld == null) {
             return;
 }
         GL11.glPushAttrib((int)1048575);
@@ -86,15 +86,15 @@ implements EventSubscriber {
                 GL11.glEnable((int)2848);
                 GL11.glLineWidth((float)1.0f);
 }
-            RenderManager manager = f.func_175598_ae();
+            RenderManager manager = f.getRenderManager();
             GL11.glTranslated((double)(-RenderManagerAccessor.k(0L, manager)), (double)(-StorageESP.renderY(manager)), (double)(-RenderManagerAccessor.W(0L, manager)));
-            for (TileEntity tile : StorageESP.f.field_71441_e.field_147482_g) {
+            for (TileEntity tile : StorageESP.f.theWorld.loadedTileEntityList) {
                 int color = this.colorFor(tile);
                 if (color == 0) continue;
-                BlockPos pos = tile.func_174877_v();
-                AxisAlignedBB box = tile.func_145838_q().func_180640_a((World)StorageESP.f.field_71441_e, pos, tile.func_145838_q().func_176203_a(tile.func_145832_p()));
+                BlockPos pos = tile.getPos();
+                AxisAlignedBB box = tile.getBlockType().getCollisionBoundingBox((World)StorageESP.f.theWorld, pos, tile.getBlockType().getStateFromMeta(tile.getBlockMetadata()));
                 if (box == null) {
-                    box = new AxisAlignedBB(pos, pos.func_177982_a(1, 1, 1));
+                    box = new AxisAlignedBB(pos, pos.add(1, 1, 1));
 }
                 StorageESP.color(color);
                 StorageESP.drawBox(box, outline.c());
@@ -117,18 +117,18 @@ implements EventSubscriber {
     private static void drawBox(AxisAlignedBB b, boolean lines) {
         if (lines) {
             GL11.glBegin((int)1);
-            StorageESP.edge(b.field_72340_a, b.field_72338_b, b.field_72339_c, b.field_72336_d, b.field_72338_b, b.field_72339_c);
-            StorageESP.edge(b.field_72336_d, b.field_72338_b, b.field_72339_c, b.field_72336_d, b.field_72338_b, b.field_72334_f);
-            StorageESP.edge(b.field_72336_d, b.field_72338_b, b.field_72334_f, b.field_72340_a, b.field_72338_b, b.field_72334_f);
-            StorageESP.edge(b.field_72340_a, b.field_72338_b, b.field_72334_f, b.field_72340_a, b.field_72338_b, b.field_72339_c);
-            StorageESP.edge(b.field_72340_a, b.field_72337_e, b.field_72339_c, b.field_72336_d, b.field_72337_e, b.field_72339_c);
-            StorageESP.edge(b.field_72336_d, b.field_72337_e, b.field_72339_c, b.field_72336_d, b.field_72337_e, b.field_72334_f);
-            StorageESP.edge(b.field_72336_d, b.field_72337_e, b.field_72334_f, b.field_72340_a, b.field_72337_e, b.field_72334_f);
-            StorageESP.edge(b.field_72340_a, b.field_72337_e, b.field_72334_f, b.field_72340_a, b.field_72337_e, b.field_72339_c);
-            StorageESP.edge(b.field_72340_a, b.field_72338_b, b.field_72339_c, b.field_72340_a, b.field_72337_e, b.field_72339_c);
-            StorageESP.edge(b.field_72336_d, b.field_72338_b, b.field_72339_c, b.field_72336_d, b.field_72337_e, b.field_72339_c);
-            StorageESP.edge(b.field_72336_d, b.field_72338_b, b.field_72334_f, b.field_72336_d, b.field_72337_e, b.field_72334_f);
-            StorageESP.edge(b.field_72340_a, b.field_72338_b, b.field_72334_f, b.field_72340_a, b.field_72337_e, b.field_72334_f);
+            StorageESP.edge(b.minX, b.minY, b.minZ, b.maxX, b.minY, b.minZ);
+            StorageESP.edge(b.maxX, b.minY, b.minZ, b.maxX, b.minY, b.maxZ);
+            StorageESP.edge(b.maxX, b.minY, b.maxZ, b.minX, b.minY, b.maxZ);
+            StorageESP.edge(b.minX, b.minY, b.maxZ, b.minX, b.minY, b.minZ);
+            StorageESP.edge(b.minX, b.maxY, b.minZ, b.maxX, b.maxY, b.minZ);
+            StorageESP.edge(b.maxX, b.maxY, b.minZ, b.maxX, b.maxY, b.maxZ);
+            StorageESP.edge(b.maxX, b.maxY, b.maxZ, b.minX, b.maxY, b.maxZ);
+            StorageESP.edge(b.minX, b.maxY, b.maxZ, b.minX, b.maxY, b.minZ);
+            StorageESP.edge(b.minX, b.minY, b.minZ, b.minX, b.maxY, b.minZ);
+            StorageESP.edge(b.maxX, b.minY, b.minZ, b.maxX, b.maxY, b.minZ);
+            StorageESP.edge(b.maxX, b.minY, b.maxZ, b.maxX, b.maxY, b.maxZ);
+            StorageESP.edge(b.minX, b.minY, b.maxZ, b.minX, b.maxY, b.maxZ);
             GL11.glEnd();
 }
 }

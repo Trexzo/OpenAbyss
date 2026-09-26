@@ -13,7 +13,7 @@ import net.minecraft.entity.player.EntityPlayer;
 
 public class PickUpItemEvent
 extends Event {
-    private static final long public final EntityPlayer F;
+    public final EntityPlayer F;
     public final EntityItem P;
 
     public PickUpItemEvent(EntityItem var1, EntityPlayer var2) {

@@ -325,14 +325,16 @@ implements FlatStylingSupport.StyleableUI {
                     if (parentPath != null || rootVisible && row == 0) {
                         Rectangle bounds2 = new Rectangle(bounds);
                         int row2 = row;
-                        paintLinesLater.add(() -> this.paintHorizontalPartOfLeg(g, clipBounds, insets, bounds2, path, row2, isExpanded, hasBeenExpanded, isLeaf));
+                        TreePath path2 = path;
+                        paintLinesLater.add(() -> this.paintHorizontalPartOfLeg(g, clipBounds, insets, bounds2, path2, row2, isExpanded, hasBeenExpanded, isLeaf));
 }
 }
                 if (this.shouldPaintExpandControl(path, row, isExpanded, hasBeenExpanded, isLeaf)) {
                     if (this.paintLines) {
-                        Rectangle bounds2 = new Rectangle(bounds);
-                        int row2 = row;
-                        paintExpandControlsLater.add(() -> this.paintExpandControl(g, clipBounds, insets, bounds2, path, row2, isExpanded, hasBeenExpanded, isLeaf));
+                        Rectangle bounds3 = new Rectangle(bounds);
+                        int row3 = row;
+                        TreePath path3 = path;
+                        paintExpandControlsLater.add(() -> this.paintExpandControl(g, clipBounds, insets, bounds3, path3, row3, isExpanded, hasBeenExpanded, isLeaf));
                     } else {
                         this.paintExpandControl(g, clipBounds, insets, bounds, path, row, isExpanded, hasBeenExpanded, isLeaf);
 }

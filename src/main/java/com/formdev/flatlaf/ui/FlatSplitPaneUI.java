@@ -197,9 +197,6 @@ implements FlatStylingSupport.StyleableUI {
 }
         protected class FlatDividerLayout
         extends BasicSplitPaneDivider.DividerLayout {
-            protected FlatDividerLayout() {
-                super(FlatSplitPaneDivider.this);
-}
             @Override
             public void layoutContainer(Container c) {
                 super.layoutContainer(c);

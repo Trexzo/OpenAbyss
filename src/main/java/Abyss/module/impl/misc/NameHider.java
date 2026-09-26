@@ -16,7 +16,7 @@ import net.minecraft.client.Minecraft;
 
 public class NameHider
 extends Module {
-    private static final long public static TextSetting name;
+    public static TextSetting name;
     private static final Minecraft n;
 
     public NameHider(long var1) {
@@ -25,10 +25,10 @@ extends Module {
         var1 = 0x7156FA88F6ECL ^ var1;
 }
     public static String U(String var0) {
-        if (NameHider.n.field_71439_g == null || ModuleManager.J == null || var0 == null) {
+        if (NameHider.n.thePlayer == null || ModuleManager.J == null || var0 == null) {
             return var0;
 }
-        String self = NameHider.n.field_71439_g.func_70005_c_();
+        String self = NameHider.n.thePlayer.getName();
         if (self == null || self.isEmpty()) {
             return var0;
 }

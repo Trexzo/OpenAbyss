@@ -50,11 +50,11 @@ implements EventSubscriber {
 
     public static void M(Packet<INetHandlerPlayClient> var0) {
         try {
-            if (!ClientUtil.I() || T.func_71356_B()) {
+            if (!ClientUtil.I() || T.isSingleplayer()) {
                 return;
 }
             a.add(PacketManager.s(var0));
-            var0.func_148833_a((INetHandler)T.func_147114_u());
+            var0.processPacket(T.getNetHandler());
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -70,7 +70,7 @@ implements EventSubscriber {
     public static void X(Packet<?> var0) {
         try {
             v.add(PacketManager.s(var0));
-            T.func_147114_u().func_147297_a(var0);
+            T.getNetHandler().addToSendQueue(var0);
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -78,17 +78,17 @@ implements EventSubscriber {
 }
     public static void k(Packet<INetHandlerPlayClient> var0) {
         try {
-            if (!ClientUtil.I() || T.func_71356_B()) {
+            if (!ClientUtil.I() || T.isSingleplayer()) {
                 return;
 }
-            var0.func_148833_a((INetHandler)T.func_147114_u());
+            var0.processPacket(T.getNetHandler());
 }
         catch (Throwable throwable) {
             // empty catch block
 }
 }
     public void onSendPacket(long var1, SendPacketEvent var3) {
-        if (ClientUtil.I() && !T.func_71356_B()) {
+        if (ClientUtil.I() && !T.isSingleplayer()) {
             if (Z) {
                 OutgoingPacketState.D(0L, var3.B);
                 u.add(var3.B);
@@ -102,7 +102,7 @@ implements EventSubscriber {
 }
     public static void b(Packet<?> var0) {
         try {
-            T.func_147114_u().func_147297_a(var0);
+            T.getNetHandler().addToSendQueue(var0);
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -113,10 +113,10 @@ implements EventSubscriber {
 }
     public static void j() {
         try {
-            if (T.func_71356_B()) {
+            if (T.isSingleplayer()) {
                 u.clear();
 }
-            ArrayList snapshot = new ArrayList(u);
+            ArrayList<Packet<?>> snapshot = new ArrayList<Packet<?>>(u);
             u.clear();
             for (Packet packet : snapshot) {
                 PacketManager.X(packet);
@@ -127,7 +127,7 @@ implements EventSubscriber {
 }
 }
     public static <H extends INetHandler> Packet<H> s(Packet<?> var0) {
-        return var0;
+        return (Packet<H>)var0;
 }
     static void $jnicClinit() throws InvalidAlgorithmParameterException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException, NoSuchPaddingException {
         long var12;

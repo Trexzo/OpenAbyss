@@ -66,6 +66,8 @@ public class AsmUtil {
     private static Map<MappingKind, Map<String, String>> Y;
     private static Logger I;
     private static long[] g;
+    private static long a;
+    private static String[] d;
     
     private static Map f;
     private static String C;
@@ -123,6 +125,9 @@ public class AsmUtil {
     public static void O() {
         r.remove();
 }
+    public static void a() {
+        v.remove();
+    }
     public static boolean H(ClassNode var0) {
         for (Object var4 : var0.methods) {
             MethodNode var5 = (MethodNode)var4;
@@ -651,117 +656,133 @@ public class AsmUtil {
     public static String n(String var0) {
         return AsmUtil.Y(MappingKind.MCP, var0);
 }
-                Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }    private static void zkm$clinit() {
+        try {
+            long var0 = a ^ 83507682439898L;
+            f = new HashMap(13);
+
+            byte[] var10003 = new byte[8];
+            for (int var3 = 0; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var0 >>> 56 - var3 * 8);
+            }
+
+            Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+
             String[] var4 = new String[41];
             int var5 = 0;
-            String var6 = "\u0010\u0010\u00ec\u00ebqR\u00bc\u00fa\u00bfT*-Nm\bR\u0011\u001a\u00b0\u00f8{\u00bdPj\u0085\u00c1y\u00e9\"\u00f6F\u00def\u0088F\u00c3\u001cn\u00a4\u00bbC7l\u00bf\u00be\u00cc@\u00afr\u00cf\u00aeU\u00d8C]\u00ca8\u0013\u00fa\u00d2i\u00fd\u00b7\u00db6+\u0005\u0004\u00aa\u00d5\u00e7|\u00cb\u00bd@\u0097\u00e5\u0001\u00c13p\u00cd-\u00d8\u0089;\u00d6\u0091\u00feF\u00e3Ai\u00f8\u00fdk\u0082\u001c\u00f9\t\u008bj^B\u000e\u009aM\u00adTt2w\u00bf\u0010e\u0002'\u00dc\u00b7q\u0091\u0019\u0003\u00b0\u00a2\u00a1\u00e8\u00a5\u007f\u00ea\u0018s\u00bb0zCG\u00035\u0086+\u009ad\u0089\u00e5ak\u00c9\u001144\u00d5\u0016\u0001\u008c0\u00fe\u00b9\u00da\u00fd\u0095\u00ab\u00a2\u00a6}\u0018s\u00ed\u0081\u001bU\u0099\u00ee\u00dcU\u00c9\u001e\u008e\u00c8\u00bd\u007f\u0000\u0081Ner\u00be\u00b1\u00eaZ6\u00b9\u00195T\u00be<DB\u00f4UjB\u0015 w\u009c\u0097\u00ed\u00d6Z\u00e9+\nn\u00ed\u00c9\u00bb\u0014o\u00eb\u0085\u00956Q\u0098\u001b|\u00d1\u00ee\u00f1\u00b0;\u00b8\u00c8\u0090\u0019\u0010\u0088r/\b\u001c\u00be\u00e3\u00d4l4\u00e7\u000fN\u00c6\u00c9v\u0010M?\u00d2\u008e\u00be\u00a8\u00a4\u0016\u00a0P\n\u00b9\u0090\u00d0hV L^\u00b5\u00fa\u0005\u00a0\u00c41qo\u00ecV\u00b0\u00e7s8;\u00deE\u00f9R\u0014\u0091\u0018P\u00f4\u001b\u00dc\u00b5\u0092\u00ba\u00eb8]\u008d\u00faWwk3R\u00c7|q\u00c7.\u00ef\u00f8&\u00ec\u0010\u00ee8\u00c5\u00e3!\u0010\u00a9\u00a2\u00a4\u00bf\u00e3\u0007\u00b0\u00ae\u00f9\u00f4\u00e5\u00cdN\u00e9\u00f1\u00cf2\u00fd\u00f8\f\u00d3\u00e3\u00d2i\u0000q\u00f5\u00ab(\u00b2f_\u0018A\u008b\u00ae\u00d5\r\u000f\u00b9\u000b\u00b38\u00c2\u00f1\\f\u00c5\u00af\u0091\u00ceo\u00d0\u00e0\u0088\u00e66\u0010\u009a\u0090\u000eqe\u0019\u00bd\u001c\u00b3'=T\u00c5<\u00de\u00f58\u00f7\u00f4u/z\u001a\u00e9\u00b1\u00dd\u00dah*5\u00aeuK\u00fb\u00bf\u00b2\u00ca\u00d0\u00e42r\u00c3*\u00fd\u0000\u00f6\u0092\u00d6\u00cf\u00a5i+-*\u0007\u001b\u0083\u00de\u00b7.M\u00a4eP\u00a4\u00af\u00f4\u0010\u0085>c\u00d46 \u00d7\u009d\u001fY[G\u00d0\u00ee`\u00d8`\u0092\u00df?r\u0089*I`R\u00ff\u00a2\u00b9\u00c0\u0016'?B\u00b6\u00e5\u00ec\u00f6h\u0002l\u00e5kX*\u00876\u00c1\u00c9,7\u008d\u00c3U\u001c2^A\u00b0<u\u0010\u00f89\u0081\u00a4j\u009a\u0012\u00a1\u00d5\u0082\u0093\u0091\u00d2\u00fb\bHp\u00d8\u00da|\u0001u\u0083G\u00e2\u0015\u0089\u00d1\u00be8j\u008e w\u00c0F\u00c2\u00aaoao\u00a64;\u001bwpO\u001ed\u0019\u00a1u[\u00991\u00f6\u00af\u00ce\u00c1)s\u0004Qaj\u00ac\u00a4\u00b4\u00df]7\u0004P+T\u00b7\u009a\u000f\u00dc\u00e2 2}\u00db\u0004\u001f\u009a\u00c7\u00b5\u0013\"1[\"\u00e04\u00ef|\u00e8w\u0005\u009d\u00a5\u009d'\"\u0018\u00ce\u00f4w/\u00c6\u00988\u00fd z\u00ed\u00ccud0\u00fd\u00a1\u00aa\u0086\u008c7?\u00ac\u00b02\u009dl\u00d0\u00b2\b\u0099\u00e5[+N\u00cbBs\u00cf.\u00c9&\u0019\u00e3\u00a33\u00f0\u00e4\u00a1X!\u00a1\u00c2\u00da\u00d8\u00c7WH\u00dc\u001e\u001b\u009d\u00e70\u00ea\\\u0012\u00bcu\u00fd\u0013c\u00db\f\u00ffV\u0080m\u0019O\u00a6\u00e6N\u00c3\u00ea!\u0080\u00fc,\u0081\u0094\u00d5\u009e\u00ad1N\u0099\u007f\u00c9\u00ecg|\u00c2\u00ea\u00eaH\u0086\u00b7v\u008d\u001a\u00ba\u0010\u00a5;\u00ee\u0099\u00ca\u0086\u00db\u00c2\u00a96\u001a\u00ae\u0097\u00f3\u0000(\u00a06\u00b7\u00c4\u00e3\"\u00bc1\u0015\u00f2t6\u0081w\u00dd\u0016\u00d9\u00a0?t\u00a9\u00c0\u0090vzg|\u0085h\u00a0\u00b3\u00e4\u0097~{r)\u00bdrA\u00cf\u0090b~\u00d5\u00af\u00d9\u008d}\u0086\u00a8\u00d2`\u0083m\u00af\u00bd`\u00a9\u00a3G\u00e0\u00f8\u008b\u001c\u00ad\u0086\u0015\u00ba\u00bf\u00f6n\u00bfq\u0093\u0018\u0087k\u00b1\u00a6\u00f1\u00ac\u00cd\u00cc_\u00e3\"\u00ad\u00ab\u00e7Q\rf3G\u00b1\u00abL\u008agSX\u0082QsV\u00b1\u009c[Q\u0003\u00df\u00fdhe\u0098\u00bd\u00a6%\u0005\u00fd\u00aa\u0018\u00e8]\u0015+4\u00f4\u00cf\u00a4\u00d8\u00b0P\u00ea\u001b\r(\u00a7\u00d5aza\u00bcn\u00aa\n\u0090\u008fP\u00e9\u00d4I7J\u00f1\u00cc\u0093\u00e5\u0001\u00ed\u0010\u00ba)\u00ecV(@A\u00f4\u0091\u00a8=;t\u00ed(\u00b3 \u0011\u0080\u00af\u00ed-\u0007\u00fe \u00a9x\u0002\u00be\u00a2\u00a6\u0087\u00e3\u007f\u009a0\u00a9\u00eb\u00c9\u0080-\u0018q t\u008ba%\u0096\u0010W`\u0096s\u008c\u00dc+\"\u00d5\u00f6\u00fb\u00ea\u00b6cO\u00b0\u0018\u00e5\u00b8\u0088f\u009fb4\u00f4\u00dc\u0089\u008f\u00c8SR\u00efx\u00be`g\u0080M\u00a9mJ8\u0014\u00ef\u0018\u00f8\u0015\u00ef\u00a7q\u00a5}BN\u00d9\u0089\u000ey\u0086\u0019[\u00dd\u00aa\u00c9\u0084\u00c5\u00fd\u0005.A\u001f\u00fdx\u0010\u00afxf\u00fb\u0019\u00af/\u00f9?=\u00e2\u00b8Fns\u000f\u00a5}%U\u00b4V\u0014\u0089@\u009f\u00f2\u0081\u001e8\u00bf\u0011\u0090:\u00f9\b8\u009dI\u0096\u00e6\u00eem\u00b2~~\u0004\u00e9-\u00f2x\u00f0\u0084\fT\u00bfx\u00dc\u00ae1\u009b\u007fV~\u0096\u001f\u00b5\u008e\u00d9\u00d5\u00eb_o?t}\u0098YT\u00d1\u00ff\u00f4\u00b4\u00ccI\u00e1$3\u00f08ew\u00dby\u008ex\u00db;!\u009f\u0098\u00f5\u007f;\u00e6\u00bb,h\u00d9\u00e6pO\u00e2\u0013\u00afP\u00c1\u00cc\u0095\u00a3\u00be\n<\u00d5\u008d\u00aceZ\u0095\u00fe\u00ed\u00b5-\u00cc\u00b5\u00f3\u00fc\u00a6\u00a0\u0095\u00c7\u00c3\u00e5-b}\u0018\u00c7aP\u00ea\u00ebOI\u00af\u0003\u0017\u00ba\u00bf7\u0003L\u001e\u00d7o|\u0013\u00ba3\u00fb.@\u00ad4\u00f5\u00c0\u00d2\u00f0\u0005\u009eu\u00a6\u00fd\u00a2\u001c{\u0085H\u00e3X\u001a\u00d8O,\u001c\u00a9js\u00c4Wq\tY\u009b+\u001f\u0013\u00ff\b \u00e7\u0099\u00b9\u00dbg\u00aa\u0011\u00a6\u00fb\u00e0\u009c\u0083X\u0013\u00eb\u0096\u00e6h\u00cc\u00f5\u00c7\u0007(\u009b\u00a3I\u00a0\u00f2\u00c7\u00f9r\u0084p\u00be\u00c0\u00d2,\u00ebAs\u00cf`\u00bc\u00fe\u0004l\u0085\u0019\"\u00c1\u00a4}\u00a8\u00b5\u00b5\u0006\u00e2]\u00fbg\u008e\u0087S\u00eb\u00dd]\"\u00baL\u008dE\u0085\u00bb\u00ee\u008a\u00fd\u0090T\u0094\u00efB\u00c2\u00ea\u00bdo\u0090\u00c1\u009a\u00f1{7\u00b1+\u00f0x\u0090nM34S\u0095\u00b1\u00c1\u0013\u00a2\u00bb\u00b6\u00ac\u00c2a.o\u00a0\u0094=\u0098\u00ea\b\u00d6\u00c4\u00b2\u00fd\u00ed\u0003\u00d4w\u0088\u00aa\u00d6\u0098y\u0082.\u0015\u00947\u00b5\u0004=q\u00e82f\u0094\u0010\u0013y\f\u00fej\u00f5\u00b9\u00c5\u009d\u0095d\u0004N\u00a4\u0014\u00eb\u00f1\u009bF\u00adVpDmY\u001d\u00cdu@3\u00e9AtvN\u00b7B\u00ba(`\u009a\u0010K=\u00ee\u00fa8\u00e1\u00a4\u00afI9\u00ec\u00d44-\u00c9\u00d6(\u00bb\u00dc\u00a4\u00bd9}<\u00b3\u00df\u00d8\u009f\u0018\u00f6P\u0083\u0084\u00b2m\u00cb\u00d5\u00cc\u00b9\u008e\u0018\u00b4\u00f5\u000e\u00f7,\bq\u0085AJ\u00c5z\u00db<\u00b2Y\u0010+\u00fe\u00c3\u00cd\u00edPjT\u0016#\u001e\u00db`\u00b9\u00a4i(\u00d5\u00e6\u00e5=\u0005k\u00ff\u0011K\u0003\u009c`\"\u00efs\u000b\u00b2H\u00ff\u00dbE\u0018R\u00a0!\u00a0\u008d\u001b\u0099\u00e1:\u00e3\n\u00bdw\r\u00b2r\u00ae\u000b q\u00ab\u00ab\u001c\u00c3\u00ac\u00af1_\u00aa\u00cc\u00fdp\u00c2N_\u00e2\u0019?\u0090t\u00db\u00cbg\u00d9\u0094W\u00e0\u00f9Y\u00e7\t #\u00a9\u00daK\u00b1\u00faj\u00a9NOb\u00bd\u009a\u00de^\u00a5o?\u00b5\u00bc\u00a7\u0099\u0019E\"\u00a3\r\u00e9\u00bb&P-0Qf\u00e7\"%\u00bb'\u00946F\u00a7\u00b9\u008c\u0006\u00cc\u00e9\u00ea\u00c9\u0081\u00b1\u0086\u00d8Qm^*\u00b6,\u00d8\u00ba\u00ca\u0014\u00c4\u00a4\u00a5\u00c5Z\u001ci\u001f=\u00dbM(5T\u00fe\u00f0 wA\u00b7>\u0004\u00ad\u00a4u\u00a6\u00c5\u00d7\u00e7\u00df\u00fbL\u0006\u00ff\u00a3!8V\u00cb\u009bAT\u0090b>\u00af\u00b1\n\u009b0\u00b7\u00d7\u0019\u00e3\u00f4X\u00a1h}5b\u00af\u00e4\u00dbI<H\u00d4:\u00d5&`\u00af\u000f]\nz\u0001Qe\u0000$\u0090h\u00c4\u009cV\u0098\u00eb\u00cc\u007f^)\u00b6G\u00fd\u0080\u000f";
-            int var7 = "\u0010\u0010\u00ec\u00ebqR\u00bc\u00fa\u00bfT*-Nm\bR\u0011\u001a\u00b0\u00f8{\u00bdPj\u0085\u00c1y\u00e9\"\u00f6F\u00def\u0088F\u00c3\u001cn\u00a4\u00bbC7l\u00bf\u00be\u00cc@\u00afr\u00cf\u00aeU\u00d8C]\u00ca8\u0013\u00fa\u00d2i\u00fd\u00b7\u00db6+\u0005\u0004\u00aa\u00d5\u00e7|\u00cb\u00bd@\u0097\u00e5\u0001\u00c13p\u00cd-\u00d8\u0089;\u00d6\u0091\u00feF\u00e3Ai\u00f8\u00fdk\u0082\u001c\u00f9\t\u008bj^B\u000e\u009aM\u00adTt2w\u00bf\u0010e\u0002'\u00dc\u00b7q\u0091\u0019\u0003\u00b0\u00a2\u00a1\u00e8\u00a5\u007f\u00ea\u0018s\u00bb0zCG\u00035\u0086+\u009ad\u0089\u00e5ak\u00c9\u001144\u00d5\u0016\u0001\u008c0\u00fe\u00b9\u00da\u00fd\u0095\u00ab\u00a2\u00a6}\u0018s\u00ed\u0081\u001bU\u0099\u00ee\u00dcU\u00c9\u001e\u008e\u00c8\u00bd\u007f\u0000\u0081Ner\u00be\u00b1\u00eaZ6\u00b9\u00195T\u00be<DB\u00f4UjB\u0015 w\u009c\u0097\u00ed\u00d6Z\u00e9+\nn\u00ed\u00c9\u00bb\u0014o\u00eb\u0085\u00956Q\u0098\u001b|\u00d1\u00ee\u00f1\u00b0;\u00b8\u00c8\u0090\u0019\u0010\u0088r/\b\u001c\u00be\u00e3\u00d4l4\u00e7\u000fN\u00c6\u00c9v\u0010M?\u00d2\u008e\u00be\u00a8\u00a4\u0016\u00a0P\n\u00b9\u0090\u00d0hV L^\u00b5\u00fa\u0005\u00a0\u00c41qo\u00ecV\u00b0\u00e7s8;\u00deE\u00f9R\u0014\u0091\u0018P\u00f4\u001b\u00dc\u00b5\u0092\u00ba\u00eb8]\u008d\u00faWwk3R\u00c7|q\u00c7.\u00ef\u00f8&\u00ec\u0010\u00ee8\u00c5\u00e3!\u0010\u00a9\u00a2\u00a4\u00bf\u00e3\u0007\u00b0\u00ae\u00f9\u00f4\u00e5\u00cdN\u00e9\u00f1\u00cf2\u00fd\u00f8\f\u00d3\u00e3\u00d2i\u0000q\u00f5\u00ab(\u00b2f_\u0018A\u008b\u00ae\u00d5\r\u000f\u00b9\u000b\u00b38\u00c2\u00f1\\f\u00c5\u00af\u0091\u00ceo\u00d0\u00e0\u0088\u00e66\u0010\u009a\u0090\u000eqe\u0019\u00bd\u001c\u00b3'=T\u00c5<\u00de\u00f58\u00f7\u00f4u/z\u001a\u00e9\u00b1\u00dd\u00dah*5\u00aeuK\u00fb\u00bf\u00b2\u00ca\u00d0\u00e42r\u00c3*\u00fd\u0000\u00f6\u0092\u00d6\u00cf\u00a5i+-*\u0007\u001b\u0083\u00de\u00b7.M\u00a4eP\u00a4\u00af\u00f4\u0010\u0085>c\u00d46 \u00d7\u009d\u001fY[G\u00d0\u00ee`\u00d8`\u0092\u00df?r\u0089*I`R\u00ff\u00a2\u00b9\u00c0\u0016'?B\u00b6\u00e5\u00ec\u00f6h\u0002l\u00e5kX*\u00876\u00c1\u00c9,7\u008d\u00c3U\u001c2^A\u00b0<u\u0010\u00f89\u0081\u00a4j\u009a\u0012\u00a1\u00d5\u0082\u0093\u0091\u00d2\u00fb\bHp\u00d8\u00da|\u0001u\u0083G\u00e2\u0015\u0089\u00d1\u00be8j\u008e w\u00c0F\u00c2\u00aaoao\u00a64;\u001bwpO\u001ed\u0019\u00a1u[\u00991\u00f6\u00af\u00ce\u00c1)s\u0004Qaj\u00ac\u00a4\u00b4\u00df]7\u0004P+T\u00b7\u009a\u000f\u00dc\u00e2 2}\u00db\u0004\u001f\u009a\u00c7\u00b5\u0013\"1[\"\u00e04\u00ef|\u00e8w\u0005\u009d\u00a5\u009d'\"\u0018\u00ce\u00f4w/\u00c6\u00988\u00fd z\u00ed\u00ccud0\u00fd\u00a1\u00aa\u0086\u008c7?\u00ac\u00b02\u009dl\u00d0\u00b2\b\u0099\u00e5[+N\u00cbBs\u00cf.\u00c9&\u0019\u00e3\u00a33\u00f0\u00e4\u00a1X!\u00a1\u00c2\u00da\u00d8\u00c7WH\u00dc\u001e\u001b\u009d\u00e70\u00ea\\\u0012\u00bcu\u00fd\u0013c\u00db\f\u00ffV\u0080m\u0019O\u00a6\u00e6N\u00c3\u00ea!\u0080\u00fc,\u0081\u0094\u00d5\u009e\u00ad1N\u0099\u007f\u00c9\u00ecg|\u00c2\u00ea\u00eaH\u0086\u00b7v\u008d\u001a\u00ba\u0010\u00a5;\u00ee\u0099\u00ca\u0086\u00db\u00c2\u00a96\u001a\u00ae\u0097\u00f3\u0000(\u00a06\u00b7\u00c4\u00e3\"\u00bc1\u0015\u00f2t6\u0081w\u00dd\u0016\u00d9\u00a0?t\u00a9\u00c0\u0090vzg|\u0085h\u00a0\u00b3\u00e4\u0097~{r)\u00bdrA\u00cf\u0090b~\u00d5\u00af\u00d9\u008d}\u0086\u00a8\u00d2`\u0083m\u00af\u00bd`\u00a9\u00a3G\u00e0\u00f8\u008b\u001c\u00ad\u0086\u0015\u00ba\u00bf\u00f6n\u00bfq\u0093\u0018\u0087k\u00b1\u00a6\u00f1\u00ac\u00cd\u00cc_\u00e3\"\u00ad\u00ab\u00e7Q\rf3G\u00b1\u00abL\u008agSX\u0082QsV\u00b1\u009c[Q\u0003\u00df\u00fdhe\u0098\u00bd\u00a6%\u0005\u00fd\u00aa\u0018\u00e8]\u0015+4\u00f4\u00cf\u00a4\u00d8\u00b0P\u00ea\u001b\r(\u00a7\u00d5aza\u00bcn\u00aa\n\u0090\u008fP\u00e9\u00d4I7J\u00f1\u00cc\u0093\u00e5\u0001\u00ed\u0010\u00ba)\u00ecV(@A\u00f4\u0091\u00a8=;t\u00ed(\u00b3 \u0011\u0080\u00af\u00ed-\u0007\u00fe \u00a9x\u0002\u00be\u00a2\u00a6\u0087\u00e3\u007f\u009a0\u00a9\u00eb\u00c9\u0080-\u0018q t\u008ba%\u0096\u0010W`\u0096s\u008c\u00dc+\"\u00d5\u00f6\u00fb\u00ea\u00b6cO\u00b0\u0018\u00e5\u00b8\u0088f\u009fb4\u00f4\u00dc\u0089\u008f\u00c8SR\u00efx\u00be`g\u0080M\u00a9mJ8\u0014\u00ef\u0018\u00f8\u0015\u00ef\u00a7q\u00a5}BN\u00d9\u0089\u000ey\u0086\u0019[\u00dd\u00aa\u00c9\u0084\u00c5\u00fd\u0005.A\u001f\u00fdx\u0010\u00afxf\u00fb\u0019\u00af/\u00f9?=\u00e2\u00b8Fns\u000f\u00a5}%U\u00b4V\u0014\u0089@\u009f\u00f2\u0081\u001e8\u00bf\u0011\u0090:\u00f9\b8\u009dI\u0096\u00e6\u00eem\u00b2~~\u0004\u00e9-\u00f2x\u00f0\u0084\fT\u00bfx\u00dc\u00ae1\u009b\u007fV~\u0096\u001f\u00b5\u008e\u00d9\u00d5\u00eb_o?t}\u0098YT\u00d1\u00ff\u00f4\u00b4\u00ccI\u00e1$3\u00f08ew\u00dby\u008ex\u00db;!\u009f\u0098\u00f5\u007f;\u00e6\u00bb,h\u00d9\u00e6pO\u00e2\u0013\u00afP\u00c1\u00cc\u0095\u00a3\u00be\n<\u00d5\u008d\u00aceZ\u0095\u00fe\u00ed\u00b5-\u00cc\u00b5\u00f3\u00fc\u00a6\u00a0\u0095\u00c7\u00c3\u00e5-b}\u0018\u00c7aP\u00ea\u00ebOI\u00af\u0003\u0017\u00ba\u00bf7\u0003L\u001e\u00d7o|\u0013\u00ba3\u00fb.@\u00ad4\u00f5\u00c0\u00d2\u00f0\u0005\u009eu\u00a6\u00fd\u00a2\u001c{\u0085H\u00e3X\u001a\u00d8O,\u001c\u00a9js\u00c4Wq\tY\u009b+\u001f\u0013\u00ff\b \u00e7\u0099\u00b9\u00dbg\u00aa\u0011\u00a6\u00fb\u00e0\u009c\u0083X\u0013\u00eb\u0096\u00e6h\u00cc\u00f5\u00c7\u0007(\u009b\u00a3I\u00a0\u00f2\u00c7\u00f9r\u0084p\u00be\u00c0\u00d2,\u00ebAs\u00cf`\u00bc\u00fe\u0004l\u0085\u0019\"\u00c1\u00a4}\u00a8\u00b5\u00b5\u0006\u00e2]\u00fbg\u008e\u0087S\u00eb\u00dd]\"\u00baL\u008dE\u0085\u00bb\u00ee\u008a\u00fd\u0090T\u0094\u00efB\u00c2\u00ea\u00bdo\u0090\u00c1\u009a\u00f1{7\u00b1+\u00f0x\u0090nM34S\u0095\u00b1\u00c1\u0013\u00a2\u00bb\u00b6\u00ac\u00c2a.o\u00a0\u0094=\u0098\u00ea\b\u00d6\u00c4\u00b2\u00fd\u00ed\u0003\u00d4w\u0088\u00aa\u00d6\u0098y\u0082.\u0015\u00947\u00b5\u0004=q\u00e82f\u0094\u0010\u0013y\f\u00fej\u00f5\u00b9\u00c5\u009d\u0095d\u0004N\u00a4\u0014\u00eb\u00f1\u009bF\u00adVpDmY\u001d\u00cdu@3\u00e9AtvN\u00b7B\u00ba(`\u009a\u0010K=\u00ee\u00fa8\u00e1\u00a4\u00afI9\u00ec\u00d44-\u00c9\u00d6(\u00bb\u00dc\u00a4\u00bd9}<\u00b3\u00df\u00d8\u009f\u0018\u00f6P\u0083\u0084\u00b2m\u00cb\u00d5\u00cc\u00b9\u008e\u0018\u00b4\u00f5\u000e\u00f7,\bq\u0085AJ\u00c5z\u00db<\u00b2Y\u0010+\u00fe\u00c3\u00cd\u00edPjT\u0016#\u001e\u00db`\u00b9\u00a4i(\u00d5\u00e6\u00e5=\u0005k\u00ff\u0011K\u0003\u009c`\"\u00efs\u000b\u00b2H\u00ff\u00dbE\u0018R\u00a0!\u00a0\u008d\u001b\u0099\u00e1:\u00e3\n\u00bdw\r\u00b2r\u00ae\u000b q\u00ab\u00ab\u001c\u00c3\u00ac\u00af1_\u00aa\u00cc\u00fdp\u00c2N_\u00e2\u0019?\u0090t\u00db\u00cbg\u00d9\u0094W\u00e0\u00f9Y\u00e7\t #\u00a9\u00daK\u00b1\u00faj\u00a9NOb\u00bd\u009a\u00de^\u00a5o?\u00b5\u00bc\u00a7\u0099\u0019E\"\u00a3\r\u00e9\u00bb&P-0Qf\u00e7\"%\u00bb'\u00946F\u00a7\u00b9\u008c\u0006\u00cc\u00e9\u00ea\u00c9\u0081\u00b1\u0086\u00d8Qm^*\u00b6,\u00d8\u00ba\u00ca\u0014\u00c4\u00a4\u00a5\u00c5Z\u001ci\u001f=\u00dbM(5T\u00fe\u00f0 wA\u00b7>\u0004\u00ad\u00a4u\u00a6\u00c5\u00d7\u00e7\u00df\u00fbL\u0006\u00ff\u00a3!8V\u00cb\u009bAT\u0090b>\u00af\u00b1\n\u009b0\u00b7\u00d7\u0019\u00e3\u00f4X\u00a1h}5b\u00af\u00e4\u00dbI<H\u00d4:\u00d5&`\u00af\u000f]\nz\u0001Qe\u0000$\u0090h\u00c4\u009cV\u0098\u00eb\u00cc\u007f^)\u00b6G\u00fd\u0080\u000f".length();
-            int var8 = 56;
-            int var24 = -1;
-            block9: while (true) {
-                String var26 = var6.substring(++var24, var24 + var8);
-                int var10001 = -1;
-                while (true) {
-                    byte[] var10 = var2.doFinal(var26.getBytes("ISO-8859-1"));
-                    String var37 = AsmUtil.a(var10).intern();
-                    switch (var10001) {
-                        case 0: {
-                            var4[var5++] = var37;
-                            if ((var24 += var8) >= var7) {
-                                d = var4;
-                                e = new String[41];
-                                C = "/assets/abyss/asm/mcp-srg.srg";
-                                c = "/assets/abyss/asm/mcp-notch.srg";
-                                j = new HashMap(13);
-                                var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
-                                for (int var12 = 1; var12 < 8; ++var12) {
-                                    var10003[var12] = (byte)(var0 << var12 * 8 >>> 56);
-}
-                                Cipher var11 = Cipher.getInstance("DES/CBC/NoPadding");
-                                var11.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
-                                long[] var13 = new long[10];
-                                int var14 = 0;
-                                String var15 = "\u00ae\u007f\u009d\u00b4\u001dW\u009dy\u00b9n[v\u00d3\u00d5\u00d7\u00f4\u00a7\u008f\u00c1\u00fc*\u0007\u00ef\u00f8\u00a4*b\u00c8\u0098I>M\u0007\u008a\u00efo\u00ae4\u008a\u00e6\u0085\u00fb\u00b0I\u00ce\u008dn\u00c6\u00f7ar\u00b9`\u001b\u00ae\u00c2\u008d\u00a9_\u00c3\u00b4\u00b5\u008c\u00ae";
-                                int var16 = "\u00ae\u007f\u009d\u00b4\u001dW\u009dy\u00b9n[v\u00d3\u00d5\u00d7\u00f4\u00a7\u008f\u00c1\u00fc*\u0007\u00ef\u00f8\u00a4*b\u00c8\u0098I>M\u0007\u008a\u00efo\u00ae4\u008a\u00e6\u0085\u00fb\u00b0I\u00ce\u008dn\u00c6\u00f7ar\u00b9`\u001b\u00ae\u00c2\u008d\u00a9_\u00c3\u00b4\u00b5\u008c\u00ae".length();
-                                int var17 = 0;
-                                block12: while (true) {
-                                    var10001 = var17;
-                                    byte[] var18 = var15.substring(var10001, var17 += 8).getBytes("ISO-8859-1");
-                                    long[] var29 = var13;
-                                    var10001 = var14++;
-                                    long var41 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
-                                    int var44 = -1;
-                                    while (true) {
-                                        long var19 = var41;
-                                        byte[] var21 = var11.doFinal(new byte[]{(byte)(var19 >>> 56), (byte)(var19 >>> 48), (byte)(var19 >>> 40), (byte)(var19 >>> 32), (byte)(var19 >>> 24), (byte)(var19 >>> 16), (byte)(var19 >>> 8), (byte)var19});
-                                        long var46 = ((long)var21[0] & 0xFFL) << 56 | ((long)var21[1] & 0xFFL) << 48 | ((long)var21[2] & 0xFFL) << 40 | ((long)var21[3] & 0xFFL) << 32 | ((long)var21[4] & 0xFFL) << 24 | ((long)var21[5] & 0xFFL) << 16 | ((long)var21[6] & 0xFFL) << 8 | (long)var21[7] & 0xFFL;
-                                        switch (var44) {
-                                            case 0: {
-                                                var29[var10001] = var46;
-                                                if (var17 < var16) break;
-                                                g = var13;
-                                                h = new Integer[10];
-                                                I = LogManager.getLogger((String)"Abyss ASM Mappings");
-                                                v = new ThreadLocal();
-                                                Y = new EnumMap<MappingKind, Map<String, String>>(MappingKind.class);
-                                                N = new EnumMap<MappingKind, Map<String, String>>(MappingKind.class);
-                                                Z = new EnumMap<MappingKind, Map<MethodRef, MethodMapping>>(MappingKind.class);
-                                                b = new EnumMap<MappingKind, Map<MethodRef, MethodMapping>>(MappingKind.class);
-                                                P = new EnumMap<MappingKind, Map<FieldRef, FieldMapping>>(MappingKind.class);
-                                                B = new EnumMap<MappingKind, Map<FieldRef, FieldMapping>>(MappingKind.class);
-                                                r = new ThreadLocal();
-                                                AsmUtil.X(MappingKind.MCP);
-                                                AsmUtil.X(MappingKind.SRG);
-                                                AsmUtil.X(MappingKind.NOTCH);
-                                                AsmUtil.H("/assets/abyss/asm/mcp-srg.srg", MappingKind.SRG);
-                                                AsmUtil.H("/assets/abyss/asm/mcp-notch.srg", MappingKind.NOTCH);
-                                                I.info("Loaded ASM mappings: srgMethods={}, srgFields={}, notchClasses={}, notchMethods={}, notchFields={}", new Object[]{Z.get((Object)MappingKind.SRG).size(), P.get((Object)MappingKind.SRG).size(), Y.get((Object)MappingKind.NOTCH).size(), Z.get((Object)MappingKind.NOTCH).size(), P.get((Object)MappingKind.NOTCH).size()});
-                                                return;
-}
-                                            default: {
-                                                var29[var10001] = var46;
-                                                if (var17 < var16) continue block12;
-                                                var15 = "\u00c5r\u00c4\u0084LF\u00b9\u007f\u008b\u00ac\u00ebe\u0001\u00b0\u00ec8";
-                                                var16 = "\u00c5r\u00c4\u0084LF\u00b9\u007f\u008b\u00ac\u00ebe\u0001\u00b0\u00ec8".length();
-                                                var17 = 0;
-}
-}
-                                        int var35 = var17;
-                                        var18 = var15.substring(var35, var17 += 8).getBytes("ISO-8859-1");
-                                        var29 = var13;
-                                        var10001 = var14++;
-                                        var41 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
-                                        var44 = 0;
-}
-                                    break;
-}
-}
-                            var8 = var6.charAt(var24);
-                            break;
-}
-                        default: {
-                            var4[var5++] = var37;
-                            if ((var24 += var8) < var7) {
-                                var8 = var6.charAt(var24);
-                                continue block9;
-}
-                            var6 = "\u00aa\u0095i\u00f6\u0006JQ\u00e6\u00bcm\u00dc\u00bee\u00ce.20m\u0082\u0082|z\u00daR&P\u0004\u00b9\u00daC9\u00ea/\u00d9K\u00e2u\u00b10\u00be\f\u00bf\u001a\u008a\u0084\u0010\u00e5@b\u00d1'\u0081\u00b5\u0015P\u00fd\u008b\u00a6\u00bd\u0094=\u0012m{\n";
-                            var7 = "\u00aa\u0095i\u00f6\u0006JQ\u00e6\u00bcm\u00dc\u00bee\u00ce.20m\u0082\u0082|z\u00daR&P\u0004\u00b9\u00daC9\u00ea/\u00d9K\u00e2u\u00b10\u00be\f\u00bf\u001a\u008a\u0084\u0010\u00e5@b\u00d1'\u0081\u00b5\u0015P\u00fd\u008b\u00a6\u00bd\u0094=\u0012m{\n".length();
-                            var8 = 16;
-                            var24 = -1;
-}
-}
-                    var26 = var6.substring(++var24, var24 + var8);
-                    var10001 = 0;
-}
-                break;
-}
-}
+            String[] var6Blobs = new String[]{"\u0010\u0010\u00ec\u00ebqR\u00bc\u00fa\u00bfT*-Nm\bR\u0011\u001a\u00b0\u00f8{\u00bdPj\u0085\u00c1y\u00e9\"\u00f6F\u00def\u0088F\u00c3\u001cn\u00a4\u00bbC7l\u00bf\u00be\u00cc@\u00afr\u00cf\u00aeU\u00d8C]\u00ca8\u0013\u00fa\u00d2i\u00fd\u00b7\u00db6+\u0005\u0004\u00aa\u00d5\u00e7|\u00cb\u00bd@\u0097\u00e5\u0001\u00c13p\u00cd-\u00d8\u0089;\u00d6\u0091\u00feF\u00e3Ai\u00f8\u00fdk\u0082\u001c\u00f9\t\u008bj^B\u000e\u009aM\u00adTt2w\u00bf\u0010e\u0002'\u00dc\u00b7q\u0091\u0019\u0003\u00b0\u00a2\u00a1\u00e8\u00a5\u007f\u00ea\u0018s\u00bb0zCG\u00035\u0086+\u009ad\u0089\u00e5ak\u00c9\u001144\u00d5\u0016\u0001\u008c0\u00fe\u00b9\u00da\u00fd\u0095\u00ab\u00a2\u00a6}\u0018s\u00ed\u0081\u001bU\u0099\u00ee\u00dcU\u00c9\u001e\u008e\u00c8\u00bd\u007f\u0000\u0081Ner\u00be\u00b1\u00eaZ6\u00b9\u00195T\u00be<DB\u00f4UjB\u0015 w\u009c\u0097\u00ed\u00d6Z\u00e9+\nn\u00ed\u00c9\u00bb\u0014o\u00eb\u0085\u00956Q\u0098\u001b|\u00d1\u00ee\u00f1\u00b0;\u00b8\u00c8\u0090\u0019\u0010\u0088r/\b\u001c\u00be\u00e3\u00d4l4\u00e7\u000fN\u00c6\u00c9v\u0010M?\u00d2\u008e\u00be\u00a8\u00a4\u0016\u00a0P\n\u00b9\u0090\u00d0hV L^\u00b5\u00fa\u0005\u00a0\u00c41qo\u00ecV\u00b0\u00e7s8;\u00deE\u00f9R\u0014\u0091\u0018P\u00f4\u001b\u00dc\u00b5\u0092\u00ba\u00eb8]\u008d\u00faWwk3R\u00c7|q\u00c7.\u00ef\u00f8&\u00ec\u0010\u00ee8\u00c5\u00e3!\u0010\u00a9\u00a2\u00a4\u00bf\u00e3\u0007\u00b0\u00ae\u00f9\u00f4\u00e5\u00cdN\u00e9\u00f1\u00cf2\u00fd\u00f8\f\u00d3\u00e3\u00d2i\u0000q\u00f5\u00ab(\u00b2f_\u0018A\u008b\u00ae\u00d5\r\u000f\u00b9\u000b\u00b38\u00c2\u00f1\\f\u00c5\u00af\u0091\u00ceo\u00d0\u00e0\u0088\u00e66\u0010\u009a\u0090\u000eqe\u0019\u00bd\u001c\u00b3'=T\u00c5<\u00de\u00f58\u00f7\u00f4u/z\u001a\u00e9\u00b1\u00dd\u00dah*5\u00aeuK\u00fb\u00bf\u00b2\u00ca\u00d0\u00e42r\u00c3*\u00fd\u0000\u00f6\u0092\u00d6\u00cf\u00a5i+-*\u0007\u001b\u0083\u00de\u00b7.M\u00a4eP\u00a4\u00af\u00f4\u0010\u0085>c\u00d46 \u00d7\u009d\u001fY[G\u00d0\u00ee`\u00d8`\u0092\u00df?r\u0089*I`R\u00ff\u00a2\u00b9\u00c0\u0016'?B\u00b6\u00e5\u00ec\u00f6h\u0002l\u00e5kX*\u00876\u00c1\u00c9,7\u008d\u00c3U\u001c2^A\u00b0<u\u0010\u00f89\u0081\u00a4j\u009a\u0012\u00a1\u00d5\u0082\u0093\u0091\u00d2\u00fb\bHp\u00d8\u00da|\u0001u\u0083G\u00e2\u0015\u0089\u00d1\u00be8j\u008e w\u00c0F\u00c2\u00aaoao\u00a64;\u001bwpO\u001ed\u0019\u00a1u[\u00991\u00f6\u00af\u00ce\u00c1)s\u0004Qaj\u00ac\u00a4\u00b4\u00df]7\u0004P+T\u00b7\u009a\u000f\u00dc\u00e2 2}\u00db\u0004\u001f\u009a\u00c7\u00b5\u0013\"1[\"\u00e04\u00ef|\u00e8w\u0005\u009d\u00a5\u009d'\"\u0018\u00ce\u00f4w/\u00c6\u00988\u00fd z\u00ed\u00ccud0\u00fd\u00a1\u00aa\u0086\u008c7?\u00ac\u00b02\u009dl\u00d0\u00b2\b\u0099\u00e5[+N\u00cbBs\u00cf.\u00c9&\u0019\u00e3\u00a33\u00f0\u00e4\u00a1X!\u00a1\u00c2\u00da\u00d8\u00c7WH\u00dc\u001e\u001b\u009d\u00e70\u00ea\\\u0012\u00bcu\u00fd\u0013c\u00db\f\u00ffV\u0080m\u0019O\u00a6\u00e6N\u00c3\u00ea!\u0080\u00fc,\u0081\u0094\u00d5\u009e\u00ad1N\u0099\u007f\u00c9\u00ecg|\u00c2\u00ea\u00eaH\u0086\u00b7v\u008d\u001a\u00ba\u0010\u00a5;\u00ee\u0099\u00ca\u0086\u00db\u00c2\u00a96\u001a\u00ae\u0097\u00f3\u0000(\u00a06\u00b7\u00c4\u00e3\"\u00bc1\u0015\u00f2t6\u0081w\u00dd\u0016\u00d9\u00a0?t\u00a9\u00c0\u0090vzg|\u0085h\u00a0\u00b3\u00e4\u0097~{r)\u00bdrA\u00cf\u0090b~\u00d5\u00af\u00d9\u008d}\u0086\u00a8\u00d2`\u0083m\u00af\u00bd`\u00a9\u00a3G\u00e0\u00f8\u008b\u001c\u00ad\u0086\u0015\u00ba\u00bf\u00f6n\u00bfq\u0093\u0018\u0087k\u00b1\u00a6\u00f1\u00ac\u00cd\u00cc_\u00e3\"\u00ad\u00ab\u00e7Q\rf3G\u00b1\u00abL\u008agSX\u0082QsV\u00b1\u009c[Q\u0003\u00df\u00fdhe\u0098\u00bd\u00a6%\u0005\u00fd\u00aa\u0018\u00e8]\u0015+4\u00f4\u00cf\u00a4\u00d8\u00b0P\u00ea\u001b\r(\u00a7\u00d5aza\u00bcn\u00aa\n\u0090\u008fP\u00e9\u00d4I7J\u00f1\u00cc\u0093\u00e5\u0001\u00ed\u0010\u00ba)\u00ecV(@A\u00f4\u0091\u00a8=;t\u00ed(\u00b3 \u0011\u0080\u00af\u00ed-\u0007\u00fe \u00a9x\u0002\u00be\u00a2\u00a6\u0087\u00e3\u007f\u009a0\u00a9\u00eb\u00c9\u0080-\u0018q t\u008ba%\u0096\u0010W`\u0096s\u008c\u00dc+\"\u00d5\u00f6\u00fb\u00ea\u00b6cO\u00b0\u0018\u00e5\u00b8\u0088f\u009fb4\u00f4\u00dc\u0089\u008f\u00c8SR\u00efx\u00be`g\u0080M\u00a9mJ8\u0014\u00ef\u0018\u00f8\u0015\u00ef\u00a7q\u00a5}BN\u00d9\u0089\u000ey\u0086\u0019[\u00dd\u00aa\u00c9\u0084\u00c5\u00fd\u0005.A\u001f\u00fdx\u0010\u00afxf\u00fb\u0019\u00af/\u00f9?=\u00e2\u00b8Fns\u000f\u00a5}%U\u00b4V\u0014\u0089@\u009f\u00f2\u0081\u001e8\u00bf\u0011\u0090:\u00f9\b8\u009dI\u0096\u00e6\u00eem\u00b2~~\u0004\u00e9-\u00f2x\u00f0\u0084\fT\u00bfx\u00dc\u00ae1\u009b\u007fV~\u0096\u001f\u00b5\u008e\u00d9\u00d5\u00eb_o?t}\u0098YT\u00d1\u00ff\u00f4\u00b4\u00ccI\u00e1$3\u00f08ew\u00dby\u008ex\u00db;!\u009f\u0098\u00f5\u007f;\u00e6\u00bb,h\u00d9\u00e6pO\u00e2\u0013\u00afP\u00c1\u00cc\u0095\u00a3\u00be\n<\u00d5\u008d\u00aceZ\u0095\u00fe\u00ed\u00b5-\u00cc\u00b5\u00f3\u00fc\u00a6\u00a0\u0095\u00c7\u00c3\u00e5-b}\u0018\u00c7aP\u00ea\u00ebOI\u00af\u0003\u0017\u00ba\u00bf7\u0003L\u001e\u00d7o|\u0013\u00ba3\u00fb.@\u00ad4\u00f5\u00c0\u00d2\u00f0\u0005\u009eu\u00a6\u00fd\u00a2\u001c{\u0085H\u00e3X\u001a\u00d8O,\u001c\u00a9js\u00c4Wq\tY\u009b+\u001f\u0013\u00ff\b \u00e7\u0099\u00b9\u00dbg\u00aa\u0011\u00a6\u00fb\u00e0\u009c\u0083X\u0013\u00eb\u0096\u00e6h\u00cc\u00f5\u00c7\u0007(\u009b\u00a3I\u00a0\u00f2\u00c7\u00f9r\u0084p\u00be\u00c0\u00d2,\u00ebAs\u00cf`\u00bc\u00fe\u0004l\u0085\u0019\"\u00c1\u00a4}\u00a8\u00b5\u00b5\u0006\u00e2]\u00fbg\u008e\u0087S\u00eb\u00dd]\"\u00baL\u008dE\u0085\u00bb\u00ee\u008a\u00fd\u0090T\u0094\u00efB\u00c2\u00ea\u00bdo\u0090\u00c1\u009a\u00f1{7\u00b1+\u00f0x\u0090nM34S\u0095\u00b1\u00c1\u0013\u00a2\u00bb\u00b6\u00ac\u00c2a.o\u00a0\u0094=\u0098\u00ea\b\u00d6\u00c4\u00b2\u00fd\u00ed\u0003\u00d4w\u0088\u00aa\u00d6\u0098y\u0082.\u0015\u00947\u00b5\u0004=q\u00e82f\u0094\u0010\u0013y\f\u00fej\u00f5\u00b9\u00c5\u009d\u0095d\u0004N\u00a4\u0014\u00eb\u00f1\u009bF\u00adVpDmY\u001d\u00cdu@3\u00e9AtvN\u00b7B\u00ba(`\u009a\u0010K=\u00ee\u00fa8\u00e1\u00a4\u00afI9\u00ec\u00d44-\u00c9\u00d6(\u00bb\u00dc\u00a4\u00bd9}<\u00b3\u00df\u00d8\u009f\u0018\u00f6P\u0083\u0084\u00b2m\u00cb\u00d5\u00cc\u00b9\u008e\u0018\u00b4\u00f5\u000e\u00f7,\bq\u0085AJ\u00c5z\u00db<\u00b2Y\u0010+\u00fe\u00c3\u00cd\u00edPjT\u0016#\u001e\u00db`\u00b9\u00a4i(\u00d5\u00e6\u00e5=\u0005k\u00ff\u0011K\u0003\u009c`\"\u00efs\u000b\u00b2H\u00ff\u00dbE\u0018R\u00a0!\u00a0\u008d\u001b\u0099\u00e1:\u00e3\n\u00bdw\r\u00b2r\u00ae\u000b q\u00ab\u00ab\u001c\u00c3\u00ac\u00af1_\u00aa\u00cc\u00fdp\u00c2N_\u00e2\u0019?\u0090t\u00db\u00cbg\u00d9\u0094W\u00e0\u00f9Y\u00e7\t #\u00a9\u00daK\u00b1\u00faj\u00a9NOb\u00bd\u009a\u00de^\u00a5o?\u00b5\u00bc\u00a7\u0099\u0019E\"\u00a3\r\u00e9\u00bb&P-0Qf\u00e7\"%\u00bb'\u00946F\u00a7\u00b9\u008c\u0006\u00cc\u00e9\u00ea\u00c9\u0081\u00b1\u0086\u00d8Qm^*\u00b6,\u00d8\u00ba\u00ca\u0014\u00c4\u00a4\u00a5\u00c5Z\u001ci\u001f=\u00dbM(5T\u00fe\u00f0 wA\u00b7>\u0004\u00ad\u00a4u\u00a6\u00c5\u00d7\u00e7\u00df\u00fbL\u0006\u00ff\u00a3!8V\u00cb\u009bAT\u0090b>\u00af\u00b1\n\u009b0\u00b7\u00d7\u0019\u00e3\u00f4X\u00a1h}5b\u00af\u00e4\u00dbI<H\u00d4:\u00d5&`\u00af\u000f]\nz\u0001Qe\u0000$\u0090h\u00c4\u009cV\u0098\u00eb\u00cc\u007f^)\u00b6G\u00fd\u0080\u000f", "\u00aa\u0095i\u00f6\u0006JQ\u00e6\u00bcm\u00dc\u00bee\u00ce.20m\u0082\u0082|z\u00daR&P\u0004\u00b9\u00daC9\u00ea/\u00d9K\u00e2u\u00b10\u00be\f\u00bf\u001a\u008a\u0084\u0010\u00e5@b\u00d1'\u0081\u00b5\u0015P\u00fd\u008b\u00a6\u00bd\u0094=\u0012m{\n"};
+            int[] var6InitialLengths = new int[]{56, 16};
+
+            for (int var6Blob = 0; var6Blob < var6Blobs.length; ++var6Blob) {
+                String var6 = var6Blobs[var6Blob];
+                int var24 = 0;
+                int var8 = var6InitialLengths[var6Blob];
+                while (var24 < var6.length()) {
+                    if (var8 <= 0 || var24 + var8 > var6.length()) {
+                        throw new IllegalStateException("Invalid encrypted ASM string chunk at " + var24 + " length " + var8 + " of " + var6.length());
+                    }
+                    byte[] var10 = var2.doFinal(var6.substring(var24, var24 + var8).getBytes("ISO-8859-1"));
+                    if (var5 >= var4.length) {
+                        throw new IllegalStateException("Too many encrypted ASM strings");
+                    }
+                    var4[var5++] = AsmUtil.a(var10).intern();
+                    var24 += var8;
+                    if (var24 < var6.length()) {
+                        var8 = var6.charAt(var24++);
+                    }
+                }
+            }
+
+            if (var5 != var4.length) {
+                throw new IllegalStateException("Expected " + var4.length + " encrypted ASM strings, decoded " + var5);
+            }
+
+            d = var4;
+            e = new String[41];
+            C = "/assets/abyss/asm/mcp-srg.srg";
+            c = "/assets/abyss/asm/mcp-notch.srg";
+            j = new HashMap(13);
+
+            Cipher var11 = Cipher.getInstance("DES/CBC/NoPadding");
+            var11.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+
+            long[] var13 = new long[10];
+            int var14 = 0;
+            String[] var15Blobs = new String[]{"\u00ae\u007f\u009d\u00b4\u001dW\u009dy\u00b9n[v\u00d3\u00d5\u00d7\u00f4\u00a7\u008f\u00c1\u00fc*\u0007\u00ef\u00f8\u00a4*b\u00c8\u0098I>M\u0007\u008a\u00efo\u00ae4\u008a\u00e6\u0085\u00fb\u00b0I\u00ce\u008dn\u00c6\u00f7ar\u00b9`\u001b\u00ae\u00c2\u008d\u00a9_\u00c3\u00b4\u00b5\u008c\u00ae", "\u00c5r\u00c4\u0084LF\u00b9\u007f\u008b\u00ac\u00ebe\u0001\u00b0\u00ec8"};
+            for (String var15 : var15Blobs) {
+                if ((var15.length() & 7) != 0) {
+                    throw new IllegalStateException("Invalid encrypted ASM long blob length " + var15.length());
+                }
+                for (int var17 = 0; var17 < var15.length(); var17 += 8) {
+                    byte[] var18 = var15.substring(var17, var17 + 8).getBytes("ISO-8859-1");
+                    byte[] var21 = var11.doFinal(var18);
+                    long var46 = ((long)var21[0] & 0xFFL) << 56
+                            | ((long)var21[1] & 0xFFL) << 48
+                            | ((long)var21[2] & 0xFFL) << 40
+                            | ((long)var21[3] & 0xFFL) << 32
+                            | ((long)var21[4] & 0xFFL) << 24
+                            | ((long)var21[5] & 0xFFL) << 16
+                            | ((long)var21[6] & 0xFFL) << 8
+                            | (long)var21[7] & 0xFFL;
+                    if (var14 >= var13.length) {
+                        throw new IllegalStateException("Too many encrypted ASM long constants");
+                    }
+                    var13[var14++] = var46;
+                }
+            }
+
+            if (var14 != var13.length) {
+                throw new IllegalStateException("Expected " + var13.length + " encrypted ASM long constants, decoded " + var14);
+            }
+
+            g = var13;
+            h = new Integer[10];
+            I = LogManager.getLogger((String)"Abyss ASM Mappings");
+            v = new ThreadLocal();
+            Y = new EnumMap<MappingKind, Map<String, String>>(MappingKind.class);
+            N = new EnumMap<MappingKind, Map<String, String>>(MappingKind.class);
+            Z = new EnumMap<MappingKind, Map<MethodRef, MethodMapping>>(MappingKind.class);
+            b = new EnumMap<MappingKind, Map<MethodRef, MethodMapping>>(MappingKind.class);
+            P = new EnumMap<MappingKind, Map<FieldRef, FieldMapping>>(MappingKind.class);
+            B = new EnumMap<MappingKind, Map<FieldRef, FieldMapping>>(MappingKind.class);
+            r = new ThreadLocal();
+            AsmUtil.X(MappingKind.MCP);
+            AsmUtil.X(MappingKind.SRG);
+            AsmUtil.X(MappingKind.NOTCH);
+            AsmUtil.H("/assets/abyss/asm/mcp-srg.srg", MappingKind.SRG);
+            AsmUtil.H("/assets/abyss/asm/mcp-notch.srg", MappingKind.NOTCH);
+            I.info("Loaded ASM mappings: srgMethods={}, srgFields={}, notchClasses={}, notchMethods={}, notchFields={}", new Object[]{Z.get((Object)MappingKind.SRG).size(), P.get((Object)MappingKind.SRG).size(), Y.get((Object)MappingKind.NOTCH).size(), Z.get((Object)MappingKind.NOTCH).size(), P.get((Object)MappingKind.NOTCH).size()});
+        }
         catch (Throwable var22) {
             throw new RuntimeException(var22);
-}
-}
+        }
+    }
     static {
+        a = 90580821667740L;
+        zkm$clinit();
 }
 }

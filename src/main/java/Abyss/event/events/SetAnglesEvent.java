@@ -10,7 +10,7 @@ extends Event {
     private float s;
     private boolean F = false;
     private float Y;
-    private static long public boolean l() {
+    public boolean l() {
         return this.F;
 }
     public float s() {

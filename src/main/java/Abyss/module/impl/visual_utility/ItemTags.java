@@ -53,10 +53,19 @@ import net.minecraft.item.ItemSword;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.StringUtils;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class ItemTags
 extends Module
 implements EventSubscriber {
+    private static long a = 67299170408461L;
+
     public static BooleanSetting renderBlocks;
     public static BooleanSetting renderSwordsAndBows;
     public static BooleanSetting nbtOnly;
@@ -80,11 +89,11 @@ implements EventSubscriber {
 }
 }
     private void y(long var1, EntityItem var3, ItemStack var4) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        Item var22 = var4.func_77973_b();
-        String var23 = var4.func_82833_r();
-        String var24 = StringUtils.func_76338_a((String)var23);
-        int var25 = var4.field_77994_a;
-        boolean var26 = var4.func_77942_o();
+        Item var22 = var4.getItem();
+        String var23 = var4.getDisplayName();
+        String var24 = StringUtils.stripControlCodes((String)var23);
+        int var25 = var4.stackSize;
+        boolean var26 = var4.hasTagCompound();
         if (!nbtOnly.c() || var26) {
             int var27 = this.L(var4, 0L);
             String var28 = this.l(var23, 0L, var25);
@@ -115,9 +124,9 @@ implements EventSubscriber {
     private void o(long var1) {
         GL11.glEnable((int)2929);
         GL11.glDisable((int)3042);
-        GlStateManager.func_179117_G();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.resetColor();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.popMatrix();
 }
     @Override
     public void A(long var1) {
@@ -125,12 +134,12 @@ implements EventSubscriber {
 }
     private void a(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         this.S.clear();
-        List var5 = ItemTags.f.field_71441_e.field_72996_f;
+        List var5 = ItemTags.f.theWorld.loadedEntityList;
         for (int var6 = 0; var6 < var5.size(); ++var6) {
             EntityItem var8;
             ItemStack var9;
             Entity var7 = (Entity)var5.get(var6);
-            if (!(var7 instanceof EntityItem) || !this.I(var9 = (var8 = (EntityItem)var7).func_92059_d())) continue;
+            if (!(var7 instanceof EntityItem) || !this.I(var9 = (var8 = (EntityItem)var7).getEntityItem())) continue;
             this.y(17753419752380L, var8, var9);
 }
 }
@@ -145,21 +154,21 @@ implements EventSubscriber {
 }
     private float m(Minecraft var1, int var2, char var3, char var4) {
         if (LunarClientDetector.q(0L)) {
-            return var1.func_175598_ae().field_78732_j;
+            return var1.getRenderManager().playerViewX;
 }
-        return var1.field_71474_y.field_74320_O == 2 ? -var1.func_175598_ae().field_78732_j : var1.func_175598_ae().field_78732_j;
+        return var1.gameSettings.thirdPersonView == 2 ? -var1.getRenderManager().playerViewX : var1.getRenderManager().playerViewX;
 }
     private void W(long var1, EntityItem var3, Item var4, String var5) {
-        if (var4 == Items.field_151045_i) {
+        if (var4 == Items.diamond) {
             this.w(var3, var5, 0x55FFFF);
 }
-        if (var4 == Items.field_151042_j) {
+        if (var4 == Items.iron_ingot) {
             this.w(var3, var5, 0xAAAAAA);
 }
-        if (var4 == Items.field_151043_k) {
+        if (var4 == Items.gold_ingot) {
             this.w(var3, var5, 0xFFFF55);
 }
-        if (var4 == Items.field_151166_bC) {
+        if (var4 == Items.emerald) {
             this.w(var3, var5, 0x55FF55);
 }
 }
@@ -167,9 +176,9 @@ implements EventSubscriber {
         this.a(32528519039452L);
 }
     private ItemTagsRenderPos getRenderManager(Entity var1, float var2) {
-        float var3 = this.W((float)var1.field_70142_S, (float)var1.field_70165_t, var2) - (float)ItemTags.f.func_175598_ae().field_78730_l;
-        float var4 = this.W((float)var1.field_70137_T, (float)var1.field_70163_u, var2) - (float)ItemTags.f.func_175598_ae().field_78731_m;
-        float var5 = this.W((float)var1.field_70136_U, (float)var1.field_70161_v, var2) - (float)ItemTags.f.func_175598_ae().field_78728_n;
+        float var3 = this.W((float)var1.lastTickPosX, (float)var1.posX, var2) - (float)ItemTags.f.getRenderManager().viewerPosX;
+        float var4 = this.W((float)var1.lastTickPosY, (float)var1.posY, var2) - (float)ItemTags.f.getRenderManager().viewerPosY;
+        float var5 = this.W((float)var1.lastTickPosZ, (float)var1.posZ, var2) - (float)ItemTags.f.getRenderManager().viewerPosZ;
         return new ItemTagsRenderPos(var3, var4, var5, null);
 }
     private void P(long var1, EntityItem var3, String var4, boolean var5, int var6) {
@@ -181,7 +190,7 @@ implements EventSubscriber {
         if (!this.M()) {
             return 0;
 }
-        return !ItemScale.c(var3.func_92059_d()) ? 0 : (int)((ItemScale.scale.L() - 1.0f) * 14.0f);
+        return !ItemScale.c(var3.getEntityItem()) ? 0 : (int)((ItemScale.scale.L() - 1.0f) * 14.0f);
 }
     public void onRender3D(long var1, Render3DEvent var3) {
         CustomFont var8 = Font.s(0L);
@@ -219,15 +228,15 @@ implements EventSubscriber {
         return renderSwordsAndBows.c() ? "WEAPONS" : "NONE";
 }
     private int L(ItemStack var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (!var1.func_77942_o()) {
+        if (!var1.hasTagCompound()) {
             return -1;
 }
-        NBTTagCompound var4 = var1.func_77978_p();
-        if (!var4.func_74764_b("display")) {
+        NBTTagCompound var4 = var1.getTagCompound();
+        if (!var4.hasKey("display")) {
             return -1;
 }
-        NBTTagCompound var5 = var4.func_74775_l("display");
-        return !var5.func_74764_b("color") ? -1 : var5.func_74762_e("color");
+        NBTTagCompound var5 = var4.getCompoundTag("display");
+        return !var5.hasKey("color") ? -1 : var5.getInteger("color");
 }
     @Override
     public final void x(long var1, EventBus var3) {
@@ -237,7 +246,7 @@ implements EventSubscriber {
 }
     private float getDistanceToEntity(Entity var1, float var2) {
         float var3 = var2 / 3.0f;
-        float var4 = ItemTags.f.field_71439_g.func_70032_d(var1) / 10.0f;
+        float var4 = ItemTags.f.thePlayer.getDistanceToEntity(var1) / 10.0f;
         if (var4 < 1.1f) {
             var4 = 1.1f;
 }
@@ -258,7 +267,7 @@ implements EventSubscriber {
         return Modules.J(ItemScale.class).o();
 }
     private boolean c(Item var1) {
-        return var1 == Items.field_151175_af || var1 == Items.field_151173_ae || var1 == Items.field_151161_ac || var1 == Items.field_151163_ad;
+        return var1 == Items.diamond_boots || var1 == Items.diamond_leggings || var1 == Items.diamond_helmet || var1 == Items.diamond_chestplate;
 }
     private void z(EntityItem var1, ItemStack var2, long var3, String var5) {
         if (ItemUtil.u(var2)) {
@@ -266,19 +275,19 @@ implements EventSubscriber {
 }
 }
     private boolean I(ItemStack var1) {
-        return var1 != null && var1.field_77994_a > 0;
+        return var1 != null && var1.stackSize > 0;
 }
     private void y(ItemTagsRenderPos var1, float var2, long var3) {
         GL11.glPushMatrix();
         GL11.glTranslatef((float)ItemTagsRenderPos.B(var1), (float)(ItemTagsRenderPos.Z(var1) + 0.5f), (float)ItemTagsRenderPos.M(var1));
-        GL11.glRotatef((float)(-ItemTags.f.func_175598_ae().field_78735_i), (float)0.0f, (float)1.0f, (float)0.0f);
+        GL11.glRotatef((float)(-ItemTags.f.getRenderManager().playerViewY), (float)0.0f, (float)1.0f, (float)0.0f);
         GL11.glRotatef((float)this.m(f, 25825, '\ud762', '\u1fcc'), (float)1.0f, (float)0.0f, (float)0.0f);
         GL11.glScalef((float)(-var2), (float)(-var2), (float)var2);
         GL11.glDisable((int)2929);
         GL11.glEnable((int)3042);
 }
     private void g(EntityItem var1, Item var2, String var3, long var4) {
-        if (var2 == Items.field_151153_ao) {
+        if (var2 == Items.golden_apple) {
             this.w(var1, var3, 0xFFAA00);
 }
 }
@@ -301,16 +310,16 @@ implements EventSubscriber {
         if (var4.startsWith("Junk Apple")) {
             this.w(var2, var5, var7);
 }
-        if (var3 == Items.field_151158_bO) {
+        if (var3 == Items.pumpkin_pie) {
             this.w(var2, var5, 16711610);
 }
-        if (var3 == Items.field_151153_ao) {
+        if (var3 == Items.golden_apple) {
             this.w(var2, var5, 0xFFAA00);
 }
-        if (var3 == Items.field_151045_i) {
+        if (var3 == Items.diamond) {
             this.w(var2, var5, 0x55FFFF);
 }
-        if (var3 == Items.field_151048_u) {
+        if (var3 == Items.diamond_sword) {
             this.w(var2, var5, 0x55FFFF);
 }
         if (this.c(var3)) {

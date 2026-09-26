@@ -17,6 +17,7 @@ import Abyss.ui.screen.AccountManagerScreen;
 import Abyss.util.BrowserLauncher;
 import Abyss.util.ChatFormatting;
 import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.util.Session;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class MicrosoftLoginScreen
@@ -43,9 +45,9 @@ extends GuiScreen {
     private boolean v = false;
     private static long c = 11783191072859L;
 
-    public void func_73876_c() {
+    public void updateScreen() {
         if (this.v) {
-            this.field_146297_k.func_147108_a((GuiScreen)new AccountManagerScreen(106134966044692L, this.J, new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", SessionAccessor.d().func_111285_a())), 5000L)));
+            this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(106134966044692L, this.J, new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", SessionAccessor.d().getUsername())), 5000L)));
             this.v = false;
 }
         if (this.i != null && !this.v && this.P != null && !this.P.isDone()) {
@@ -58,14 +60,14 @@ extends GuiScreen {
             this.m = 0;
 }
 }
-    protected void func_73869_a(char var1, int var2) {
+    protected void keyTyped(char var1, int var2) {
         if (var2 == 1) {
-            this.func_146284_a(this.G);
+            this.actionPerformed(this.G);
 }
 }
-    protected void func_146284_a(GuiButton var1) {
-        if (var1 != null && var1.field_146124_l) {
-            switch (var1.field_146127_k) {
+    protected void actionPerformed(GuiButton var1) {
+        if (var1 != null && var1.enabled) {
+            switch (var1.id) {
                 case 0: {
                     BrowserLauncher.F(AuthService.P(this.b));
                     this.i = "&fPlease complete the login in your browser&r";
@@ -89,21 +91,21 @@ extends GuiScreen {
                     break;
 }
                 case 2: {
-                    this.field_146297_k.func_147108_a(this.J);
+                    this.mc.displayGuiScreen(this.J);
 }
 }
 }
 }
-    public void func_73863_a(int var1, int var2, float var3) {
+    public void drawScreen(int var1, int var2, float var3) {
         if (this.H != null) {
-            this.H.field_146124_l = this.z;
+            this.H.enabled = this.z;
 }
         if (this.Y != null) {
-            this.Y.field_146124_l = this.z;
+            this.Y.enabled = this.z;
 }
-        this.func_146276_q_();
-        super.func_73863_a(var1, var2, var3);
-        this.func_73732_a(this.field_146289_q, "Microsoft Authentication", this.field_146294_l / 2, this.field_146295_m / 2 - this.field_146289_q.field_78288_b / 2 - this.field_146289_q.field_78288_b * 2, 0xAAAAAA);
+        this.drawDefaultBackground();
+        super.drawScreen(var1, var2, var3);
+        this.drawCenteredString(this.fontRendererObj, "Microsoft Authentication", this.width / 2, this.height / 2 - this.fontRendererObj.FONT_HEIGHT / 2 - this.fontRendererObj.FONT_HEIGHT * 2, 0xAAAAAA);
         if (this.i != null) {
             String var9 = this.i;
             if (this.P != null && !this.P.isDone() && this.p == null) {
@@ -111,29 +113,29 @@ extends GuiScreen {
                     var9 = var9 + ".";
 }
 }
-            this.func_73732_a(this.field_146289_q, ChatFormatting.y(var9), this.field_146294_l / 2, this.field_146295_m / 2 - this.field_146289_q.field_78288_b / 2, -1);
+            this.drawCenteredString(this.fontRendererObj, ChatFormatting.y(var9), this.width / 2, this.height / 2 - this.fontRendererObj.FONT_HEIGHT / 2, -1);
 }
         if (this.p != null) {
-            this.func_73732_a(this.field_146289_q, ChatFormatting.y(this.p), this.field_146294_l / 2, this.field_146295_m / 2 + this.field_146289_q.field_78288_b / 2 + this.field_146289_q.field_78288_b, 0xFFAAAA);
+            this.drawCenteredString(this.fontRendererObj, ChatFormatting.y(this.p), this.width / 2, this.height / 2 + this.fontRendererObj.FONT_HEIGHT / 2 + this.fontRendererObj.FONT_HEIGHT, 0xFFAAAA);
 }
 }
-    public void func_146281_b() {
+    public void onGuiClosed() {
         if (this.P != null && !this.P.isDone()) {
             this.P.cancel(true);
             this.a.shutdownNow();
 }
 }
-    public void func_73866_w_() {
-        this.field_146292_n.clear();
-        int var6 = this.field_146294_l / 2;
+    public void initGui() {
+        this.buttonList.clear();
+        int var6 = this.width / 2;
         int var7 = var6 - 100;
-        int var8 = this.field_146295_m / 2 + this.field_146289_q.field_78288_b / 2 + this.field_146289_q.field_78288_b * 2;
+        int var8 = this.height / 2 + this.fontRendererObj.FONT_HEIGHT / 2 + this.fontRendererObj.FONT_HEIGHT * 2;
         this.H = new GuiButton(0, var7, var8, 200, 20, "Open Link");
-        this.field_146292_n.add(this.H);
+        this.buttonList.add(this.H);
         this.Y = new GuiButton(1, var7, var8 + 20 + 5, 200, 20, "Copy Link");
-        this.field_146292_n.add(this.Y);
+        this.buttonList.add(this.Y);
         this.G = new GuiButton(2, var7, var8 + 50, 200, 20, "Cancel");
-        this.field_146292_n.add(this.G);
+        this.buttonList.add(this.G);
         if (this.P == null) {
             this.i = "&fWaiting for login&r";
             if (this.a == null) {
@@ -141,35 +143,35 @@ extends GuiScreen {
 }
             AtomicReference<String> var9 = new AtomicReference<String>("");
             AtomicReference<String> var10 = new AtomicReference<String>("");
-            this.P = ((CompletableFuture)((CompletableFuture)((CompletableFuture)((CompletableFuture)((CompletableFuture)((CompletableFuture)AuthService.S(this.b, this.a).thenComposeAsync(var1x -> {
+            this.P = AuthService.S(this.b, this.a).thenComposeAsync((String var1x) -> {
                 long var2 = c ^ 0x2E1F3D1786C6L;
                 this.z = false;
                 this.i = "&fAcquiring Microsoft access tokens&r";
                 return AuthService.x(var1x, this.a);
-            }, (Executor)this.a)).thenComposeAsync(var2 -> {
+            }, this.a).thenComposeAsync((Map<String, String> var2) -> {
                 long var3x = c ^ 0x1F20AACBBF67L;
                 this.i = "&fAcquiring Xbox access token.&r";
                 var9.set((String)var2.get("refresh_token"));
                 return AuthService.M((String)var2.get("access_token"), this.a);
-            }, (Executor)this.a)).thenComposeAsync(var1x -> {
+            }, this.a).thenComposeAsync((String var1x) -> {
                 long var2 = c ^ 0x2B327CA615F2L;
                 this.i = "&fAcquiring Xbox XSTS token&r";
                 return AuthService.L(var1x, this.a);
-            }, (Executor)this.a)).thenComposeAsync(var1x -> {
+            }, this.a).thenComposeAsync((Map<String, String> var1x) -> {
                 long var2 = c ^ 0x61643A20EB02L;
                 this.i = "&fAcquiring Minecraft access token&r";
                 return AuthService.P((String)var1x.get("Token"), (String)var1x.get("uhs"), this.a);
-            }, (Executor)this.a)).thenComposeAsync(var2 -> {
+            }, this.a).thenComposeAsync((String var2) -> {
                 long var3x = c ^ 0x340411770159L;
                 this.i = "&fFetching your Minecraft profile&r";
                 var10.set((String)var2);
                 return AuthService.i(var2, this.a);
-            }, (Executor)this.a)).thenAccept(var3x -> {
+            }, this.a).thenAccept((Session var3x) -> {
                 long var4x = c ^ 0xFF53637347DL;
                 long var6x = var4x ^ 0x591F4E372FEAL;
                 this.i = null;
                 this.p = null;
-                Account var8x = new Account((String)var9.get(), (String)var10.get(), var3x.func_111285_a(), var3x.func_148255_b());
+                Account var8x = new Account((String)var9.get(), (String)var10.get(), var3x.getUsername(), var3x.getPlayerID());
                 for (Account var10x : AltManager.Q) {
                     if (!var8x.h().equals(var10x.h())) continue;
                     var8x.G(var10x.F());
@@ -179,7 +181,7 @@ extends GuiScreen {
                 AltManager.O(var6x);
                 SessionAccessor.k(var3x);
                 this.v = true;
-            })).exceptionally(var1x -> {
+            }).exceptionally((Throwable var1x) -> {
                 long var2 = c ^ 0x7BAE80648F53L;
                 this.z = true;
                 this.i = "&cLogin failed!&r";

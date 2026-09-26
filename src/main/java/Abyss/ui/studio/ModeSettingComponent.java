@@ -16,10 +16,17 @@ import java.awt.Color;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ModeSettingComponent
 extends AbstractSettingComponent<ModeSetting> {
-    private static long private final Animation E;
+    private static long a;
+
+    private final Animation E;
     private boolean V;
     private static final float f = 8.0f;
     private final Animation p = new Animation(0.0f);
@@ -176,4 +183,7 @@ extends AbstractSettingComponent<ModeSetting> {
         super(var2, var3, var6, ((long)var1 << 32 | (long)var4 << 40 >>> 32 | (long)var5 << 56 >>> 56) ^ a ^ 0x496DB433B20CL);
         this.E = new Animation(0.0f);
 }
+    static {
+        a = 116011316814672L;
+    }
 }

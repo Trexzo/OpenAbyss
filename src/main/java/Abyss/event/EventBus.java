@@ -14,14 +14,24 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class EventBus {
+    private static long a;
+    static {
+        a = 34531714106406L;
+    }
         private final Map<Class<? extends Throwable>, Long> Y;
     private final Map<Class<?>, List<ListenerBinding<?>>> P;
     private static long e;
@@ -147,7 +157,7 @@ public class EventBus {
 }
             ListenerBinding var8 = new ListenerBinding(var6, var5);
             var7.add(var8);
-            List var9 = this.P.computeIfAbsent(var2, var0 -> new ArrayList());
+            List<ListenerBinding<?>> var9 = this.P.computeIfAbsent(var2, var0 -> new ArrayList<ListenerBinding<?>>());
             var9.add(var8);
             if (this.batchMode) return;
             var9.sort(PRIORITY_DESC);
@@ -187,8 +197,78 @@ public class EventBus {
             this.rwLock.writeLock().unlock();
 }
 }
+    public static String selfTest() {
+        try {
+            final EventBus bus = new EventBus();
+            final List<String> calls = new ArrayList<String>();
+            class TestEvent extends Event {
+}
+            EventSubscriber low = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 1, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("low");
+}
+                    });
+}
+            };
+            EventSubscriber high = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 5, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("high");
+}
+                    });
+}
+            };
+            bus.beginBatch();
+            bus.s(low, 0L);
+            bus.s(high, 0L);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.isEmpty()) {
+                return "FAIL batch-visible-before-end " + calls;
+}
+            bus.endBatch();
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("high", "low"))) {
+                return "FAIL priority " + calls;
+}
+            calls.clear();
+            bus.B(high);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("low"))) {
+                return "FAIL disable " + calls;
+}
+            calls.clear();
+            EventSubscriber stopper = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    target.R(this, TestEvent.class, 10, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            calls.add("stop");
+                            ((Event)event).I(0, 0L);
+}
+                    });
+}
+            };
+            bus.s(stopper, 0L);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("stop"))) {
+                return "FAIL cancellation " + calls;
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     static {
-        PRIORITY_DESC = Comparator.comparingInt(var0 -> ListenerBinding.k(var0)).reversed();
+        PRIORITY_DESC = Comparator.<ListenerBinding>comparingInt(var0 -> ListenerBinding.k(var0)).reversed();
         e = 500L;
 }
 }

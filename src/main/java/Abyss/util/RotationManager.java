@@ -76,6 +76,8 @@ implements EventSubscriber {
     private static Integer[] d;
     public static float L;
     private static String[] g;
+    private static long a;
+    private static Map e;
     
     private static float u;
         private static float T;
@@ -114,7 +116,7 @@ implements EventSubscriber {
         if (Freelook.c()) {
             Freelook.N += var5;
         } else {
-            RotationManager.m.field_71439_g.field_70177_z += var5;
+            RotationManager.m.thePlayer.rotationYaw += var5;
 }
 }
     public static void A(long var0, float var2) {
@@ -208,10 +210,10 @@ implements EventSubscriber {
         RotationManager.a(59024409194504L, var2, 180.0f);
 }
     public static boolean G() {
-        return J && RotationManager.m.field_71439_g != null && !Freelook.c();
+        return J && RotationManager.m.thePlayer != null && !Freelook.c();
 }
     public static void l(float var0, long var1, float var3, float var4) {
-        var0 = MathHelper.func_76131_a((float)var0, (float)-90.0f, (float)90.0f);
+        var0 = MathHelper.clamp_float((float)var0, (float)-90.0f, (float)90.0f);
         float var5 = MathUtil.M(RotationManager.s(), var0);
         var5 = Math.abs(var5) <= 1.0f ? 0.0f : MathUtil.c(var5, var4);
         var5 = MathUtil.q(var5, -var3, var3);
@@ -220,11 +222,11 @@ implements EventSubscriber {
 }
     public static void W(short var0, short var1, float var2, float var3) {
         u = var2;
-        A = MathHelper.func_76131_a((float)var3, (float)-90.0f, (float)90.0f);
+        A = MathHelper.clamp_float((float)var3, (float)-90.0f, (float)90.0f);
         J = true;
         R = 0.0f;
-        M = MathHelper.func_76142_g((float)(u - RotationManager.p()));
-        T = MathHelper.func_76131_a((float)(A - RotationManager.s()), (float)-90.0f, (float)90.0f);
+        M = MathHelper.wrapAngleTo180_float((float)(u - RotationManager.p()));
+        T = MathHelper.clamp_float((float)(A - RotationManager.s()), (float)-90.0f, (float)90.0f);
         RotationManager.z(0.0f, 0L);
 }
     public static void g(float var0, float var1, long var2, float var4) {
@@ -249,19 +251,19 @@ implements EventSubscriber {
             h = G;
             if (!X) {
                 if (r != RotationManager.p()) {
-                    if (RotationManager.m.field_71439_g.func_70115_ae()) {
+                    if (RotationManager.m.thePlayer.isRiding()) {
                         r = RotationManager.p();
                     } else {
                         r += MathUtil.M(r, RotationManager.p());
-                        RotationManager.m.field_71439_g.field_70126_B = r;
+                        RotationManager.m.thePlayer.prevRotationYaw = r;
                         RotationManager.r(r);
 }
                     V = RotationManager.p();
 }
                 if (G != RotationManager.s()) {
-                    RotationManager.m.field_71439_g.field_70127_C = G = RotationManager.s();
+                    RotationManager.m.thePlayer.prevRotationPitch = G = RotationManager.s();
 }
-                if (RotationManager.m.field_71439_g.func_70115_ae()) {
+                if (RotationManager.m.thePlayer.isRiding()) {
                     I = r;
                     K = G;
 }
@@ -314,11 +316,11 @@ implements EventSubscriber {
         if (Freelook.c()) {
             Freelook.N = var0;
         } else {
-            RotationManager.m.field_71439_g.field_70177_z = var0;
+            RotationManager.m.thePlayer.rotationYaw = var0;
 }
 }
     public static float s() {
-        return Freelook.c() ? Freelook.M() : RotationManager.m.field_71439_g.field_70125_A;
+        return Freelook.c() ? Freelook.M() : RotationManager.m.thePlayer.rotationPitch;
 }
     public static void k(long var0) {
         J = false;
@@ -327,11 +329,11 @@ implements EventSubscriber {
         T = 0.0f;
 }
     private static void R(float var0) {
-        var0 = MathHelper.func_76131_a((float)var0, (float)-90.0f, (float)90.0f);
+        var0 = MathHelper.clamp_float((float)var0, (float)-90.0f, (float)90.0f);
         if (Freelook.c()) {
             Freelook.v = var0;
         } else {
-            RotationManager.m.field_71439_g.field_70125_A = var0;
+            RotationManager.m.thePlayer.rotationPitch = var0;
 }
 }
     public static void R(float var0, long var1, float var3) {
@@ -346,11 +348,11 @@ implements EventSubscriber {
 }
     public static void r(long var0) {
         if (RotationManager.G()) {
-            EntityPlayerSP var2 = RotationManager.m.field_71439_g;
-            var2.field_70126_B = var2.field_70177_z;
-            var2.field_70127_C = var2.field_70125_A;
-            var2.field_71163_h = var2.field_70177_z - (var2.field_71154_f - var2.field_71163_h) * 2.0f;
-            var2.field_71154_f = var2.field_70177_z;
+            EntityPlayerSP var2 = RotationManager.m.thePlayer;
+            var2.prevRotationYaw = var2.rotationYaw;
+            var2.prevRotationPitch = var2.rotationPitch;
+            var2.prevRenderArmYaw = var2.rotationYaw - (var2.renderArmYaw - var2.prevRenderArmYaw) * 2.0f;
+            var2.renderArmYaw = var2.rotationYaw;
 }
 }
     private static Field c(long var0, long var2) {
@@ -443,7 +445,7 @@ implements EventSubscriber {
             V = RotationManager.p();
         } else if (o.equals((Object)RotationMode.SILENT)) {
             V = r;
-            float var4 = MathHelper.func_76142_g((float)(MoveUtil.i(RotationManager.p(), MoveUtil.f(), MoveUtil.K()) - r + 22.5f));
+            float var4 = MathHelper.wrapAngleTo180_float((float)(MoveUtil.i(RotationManager.p(), MoveUtil.f(), MoveUtil.K()) - r + 22.5f));
             float var5 = var1.t();
             float var6 = var1.R();
             if (var5 == 0.0f && var6 == 0.0f) {
@@ -531,8 +533,8 @@ implements EventSubscriber {
     public void onReceivePacket(ReceivePacketEvent var1) {
         if (var1.d instanceof S08PacketPlayerPosLook) {
             S08PacketPlayerPosLook var2 = (S08PacketPlayerPosLook)var1.d;
-            float var3 = var2.func_148931_f();
-            float var4 = var2.func_148930_g();
+            float var3 = var2.getYaw();
+            float var4 = var2.getPitch();
             if (var2.func_179834_f().contains(S08PacketPlayerPosLook.EnumFlags.X_ROT)) {
                 var3 += r;
 }
@@ -551,26 +553,26 @@ implements EventSubscriber {
 }
 }
     public static float p() {
-        return Freelook.c() ? Freelook.v() : RotationManager.m.field_71439_g.field_70177_z;
+        return Freelook.c() ? Freelook.v() : RotationManager.m.thePlayer.rotationYaw;
 }
     public static void z(float var0, long var1) {
         if (RotationManager.G()) {
             float var3;
-            var0 = MathHelper.func_76131_a((float)var0, (float)0.0f, (float)1.0f);
+            var0 = MathHelper.clamp_float((float)var0, (float)0.0f, (float)1.0f);
             if (Float.isNaN(R)) {
                 R = 0.0f;
 }
             if (!((var3 = var0 - R) <= 0.0f)) {
-                EntityPlayerSP var4 = RotationManager.m.field_71439_g;
+                EntityPlayerSP var4 = RotationManager.m.thePlayer;
                 float var5 = M * var3;
                 float var6 = T * var3;
                 if (var5 != 0.0f) {
-                    var4.field_70126_B = var4.field_70177_z;
-                    var4.field_70177_z += var5;
+                    var4.prevRotationYaw = var4.rotationYaw;
+                    var4.rotationYaw += var5;
 }
                 if (var6 != 0.0f) {
-                    var4.field_70127_C = var4.field_70125_A;
-                    var4.field_70125_A = MathHelper.func_76131_a((float)(var4.field_70125_A + var6), (float)-90.0f, (float)90.0f);
+                    var4.prevRotationPitch = var4.rotationPitch;
+                    var4.rotationPitch = MathHelper.clamp_float((float)(var4.rotationPitch + var6), (float)-90.0f, (float)90.0f);
 }
                 R = var0;
 }
@@ -583,11 +585,11 @@ implements EventSubscriber {
         if (Freelook.c()) {
             Freelook.N += var5;
         } else {
-            RotationManager.m.field_71439_g.field_70177_z += var5;
+            RotationManager.m.thePlayer.rotationYaw += var5;
 }
 }
     public static void a(long var0, float var2, float var3) {
-        var2 = MathHelper.func_76131_a((float)var2, (float)-90.0f, (float)90.0f);
+        var2 = MathHelper.clamp_float((float)var2, (float)-90.0f, (float)90.0f);
         float var4 = MathUtil.q(MathUtil.M(RotationManager.s(), var2), -var3, var3);
         var4 = MathUtil.H(var4);
         RotationManager.R(RotationManager.s() + var4);
@@ -714,95 +716,110 @@ implements EventSubscriber {
         U = false;
         RotationManager.k(0L);
         if (r != RotationManager.p()) {
-            if (RotationManager.m.field_71439_g.func_70115_ae()) {
+            if (RotationManager.m.thePlayer.isRiding()) {
                 r = RotationManager.p();
             } else {
                 r += MathUtil.M(r, RotationManager.p());
-                RotationManager.m.field_71439_g.field_70126_B = r;
+                RotationManager.m.thePlayer.prevRotationYaw = r;
                 RotationManager.r(r);
 }
             V = RotationManager.p();
 }
         if (G != RotationManager.s()) {
-            RotationManager.m.field_71439_g.field_70127_C = G = RotationManager.s();
+            RotationManager.m.thePlayer.prevRotationPitch = G = RotationManager.s();
 }
-        if (RotationManager.m.field_71439_g.func_70115_ae()) {
+        if (RotationManager.m.thePlayer.isRiding()) {
             I = r;
             K = G;
 }
 }
-    private static Method d(long var0, long var2) {
-        Class var23;
-        Class var15;
-        Class[] var14;
-        int var13;
-        String var10;
-        Class var8;
-        block10: {
-            int var4 = RotationManager.a(var0, var2);
-            Object var5 = f[var4];
-            if (!(var5 instanceof String)) {
-                return (Method)var5;
-}
-            String var6 = g[var4];
-            int var7 = var6.indexOf(8);
-            var8 = RotationManager.b(Long.parseLong(var6.substring(0, var7), 36), 0L);
-            int var9 = var6.indexOf(8, ++var7);
-            var10 = var6.substring(var7, var9);
-            int var11 = -1;
-            int var12 = var9;
-            do {
-                ++var11;
-                ++var12;
-            } while ((var12 = var6.indexOf(8, var12)) > -1);
-            var13 = var11 - 1;
-            var14 = new Class[var13];
-            var15 = null;
-            var12 = var9 + 1;
-            for (int var16 = 0; var16 < var11; ++var16) {
-                int var17 = var6.indexOf(8, var12);
-                var15 = RotationManager.b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
-                if (var16 >= var13) continue;
-                var14[var16] = var15;
-}
-            var23 = var8;
-            do {
-                Method var26;
-                if ((var26 = RotationManager.a(var23, var10, var15, var13, var14)) != null) {
-                    RotationManager.f[var4] = var26;
-                    return var26;
-}
-                if (var23.getName().equals("java.lang.Object")) break block10;
-            } while ((var23 = var23.getSuperclass()) != null);
-            var23 = RotationManager.b(892700819680181L, 0L);
-}
-        var23 = var8;
-        while (true) {
-            Class<?>[] var27;
-            if ((var27 = var23.getInterfaces()) != null) {
-                for (int var18 = 0; var18 < var27.length; ++var18) {
-                    Method var19 = RotationManager.b(var27[var18], var10, var15, var13, var14);
-                    if (var19 == null) continue;
-                    RotationManager.f[var4] = var19;
-                    return var19;
-}
-}
-            if (var23.getName().equals("java.lang.Object")) {
-                StringBuffer var28 = new StringBuffer();
-                var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
-                int var29 = 0;
-                while (var29 < var13) {
-                    var28.append(var14[var29].getName());
-                    if (++var29 >= var13) continue;
-                    var28.append(", ");
-}
-                var28.append(')');
-                throw new RuntimeException(var28.toString());
-}
-            if ((var23 = var23.getSuperclass()) != null) continue;
-            var23 = RotationManager.b(892700819680181L, 0L);
-}
-}
+   private static Method d(long var0, long var2) {
+      int var4 = a(var0, var2);
+      Object var5 = f[var4];
+      if (!(var5 instanceof String)) {
+         return (Method)var5;
+      }
+
+      String var6 = g[var4];
+      int var7 = var6.indexOf(8);
+      Class var8 = b(Long.parseLong(var6.substring(0, var7), 36), 0L);
+      int var9 = var6.indexOf(8, ++var7);
+      String var10 = var6.substring(var7, var9);
+      int var11 = -1;
+      int var12 = var9;
+
+      do {
+         var11++;
+         var12++;
+      } while ((var12 = var6.indexOf(8, var12)) > -1);
+
+      int var13;
+      Class[] var14 = new Class[var13 = var11 - 1];
+      Class var15 = null;
+      var12 = var9 + 1;
+
+      for (int var16 = 0; var16 < var11; var16++) {
+         int var17 = var6.indexOf(8, var12);
+         var15 = b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
+         if (var16 < var13) {
+            var14[var16] = var15;
+         }
+      }
+
+      Class var23 = var8;
+
+      while (true) {
+         Method var26 = a(var23, var10, var15, var13, var14);
+         if (var26 != null) {
+            f[var4] = var26;
+            return var26;
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            break;
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(892700819680181L, 0L);
+            break;
+         }
+      }
+
+      var23 = var8;
+
+      while (true) {
+         Class[] var27;
+         if ((var27 = var23.getInterfaces()) != null) {
+            for (int var18 = 0; var18 < var27.length; var18++) {
+               Method var19 = b(var27[var18], var10, var15, var13, var14);
+               if (var19 != null) {
+                  f[var4] = var19;
+                  return var19;
+               }
+            }
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            StringBuffer var28 = new StringBuffer();
+            var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
+            int var29 = 0;
+
+            while (var29 < var13) {
+               var28.append(var14[var29].getName());
+               if (++var29 < var13) {
+                  var28.append(", ");
+               }
+            }
+
+            var28.append(')');
+            throw new RuntimeException(var28.toString());
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(892700819680181L, 0L);
+         }
+      }
+   }
     public static float[] N(long var0) {
         return new float[]{RotationManager.p(), RotationManager.s()};
 }
@@ -818,7 +835,7 @@ implements EventSubscriber {
     private static float zkm$unresolved$2$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_oN_p_OR_Abyss_oN_s_y_slots_18_26(long var2) {
         try {
             MethodType var4 = MethodType.fromMethodDescriptorString("(JJ)F", RotationManager.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(RotationManager.a(MethodHandles.lookup(), null, "H", var4, 8569705496824988010L, var2), var4).invoke(8569705496824988010L, var2);
+            return (float)MethodHandles.explicitCastArguments(RotationManager.a(MethodHandles.lookup(), null, "H", var4, 8569705496824988010L, var2), var4).invoke((long)8569705496824988010L, (long)var2);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
@@ -827,14 +844,25 @@ implements EventSubscriber {
     private static float zkm$unresolved$3$monomorphic_exactly_one_target_not_statically_decidable_candidates_Abyss_oN_p_OR_Abyss_oN_s_y_slots_18_26(long var2) {
         try {
             MethodType var4 = MethodType.fromMethodDescriptorString("(JJ)F", RotationManager.class.getClassLoader());
-            return MethodHandles.explicitCastArguments(RotationManager.a(MethodHandles.lookup(), null, "H", var4, 8569705496824988010L, var2), var4).invoke(8569705496824988010L, var2);
+            return (float)MethodHandles.explicitCastArguments(RotationManager.a(MethodHandles.lookup(), null, "H", var4, 8569705496824988010L, var2), var4).invoke((long)8569705496824988010L, (long)var2);
 }
         catch (Throwable ex) {
             throw Sneaky.rethrow(ex);
 }
 }
-                Cipher var0 = Cipher.getInstance("DES/CBC/NoPadding");
-            var0.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            long var11 = a ^ 47693901268210L;
+            f = new Object[54];
+            g = new String[54];
+            a();
+            e = new HashMap(13);
+            Cipher var0;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var1 = 1; var1 < 8; ++var1) {
+                var10003[var1] = (byte)(var11 << var1 * 8 >>> 56);
+            }
+            (var0 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             long[] var6 = new long[6];
             int var3 = 0;
             String var4 = "\u00f6\u0086G\u0081V\u00c98o\u0016\u008fS\u00c3\"\u000e\u00ec#\u00b0\u00e6\u0019O\u0000\u00b9\u00c9\u00ab\u00a5\u0095\u000b\u0098%\u0093V\u0094";
@@ -874,7 +902,6 @@ implements EventSubscriber {
                     var21 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                     var23 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var16) {
@@ -882,6 +909,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 115951112047268L;
+        zkm$clinit();
         KEY_OFFSETS = new byte[]{29, 33, 22, 12, 21, 60, 20, 61, 56, 24, 11, 26, 45, 41, 58, 63, 50, 10, 15, 4, 25, 43, 19, 6, 23, 32, 46, 8, 0, 39, 34, 5, 37, 30, 48, 16, 27, 18, 31, 17, 59, 1, 57, 3, 35, 42, 47, 28, 44, 9, 40, 51, 49, 54, 53, 13, 52, 38, 55, 7, 36, 14, 62, 2};
         m = MinecraftRef.c((byte)0, 0L);
         o = RotationMode.NONE;

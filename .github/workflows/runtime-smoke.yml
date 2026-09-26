@@ -1,0 +1,388 @@
+name: OpenAbyss Offline Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  offline-runtime-smoke:
+    name: Offline Forge runClient smoke
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install Gradle 2.14.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-bin.zip'
+          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
+          $userHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
+          & curl.exe -L --fail --silent --show-error 'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' -o $zip
+          if ($LASTEXITCODE -ne 0) { throw "curl failed: $LASTEXITCODE" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
+          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
+          if (-not (Test-Path -LiteralPath $gradle)) { throw "Gradle missing: $gradle" }
+          "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "GRADLE_USER_HOME=$userHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & $gradle --version
+
+      - name: Prepare Forge runtime while network is available
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon clean build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host 'Preparing Minecraft 1.8 asset index/assets with getAssets...'
+          & $env:OPENABYSS_GRADLE --no-daemon getAssets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $assetIndex = Join-Path $env:GRADLE_USER_HOME 'caches\minecraft\assets\indexes\1.8.json'
+          if (-not (Test-Path -LiteralPath $assetIndex)) {
+            throw "getAssets completed but asset index is still missing: $assetIndex"
+          }
+          Write-Host "ASSET_INDEX_READY=$assetIndex"
+
+      - name: Block Java outbound traffic for runtime
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $java = Join-Path $env:JAVA_HOME 'bin\java.exe'
+          $javaw = Join-Path $env:JAVA_HOME 'bin\javaw.exe'
+          foreach ($exe in @($java,$javaw)) {
+            if (Test-Path -LiteralPath $exe) {
+              $name = 'OpenAbyss-CI-Block-' + [IO.Path]::GetFileNameWithoutExtension($exe)
+              New-NetFirewallRule -DisplayName $name -Direction Outbound -Program $exe -Action Block -Profile Any | Out-Null
+              Write-Host "BLOCKED_OUTBOUND $exe"
+            }
+          }
+
+      - name: Run offline client for up to 120 seconds
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:GITHUB_TOKEN = $null
+          $env:ACTIONS_RUNTIME_TOKEN = $null
+          $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
+          $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
+          $env:ABYSS_PAYLOAD_KEY = $null
+          # GitHub-hosted Windows runners have no accelerated WGL pixel format.
+          # LWJGL 2 exposes this documented switch to permit a software-only context.
+          $env:JAVA_TOOL_OPTIONS = '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true -Dabyss.runtimeSelfTest=true'
+          Write-Host "JAVA_TOOL_OPTIONS=$env:JAVA_TOOL_OPTIONS"
+
+          $stdout = Join-Path $env:RUNNER_TEMP 'openabyss-runClient.stdout.log'
+          $stderr = Join-Path $env:RUNNER_TEMP 'openabyss-runClient.stderr.log'
+          $args = @('--offline','--no-daemon','runClient')
+          $p = Start-Process -FilePath $env:OPENABYSS_GRADLE -ArgumentList $args -WorkingDirectory $env:GITHUB_WORKSPACE -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          Write-Host "RUNCLIENT_PID=$($p.Id)"
+
+          $deadline = (Get-Date).AddSeconds(120)
+          while (-not $p.HasExited -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+            $p.Refresh()
+          }
+
+          $timedOut = -not $p.HasExited
+          if ($timedOut) {
+            Write-Host 'RUNCLIENT_TIMEOUT_EXPECTED=1'
+            & taskkill.exe /PID $p.Id /T /F | Out-Host
+            Start-Sleep -Seconds 2
+          } else {
+            $p.WaitForExit()
+            $p.Refresh()
+            Write-Host "RUNCLIENT_EXIT=$($p.ExitCode)"
+          }
+
+          Write-Host '=== runClient stdout tail ==='
+          if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -Tail 250 | Out-Host }
+          Write-Host '=== runClient stderr tail ==='
+          if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -Tail 250 | Out-Host }
+
+          $latest = Join-Path $env:GITHUB_WORKSPACE 'run\logs\latest.log'
+          $inject = Join-Path $env:TEMP 'abyss-inject.log'
+          $census = Join-Path $env:GITHUB_WORKSPACE 'abyss-census.tsv'
+          $runCensus = Join-Path $env:GITHUB_WORKSPACE 'run\abyss-census.tsv'
+          $diag = Join-Path $env:GITHUB_WORKSPACE 'abyss-bootstrap-diagnostics.txt'
+          $runDiag = Join-Path $env:GITHUB_WORKSPACE 'run\abyss-bootstrap-diagnostics.txt'
+
+          Write-Host '=== runtime evidence ==='
+          Write-Host ('LATEST_LOG=' + (Test-Path -LiteralPath $latest))
+          Write-Host ('INJECT_LOG=' + (Test-Path -LiteralPath $inject))
+          Write-Host ('ROOT_CENSUS=' + (Test-Path -LiteralPath $census))
+          Write-Host ('RUN_CENSUS=' + (Test-Path -LiteralPath $runCensus))
+
+          $combined = ''
+          foreach ($f in @($stdout,$stderr,$latest,$inject)) {
+            if (Test-Path -LiteralPath $f) {
+              $combined += [Environment]::NewLine + [IO.File]::ReadAllText($f)
+            }
+          }
+
+          $forgeLaunch = $combined -match 'Launching wrapped minecraft|Setting user:|LWJGL Version|Forge Mod Loader version|MinecraftForge v'
+          $transformer = $combined -match 'Class Transformer initialized|Abyss Class Transformer'
+          $injectReady = $combined -match '\[abyss-inject\].*client ready'
+          $censusReady = (Test-Path -LiteralPath $census) -or (Test-Path -LiteralPath $runCensus)
+          $bootstrapFailed = $combined -match '\[abyss-inject\].*client failed to start'
+          $initializerFailure = $combined -match 'ExceptionInInitializerError'
+          $processFailure = $combined -match 'Exception in thread "main"|:runClient FAILED|BUILD FAILED'
+          $graphicsLimited = ($combined -match 'OpenGL: GDI Generic GL version 1\.1\.0') -and ($combined -match 'OpenGL 1\.4 is not supported|Texture creation: Invalid enum')
+
+          Write-Host "FORGE_LAUNCH_EVIDENCE=$forgeLaunch"
+          Write-Host "TRANSFORMER_EVIDENCE=$transformer"
+          Write-Host "INJECT_CLIENT_READY=$injectReady"
+          Write-Host "CENSUS_BOOTSTRAP_EVIDENCE=$censusReady"
+          Write-Host "BOOTSTRAP_FAILURE_MARKER=$bootstrapFailed"
+          Write-Host "INITIALIZER_FAILURE_MARKER=$initializerFailure"
+          Write-Host "PROCESS_FAILURE_MARKER=$processFailure"
+          Write-Host "GRAPHICS_LIMITED_RUNNER=$graphicsLimited"
+
+          if ($bootstrapFailed) { throw 'Abyss bootstrap emitted an explicit failure marker.' }
+          if ($initializerFailure) { throw 'A static initializer failed during OpenAbyss bootstrap/runtime.' }
+          if (-not $forgeLaunch) { throw 'No Forge/Minecraft launch evidence was observed.' }
+          if (-not $censusReady -and -not $injectReady) {
+            throw 'Minecraft/coremod launched, but Abyss client bootstrap did not reach ready/census state.'
+          }
+
+          if ($censusReady) {
+            $censusPath = if (Test-Path -LiteralPath $census) { $census } else { $runCensus }
+            $censusLines = @(Get-Content -LiteralPath $censusPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            $censusCount = $censusLines.Count
+            Write-Host "MODULE_CENSUS_COUNT=$censusCount"
+            if ($censusCount -ne 112) {
+              throw "Unexpected OpenAbyss module census count: $censusCount (expected 112)."
+            }
+
+            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme','InputFix','NoObfuscation','RawInput','VisualSpoof','CaveXray','ItemScale','AntiNick','ContainerKeeper','BindGUI','KeyStrokes','TeamInvisible','ClosestPlayerHUD','FKCounter','FallIndicator','LeapModeHUD')
+            foreach ($module in $requiredModules) {
+              if (-not ($censusLines -match ("\t" + [regex]::Escape($module) + "\t"))) {
+                throw "Required module missing from census: $module"
+              }
+            }
+
+            $expectedSettingCounts = @{
+              Scaffold   = 30
+              AutoBlock  = 26
+              KillAura   = 35
+              InvManager = 34
+              Velocity   = 24
+              ESP        = 16
+              TargetHUD  = 26
+              CustomCape = 1
+              Font        = 6
+              Gadgets     = 3
+              Language    = 8
+              Theme       = 7
+              InputFix    = 0
+              NoObfuscation = 0
+              RawInput    = 0
+              VisualSpoof = 4
+              CaveXray    = 2
+              ItemScale   = 7
+              ClickGUI    = 3
+              AntiNick    = 1
+              ContainerKeeper = 2
+              BindGUI     = 3
+              KeyStrokes  = 3
+              TeamInvisible = 2
+              ClosestPlayerHUD = 11
+              FKCounter   = 4
+              FallIndicator = 3
+              LeapModeHUD = 4
+              BlockHit   = 26
+              BedNuker   = 21
+              BlocksESP  = 17
+              BedPlates  = 6
+              BlockIn    = 5
+            }
+            foreach ($entry in $expectedSettingCounts.GetEnumerator()) {
+              # Preserve each split row as one array object. Without the unary comma,
+              # PowerShell flattens the fields into the pipeline and the row matcher sees strings.
+              $parts = @($censusLines | ForEach-Object { ,($_ -split "\t") } | Where-Object { $_.Count -ge 4 -and $_[1] -eq $entry.Key })
+              if ($parts.Count -ne 1) {
+                throw "Expected exactly one census row for $($entry.Key), found $($parts.Count)."
+              }
+              $actualCount = [int]$parts[0][3]
+              if ($actualCount -ne [int]$entry.Value) {
+                throw "Unexpected setting count for $($entry.Key): $actualCount (expected $($entry.Value))."
+              }
+            }
+            Write-Host 'MODULE_CENSUS_CONTRACT=PASS'
+
+            $diagPath = if (Test-Path -LiteralPath $diag) { $diag } elseif (Test-Path -LiteralPath $runDiag) { $runDiag } else { $null }
+            if ($null -eq $diagPath) {
+              throw 'Bootstrap diagnostic report was not produced.'
+            }
+            $diagText = [IO.File]::ReadAllText($diagPath)
+            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 112 of 112 OK')) {
+              throw 'Bootstrap diagnostic module-count gate is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
+              throw 'Bootstrap diagnostic config-writable gate is not green.'
+            }
+            if (-not ($diagText.Contains('retired=0') -and $diagText.Contains('persistable=112') -and $diagText.Contains('missing=0'))) {
+              throw 'Full original module registry is not writable/persistable without retired or missing modules.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] census names       = 112 of 112 (truth 112)')) {
+              throw 'Not all 112 original module names are published.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] module usability   = toggleable=109 stockDisabled=3 invalid=0 nullSettings=0')) {
+              throw 'Published module usability contract is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] eventbus selftest  = PASS')) {
+              throw 'EventBus isolated self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] module selftest    = PASS')) {
+              throw 'Module state-machine self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] config selftest    = PASS')) {
+              throw 'Config persistence self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] session selftest   = PASS')) {
+              throw 'Minecraft session swap self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] command data load = friends.txt=')) {
+              throw 'Persisted command-data loader did not run.'
+            }
+            if ($diagText.Contains('[ABYSSDIAG] command data load = ') -and $diagText.Contains('FAILED (')) {
+              throw 'Persisted command-data loader reported a failure.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19')) {
+              throw 'Recovered command resolver self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] clickgui selftest = PASS mode=')) {
+              throw 'Recovered ClickGUI selector self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] altmenu selftest  = PASS')) {
+              throw 'Alt Manager main-menu injection self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
+              throw 'Constructor-cache bootstrap gate is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 112')) {
+              throw 'Published module-list size is not 112.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.o (byClass)   = 113')) {
+              throw 'By-class module registry size is not 113.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] t6.L (commands)  = 19')) {
+              throw 'Recovered command registry size is not 19.'
+            }
+            foreach ($guiLine in @(
+              '[ABYSSDIAG] zu_3.B VESTIGE   = live',
+              '[ABYSSDIAG] zu_3.Y STUDIO    = live',
+              '[ABYSSDIAG] zu_3.F RAVEN     = live',
+              '[ABYSSDIAG] zu_3 open bind   = RSHIFT'
+            )) {
+              if (-not $diagText.Contains($guiLine)) {
+                throw "Recovered ClickGUI contract failed: $guiLine"
+              }
+            }
+            $expectedCategories = '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=11, Movement=8, Player=12, Visual=19, Visual_utility=19, World=11}'
+            if (-not $diagText.Contains($expectedCategories)) {
+              throw 'Recovered module category census is not the expected 112-module layout.'
+            }
+            if (-not ($diagText.Contains('RavenClickGuiScreen (RAVEN theme) published into zu_3.F') -and $diagText.Contains('112 module rows'))) {
+              throw 'Raven ClickGUI did not publish all 112 active module rows.'
+            }
+            Write-Host 'CLICKGUI_PUBLICATION_CONTRACT=PASS'
+            Write-Host 'MODULE_CATEGORY_CENSUS_CONTRACT=PASS'
+
+            $requiredSubscribers = @(
+              'Abyss.internal.MiningEngine',
+              'Abyss.internal.BrokenBlockTracker',
+              'Abyss.internal.MiningRenderSubscriber',
+              'Abyss.util.RotationManager',
+              'Abyss.util.packet.PacketManager',
+              'Abyss.AbyssClient',
+              'Abyss.internal.ChatInputHandler',
+              'Abyss.module.impl.misc.Timer',
+              'Abyss.internal.CheaterDetector',
+              'Abyss.ui.screen.ReconnectHandler'
+            )
+            foreach ($subscriber in $requiredSubscribers) {
+              if (-not $diagText.Contains($subscriber)) {
+                throw "Required recovered subscriber missing from bootstrap diagnostics: $subscriber"
+              }
+            }
+            Write-Host 'BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+            Write-Host 'INTERNAL_SUBSCRIBER_CONTRACT=PASS'
+          }
+
+          $transformTargets = @([regex]::Matches($combined, 'ASM transformed: ([^\r\n]+)') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+          $transformCount = $transformTargets.Count
+          Write-Host "ASM_TRANSFORM_COUNT=$transformCount"
+          if ($combined -match 'ASM transform failed') {
+            throw 'At least one ASM target emitted an explicit transform failure.'
+          }
+          if ($transformCount -lt 30) {
+            throw "Insufficient successful ASM transform coverage: $transformCount"
+          }
+
+          $requiredTransforms = @(
+            'net/minecraft/client/Minecraft',
+            'net/minecraft/client/gui/GuiScreen',
+            'net/minecraft/client/renderer/ItemRenderer',
+            'net/minecraft/client/renderer/EntityRenderer',
+            'net/minecraft/client/network/NetHandlerPlayClient',
+            'net/minecraft/client/LoadingScreenRenderer'
+          )
+          foreach ($target in $requiredTransforms) {
+            if ($transformTargets -notcontains $target) {
+              throw "Required ASM transform was not observed: $target"
+            }
+          }
+          Write-Host 'ASM_TRANSFORM_CONTRACT=PASS'
+
+          if ($graphicsLimited -and $censusReady) {
+            Write-Host 'OFFLINE_RUNTIME_BOOTSTRAP_PASS_GRAPHICS_LIMITED'
+            Write-Host 'OpenAbyss reached module census successfully; hosted runner is limited to Microsoft GDI Generic OpenGL 1.1.'
+          } elseif ($processFailure) {
+            throw 'The runtime process failed after bootstrap without the recognized hosted-runner OpenGL limitation.'
+          } else {
+            Write-Host 'OFFLINE_RUNTIME_SMOKE_PASS'
+          }
+
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-offline-runtime-smoke
+          path: |
+            run/logs/**
+            run/crash-reports/**
+            run/abyss-census.tsv
+            abyss-census.tsv
+            run/abyss-bootstrap-diagnostics.txt
+            abyss-bootstrap-diagnostics.txt
+            ${{ runner.temp }}/openabyss-runClient.stdout.log
+            ${{ runner.temp }}/openabyss-runClient.stderr.log
+            ${{ runner.temp }}/abyss-inject.log
+          if-no-files-found: warn
+          retention-days: 7

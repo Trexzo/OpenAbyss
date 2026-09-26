@@ -42,7 +42,7 @@ extends MouseHelper {
         this.p = null;
 }
     private void V() {
-        if (MinecraftRef.c((byte)0, (long)0L).field_71462_r == null) {
+        if (MinecraftRef.c((byte)0, (long)0L).currentScreen == null) {
             this.o.forEach(var1x -> {
                 var1x.poll();
                 this.I.addAndGet((double)var1x.getX().getPollData());
@@ -50,9 +50,9 @@ extends MouseHelper {
             });
 }
 }
-    public void func_74374_c() {
-        this.field_74377_a = (int)this.I.getAndSet(0.0);
-        this.field_74375_b = (int)(-this.a.getAndSet(0.0));
+    public void mouseXYChange() {
+        this.deltaX = (int)this.I.getAndSet(0.0);
+        this.deltaY = (int)(-this.a.getAndSet(0.0));
 }
     public SmoothMouseHelper(long var1) {
         var1 = b ^ var1;
@@ -66,7 +66,7 @@ extends MouseHelper {
         var1 = b ^ var1;
         int var3 = (int)((var1 ^ 0xFC9C826F8C6L) >>> 56);
         try {
-            MinecraftRef.c((byte)((byte)var3), (long)0L).field_71417_B = this;
+            MinecraftRef.c((byte)((byte)var3), (long)0L).mouseHelper = this;
             this.p = new ControllerEnvironmentImpl();
             this.A.scheduleAtFixedRate(this::V, 0L, 1L, TimeUnit.MILLISECONDS);
             this.A.scheduleAtFixedRate(this::j, 0L, d, TimeUnit.MILLISECONDS);
@@ -77,7 +77,7 @@ extends MouseHelper {
 }
     private void j() {
         boolean var8;
-        boolean bl = var8 = MinecraftRef.c((byte)0, (long)0L).field_71462_r != null;
+        boolean bl = var8 = MinecraftRef.c((byte)0, (long)0L).currentScreen != null;
         if (var8 && !this.M.get()) {
             this.p.d(17775678696637L);
             this.o = Arrays.stream(this.p.getControllers()).filter(Mouse.class::isInstance).map(Mouse.class::cast).collect(Collectors.toSet());

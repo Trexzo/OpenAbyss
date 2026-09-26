@@ -78,29 +78,29 @@ implements EventSubscriber {
             if (this.Y % 5 == 0) {
                 HashSet<Entity> var10 = new HashSet<Entity>();
                 this.m.clear();
-                double var11 = Indicators.f.field_71439_g.field_70165_t;
-                double var13 = Indicators.f.field_71439_g.field_70163_u;
-                double var15 = Indicators.f.field_71439_g.field_70161_v;
-                for (Object var18 : Indicators.f.field_71441_e.field_72996_f) {
+                double var11 = Indicators.f.thePlayer.posX;
+                double var13 = Indicators.f.thePlayer.posY;
+                double var15 = Indicators.f.thePlayer.posZ;
+                for (Object var18 : Indicators.f.theWorld.loadedEntityList) {
                     ItemStack var20;
                     Entity var19;
-                    if (!(var18 instanceof Entity) || (var19 = (Entity)var18) == null || var19 == Indicators.f.field_71439_g || (var20 = this.H((short)0, var19)) == null || !this.d(var19, (short)0)) continue;
+                    if (!(var18 instanceof Entity) || (var19 = (Entity)var18) == null || var19 == Indicators.f.thePlayer || (var20 = this.H((short)0, var19)) == null || !this.d(var19, (short)0)) continue;
                     var10.add(var19);
                     Vec3 var21 = this.p.get(var19);
                     if (onlyWhenApproaching.c()) {
                         double var24;
                         if (var21 == null) {
-                            this.p.put(var19, new Vec3(var19.field_70165_t, var19.field_70163_u, var19.field_70161_v));
+                            this.p.put(var19, new Vec3(var19.posX, var19.posY, var19.posZ));
                             continue;
 }
-                        double var22 = Math.sqrt((var11 - var21.field_72450_a) * (var11 - var21.field_72450_a) + (var13 - var21.field_72448_b) * (var13 - var21.field_72448_b) + (var15 - var21.field_72449_c) * (var15 - var21.field_72449_c));
-                        if (var22 - (var24 = (double)Indicators.f.field_71439_g.func_70032_d(var19)) <= 1.0) {
-                            this.p.put(var19, new Vec3(var19.field_70165_t, var19.field_70163_u, var19.field_70161_v));
+                        double var22 = Math.sqrt((var11 - var21.xCoord) * (var11 - var21.xCoord) + (var13 - var21.yCoord) * (var13 - var21.yCoord) + (var15 - var21.zCoord) * (var15 - var21.zCoord));
+                        if (var22 - (var24 = (double)Indicators.f.thePlayer.getDistanceToEntity(var19)) <= 1.0) {
+                            this.p.put(var19, new Vec3(var19.posX, var19.posY, var19.posZ));
                             continue;
 }
 }
                     this.m.add(var19);
-                    this.p.put(var19, new Vec3(var19.field_70165_t, var19.field_70163_u, var19.field_70161_v));
+                    this.p.put(var19, new Vec3(var19.posX, var19.posY, var19.posZ));
 }
                 this.p.keySet().retainAll(var10);
 }
@@ -142,16 +142,16 @@ implements EventSubscriber {
         if (var3 == null) {
             return Color.WHITE;
 }
-        if (var3.func_77973_b() == Items.field_151079_bi) {
+        if (var3.getItem() == Items.ender_pearl) {
             return new Color(62, 127, 94);
 }
-        if (var3.func_77973_b() == Items.field_151059_bz) {
+        if (var3.getItem() == Items.fire_charge) {
             return new Color(255, 150, 0);
 }
-        if (var3.func_77973_b() == Items.field_151110_aK) {
+        if (var3.getItem() == Items.egg) {
             return new Color(255, 238, 154);
 }
-        return var3.func_77973_b() == Items.field_151126_ay ? new Color(200, 220, 255) : Color.WHITE;
+        return var3.getItem() == Items.snowball ? new Color(200, 220, 255) : Color.WHITE;
 }
     @Override
     public final void x(long var1, EventBus var3) {
@@ -162,21 +162,21 @@ implements EventSubscriber {
             return null;
 }
         if (var4 instanceof EntityArrow) {
-            return EntityArrowAccessor.E(0L, (EntityArrow)var4) ? null : new ItemStack(Items.field_151032_g);
+            return EntityArrowAccessor.E(0L, (EntityArrow)var4) ? null : new ItemStack(Items.arrow);
 }
         if (var4 instanceof EntityFireball) {
-            return new ItemStack(Items.field_151059_bz);
+            return new ItemStack(Items.fire_charge);
 }
         if (var4 instanceof EntityEnderPearl) {
-            return new ItemStack(Items.field_151079_bi);
+            return new ItemStack(Items.ender_pearl);
 }
         if (var4 instanceof EntityEgg) {
-            return new ItemStack(Items.field_151110_aK);
+            return new ItemStack(Items.egg);
 }
-        return var4 instanceof EntitySnowball ? new ItemStack(Items.field_151126_ay) : null;
+        return var4 instanceof EntitySnowball ? new ItemStack(Items.snowball) : null;
 }
     public void onRender2D(long var1, Render2DEvent var3) {
-        if (Indicators.f.field_71462_r == null && ClientUtil.I()) {
+        if (Indicators.f.currentScreen == null && ClientUtil.I()) {
             try {
                 for (Entity var11 : this.m) {
                     ItemStack var12 = this.H((short)0, var11);
@@ -227,19 +227,19 @@ implements EventSubscriber {
         GL11.glDisable((int)2848);
 }
     public static void F(Entity var0, int var1, float var2, double var5, boolean var7) {
-        double var12 = var0.field_70142_S + (var0.field_70165_t - var0.field_70142_S) * (double)var2 - Indicators.f.func_175598_ae().field_78730_l;
-        double var14 = var0.field_70137_T + (var0.field_70163_u - var0.field_70137_T) * (double)var2 - Indicators.f.func_175598_ae().field_78731_m + (double)var0.field_70131_O / 2.0;
-        double var16 = var0.field_70136_U + (var0.field_70161_v - var0.field_70136_U) * (double)var2 - Indicators.f.func_175598_ae().field_78728_n;
-        EntityRendererAccessor.k(Indicators.f.field_71460_t, var2, 0);
+        double var12 = var0.lastTickPosX + (var0.posX - var0.lastTickPosX) * (double)var2 - Indicators.f.getRenderManager().viewerPosX;
+        double var14 = var0.lastTickPosY + (var0.posY - var0.lastTickPosY) * (double)var2 - Indicators.f.getRenderManager().viewerPosY + (double)var0.height / 2.0;
+        double var16 = var0.lastTickPosZ + (var0.posZ - var0.lastTickPosZ) * (double)var2 - Indicators.f.getRenderManager().viewerPosZ;
+        EntityRendererAccessor.k(Indicators.f.entityRenderer, var2, 0);
         ScaledResolution var18 = new ScaledResolution(f);
-        Vec3 var19 = RenderUtil.I(var18.func_78325_e(), var12, var14, var16);
+        Vec3 var19 = RenderUtil.I(var18.getScaleFactor(), var12, var14, var16);
         if (var19 != null) {
             boolean var25;
-            Indicators.f.field_71460_t.func_78478_c();
+            Indicators.f.entityRenderer.setupOverlayRendering();
             ScaledResolution var20 = new ScaledResolution(f);
-            double var21 = var19.field_72450_a - (double)var20.func_78326_a() / 2.0;
-            double var23 = var19.field_72448_b - (double)var20.func_78328_b() / 2.0;
-            boolean bl = var25 = var19.field_72449_c < 1.0003684;
+            double var21 = var19.xCoord - (double)var20.getScaledWidth() / 2.0;
+            double var23 = var19.yCoord - (double)var20.getScaledHeight() / 2.0;
+            boolean bl = var25 = var19.zCoord < 1.0003684;
             if (!var25) {
                 var21 *= -1.0;
                 var23 *= -1.0;
@@ -249,35 +249,35 @@ implements EventSubscriber {
             double var30 = Math.hypot(var21, var23);
             if (!var25 || !(var30 < var5 + 15.0)) {
                 boolean var47;
-                double var32 = (double)var20.func_78326_a() / 2.0;
-                double var34 = (double)var20.func_78328_b() / 2.0;
+                double var32 = (double)var20.getScaledWidth() / 2.0;
+                double var34 = (double)var20.getScaledHeight() / 2.0;
                 double var36 = Math.sin(var26);
                 double var38 = Math.cos(var26);
                 double var40 = var32 + var5 * var36;
                 double var42 = var34 + var5 * var38;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179137_b((double)var40, (double)var42, (double)0.0);
-                GlStateManager.func_179114_b((float)((float)var28), (float)0.0f, (float)0.0f, (float)1.0f);
-                GlStateManager.func_179152_a((float)1.0f, (float)1.0f, (float)1.0f);
-                double var44 = Indicators.f.field_71439_g.func_70032_d(var0);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate((double)var40, (double)var42, (double)0.0);
+                GlStateManager.rotate((float)((float)var28), (float)0.0f, (float)0.0f, (float)1.0f);
+                GlStateManager.scale((float)1.0f, (float)1.0f, (float)1.0f);
+                double var44 = Indicators.f.thePlayer.getDistanceToEntity(var0);
                 boolean var46 = var44 <= 10.0;
                 boolean bl2 = var47 = var46 && System.currentTimeMillis() % 400L < 200L;
                 if (!var47) {
                     Indicators.A(var1);
 }
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
                 var40 = var32 + (var5 - 13.0) * var36;
                 var42 = var34 + (var5 - 13.0) * var38;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179137_b((double)var40, (double)var42, (double)0.0);
-                GlStateManager.func_179139_a((double)0.8, (double)0.8, (double)0.8);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate((double)var40, (double)var42, (double)0.0);
+                GlStateManager.scale((double)0.8, (double)0.8, (double)0.8);
                 if (var7) {
                     String var48 = (int)var44 + "m";
-                    FontRenderer var49 = Indicators.f.field_71466_p;
+                    FontRenderer var49 = Indicators.f.fontRendererObj;
                     int var50 = var46 ? -65536 : -1;
-                    var49.func_175063_a(var48, (float)(-var49.func_78256_a(var48) / 2), -4.0f, var50);
+                    var49.drawStringWithShadow(var48, (float)(-var49.getStringWidth(var48) / 2), -4.0f, var50);
 }
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
 }
 }
 }

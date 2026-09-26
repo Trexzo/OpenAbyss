@@ -20,7 +20,7 @@ public class ControllerEnvironmentImpl
 extends ControllerEnvironment {
     private final Collection<String> x = new ArrayList<String>();
     private ArrayList<Controller> N;
-    private static long private void c(String var1) {
+    private void c(String var1) {
         File var2 = new File(var1);
         if (var2.exists()) {
             try {

@@ -15,7 +15,7 @@ public class RenderItemInFirstPersonEvent
 extends Event {
     public final EnumAction d;
     public final float C;
-    private static final long public final float J;
+    public final float J;
     public final ItemStack e;
     public final float U;
 

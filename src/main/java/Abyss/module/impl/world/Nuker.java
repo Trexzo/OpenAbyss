@@ -56,6 +56,10 @@ import net.minecraft.util.Vec3;
 public class Nuker
 extends PriorityModule
 implements EventSubscriber {
+    private static String[] d;
+
+    private static Map e;
+
     public static BooleanSetting swing;
     public static NumberSetting range;
     private int U;
@@ -76,7 +80,7 @@ implements EventSubscriber {
         long var5 = (var2 << 16 | (long)var4 << 48 >>> 48) ^ b;
         int var7 = (int)((var5 ^ 0x6DCE12022443L) >>> 32);
         long var8 = (var5 ^ 0x6DCE12022443L) << 32 >>> 32;
-        if (var1.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var1.B).func_180762_c() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
+        if (var1.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var1.B).getStatus() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
             var1.I(var7, var8);
 }
 }
@@ -156,7 +160,7 @@ implements EventSubscriber {
                 EnumFacing var24 = this.c(var23, 0L);
                 if (var24 != null && this.l(var23, var14, var24)) {
                     if (swing.c()) {
-                        Nuker.f.field_71439_g.func_71038_i();
+                        Nuker.f.thePlayer.swingItem();
                     } else {
                         PacketManager.b(new C0APacketAnimation());
 }
@@ -185,7 +189,7 @@ implements EventSubscriber {
         int var8 = ItemUtil.e(0L, var3);
         if (var8 != -1) {
             if (!this.K) {
-                this.U = Nuker.f.field_71439_g.field_71071_by.field_70461_c;
+                this.U = Nuker.f.thePlayer.inventory.currentItem;
 }
             ItemUtil.P(var8);
             this.K = true;
@@ -216,9 +220,9 @@ implements EventSubscriber {
 }
     private boolean isBlockLoaded(BlockPos var1, long var2) {
         long var4 = var2 ^ 0x5044BACBE782L;
-        if (var1 != null && Nuker.f.field_71441_e != null && Nuker.f.field_71441_e.func_175667_e(var1)) {
+        if (var1 != null && Nuker.f.theWorld != null && Nuker.f.theWorld.isBlockLoaded(var1)) {
             Block var8 = BlockUtil.a(var1);
-            if (var8 != null && var8 != Blocks.field_150350_a && !BlockUtil.a$r1(var1)) {
+            if (var8 != null && var8 != Blocks.air && !BlockUtil.a$r1(var1)) {
                 return !RaytraceUtil.Y(var1, (double)range.L() + 0.75, var4) ? false : this.c(var1, 0L) != null;
 }
             return false;
@@ -232,9 +236,9 @@ implements EventSubscriber {
         int var9 = (int)Math.ceil(range.L());
         NukerScanAxis var10 = this.f$r1();
         List<Integer> var11 = this.x(var9);
-        int var12 = (int)Math.floor(Nuker.f.field_71439_g.field_70165_t);
-        int var13 = (int)Math.floor(Nuker.f.field_71439_g.field_70163_u);
-        int var14 = (int)Math.floor(Nuker.f.field_71439_g.field_70161_v);
+        int var12 = (int)Math.floor(Nuker.f.thePlayer.posX);
+        int var13 = (int)Math.floor(Nuker.f.thePlayer.posY);
+        int var14 = (int)Math.floor(Nuker.f.thePlayer.posZ);
         Iterator iterator = var11.iterator();
         while (iterator.hasNext()) {
             int var16 = (Integer)iterator.next();
@@ -279,21 +283,21 @@ implements EventSubscriber {
         RotationManager.v(var15[0], 60.0f, 0L, 1.0f);
         RotationManager.A(var10, var15[1]);
         this.g = true;
-        MovingObjectPosition var16 = RaytraceUtil.f(RotationManager.r, RotationManager.G, Nuker.f.field_71442_b.func_78757_d(), 1.0f);
-        return var16 != null && var16.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK && var1.equals((Object)var16.func_178782_a()) || Math.abs(MathUtil.M(RotationManager.r, var15[0])) <= 20.0f;
+        MovingObjectPosition var16 = RaytraceUtil.f(RotationManager.r, RotationManager.G, Nuker.f.playerController.getBlockReachDistance(), 1.0f);
+        return var16 != null && var16.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && var1.equals((Object)var16.getBlockPos()) || Math.abs(MathUtil.M(RotationManager.r, var15[0])) <= 20.0f;
 }
     private EnumFacing c(BlockPos var1, long var2) {
         EnumFacing[] var4;
         EnumFacing[] var10000 = new EnumFacing[]{EnumFacing.UP, EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.EAST, EnumFacing.WEST, EnumFacing.DOWN};
         for (EnumFacing var8 : var4 = var10000) {
-            BlockPos var9 = var1.func_177972_a(var8);
-            if (!Nuker.f.field_71441_e.func_175667_e(var9) || !BlockUtil.a$r1(var9)) continue;
+            BlockPos var9 = var1.offset(var8);
+            if (!Nuker.f.theWorld.isBlockLoaded(var9) || !BlockUtil.a$r1(var9)) continue;
             Vec3 var10 = BlockUtil.f(var1, var8);
             MovingObjectPosition var11 = RaytraceUtil.H(var10);
             if (var11 == null) {
                 return var8;
 }
-            if (var11.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK || !var1.equals((Object)var11.func_178782_a())) continue;
+            if (var11.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || !var1.equals((Object)var11.getBlockPos())) continue;
             return var8;
 }
         return null;
@@ -310,7 +314,7 @@ implements EventSubscriber {
         this.T(false);
         if (this.g) {
             RotationManager.O(var5);
-            Nuker.f.field_71442_b.func_78767_c();
+            Nuker.f.playerController.resetBlockRemoving();
             this.g = false;
 }
         if (this.K) {
@@ -328,9 +332,9 @@ implements EventSubscriber {
         return new BlockPos(var7, var3, var8);
 }
     private BlockPos f(NukerScanAxis var1, int var2, int var3, int var4) {
-        double var5 = Nuker.f.field_71439_g.field_70165_t;
-        double var7 = Nuker.f.field_71439_g.field_70163_u;
-        double var9 = Nuker.f.field_71439_g.field_70161_v;
+        double var5 = Nuker.f.thePlayer.posX;
+        double var7 = Nuker.f.thePlayer.posY;
+        double var9 = Nuker.f.thePlayer.posZ;
         int var11 = (int)Math.floor(var5) + NukerScanAxis.T(var1) * var2 + NukerScanAxis.a(var1) * var3;
         int var12 = (int)Math.floor(var7) + var4;
         int var13 = (int)Math.floor(var9) + NukerScanAxis.Y(var1) * var2 + NukerScanAxis.y(var1) * var3;

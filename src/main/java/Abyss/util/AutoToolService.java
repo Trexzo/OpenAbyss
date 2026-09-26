@@ -55,10 +55,10 @@ implements EventSubscriber {
         float var5 = 1.0f;
         int var6 = -1;
         for (int var7 = 0; var7 < 9; ++var7) {
-            ItemStack var8 = var3.field_71071_by.func_70301_a(var7);
+            ItemStack var8 = var3.inventory.getStackInSlot(var7);
             if (var8 == null) continue;
-            float var9 = var8.func_150997_a(var4);
-            if (var8.func_77973_b() instanceof ItemTool) {
+            float var9 = var8.getStrVsBlock(var4);
+            if (var8.getItem() instanceof ItemTool) {
                 if (!(var9 > var5)) continue;
                 var5 = var9;
                 var6 = var7;
@@ -75,8 +75,8 @@ implements EventSubscriber {
         EntityPlayerSP var9;
         int var10;
         MovingObjectPosition var6;
-        if (this.U && (var6 = AutoToolService.f.field_71476_x) != null && var6.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK && (var10 = this.Q(0L, var9 = AutoToolService.f.field_71439_g, var8 = AutoToolService.f.field_71441_e.func_180495_p(var7 = var6.func_178782_a()).func_177230_c())) != -1 && var10 != var9.field_71071_by.field_70461_c) {
-            var9.field_71071_by.field_70461_c = var10;
+        if (this.U && (var6 = AutoToolService.f.objectMouseOver) != null && var6.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && (var10 = this.Q(0L, var9 = AutoToolService.f.thePlayer, var8 = AutoToolService.f.theWorld.getBlockState(var7 = var6.getBlockPos()).getBlock())) != -1 && var10 != var9.inventory.currentItem) {
+            var9.inventory.currentItem = var10;
 }
 }
     static {

@@ -22,7 +22,7 @@ implements EventSubscriber {
     public static TextSetting chatMessage;
     public static NumberSetting projectilesDuration;
     public static BooleanSetting swapBack;
-    private static final long public static ModeSetting mode;
+    public static ModeSetting mode;
 
     public Macro5(long var1) {
         super(0x3152ACEB4FCAL ^ var1 ^ 0x2B762164A235L);

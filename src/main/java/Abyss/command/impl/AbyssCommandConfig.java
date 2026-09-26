@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -181,7 +182,7 @@ extends Command {
         int var5 = 0;
         int var6 = 0;
         int var12 = 0;
-        for (Module var8 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var8 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var8 == null || !AbyssModuleRegistry.isConfigPersistable(var8)) {
                 ++var6;
                 continue;
@@ -205,6 +206,8 @@ extends Command {
                     // empty catch block
 }
 }
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "suffix-visible", "q");
             var12 += AbyssCommandConfig.applySettingValues(var8, var10);
 }
         AbyssBootstrap.forceEnableCommandLine();
@@ -224,7 +227,12 @@ extends Command {
 }
         File file = var3 = var2.isFile() ? var2 : new File(var2.getParentFile(), "current.json");
         if (!var3.isFile()) {
-            AbyssCommands.chat("\u00a7cNo template to merge into (neither " + var2.getName() + " nor current.json exists). Refusing to invent a config.");
+            AbyssConfig.SaveResult fresh = AbyssConfig.save(var0);
+            if (fresh != null && fresh.ok) {
+                AbyssCommands.chat("\u00a7aSaved \u00a7f" + new File(fresh.path).getName() + "\u00a7a (created fresh config)");
+            } else {
+                AbyssCommands.chat("\u00a7cFresh config save failed: " + String.valueOf(fresh));
+            }
             return;
 }
         JsonObject var4 = AbyssCommandConfig.read(var3);
@@ -236,18 +244,23 @@ extends Command {
         int var6 = 0;
         int var13 = 0;
         boolean var7 = AbyssCommandConfig.gate();
-        for (Module var9 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var9 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var9 == null || !AbyssModuleRegistry.isConfigPersistable(var9)) continue;
             JsonElement var10 = var4.get(var9.b());
+            JsonObject var11;
             if (var10 == null || !var10.isJsonObject()) {
+                var11 = new JsonObject();
+                var4.add(var9.b(), (JsonElement)var11);
                 ++var6;
-                continue;
+            } else {
+                var11 = var10.getAsJsonObject();
 }
-            JsonObject var11 = var10.getAsJsonObject();
             var11.addProperty("status", Boolean.valueOf(var9.o()));
             if (var7) {
                 var11.addProperty("keyBind", (Number)var9.h());
 }
+            var11.addProperty("visible", Boolean.valueOf(var9.D()));
+            var11.addProperty("suffix-visible", Boolean.valueOf(var9.r()));
             var13 += AbyssCommandConfig.writeSettingValues(var9, var11);
             ++var5;
 }
@@ -280,7 +293,7 @@ extends Command {
 }
         try {
             File var4;
-            File var3 = Minecraft.func_71410_x().field_71412_D;
+            File var3 = Minecraft.getMinecraft().mcDataDir;
             if (var3 != null && (var4 = new File(var3, "Abyss")).isDirectory()) {
                 return var4;
 }
@@ -302,100 +315,96 @@ extends Command {
         String var2 = var0.toLowerCase().endsWith(SUFFIX) ? var0 : var0 + SUFFIX;
         return new File(var1, var2);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static JsonObject read(File var0) {
-        JsonObject jsonObject;
         Reader var1 = null;
         try {
             var1 = new InputStreamReader((InputStream)new FileInputStream(var0), "UTF-8");
             JsonElement var2 = new JsonParser().parse(var1);
-            jsonObject = var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
-            if (var1 == null) return jsonObject;
+            return var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
 }
         catch (Throwable var3) {
-            try {
-                JsonObject jsonObject3 = null;
-                return jsonObject3;
+            return null;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (var1 != null) {
+                try {
+                    var1.close();
 }
-            finally {
-                if (var1 != null) {
-                    try {
-                        var1.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure does not change the read result
 }
 }
 }
-        try {
-            var1.close();
-            return jsonObject;
 }
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return jsonObject;
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static boolean write(File var0, JsonObject var1) {
-        boolean var4222;
         File var2 = new File(var0.getParentFile(), var0.getName() + ".tmp");
         Writer var3 = null;
+
         try {
-            var3 = new OutputStreamWriter((OutputStream)new FileOutputStream(var2), "UTF-8");
-            new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)var1, (Appendable)var3);
+            var3 = new OutputStreamWriter(new FileOutputStream(var2), "UTF-8");
+            new GsonBuilder().setPrettyPrinting().create().toJson(var1, var3);
             var3.close();
             var3 = null;
+
             if (var0.isFile()) {
-                File var4222 = new File(var0.getParentFile(), var0.getName() + ".bak");
-                if (var4222.isFile()) {
-                    var4222.delete();
-}
-                var0.renameTo(var4222);
-}
-            var4222 = var2.renameTo(var0);
-            if (var3 == null) return var4222;
-}
-        catch (Throwable var5) {
-            try {
-                boolean bl = false;
-                return bl;
-}
-            catch (Throwable throwable) {
-                throw throwable;
-}
-            finally {
-                if (var3 != null) {
-                    try {
-                        var3.close();
-}
-                    catch (Throwable throwable) {}
-}
-}
-}
-        try {
-            var3.close();
-            return var4222;
-}
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return var4222;
-}
+                File var4 = new File(var0.getParentFile(), var0.getName() + ".bak");
+                if (var4.isFile()) {
+                    var4.delete();
+                }
+                var0.renameTo(var4);
+            }
+
+            return var2.renameTo(var0);
+        } catch (Throwable var5) {
+            return false;
+        } finally {
+            if (var3 != null) {
+                try {
+                    var3.close();
+                } catch (Throwable var6) {
+                }
+            }
+        }
+    }
     private static boolean gate() {
         return AbyssCommandBind.gateOk();
+}
+    private static void applyModuleBoolean(Module module, JsonObject block, String key, String fieldName) {
+        if (module == null || block == null || !block.has(key)) {
+            return;
+}
+        try {
+            JsonElement value = block.get(key);
+            if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+                return;
+}
+            Field field = Module.class.getDeclaredField(fieldName);
+            if (field.getType() != Boolean.TYPE) {
+                return;
+}
+            field.setAccessible(true);
+            field.setBoolean(module, value.getAsBoolean());
+}
+        catch (Throwable throwable) {
+            // malformed or incompatible config metadata is ignored
+}
+}
+    public static String selfTest() {
+        try {
+            Module probe = new Module(0L);
+            JsonObject block = new JsonObject();
+            block.addProperty("visible", Boolean.TRUE);
+            block.addProperty("suffix-visible", Boolean.FALSE);
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "suffix-visible", "q");
+            if (!probe.D() || probe.r()) {
+                return "FAIL metadata visible=" + probe.D() + " suffix=" + probe.r();
+}
+            return "PASS metadata";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
 }
     private static int writeSettingValues(Module var0, JsonObject var1) {
         List<Setting> var2;

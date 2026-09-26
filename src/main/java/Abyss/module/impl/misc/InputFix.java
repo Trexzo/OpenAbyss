@@ -9,7 +9,7 @@ import Abyss.setting.Setting;
 
 public class InputFix
 extends Module {
-    private static final long public InputFix(short var1, int var2, int var3) {
+    public InputFix(short var1, int var2, int var3) {
         super(((long)var1 << 48 | (long)var2 << 32 >>> 16 | (long)var3 << 48 >>> 48) ^ 0x6A0B188463EEL ^ 0x1912C15E9119L);
         this.declare("InputFix", Category.Misc, "Fix some special characters typing", new Setting[0]);
 }

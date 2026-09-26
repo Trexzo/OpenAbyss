@@ -16,7 +16,7 @@ import java.nio.IntBuffer;
 import net.minecraft.client.renderer.WorldRenderer;
 
 public class WorldRendererHooks {
-    private static final long public static void putColorMultiplier(WorldRenderer var0, float var1, float var2, float var3, int var4, boolean var5, IntBuffer var6, CallbackInfo var7) {
+    public static void putColorMultiplier(WorldRenderer var0, float var1, float var2, float var3, int var4, boolean var5, IntBuffer var6, CallbackInfo var7) {
         int var14 = WorldRendererAccessor.t(var0, var4);
         int var15 = -1;
         if (!var5) {

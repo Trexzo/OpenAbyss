@@ -12,7 +12,7 @@ import net.minecraft.entity.Entity;
 public class AttackTargetEntityEvent
 extends Event {
     public final Entity w;
-    private static final long public AttackTargetEntityEvent(Entity var1) {
+    public AttackTargetEntityEvent(Entity var1) {
         this.w = var1;
 }
 }

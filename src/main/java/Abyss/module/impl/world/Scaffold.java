@@ -75,6 +75,11 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.WorldSettings;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Scaffold
 extends PriorityModule
@@ -150,18 +155,18 @@ implements EventSubscriber {
     private void U() {
         PlacementTarget var11;
         if (!this.dw) {
-            KeyBindUtil.o(99363263780575L, Scaffold.f.field_71474_y.field_74314_A.func_151463_i());
+            KeyBindUtil.o(99363263780575L, Scaffold.f.gameSettings.keyBindJump.getKeyCode());
             this.dw = true;
 }
-        if ((var11 = BlockUtil.x(Scaffold.f.field_71439_g.field_70163_u - 1.0, this.Y$r1(), downPlace.c())) != null) {
+        if ((var11 = BlockUtil.x(Scaffold.f.thePlayer.posY - 1.0, this.Y$r1(), downPlace.c())) != null) {
             this.v(var11, angleStep.L());
 }
-        if (var11 != null && ((double)var11.q.func_177956_o() <= Scaffold.f.field_71439_g.field_70163_u - 1.0 || downPlace.c())) {
+        if (var11 != null && ((double)var11.q.getY() <= Scaffold.f.thePlayer.posY - 1.0 || downPlace.c())) {
             this.M(var11);
 }
 }
     private void i(long var1, MoveInputEvent var3) {
-        int var8 = Scaffold.f.field_71439_g.field_70173_aa;
+        int var8 = Scaffold.f.thePlayer.ticksExisted;
         if (this.T == -1) {
             this.T = var8;
             this.de = this.o(Math.max(0.0, (double)legitModeUnsneakDelay.L() - 50.0));
@@ -174,8 +179,8 @@ implements EventSubscriber {
 }
 }
     private void D(long var1) {
-        PlacementTarget var9 = BlockUtil.x(Scaffold.f.field_71439_g.field_70163_u - 1.0, this.Y$r1(), downPlace.c());
-        if (var9 != null && ((double)var9.q.func_177956_o() <= Scaffold.f.field_71439_g.field_70163_u - 1.0 || downPlace.c())) {
+        PlacementTarget var9 = BlockUtil.x(Scaffold.f.thePlayer.posY - 1.0, this.Y$r1(), downPlace.c());
+        if (var9 != null && ((double)var9.q.getY() <= Scaffold.f.thePlayer.posY - 1.0 || downPlace.c())) {
             this.v(var9, angleStep.L());
             this.M(var9);
 }
@@ -195,7 +200,7 @@ implements EventSubscriber {
     private void O(long var1, MoveInputEvent var3, short var4) {
         long var5 = (0x7123B6AB0000L | (long)var4 << 48 >>> 48) ^ bb;
         long var9 = var5 ^ 0x3968AAB42E2BL;
-        if (this.d && !KeyBindUtil.V(Scaffold.f.field_71474_y.field_74311_E.func_151463_i(), var9)) {
+        if (this.d && !KeyBindUtil.V(Scaffold.f.gameSettings.keyBindSneak.getKeyCode(), var9)) {
             var3.x(false);
 }
         this.a();
@@ -230,7 +235,7 @@ implements EventSubscriber {
             if (dontRenderRotation.c()) {
                 RotationManager.w(true);
 }
-            float[] var11 = this.T(new BlockPos(Scaffold.f.field_71439_g.field_70165_t, Scaffold.f.field_71439_g.field_70163_u - 1.0, Scaffold.f.field_71439_g.field_70161_v), EnumFacing.UP, true, 10744777957284L);
+            float[] var11 = this.T(new BlockPos(Scaffold.f.thePlayer.posX, Scaffold.f.thePlayer.posY - 1.0, Scaffold.f.thePlayer.posZ), EnumFacing.UP, true, 10744777957284L);
             float var12 = (float)rotationSmoothing.k() / 100.0f;
             RotationManager.v(var11[0], var1, 0L, var12);
             RotationManager.f(var11[1], 39.0f, var12, 0L);
@@ -274,22 +279,22 @@ implements EventSubscriber {
         if (autoItem.c() && !OutgoingPacketState.P && !OutgoingPacketState.h) {
             ItemStack var5;
             if (!this.b) {
-                this.dl = Scaffold.f.field_71439_g.field_71071_by.field_70461_c;
+                this.dl = Scaffold.f.thePlayer.inventory.currentItem;
                 this.b = true;
 }
-            int var6 = ItemUtil.u(var5 = Scaffold.f.field_71439_g.func_70694_bm()) ? var5.field_77994_a : 0;
+            int var6 = ItemUtil.u(var5 = Scaffold.f.thePlayer.getHeldItem()) ? var5.stackSize : 0;
             this.v = Math.min(this.v, var6);
             if (this.v <= 0) {
-                int var7 = Scaffold.f.field_71439_g.field_71071_by.field_70461_c;
+                int var7 = Scaffold.f.thePlayer.inventory.currentItem;
                 if (this.v == 0) {
                     --var7;
 }
                 for (int var8 = var7; var8 > var7 - 9; --var8) {
                     int var9 = (var8 % 9 + 9) % 9;
-                    ItemStack var10 = Scaffold.f.field_71439_g.field_71071_by.func_70301_a(var9);
+                    ItemStack var10 = Scaffold.f.thePlayer.inventory.getStackInSlot(var9);
                     if (!ItemUtil.u(var10)) continue;
                     ItemUtil.P(var9);
-                    this.v = var10.field_77994_a;
+                    this.v = var10.stackSize;
                     break;
 }
 }
@@ -361,11 +366,11 @@ implements EventSubscriber {
                     var21[0] = var22 - 180.0f;
                     break;
 }
-                BlockPos var28 = new BlockPos(Math.floor(Scaffold.f.field_71439_g.field_70165_t), Math.floor(Scaffold.f.field_71439_g.field_70163_u) - 1.0, Math.floor(Scaffold.f.field_71439_g.field_70161_v));
-                double var29 = (double)var28.func_177958_n() + 0.5 - Scaffold.f.field_71439_g.field_70165_t;
-                double var31 = (double)var28.func_177952_p() + 0.5 - Scaffold.f.field_71439_g.field_70161_v;
+                BlockPos var28 = new BlockPos(Math.floor(Scaffold.f.thePlayer.posX), Math.floor(Scaffold.f.thePlayer.posY) - 1.0, Math.floor(Scaffold.f.thePlayer.posZ));
+                double var29 = (double)var28.getX() + 0.5 - Scaffold.f.thePlayer.posX;
+                double var31 = (double)var28.getZ() + 0.5 - Scaffold.f.thePlayer.posZ;
                 float var33 = (float)(Math.toDegrees(Math.atan2(var31, var29)) - 90.0);
-                float var34 = MathHelper.func_76142_g((float)(var33 - var22));
+                float var34 = MathHelper.wrapAngleTo180_float((float)(var33 - var22));
                 if (var34 > 0.0f) {
                     var35 = var22 + 135.0f;
                     if (strictAimCheck.c() && !this.isGetBlockPos(var23, var35, var21[1])) {
@@ -384,8 +389,8 @@ implements EventSubscriber {
         return var21;
 }
     private void v(long var1, MoveInputEvent var3) {
-        if (mode.R("LEGIT") && Scaffold.f.field_71462_r == null && !Scaffold.f.field_71439_g.field_71075_bZ.field_75100_b && ItemUtil.u(Scaffold.f.field_71439_g.func_70694_bm()) && this.Y()) {
-            if (KeyBindUtil.V(Scaffold.f.field_71474_y.field_74311_E.func_151463_i(), 64165991731362L)) {
+        if (mode.R("LEGIT") && Scaffold.f.currentScreen == null && !Scaffold.f.thePlayer.capabilities.isFlying && ItemUtil.u(Scaffold.f.thePlayer.getHeldItem()) && this.Y()) {
+            if (KeyBindUtil.V(Scaffold.f.gameSettings.keyBindSneak.getKeyCode(), 64165991731362L)) {
                 this.a();
             } else {
                 AxisAlignedBB var17 = this.K(20403440901494L);
@@ -395,7 +400,7 @@ implements EventSubscriber {
                         if (this.d) {
                             this.i(0L, var3);
 }
-                    } else if (Scaffold.f.field_71439_g.field_70122_E) {
+                    } else if (Scaffold.f.thePlayer.onGround) {
                         this.t(var3);
                     } else if (this.d) {
                         this.i(0L, var3);
@@ -489,10 +494,10 @@ implements EventSubscriber {
         return this.T(var1, var4, false, 10744777957284L);
 }
     private void Y(long var1) {
-        if (Scaffold.f.field_71439_g.field_70122_E && this.G) {
+        if (Scaffold.f.thePlayer.onGround && this.G) {
             if (!this.N) {
-                EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)Scaffold.f.field_71439_g, 0);
-                KeyBindUtil.A(82009306480869L, Scaffold.f.field_71474_y.field_74314_A.func_151463_i(), true);
+                EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)Scaffold.f.thePlayer, 0);
+                KeyBindUtil.A(82009306480869L, Scaffold.f.gameSettings.keyBindJump.getKeyCode(), true);
                 this.G = false;
             } else {
                 if (keepYBlinkRotation.c() && straightAirDelay.L() >= 1.0f && diagonalAirDelay.L() >= 1.0f) {
@@ -517,7 +522,7 @@ implements EventSubscriber {
 }
     private boolean isGetBlockPos(PlacementTarget var1, float var2, float var3) {
         MovingObjectPosition var4 = BlockUtil.F(new float[]{var2, var3}, 4.0);
-        return var4.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK ? false : BlockUtil.p(var4.func_178782_a(), var1.q) && (!strictAimCheck.c() || var4.field_178784_b == var1.Z);
+        return var4.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK ? false : BlockUtil.p(var4.getBlockPos(), var1.q) && (!strictAimCheck.c() || var4.sideHit == var1.Z);
 }
     @Override
     public void A(long var1) {
@@ -551,17 +556,17 @@ implements EventSubscriber {
             dk = false;
 }
         if (!this.dw) {
-            KeyBindUtil.o(var11, Scaffold.f.field_71474_y.field_74314_A.func_151463_i());
+            KeyBindUtil.o(var11, Scaffold.f.gameSettings.keyBindJump.getKeyCode());
             this.dw = true;
 }
-        KeyBindUtil.o(var11, Scaffold.f.field_71474_y.field_74311_E.func_151463_i());
+        KeyBindUtil.o(var11, Scaffold.f.gameSettings.keyBindSneak.getKeyCode());
         if (this.d2) {
             RotationManager.O(var7);
             this.d2 = false;
 }
         if (this.H) {
             this.H = false;
-            KeyBindUtil.A(var9, Scaffold.f.field_71474_y.field_74313_G.func_151463_i(), KeyBindUtil.V(Scaffold.f.field_71474_y.field_74313_G.func_151463_i(), var13));
+            KeyBindUtil.A(var9, Scaffold.f.gameSettings.keyBindUseItem.getKeyCode(), KeyBindUtil.V(Scaffold.f.gameSettings.keyBindUseItem.getKeyCode(), var13));
 }
 }
     private float[] T(BlockPos var1, EnumFacing var2, boolean var3, long var4) {
@@ -570,22 +575,22 @@ implements EventSubscriber {
     @Override
     public String g(long var1) {
         long var3 = var1 ^ 0x28AAC77F0BF7L;
-        return mode.R("KEEP_Y") && keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.field_71474_y.field_74313_G.func_151463_i(), var3) ? "NORMAL" : mode.Y();
+        return mode.R("KEEP_Y") && keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.gameSettings.keyBindUseItem.getKeyCode(), var3) ? "NORMAL" : mode.Y();
 }
     private float q(BlockPos var1, EnumFacing var2, long var3) {
         return RotationUtil.S('\u0000', 1931007915, '\ucec3', var1, var2)[1];
 }
     private void N() {
-        if (this.k && !Scaffold.f.field_71439_g.field_70122_E) {
+        if (this.k && !Scaffold.f.thePlayer.onGround) {
             this.K = -1;
             this.dt = true;
 }
-        if (!(keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.field_71474_y.field_74313_G.func_151463_i(), 64165991731362L) || Scaffold.f.field_71439_g.func_70644_a(Potion.field_76430_j))) {
-            if (KeyBindUtil.V(Scaffold.f.field_71474_y.field_74314_A.func_151463_i(), 64165991731362L)) {
-                this.R = (int)Scaffold.f.field_71439_g.field_70163_u - 1;
+        if (!(keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.gameSettings.keyBindUseItem.getKeyCode(), 64165991731362L) || Scaffold.f.thePlayer.isPotionActive(Potion.jump))) {
+            if (KeyBindUtil.V(Scaffold.f.gameSettings.keyBindJump.getKeyCode(), 64165991731362L)) {
+                this.R = (int)Scaffold.f.thePlayer.posY - 1;
                 this.L = true;
-            } else if (this.L || Scaffold.f.field_71439_g.field_70122_E) {
-                this.R = (int)Scaffold.f.field_71439_g.field_70163_u - 1;
+            } else if (this.L || Scaffold.f.thePlayer.onGround) {
+                this.R = (int)Scaffold.f.thePlayer.posY - 1;
                 this.L = false;
 }
             PlacementTarget var23 = BlockUtil.x(this.R, this.Y$r1(), downPlace.c());
@@ -597,18 +602,18 @@ implements EventSubscriber {
                     this.K = 0;
                     this.y = true;
 }
-                if (var23 == null || !((double)var23.q.func_177956_o() <= Scaffold.f.field_71439_g.field_70163_u - 1.0) && !downPlace.c()) {
-                    if (!(Scaffold.f.field_71474_y.field_74351_w.func_151470_d() || Scaffold.f.field_71474_y.field_74370_x.func_151470_d() || Scaffold.f.field_71474_y.field_74366_z.func_151470_d() || Scaffold.f.field_71474_y.field_74368_y.func_151470_d())) {
-                        KeyBindUtil.o(99363263780575L, Scaffold.f.field_71474_y.field_74314_A.func_151463_i());
+                if (var23 == null || !((double)var23.q.getY() <= Scaffold.f.thePlayer.posY - 1.0) && !downPlace.c()) {
+                    if (!(Scaffold.f.gameSettings.keyBindForward.isKeyDown() || Scaffold.f.gameSettings.keyBindLeft.isKeyDown() || Scaffold.f.gameSettings.keyBindRight.isKeyDown() || Scaffold.f.gameSettings.keyBindBack.isKeyDown())) {
+                        KeyBindUtil.o(99363263780575L, Scaffold.f.gameSettings.keyBindJump.getKeyCode());
                     } else if (this.x < this.F) {
-                        KeyBindUtil.A(82009306480869L, Scaffold.f.field_71474_y.field_74314_A.func_151463_i(), false);
+                        KeyBindUtil.A(82009306480869L, Scaffold.f.gameSettings.keyBindJump.getKeyCode(), false);
 }
                 } else {
                     this.v(var23, MathUtil.h(84.0f, 99.0f));
                     this.u = true;
 }
 }
-            if (var23 != null && ((double)var23.q.func_177956_o() <= Scaffold.f.field_71439_g.field_70163_u - 1.0 || downPlace.c())) {
+            if (var23 != null && ((double)var23.q.getY() <= Scaffold.f.thePlayer.posY - 1.0 || downPlace.c())) {
                 float f = this.K;
                 float f2 = Scaffold.x$r1(44418900924704L) ? diagonalAirDelay.L() : straightAirDelay.L();
                 if (f >= f2 || this.x < this.F) {
@@ -619,7 +624,7 @@ implements EventSubscriber {
         } else {
             this.k = false;
             this.g = false;
-            this.R = (int)Scaffold.f.field_71439_g.field_70163_u - 1;
+            this.R = (int)Scaffold.f.thePlayer.posY - 1;
             this.U();
 }
 }
@@ -627,17 +632,17 @@ implements EventSubscriber {
         var1.I(21307, 3074332907L);
 }
     private double q(AxisAlignedBB var1) {
-        AxisAlignedBB var2 = new AxisAlignedBB(var1.field_72340_a, var1.field_72338_b - 0.01, var1.field_72339_c, var1.field_72336_d, var1.field_72338_b, var1.field_72334_f);
-        List var3 = Scaffold.f.field_71441_e.func_72945_a((Entity)Scaffold.f.field_71439_g, var2);
+        AxisAlignedBB var2 = new AxisAlignedBB(var1.minX, var1.minY - 0.01, var1.minZ, var1.maxX, var1.minY, var1.maxZ);
+        List var3 = Scaffold.f.theWorld.getCollidingBoundingBoxes((Entity)Scaffold.f.thePlayer, var2);
         if (var3.isEmpty()) {
             return Double.NaN;
 }
-        double var4 = (var1.field_72340_a + var1.field_72336_d) * 0.5;
-        double var6 = (var1.field_72339_c + var1.field_72334_f) * 0.5;
+        double var4 = (var1.minX + var1.maxX) * 0.5;
+        double var6 = (var1.minZ + var1.maxZ) * 0.5;
         double var8 = Double.MAX_VALUE;
-        for (AxisAlignedBB var11 : var3) {
-            double var12 = Math.max(var11.field_72340_a, Math.min(var4, var11.field_72336_d));
-            double var14 = Math.max(var11.field_72339_c, Math.min(var6, var11.field_72334_f));
+        for (AxisAlignedBB var11 : (Iterable<AxisAlignedBB>)(var3)) {
+            double var12 = Math.max(var11.minX, Math.min(var4, var11.maxX));
+            double var14 = Math.max(var11.minZ, Math.min(var6, var11.maxZ));
             double var16 = Math.abs(var4 - var12);
             double var18 = Math.abs(var6 - var14);
             var8 = Math.min(var8, Math.max(var16, var18));
@@ -650,7 +655,7 @@ implements EventSubscriber {
             this.T(false);
         } else {
             this.T(true);
-            if (this.u && Scaffold.f.field_71439_g.field_70122_E) {
+            if (this.u && Scaffold.f.thePlayer.onGround) {
                 this.u = false;
 }
             if (!this.k && !this.g) {
@@ -663,7 +668,7 @@ implements EventSubscriber {
                 ++this.K;
 }
             this.H();
-            if (ItemUtil.u(Scaffold.f.field_71439_g.func_70694_bm()) && Scaffold.f.field_71462_r == null) {
+            if (ItemUtil.u(Scaffold.f.thePlayer.getHeldItem()) && Scaffold.f.currentScreen == null) {
                 if (System.currentTimeMillis() - this.s > (long)(CombatUtil.q() + 500)) {
                     this.Q(angleStep.L());
 }
@@ -691,7 +696,7 @@ implements EventSubscriber {
 }
     private void isKeyDown() {
         int n2 = this.F = Scaffold.x$r1(44418900924704L) ? (int)diagonalJumpBlocks.L() : (int)straightJumpBlocks.L();
-        if (!(Scaffold.f.field_71474_y.field_74351_w.func_151470_d() || Scaffold.f.field_71474_y.field_74370_x.func_151470_d() || Scaffold.f.field_71474_y.field_74366_z.func_151470_d() || Scaffold.f.field_71474_y.field_74368_y.func_151470_d())) {
+        if (!(Scaffold.f.gameSettings.keyBindForward.isKeyDown() || Scaffold.f.gameSettings.keyBindLeft.isKeyDown() || Scaffold.f.gameSettings.keyBindRight.isKeyDown() || Scaffold.f.gameSettings.keyBindBack.isKeyDown())) {
             this.L = true;
             this.N = false;
             this.m = false;
@@ -700,7 +705,7 @@ implements EventSubscriber {
                 this.m = true;
                 this.N = false;
 }
-            if (Scaffold.f.field_71439_g.field_70122_E && !this.G && this.x >= this.F) {
+            if (Scaffold.f.thePlayer.onGround && !this.G && this.x >= this.F) {
                 this.L = true;
                 this.G = true;
 }
@@ -719,10 +724,10 @@ implements EventSubscriber {
 }
 }
     public int q() {
-        if (Scaffold.f.field_71439_g == null) {
+        if (Scaffold.f.thePlayer == null) {
             return -1;
 }
-        return this.b ? this.dl : Scaffold.f.field_71439_g.field_71071_by.field_70461_c;
+        return this.b ? this.dl : Scaffold.f.thePlayer.inventory.currentItem;
 }
     public static boolean x$r1(long var0) {
         var0 = bb ^ var0;
@@ -772,7 +777,7 @@ implements EventSubscriber {
                 break;
 }
             case "KEEP_Y": {
-                if (keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.field_71474_y.field_74313_G.func_151463_i(), 64165991731362L)) {
+                if (keepYOnRightClick.c() && !KeyBindUtil.V(Scaffold.f.gameSettings.keyBindUseItem.getKeyCode(), 64165991731362L)) {
                     var7 = normalModeRotation.Y();
                     break;
 }
@@ -801,43 +806,43 @@ implements EventSubscriber {
         float var9 = var1.o ? 1.0f : (!strictAimCheck.c() && !this.e ? 30.0f : 1.0f);
         boolean var10 = Math.abs(MathUtil.M(RotationManager.r, var6[0])) <= var9;
         boolean var11 = Math.abs(MathUtil.M(RotationManager.G, var6[1])) <= var9;
-        boolean var12 = var8 && var7.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK && BlockUtil.p(var7.func_178782_a(), var1.q);
-        boolean var13 = var12 && var7.field_178784_b == var1.Z;
+        boolean var12 = var8 && var7.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && BlockUtil.p(var7.getBlockPos(), var1.q);
+        boolean var13 = var12 && var7.sideHit == var1.Z;
         boolean var14 = this.dZ;
         boolean bl2 = this.dZ = var10 && var11;
         if ((!aimCheck.c() || (var1.o ? var10 && var11 && var14 : (strictAimCheck.c() ? var12 && var13 : var10 && var11 || var12))) && this.v > 0) {
             Vec3 var15 = BlockUtil.f(var1.q, var1.Z);
             if (var12) {
-                var15 = var7.field_72307_f;
+                var15 = var7.hitVec;
 }
-            if (CombatUtil.u(var1.q, var1.Z, var15, swing.c(), !fakeItem.c() || Scaffold.f.field_71439_g.field_71071_by.func_70301_a(this.dl) != null && Scaffold.f.field_71439_g.field_71071_by.func_70301_a(this.dl).func_77973_b() instanceof ItemBlock)) {
-                if (Scaffold.f.field_71442_b.func_178889_l() != WorldSettings.GameType.CREATIVE) {
+            if (CombatUtil.u(var1.q, var1.Z, var15, swing.c(), !fakeItem.c() || Scaffold.f.thePlayer.inventory.getStackInSlot(this.dl) != null && Scaffold.f.thePlayer.inventory.getStackInSlot(this.dl).getItem() instanceof ItemBlock)) {
+                if (Scaffold.f.playerController.getCurrentGameType() != WorldSettings.GameType.CREATIVE) {
                     --this.v;
 }
-                this.dV.add(new Pair<BlockPos, Long>(var1.q.func_177972_a(var1.Z), System.currentTimeMillis()));
-                this.x = Scaffold.f.field_71439_g.field_70122_E ? ++this.x : 0;
+                this.dV.add(new Pair<BlockPos, Long>(var1.q.offset(var1.Z), System.currentTimeMillis()));
+                this.x = Scaffold.f.thePlayer.onGround ? ++this.x : 0;
                 return true;
 }
 }
         return false;
 }
     private AxisAlignedBB K(long var1) {
-        AxisAlignedBB var6 = Scaffold.f.field_71439_g.func_174813_aQ();
+        AxisAlignedBB var6 = Scaffold.f.thePlayer.getEntityBoundingBox();
         if (MoveUtil.f() == 0 && MoveUtil.K() == 0) {
-            return var6.func_72317_d(Scaffold.f.field_71439_g.field_70159_w, 0.0, Scaffold.f.field_71439_g.field_70179_y);
+            return var6.offset(Scaffold.f.thePlayer.motionX, 0.0, Scaffold.f.thePlayer.motionZ);
 }
-        double var7 = Scaffold.f.field_71439_g.func_70051_ag() ? 0.2873 : 0.221;
+        double var7 = Scaffold.f.thePlayer.isSprinting() ? 0.2873 : 0.221;
         float var9 = MoveUtil.X(11188, (short)-1205);
-        float var10 = MathHelper.func_76126_a((float)(var9 * (float)Math.PI / 180.0f));
-        float var11 = MathHelper.func_76134_b((float)(var9 * (float)Math.PI / 180.0f));
+        float var10 = MathHelper.sin((float)(var9 * (float)Math.PI / 180.0f));
+        float var11 = MathHelper.cos((float)(var9 * (float)Math.PI / 180.0f));
         double var12 = (double)(-var10) * var7;
         double var14 = (double)var11 * var7;
-        return var6.func_72317_d(var12, 0.0, var14);
+        return var6.offset(var12, 0.0, var14);
 }
     static {
         bb = 125416588937203L;
         dO = new Color(0, 0, 0, 100).getRGB();
-        c = new ItemStack(Item.func_150898_a((Block)Blocks.field_180401_cv));
+        c = new ItemStack(Item.getItemFromBlock((Block)Blocks.barrier));
         dk = false;
         keepYJumpForwardChance = new PercentageSetting("Keep-Y-jump-forward-chance", 100);
         rotationSmoothing = new PercentageSetting("Rotation-smoothing", 0);

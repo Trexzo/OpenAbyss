@@ -39,6 +39,7 @@ public final class AbyssCommandData {
     public static final String ENEMIES = "enemies.txt";
     public static final String CURRENT = "current.json";
     static final String CHAT_BINDS = "chatBinds";
+    public static volatile String lastLoadNote = "not loaded";
 
     private AbyssCommandData() {
 }
@@ -49,9 +50,9 @@ public final class AbyssCommandData {
             return var1;
 }
         try {
-            Minecraft var2 = Minecraft.func_71410_x();
-            if (var2 != null && var2.field_71412_D != null) {
-                return new File(var2.field_71412_D, "Abyss");
+            Minecraft var2 = Minecraft.getMinecraft();
+            if (var2 != null && var2.mcDataDir != null) {
+                return new File(var2.mcDataDir, "Abyss");
 }
 }
         catch (Throwable throwable) {
@@ -224,6 +225,10 @@ public final class AbyssCommandData {
 }
 }
     public static void load() {
+        String names = AbyssCommandData.loadNames();
+        String menu = AbyssCommandData.loadMenu();
+        String binds = AbyssCommandData.loadChatBinds();
+        lastLoadNote = names + " | " + menu + " | " + binds;
 }
     private static String loadNames() {
         int var0 = 0;

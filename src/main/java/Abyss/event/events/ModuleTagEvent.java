@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ModuleTagEvent
 extends Event {
-    private static final long private StringBuilder K = new StringBuilder();
+    private StringBuilder K = new StringBuilder();
 
     public void U(String var1) {
         this.K.append(var1).append("\n");

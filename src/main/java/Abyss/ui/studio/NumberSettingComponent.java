@@ -21,8 +21,10 @@ import org.lwjgl.input.Mouse;
 
 public class NumberSettingComponent
 extends AbstractSettingComponent<NumberSetting> {
+    private static long a;
+
     private final Animation B;
-    private static long private boolean W;
+    private boolean W;
     private final Animation E;
 
     @Override
@@ -136,4 +138,7 @@ extends AbstractSettingComponent<NumberSetting> {
 }
         return false;
 }
+    static {
+        a = 19434520715838L;
+    }
 }

@@ -73,6 +73,7 @@ public class BridgeAssist
 extends Module
 implements EventSubscriber {
     private int s;
+    private static long a;
     private boolean G;
     public static NumberSetting sneakOnJumpTime;
     
@@ -80,6 +81,7 @@ implements EventSubscriber {
     private boolean H;
     private int n;
     private static String[] h;
+    private static Map e;
         private boolean R;
     private static Object[] g;
     public static NumberSetting unsneakDelay;
@@ -113,12 +115,12 @@ implements EventSubscriber {
         long var5 = var1 ^ 0x7BC1AF741E82L;
         if (!requireSneak.c()) {
             var3.x(false);
-        } else if (!this.T || !this.isGetKeyCode(var5) || !this.H && BridgeAssist.f.field_71439_g.field_70122_E) {
+        } else if (!this.T || !this.isGetKeyCode(var5) || !this.H && BridgeAssist.f.thePlayer.onGround) {
             if (this.R) {
                 var3.x(false);
 }
         } else {
-            KeyBinding.func_74510_a((int)BridgeAssist.f.field_71474_y.field_74311_E.func_151463_i(), (boolean)false);
+            KeyBinding.setKeyBindState((int)BridgeAssist.f.gameSettings.keyBindSneak.getKeyCode(), (boolean)false);
             var3.x(false);
             this.R = true;
 }
@@ -141,7 +143,7 @@ implements EventSubscriber {
     private void C(short var1, char var2, MoveInputEvent var3, int var4, boolean var5) {
         long var6 = ((long)var1 << 48 | (long)var2 << 48 >>> 16 | (long)var4 << 32 >>> 32) ^ a;
         long var8 = var6 ^ 0x5C79FAAC1ECDL;
-        int var12 = BridgeAssist.f.field_71439_g.field_70173_aa;
+        int var12 = BridgeAssist.f.thePlayer.ticksExisted;
         if (this.s == -1 && this.Y == -1) {
             this.s = var12;
             this.n = this.q(Math.max(0.0f, unsneakDelay.L() - 50.0f));
@@ -162,17 +164,17 @@ implements EventSubscriber {
         return null;
 }
     private double b(AxisAlignedBB var1) {
-        AxisAlignedBB var2 = new AxisAlignedBB(var1.field_72340_a, var1.field_72338_b - 0.01, var1.field_72339_c, var1.field_72336_d, var1.field_72338_b, var1.field_72334_f);
-        List var3 = BridgeAssist.f.field_71441_e.func_72945_a((Entity)BridgeAssist.f.field_71439_g, var2);
+        AxisAlignedBB var2 = new AxisAlignedBB(var1.minX, var1.minY - 0.01, var1.minZ, var1.maxX, var1.minY, var1.maxZ);
+        List var3 = BridgeAssist.f.theWorld.getCollidingBoundingBoxes((Entity)BridgeAssist.f.thePlayer, var2);
         if (var3.isEmpty()) {
             return Double.NaN;
 }
-        double var4 = (var1.field_72340_a + var1.field_72336_d) / 2.0;
-        double var6 = (var1.field_72339_c + var1.field_72334_f) / 2.0;
+        double var4 = (var1.minX + var1.maxX) / 2.0;
+        double var6 = (var1.minZ + var1.maxZ) / 2.0;
         double var8 = Double.MAX_VALUE;
-        for (AxisAlignedBB var11 : var3) {
-            double var12 = Math.max(var11.field_72340_a, Math.min(var4, var11.field_72336_d));
-            double var14 = Math.max(var11.field_72339_c, Math.min(var6, var11.field_72334_f));
+        for (AxisAlignedBB var11 : (Iterable<AxisAlignedBB>)(var3)) {
+            double var12 = Math.max(var11.minX, Math.min(var4, var11.maxX));
+            double var14 = Math.max(var11.minZ, Math.min(var6, var11.maxZ));
             double var16 = Math.abs(var4 - var12);
             double var18 = Math.abs(var6 - var14);
             var8 = Math.min(var8, Math.max(var16, var18));
@@ -180,11 +182,11 @@ implements EventSubscriber {
         return var8;
 }
     private float[] Y(float var1, float var2, float var3, float var4, float var5) {
-        var5 = MathHelper.func_76131_a((float)var5, (float)1.0f, (float)(var5 * 2.0f));
-        float var6 = MathHelper.func_76142_g((float)(var3 - var1));
+        var5 = MathHelper.clamp_float((float)var5, (float)1.0f, (float)(var5 * 2.0f));
+        float var6 = MathHelper.wrapAngleTo180_float((float)(var3 - var1));
         float var7 = var4 - var2;
-        float var8 = var1 + MathHelper.func_76131_a((float)var6, (float)(-var5), (float)var5);
-        float var9 = MathHelper.func_76131_a((float)(var2 + MathHelper.func_76131_a((float)var7, (float)(-var5), (float)var5)), (float)-90.0f, (float)90.0f);
+        float var8 = var1 + MathHelper.clamp_float((float)var6, (float)(-var5), (float)var5);
+        float var9 = MathHelper.clamp_float((float)(var2 + MathHelper.clamp_float((float)var7, (float)(-var5), (float)var5)), (float)-90.0f, (float)90.0f);
         return new float[]{var8, var9};
 }
     @Override
@@ -234,15 +236,15 @@ implements EventSubscriber {
         int var10 = (int)((var5 ^ 0x22E90FE1DD2EL) << 32 >>> 48);
         int var11 = (int)((var5 ^ 0x22E90FE1DD2EL) << 48 >>> 48);
         long var14 = var5 ^ 0x2B2F249E1D3AL;
-        if (silentRotation.c() && BridgeAssist.f.field_71462_r == null && !BridgeAssist.f.field_71439_g.field_71075_bZ.field_75100_b) {
-            ItemStack var16 = BridgeAssist.f.field_71439_g.func_70694_bm();
-            if (var16 != null && var16.func_77973_b() instanceof ItemBlock) {
+        if (silentRotation.c() && BridgeAssist.f.currentScreen == null && !BridgeAssist.f.thePlayer.capabilities.isFlying) {
+            ItemStack var16 = BridgeAssist.f.thePlayer.getHeldItem();
+            if (var16 != null && var16.getItem() instanceof ItemBlock) {
                 if (requireLookingDown.c() && RotationManager.s() < 70.0f) {
                     this.o(var7);
-                } else if (notMovingForward.c() && BridgeAssist.f.field_71439_g.field_71158_b.field_78900_b > 0.0f) {
+                } else if (notMovingForward.c() && BridgeAssist.f.thePlayer.movementInput.moveForward > 0.0f) {
                     this.o(var7);
                 } else {
-                    BridgeAssistRotation var17 = this.s(var9, RotationManager.G, (short)var10, var11, BridgeAssist.f.field_71442_b.func_78757_d());
+                    BridgeAssistRotation var17 = this.s(var9, RotationManager.G, (short)var10, var11, BridgeAssist.f.playerController.getBlockReachDistance());
                     if (var17 == null) {
                         this.o(var7);
                     } else {
@@ -285,7 +287,7 @@ implements EventSubscriber {
 }
     private boolean isGetKeyCode(long var1) {
         long var3 = var1 ^ 0x5A878CE532C5L;
-        return KeyBindUtil.V(BridgeAssist.f.field_71474_y.field_74311_E.func_151463_i(), var3);
+        return KeyBindUtil.V(BridgeAssist.f.gameSettings.keyBindSneak.getKeyCode(), var3);
 }
     private static Class b(long var0, long var2) {
         Class<?> var5 = null;
@@ -309,19 +311,19 @@ implements EventSubscriber {
 }
     private BridgeAssistRotation s(int var1, float var2, short var3, int var4, double var5) {
         float var9 = RotationManager.p();
-        AxisAlignedBB var10 = BridgeAssist.f.field_71439_g.func_174813_aQ();
-        int var11 = MathHelper.func_76128_c((double)var10.field_72338_b) - 1;
-        int var12 = MathHelper.func_76128_c((double)var10.field_72340_a);
-        int var13 = MathHelper.func_76128_c((double)var10.field_72336_d);
-        int var14 = MathHelper.func_76128_c((double)var10.field_72339_c);
-        int var15 = MathHelper.func_76128_c((double)var10.field_72334_f);
+        AxisAlignedBB var10 = BridgeAssist.f.thePlayer.getEntityBoundingBox();
+        int var11 = MathHelper.floor_double((double)var10.minY) - 1;
+        int var12 = MathHelper.floor_double((double)var10.minX);
+        int var13 = MathHelper.floor_double((double)var10.maxX);
+        int var14 = MathHelper.floor_double((double)var10.minZ);
+        int var15 = MathHelper.floor_double((double)var10.maxZ);
         ArrayList<BridgeAssistPlacement> var16 = new ArrayList<BridgeAssistPlacement>();
         for (int var17 = var12; var17 <= var13; ++var17) {
             for (int var18 = var14; var18 <= var15; ++var18) {
                 BlockPos var19 = new BlockPos(var17, var11, var18);
                 if (BlockUtil.a$r1(var19)) continue;
                 for (EnumFacing var23 : c) {
-                    BlockPos var24 = var19.func_177972_a(var23);
+                    BlockPos var24 = var19.offset(var23);
                     if (!BlockUtil.a$r1(var24)) continue;
                     var16.add(new BridgeAssistPlacement(var19, var23));
 }
@@ -339,10 +341,10 @@ implements EventSubscriber {
         while (var36 <= 90.0f) {
             EnumFacing var26;
             float var37 = 1.0f + (float)(Math.random() * 2.0 - 1.0) * (0.3f + var35 * 0.4f);
-            float var39 = Math.min(var36 += (var37 = MathHelper.func_76131_a((float)var37, (float)0.4f, (float)1.8f)), 90.0f);
+            float var39 = Math.min(var36 += (var37 = MathHelper.clamp_float((float)var37, (float)0.4f, (float)1.8f)), 90.0f);
             MovingObjectPosition var25 = BlockUtil.F(new float[]{var9, var39}, var5);
-            if (var25 == null || var25.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK || (var26 = var25.field_178784_b) == EnumFacing.UP || var26 == EnumFacing.DOWN) continue;
-            BlockPos var27 = var25.func_178782_a();
+            if (var25 == null || var25.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || (var26 = var25.sideHit) == EnumFacing.UP || var26 == EnumFacing.DOWN) continue;
+            BlockPos var27 = var25.getBlockPos();
             for (BridgeAssistPlacement var29 : var16) {
                 if (!var27.equals((Object)var29.Z) || var26 != var29.U) continue;
                 float var30 = Math.abs(var39 - var2);
@@ -360,7 +362,7 @@ implements EventSubscriber {
 }
     public void onSendPacket(long var1, SendPacketEvent var3) {
         C08PacketPlayerBlockPlacement var4;
-        if (var3.B instanceof C08PacketPlayerBlockPlacement && (var4 = (C08PacketPlayerBlockPlacement)var3.B).func_149568_f() != 255 && this.T && requireSneak.c()) {
+        if (var3.B instanceof C08PacketPlayerBlockPlacement && (var4 = (C08PacketPlayerBlockPlacement)var3.B).getPlacedBlockDirection() != 255 && this.T && requireSneak.c()) {
             this.H = true;
 }
 }
@@ -468,78 +470,93 @@ implements EventSubscriber {
         BridgeAssist.h[var4] = new String(var13);
         return var4;
 }
-    private static Method d(long var0, long var2) {
-        Class var23;
-        Class var15;
-        Class[] var14;
-        int var13;
-        String var10;
-        Class var8;
-        block10: {
-            int var4 = BridgeAssist.a(var0, var2);
-            Object var5 = g[var4];
-            if (!(var5 instanceof String)) {
-                return (Method)var5;
-}
-            String var6 = h[var4];
-            int var7 = var6.indexOf(8);
-            var8 = BridgeAssist.b(Long.parseLong(var6.substring(0, var7), 36), 0L);
-            int var9 = var6.indexOf(8, ++var7);
-            var10 = var6.substring(var7, var9);
-            int var11 = -1;
-            int var12 = var9;
-            do {
-                ++var11;
-                ++var12;
-            } while ((var12 = var6.indexOf(8, var12)) > -1);
-            var13 = var11 - 1;
-            var14 = new Class[var13];
-            var15 = null;
-            var12 = var9 + 1;
-            for (int var16 = 0; var16 < var11; ++var16) {
-                int var17 = var6.indexOf(8, var12);
-                var15 = BridgeAssist.b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
-                if (var16 >= var13) continue;
-                var14[var16] = var15;
-}
-            var23 = var8;
-            do {
-                Method var26;
-                if ((var26 = BridgeAssist.a(var23, var10, var15, var13, var14)) != null) {
-                    BridgeAssist.g[var4] = var26;
-                    return var26;
-}
-                if (var23.getName().equals("java.lang.Object")) break block10;
-            } while ((var23 = var23.getSuperclass()) != null);
-            var23 = BridgeAssist.b(497560263219879L, 0L);
-}
-        var23 = var8;
-        while (true) {
-            Class<?>[] var27;
-            if ((var27 = var23.getInterfaces()) != null) {
-                for (int var18 = 0; var18 < var27.length; ++var18) {
-                    Method var19 = BridgeAssist.b(var27[var18], var10, var15, var13, var14);
-                    if (var19 == null) continue;
-                    BridgeAssist.g[var4] = var19;
-                    return var19;
-}
-}
-            if (var23.getName().equals("java.lang.Object")) {
-                StringBuffer var28 = new StringBuffer();
-                var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
-                int var29 = 0;
-                while (var29 < var13) {
-                    var28.append(var14[var29].getName());
-                    if (++var29 >= var13) continue;
-                    var28.append(", ");
-}
-                var28.append(')');
-                throw new RuntimeException(var28.toString());
-}
-            if ((var23 = var23.getSuperclass()) != null) continue;
-            var23 = BridgeAssist.b(497560263219879L, 0L);
-}
-}
+   private static Method d(long var0, long var2) {
+      int var4 = a(var0, var2);
+      Object var5 = g[var4];
+      if (!(var5 instanceof String)) {
+         return (Method)var5;
+      }
+
+      String var6 = h[var4];
+      int var7 = var6.indexOf(8);
+      Class var8 = b(Long.parseLong(var6.substring(0, var7), 36), 0L);
+      int var9 = var6.indexOf(8, ++var7);
+      String var10 = var6.substring(var7, var9);
+      int var11 = -1;
+      int var12 = var9;
+
+      do {
+         var11++;
+         var12++;
+      } while ((var12 = var6.indexOf(8, var12)) > -1);
+
+      int var13;
+      Class[] var14 = new Class[var13 = var11 - 1];
+      Class var15 = null;
+      var12 = var9 + 1;
+
+      for (int var16 = 0; var16 < var11; var16++) {
+         int var17 = var6.indexOf(8, var12);
+         var15 = b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
+         if (var16 < var13) {
+            var14[var16] = var15;
+         }
+      }
+
+      Class var23 = var8;
+
+      while (true) {
+         Method var26 = a(var23, var10, var15, var13, var14);
+         if (var26 != null) {
+            g[var4] = var26;
+            return var26;
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            break;
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(497560263219879L, 0L);
+            break;
+         }
+      }
+
+      var23 = var8;
+
+      while (true) {
+         Class[] var27;
+         if ((var27 = var23.getInterfaces()) != null) {
+            for (int var18 = 0; var18 < var27.length; var18++) {
+               Method var19 = b(var27[var18], var10, var15, var13, var14);
+               if (var19 != null) {
+                  g[var4] = var19;
+                  return var19;
+               }
+            }
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            StringBuffer var28 = new StringBuffer();
+            var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
+            int var29 = 0;
+
+            while (var29 < var13) {
+               var28.append(var14[var29].getName());
+               if (++var29 < var13) {
+                  var28.append(", ");
+               }
+            }
+
+            var28.append(')');
+            throw new RuntimeException(var28.toString());
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(497560263219879L, 0L);
+         }
+      }
+   }
     private static Method a(Class var0, String var1, Class var2, int var3, Class[] var4) {
         block0: for (Method var8 : var0.getDeclaredMethods()) {
             Class<?>[] var9;
@@ -599,31 +616,31 @@ implements EventSubscriber {
         this.G = false;
 }
     private AxisAlignedBB Y(float var1, float var4) {
-        AxisAlignedBB var5 = BridgeAssist.f.field_71439_g.func_174813_aQ();
+        AxisAlignedBB var5 = BridgeAssist.f.thePlayer.getEntityBoundingBox();
         if (var1 == 0.0f && var4 == 0.0f) {
-            return var5.func_72317_d(BridgeAssist.f.field_71439_g.field_70159_w, 0.0, BridgeAssist.f.field_71439_g.field_70179_y);
+            return var5.offset(BridgeAssist.f.thePlayer.motionX, 0.0, BridgeAssist.f.thePlayer.motionZ);
 }
-        float var6 = MathHelper.func_76129_c((float)(var1 * var1 + var4 * var4));
+        float var6 = MathHelper.sqrt_float((float)(var1 * var1 + var4 * var4));
         if (var6 < 1.0f) {
             var6 = 1.0f;
 }
-        double var7 = BridgeAssist.f.field_71439_g.func_70051_ag() ? 0.2873 : 0.221;
+        double var7 = BridgeAssist.f.thePlayer.isSprinting() ? 0.2873 : 0.221;
         float var9 = RotationManager.p();
-        float var10 = MathHelper.func_76126_a((float)(var9 * (float)Math.PI / 180.0f));
-        float var11 = MathHelper.func_76134_b((float)(var9 * (float)Math.PI / 180.0f));
+        float var10 = MathHelper.sin((float)(var9 * (float)Math.PI / 180.0f));
+        float var11 = MathHelper.cos((float)(var9 * (float)Math.PI / 180.0f));
         double var12 = (double)((var4 /= var6) * var11 - (var1 /= var6) * var10) * var7;
         double var14 = (double)(var1 * var11 + var4 * var10) * var7;
-        return var5.func_72317_d(var12, 0.0, var14);
+        return var5.offset(var12, 0.0, var14);
 }
     private void m(MoveInputEvent var1, long var2) {
         if (this.R && this.isGetKeyCode(106499145851495L)) {
-            KeyBinding.func_74510_a((int)BridgeAssist.f.field_71474_y.field_74311_E.func_151463_i(), (boolean)true);
+            KeyBinding.setKeyBindState((int)BridgeAssist.f.gameSettings.keyBindSneak.getKeyCode(), (boolean)true);
             var1.x(true);
 }
         this.R = false;
 }
     public void onMoveInput(MoveInputEvent var1, long var2) {
-        if (BridgeAssist.f.field_71462_r == null && !BridgeAssist.f.field_71439_g.field_71075_bZ.field_75100_b) {
+        if (BridgeAssist.f.currentScreen == null && !BridgeAssist.f.thePlayer.capabilities.isFlying) {
             boolean var19 = this.isGetKeyCode(106499145851495L);
             boolean var20 = requireSneak.c();
             if (var19 && !var20) {
@@ -635,11 +652,11 @@ implements EventSubscriber {
                     this.K(var1, 0L);
                 } else {
                     ItemStack var21;
-                    if (requireHoldingBlocks.c() && ((var21 = BridgeAssist.f.field_71439_g.func_70694_bm()) == null || !(var21.func_77973_b() instanceof ItemBlock))) {
+                    if (requireHoldingBlocks.c() && ((var21 = BridgeAssist.f.thePlayer.getHeldItem()) == null || !(var21.getItem() instanceof ItemBlock))) {
                         this.K(var1, 0L);
                         return;
 }
-                    if (!var1.d() || !BridgeAssist.f.field_71439_g.field_70122_E || var1.t() == 0.0f && var1.R() == 0.0f || !(sneakOnJumpTime.L() > 0.0f) || var20 && !this.R) {
+                    if (!var1.d() || !BridgeAssist.f.thePlayer.onGround || var1.t() == 0.0f && var1.R() == 0.0f || !(sneakOnJumpTime.L() > 0.0f) || var20 && !this.R) {
                         AxisAlignedBB var25 = this.Y(var1.t(), var1.R());
                         double var22 = this.b(var25);
                         if (!Double.isNaN(var22)) {
@@ -652,13 +669,13 @@ implements EventSubscriber {
                             if (this.T) {
                                 this.C((short)0, '\u2d98', var1, -1795877129, true);
 }
-                        } else if (BridgeAssist.f.field_71439_g.field_70122_E) {
+                        } else if (BridgeAssist.f.thePlayer.onGround) {
                             this.P(var1, true);
                         } else if (this.T) {
                             this.C((short)0, '\u2d98', var1, -1795877129, true);
 }
                     } else {
-                        this.Y = BridgeAssist.f.field_71439_g.field_70173_aa;
+                        this.Y = BridgeAssist.f.thePlayer.ticksExisted;
                         this.y = this.q(sneakOnJumpTime.L());
                         this.P(var1, true);
 }
@@ -678,10 +695,21 @@ implements EventSubscriber {
         this.T = false;
         this.p(0L);
         this.o(var3);
-        KeyBindUtil.o(var7, BridgeAssist.f.field_71474_y.field_74311_E.func_151463_i());
+        KeyBindUtil.o(var7, BridgeAssist.f.gameSettings.keyBindSneak.getKeyCode());
 }
-                Cipher var2 = Cipher.getInstance("DES/CBC/NoPadding");
-            var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            g = new Object[14];
+            h = new String[14];
+            a();
+            e = new HashMap(13);
+            long var0 = a ^ 54503866275638L;
+            Cipher var2;
+            byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var0 << var3 * 8 >>> 56);
+            }
+            (var2 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             long[] var8 = new long[7];
             int var5 = 0;
             String var6 = "\u00f2\\\u00854\u0003\u00d0\u00cc\u00a7\u00e8\u0019\u008d\u00d5G\u008es`?{\u00e9\u00e8\bV\nw\u00e1\u00f0'\u0011\u001e\u0001*w\u0012\u009c'\u009f!\u00bap\u00f3";
@@ -722,7 +750,6 @@ implements EventSubscriber {
                     var18 = ((long)var9[0] & 0xFFL) << 56 | ((long)var9[1] & 0xFFL) << 48 | ((long)var9[2] & 0xFFL) << 40 | ((long)var9[3] & 0xFFL) << 32 | ((long)var9[4] & 0xFFL) << 24 | ((long)var9[5] & 0xFFL) << 16 | ((long)var9[6] & 0xFFL) << 8 | (long)var9[7] & 0xFFL;
                     var20 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var13) {
@@ -730,6 +757,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 117632760870111L;
+        zkm$clinit();
         KEY_OFFSETS = new byte[]{23, 0, 59, 41, 45, 56, 43, 44, 36, 11, 17, 26, 9, 4, 61, 5, 10, 50, 1, 14, 40, 8, 35, 29, 34, 16, 63, 49, 58, 3, 30, 15, 25, 7, 39, 18, 31, 47, 32, 52, 46, 28, 33, 51, 62, 24, 12, 53, 20, 19, 2, 54, 48, 22, 37, 21, 6, 27, 38, 13, 55, 60, 42, 57};
         silentRotation = new BooleanSetting("Silent-rotation", false);
         requireSneak = new BooleanSetting("Require-sneak", false);

@@ -11,7 +11,7 @@ import Abyss.event.invoker.ClosestPlayerHUDRender2DInvoker;
 import Abyss.module.impl.visual_utility.ClosestPlayerHUD;
 
 public final class ClosestPlayerHUDBinder {
-    private static final long private ClosestPlayerHUDBinder() {
+    private ClosestPlayerHUDBinder() {
 }
     public static void k(EventBus var0, ClosestPlayerHUD var3) {
         var0.R(var3, PostTickEvent.class, 3, new ClosestPlayerHUDPostTickInvoker(var3));

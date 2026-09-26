@@ -26,6 +26,9 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class Font
 extends Module {
+    private static long a;
+    private static String[] b;
+    private static Map h;
     private static CustomFont H;
     
     public static ModeSetting scoreboardFont;
@@ -67,24 +70,38 @@ extends Module {
     public static CustomFont m(long var0) {
         return S;
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
-                Cipher var0 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    }
+    private static void zkm$clinit() {
+        try {
+            long var9 = a ^ 135337908579670L;
+            long var11 = var9 ^ 27393810676644L;
+            h = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var9 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var1 = 1; var1 < 8; ++var1) { var10003[var1] = (byte)(var9 << var1 * 8 >>> 56); }
+            Cipher var0 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var0.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var7 = new String[11];
             int var5 = 0;
@@ -130,7 +147,6 @@ extends Module {
                     var16 = var4.substring(++var15, var15 + var3);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var13) {
@@ -138,6 +154,8 @@ extends Module {
 }
 }
     static {
+        a = 51596533601259L;
+        zkm$clinit();
         clickguiFont = new ModeSetting("ClickGUI-font", "NONE", "PRODUCT_SANS", "INTER", "PING_FANG", "ROBOTO", "TAHOMA");
         hudFont = new ModeSetting("HUD-font", "NONE", "PRODUCT_SANS", "INTER", "PING_FANG", "ROBOTO", "TAHOMA");
         scoreboardFont = new ModeSetting("Scoreboard-font", "NONE", "PRODUCT_SANS", "INTER", "PING_FANG", "ROBOTO", "TAHOMA");

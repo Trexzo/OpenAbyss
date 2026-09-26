@@ -13,7 +13,7 @@ import Abyss.event.invoker.AmbienceUpdateWalkingPlayerInvoker;
 import Abyss.module.impl.visual.Ambience;
 
 public final class AmbienceBinder {
-    private static final long public static void K(EventBus var2, Ambience var3) {
+    public static void K(EventBus var2, Ambience var3) {
         var2.R(var3, UpdateWalkingPlayerEvent.class, 3, new AmbienceUpdateWalkingPlayerInvoker(var3));
         var2.R(var3, ReceivePacketEvent.class, 3, new AmbienceReceivePacketInvoker(var3));
         var2.R(var3, Render2DEvent.class, 3, new AmbienceRender2DInvoker(var3));

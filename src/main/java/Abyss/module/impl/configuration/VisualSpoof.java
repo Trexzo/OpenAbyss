@@ -14,6 +14,8 @@ import Abyss.util.KeyBindUtil;
 
 public class VisualSpoof
 extends Module {
+    private static long a;
+
     public static ScreenshotBypassSetting o;
     public static TextSetting keybindToggleRenderVisual;
     public static ExternalWindowSetting v;
@@ -33,6 +35,7 @@ extends Module {
         return KeyBindUtil.a(var5, keybindToggleRenderVisual.X()) != (int)b;
 }
     static {
+        a = 129138922202554L;
         b = 6804156122400817152L;
         t = new DisableRenderVisualSetting("Disable-render-visual", false);
         keybindToggleRenderVisual = new TextSetting("Keybind-toggle-render-visual", "NONE");

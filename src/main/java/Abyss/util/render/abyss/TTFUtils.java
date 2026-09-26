@@ -18,7 +18,7 @@ public final class TTFUtils {
 }
     public static Font getFontFromLocation(String fileName, int size) {
         try {
-            return Font.createFont(0, Minecraft.func_71410_x().func_110442_L().func_110536_a(new ResourceLocation("abyss/fonts/" + fileName)).func_110527_b()).deriveFont(0, size);
+            return Font.createFont(0, Minecraft.getMinecraft().getResourceManager().getResource(new ResourceLocation("abyss/fonts/" + fileName)).getInputStream()).deriveFont(0, size);
 }
         catch (FontFormatException | IOException | RuntimeException ignored) {
             return new Font("SansSerif", 0, size);

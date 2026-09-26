@@ -30,10 +30,16 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.potion.Potion;
 import net.minecraft.world.World;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class HitSelect
 extends Module
 implements EventSubscriber {
+    private static long a = 137764223568364L;
     private int L;
     public static ModeSetting strategy;
     public static NumberSetting minPauseTick;
@@ -73,11 +79,11 @@ implements EventSubscriber {
 }
                 case "CRITICALS": {
                     boolean var6;
-                    if (HitSelect.f.field_71439_g.field_70122_E) {
+                    if (HitSelect.f.thePlayer.onGround) {
                         AttackTracker.Z(true);
                         break;
 }
-                    boolean bl = var6 = HitSelect.f.field_71439_g.field_70143_R > 0.0f && !HitSelect.f.field_71439_g.func_70617_f_() && !HitSelect.f.field_71439_g.func_70090_H() && !HitSelect.f.field_71439_g.func_70644_a(Potion.field_76440_q) && HitSelect.f.field_71439_g.field_70154_o == null;
+                    boolean bl = var6 = HitSelect.f.thePlayer.fallDistance > 0.0f && !HitSelect.f.thePlayer.isOnLadder() && !HitSelect.f.thePlayer.isInWater() && !HitSelect.f.thePlayer.isPotionActive(Potion.blindness) && HitSelect.f.thePlayer.ridingEntity == null;
                     if (var6) {
                         AttackTracker.Z(this.L <= 0);
                         break;
@@ -101,7 +107,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(char var1, ReceivePacketEvent var2, int var3, short var4) {
         S19PacketEntityStatus var9;
-        if (var2.d instanceof S19PacketEntityStatus && (var9 = (S19PacketEntityStatus)var2.d).func_149161_a((World)HitSelect.f.field_71441_e) instanceof EntityPlayerSP && var9.func_149160_c() == 2 && MathUtil.Q(chance.k(), 0L)) {
+        if (var2.d instanceof S19PacketEntityStatus && (var9 = (S19PacketEntityStatus)var2.d).getEntity((World)HitSelect.f.theWorld) instanceof EntityPlayerSP && var9.getOpCode() == 2 && MathUtil.Q(chance.k(), 0L)) {
             this.L = (int)MathUtil.h(minPauseTick.L(), maxPauseTick.L());
 }
 }

@@ -9,6 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 public class BuildInfo {
+    private static String[] c;
+
+    private static String[] b;
+
+    private static Map d;
+
+    private static long a;
+
         public static String q;
     public static String K;
     public static String W;
@@ -42,6 +50,7 @@ public class BuildInfo {
         return var5.toString();
 }
     static {
+        a = 29972715278727L;
         NAME_STYLE = new String[]{"\u00a74\u00a7l", "\u00a7c\u00a7l", "\u00a7c\u00a7l", "\u00a7c\u00a7l", "\u00a74\u00a7l"};
         D = "User";
         K = NAME;

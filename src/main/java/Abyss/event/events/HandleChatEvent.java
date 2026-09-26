@@ -11,7 +11,7 @@ import net.minecraft.util.IChatComponent;
 
 public class HandleChatEvent
 extends Event {
-    private static final long public final IChatComponent A;
+    public final IChatComponent A;
 
     public HandleChatEvent(IChatComponent var1) {
         this.A = var1;

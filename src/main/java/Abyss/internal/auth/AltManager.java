@@ -43,6 +43,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 
 public class AltManager {
+    private static long a;
+
     public static ArrayList<Account> Q;
     private static File i;
     private static Gson J;
@@ -116,6 +118,9 @@ public class AltManager {
 }
 }
 }
+    public static boolean isInitialized() {
+        return I;
+}
     public static void h(int var0, short var1, File var2, char var3, GuiScreen var4) {
         long var5 = ((long)var0 << 32 | (long)var1 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ a;
         long var7 = var5 ^ 0x56B35D472FC1L;
@@ -123,8 +128,9 @@ public class AltManager {
         CookieAuthService.C(var2, var9);
 }
     static {
+        a = 94244023323350L;
         X = MinecraftRef.c((byte)0, 0L);
-        i = new File(AltManager.X.field_71412_D, "accounts.json");
+        i = new File(AltManager.X.mcDataDir, "accounts.json");
         J = new GsonBuilder().setPrettyPrinting().create();
         Q = new ArrayList();
         I = false;

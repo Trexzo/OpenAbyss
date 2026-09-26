@@ -120,11 +120,10 @@ extends FlatAbstractIcon {
 }
     @Override
     protected void paintIcon(Component c, Graphics2D g) {
-        float bw;
         boolean indeterminate = this.isIndeterminate(c);
         boolean selected = indeterminate || this.isSelected(c);
         boolean isFocused = FlatUIUtils.isPermanentFocusOwner(c);
-        float f = selected ? (this.disabledSelectedBorderWidth != Float.MIN_VALUE && !c.isEnabled() ? this.disabledSelectedBorderWidth : (this.selectedBorderWidth != Float.MIN_VALUE ? this.selectedBorderWidth : this.borderWidth)) : (bw = this.borderWidth);
+        float bw = selected ? (this.disabledSelectedBorderWidth != Float.MIN_VALUE && !c.isEnabled() ? this.disabledSelectedBorderWidth : (this.selectedBorderWidth != Float.MIN_VALUE ? this.selectedBorderWidth : this.borderWidth)) : this.borderWidth;
         if (isFocused && this.focusWidth > 0.0f && FlatButtonUI.isFocusPainted(c)) {
             g.setColor(this.getFocusColor(c));
             this.paintFocusBorder(c, g);

@@ -77,34 +77,5 @@ public enum Easing {
 }
     private Easing(Function<Double, Double> var3) {
         this.b = var3;
-}}
-    static {
-        Easing[] var10000 = new Easing[0];
-        var10000[0] = LINEAR;
-        var10000[1] = EASE_IN_QUAD;
-        var10000[2] = EASE_OUT_QUAD;
-        var10000[3] = EASE_IN_OUT_QUAD;
-        var10000[4] = EASE_IN_CUBIC;
-        var10000[5] = EASE_OUT_CUBIC;
-        var10000[0] = EASE_IN_OUT_CUBIC;
-        var10000[0] = EASE_IN_QUART;
-        var10000[0] = EASE_OUT_QUART;
-        var10000[0] = EASE_IN_OUT_QUART;
-        var10000[0] = EASE_IN_QUINT;
-        var10000[0] = EASE_OUT_QUINT;
-        var10000[0] = EASE_IN_OUT_QUINT;
-        var10000[0] = EASE_IN_SINE;
-        var10000[0] = EASE_OUT_SINE;
-        var10000[0] = EASE_IN_OUT_SINE;
-        var10000[0] = EASE_IN_ABYSS;
-        var10000[0] = EASE_OUT_ABYSS;
-        var10000[0] = EASE_IN_OUT_ABYSS;
-        var10000[0] = EASE_IN_CIRC;
-        var10000[0] = EASE_OUT_CIRC;
-        var10000[0] = EASE_IN_OUT_CIRC;
-        var10000[0] = SIGMOID;
-        var10000[0] = EASE_OUT_ELASTIC;
-        var10000[0] = EASE_IN_BACK;
-        var10000[0] = DECELERATE;
-}
+    }
 }

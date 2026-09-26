@@ -11,7 +11,7 @@ import Abyss.event.invoker.ChestStealerRender2DInvoker;
 import Abyss.module.impl.player.ChestStealer;
 
 public final class ChestStealerBinder {
-    private static final long private ChestStealerBinder() {
+    private ChestStealerBinder() {
 }
     public static void W(EventBus var2, ChestStealer var3) {
         var2.R(var3, PreUpdateEvent.class, 3, new ChestStealerPreUpdateInvoker(var3));

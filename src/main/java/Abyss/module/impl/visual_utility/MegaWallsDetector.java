@@ -43,6 +43,11 @@ import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.WorldSettings;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class MegaWallsDetector
 extends Module
@@ -72,18 +77,18 @@ implements EventSubscriber {
     private String n(String var1, long var2) {
         var2 = b ^ var2;
         int var6 = (int)((var2 ^ 0x4A812BAF9B2CL) << 48 >>> 48);
-        if (f != null && f.func_147114_u() != null) {
+        if (f != null && f.getNetHandler() != null) {
             String var11;
             String var12;
-            NetworkPlayerInfo var9 = f.func_147114_u().func_175104_a(var1);
+            NetworkPlayerInfo var9 = f.getNetHandler().getPlayerInfo(var1);
             if (var9 == null) {
                 return "";
 }
-            ScorePlayerTeam var10 = var9.func_178850_i();
-            if (var10 instanceof ScorePlayerTeam && !(var12 = ScoreboardUtil.h(var11 = var10.func_96668_e(), 0L)).isEmpty()) {
+            ScorePlayerTeam var10 = var9.getPlayerTeam();
+            if (var10 instanceof ScorePlayerTeam && !(var12 = ScoreboardUtil.h(var11 = var10.getColorPrefix(), 0L)).isEmpty()) {
                 return var12;
 }
-            return ScoreboardUtil.Z((short)var6, ScorePlayerTeam.func_96667_a((Team)var10, (String)var9.func_178845_a().getName()), var9.func_178845_a().getName());
+            return ScoreboardUtil.Z((short)var6, ScorePlayerTeam.formatPlayerName((Team)var10, (String)var9.getGameProfile().getName()), var9.getGameProfile().getName());
 }
         return "";
 }
@@ -112,8 +117,8 @@ implements EventSubscriber {
 }
 }
     private int t(String var1) {
-        EntityPlayer var2 = MegaWallsDetector.f.field_71441_e.func_72924_a(var1);
-        return var2 != null && !var2.field_70128_L ? Math.round(var2.func_110143_aJ()) : this.V(var1);
+        EntityPlayer var2 = MegaWallsDetector.f.theWorld.getPlayerEntityByName(var1);
+        return var2 != null && !var2.isDead ? Math.round(var2.getHealth()) : this.V(var1);
 }
     private void S$r1() {
         this.w$r2();
@@ -164,10 +169,10 @@ implements EventSubscriber {
 }
     private void c() {
         this.B();
-        for (NetworkPlayerInfo var12 : f.func_147114_u().func_175106_d()) {
+        for (NetworkPlayerInfo var12 : f.getNetHandler().getPlayerInfoMap()) {
             boolean var16;
-            if (var12 == null || var12.func_178845_a() == null || var12.func_178848_b() == WorldSettings.GameType.SPECTATOR) continue;
-            String var13 = var12.func_178845_a().getName();
+            if (var12 == null || var12.getGameProfile() == null || var12.getGameType() == WorldSettings.GameType.SPECTATOR) continue;
+            String var13 = var12.getGameProfile().getName();
             if (!this.c(var13, 62621913985836L)) {
                 this.remove(var13);
                 continue;
@@ -184,7 +189,7 @@ implements EventSubscriber {
                 this.Y.add(var13);
                 if (phoenixChatNotify != null && phoenixChatNotify.c()) {
                     ClientUtil.t(48081174263320L, TeamPrefixUtil.n(var13) + " \u00a7eresurrected");
-                    MegaWallsDetector.f.field_71439_g.func_85030_a("note.pling", 1.0f, 2.0f);
+                    MegaWallsDetector.f.thePlayer.playSound("note.pling", 1.0f, 2.0f);
 }
 }
             if (!this.d.containsKey(var13)) {
@@ -199,7 +204,7 @@ implements EventSubscriber {
 }
 }
     public void onPlayerGetName(PlayerGetNameEvent var1, long var2, short var4) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        String var7 = var1.u.func_178845_a().getName();
+        String var7 = var1.u.getGameProfile().getName();
         if (var7 != null && !var7.isEmpty()) {
             int var8;
             if (phoenixIconsInTab != null && phoenixIconsInTab.c() && this.Y.contains(var7)) {
@@ -217,10 +222,10 @@ implements EventSubscriber {
 }
     private int V(String var1) {
         try {
-            Scoreboard var2 = MegaWallsDetector.f.field_71441_e.func_96441_U();
-            ScoreObjective var3 = var2.func_96539_a(0);
-            if (var3 != null && var3.func_178766_e() != IScoreObjectiveCriteria.EnumRenderType.HEARTS) {
-                return var2.func_96529_a(var1, var3).func_96652_c();
+            Scoreboard var2 = MegaWallsDetector.f.theWorld.getScoreboard();
+            ScoreObjective var3 = var2.getObjectiveInDisplaySlot(0);
+            if (var3 != null && var3.getRenderType() != IScoreObjectiveCriteria.EnumRenderType.HEARTS) {
+                return var2.getValueFromObjective(var1, var3).getScorePoints();
 }
 }
         catch (Exception exception) {
@@ -232,9 +237,9 @@ implements EventSubscriber {
         long var4 = ((long)var1 << 48 | 0x516DF1626BD3L) ^ b;
         long var8 = var4 ^ 0x7E12086F977BL;
         long var10 = var4 ^ 0x341BCA87420DL;
-        for (NetworkPlayerInfo var13 : f.func_147114_u().func_175106_d()) {
-            if (var13 == null || var13.func_178845_a() == null || var13.func_178848_b() == WorldSettings.GameType.SPECTATOR) continue;
-            String var14 = var13.func_178845_a().getName();
+        for (NetworkPlayerInfo var13 : f.getNetHandler().getPlayerInfoMap()) {
+            if (var13 == null || var13.getGameProfile() == null || var13.getGameType() == WorldSettings.GameType.SPECTATOR) continue;
+            String var14 = var13.getGameProfile().getName();
             if (!this.c(var14, var8)) {
                 this.F.remove(var14);
                 continue;

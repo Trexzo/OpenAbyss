@@ -9,7 +9,7 @@ public class PreMouseInputEvent
 extends Event {
     private boolean G = false;
     private boolean l = false;
-    private static long private boolean E = false;
+    private boolean E = false;
     private boolean Q = false;
 
     public void q(int var1, int var2) {
