@@ -158,6 +158,40 @@ public final class AbyssCommands {
 }
         return null;
 }
+    public static String selfTest() {
+        try {
+            if (StockCommandRegistry.L == null) {
+                return "FAIL registry-null";
+}
+            int count = 0;
+            int primaryResolved = 0;
+            for (Command command : StockCommandRegistry.L) {
+                if (command == null) {
+                    return "FAIL null-command";
+}
+                String[] aliases = command.e(0L);
+                if (aliases == null || aliases.length == 0 || aliases[0] == null || aliases[0].trim().isEmpty()) {
+                    return "FAIL aliases " + command.getClass().getName();
+}
+                ++count;
+                if (AbyssCommands.find(aliases[0]) != command) {
+                    return "FAIL resolve " + aliases[0] + " -> " + command.getClass().getName();
+}
+                ++primaryResolved;
+}
+            if (count != 19) {
+                return "FAIL count " + count + "/19";
+}
+            int placeholders = AbyssCommands.placeholderCount();
+            if (placeholders != 0) {
+                return "FAIL module-placeholders " + placeholders;
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved;
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     private static String names() {
         StringBuilder var0 = new StringBuilder();
         if (StockCommandRegistry.L != null) {
