@@ -58,33 +58,33 @@ implements EventSubscriber {
         this.H = new TimerUtil();
         this.U = null;
 }
+    private BlockPos findBedInRange(int range) {
+        if (FastPlace.f.theWorld == null || FastPlace.f.thePlayer == null) {
+            return null;
+}
+        try {
+            int px = (int)FastPlace.f.thePlayer.posX;
+            int py = (int)FastPlace.f.thePlayer.posY;
+            int pz = (int)FastPlace.f.thePlayer.posZ;
+            for (int dy = range; dy >= -range; --dy) {
+                for (int dx = -range; dx <= range; ++dx) {
+                    for (int dz = -range; dz <= range; ++dz) {
+                        this.scanPos.set(px + dx, py + dy, pz + dz);
+                        if (FastPlace.f.theWorld.getBlockState((BlockPos)this.scanPos).getBlock() == Blocks.bed) {
+                            return new BlockPos((Vec3i)this.scanPos);
+}
+}
+}
+}
+}
+        catch (Throwable throwable) {
+            // Keep the original fail-closed scan behavior.
+}
+        return null;
+}
     public void onPreUpdate(PreUpdateEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (!(disableWhenBedInRange.L() <= 0.0f) && this.H.L(c, true)) {
-            BlockPos found;
-            block22: {
-                int range = (int)disableWhenBedInRange.L();
-                found = null;
-                try {
-                    if (FastPlace.f.theWorld == null || FastPlace.f.thePlayer == null) break block22;
-                    int px = (int)FastPlace.f.thePlayer.posX;
-                    int py = (int)FastPlace.f.thePlayer.posY;
-                    int pz = (int)FastPlace.f.thePlayer.posZ;
-                    for (int dy = range; dy >= -range; --dy) {
-                        for (int dx = -range; dx <= range; ++dx) {
-                            for (int dz = -range; dz <= range; ++dz) {
-                                this.scanPos.set(px + dx, py + dy, pz + dz);
-                                if (FastPlace.f.theWorld.getBlockState((BlockPos)this.scanPos).getBlock() != Blocks.bed) continue;
-                                found = new BlockPos((Vec3i)this.scanPos);
-                                break block22;
-}
-}
-}
-}
-                catch (Throwable throwable) {
-                    // empty catch block
-}
-}
-            this.U = found;
+            this.U = this.findBedInRange((int)disableWhenBedInRange.L());
 }
         try {
             if (FastPlace.f.inGameHasFocus) {
