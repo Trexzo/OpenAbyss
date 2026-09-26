@@ -269,6 +269,9 @@ jobs:
             if ($diagText.Contains('[ABYSSDIAG] command data load = ') -and $diagText.Contains('FAILED (')) {
               throw 'Persisted command-data loader reported a failure.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19')) {
+              throw 'Recovered command resolver self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
