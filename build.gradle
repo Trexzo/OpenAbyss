@@ -75,3 +75,20 @@ if (project.hasProperty('abyssPackaged')) {
         println "ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0"
     }
 }
+
+
+task packageWindowsLauncher(type: Zip, dependsOn: jar) {
+    description = 'Builds the standalone Windows OpenAbyss launcher package.'
+    group = 'distribution'
+    destinationDir = file("$buildDir/distributions")
+    archiveName = 'OpenAbyss-Windows-Launcher.zip'
+
+    from(jar.archivePath) {
+        rename { String fileName -> 'abyss.jar' }
+    }
+    from('launcher') {
+        include 'Launcher.bat'
+        include 'launch_abyss.ps1'
+        include 'README.txt'
+    }
+}
