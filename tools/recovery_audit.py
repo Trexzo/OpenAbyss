@@ -709,7 +709,7 @@ def main():
     for native_path, native_count in sorted(native_files.items()):
         class_name = Path(native_path).stem
         external = []
-        token = re.compile(r"\\b" + re.escape(class_name) + r"\\b")
+        token = re.compile(r"\b" + re.escape(class_name) + r"\b")
         for rel, body in source_text.items():
             if rel == native_path:
                 continue
