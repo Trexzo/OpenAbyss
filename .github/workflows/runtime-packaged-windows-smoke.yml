@@ -302,6 +302,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] t6.L (commands)  = 19')) {
               throw 'Recovered command registry size is not 19.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] command line      = READY')) {
+              throw 'Recovered CommandLine module is not enabled.'
+            }
             foreach ($guiLine in @(
               '[ABYSSDIAG] zu_3.B VESTIGE   = live',
               '[ABYSSDIAG] zu_3.Y STUDIO    = live',
