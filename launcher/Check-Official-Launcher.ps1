@@ -1,5 +1,6 @@
 param(
-    [string]$PackageDir = (Split-Path -Parent $MyInvocation.MyCommand.Path)
+    [string]$PackageDir = (Split-Path -Parent $MyInvocation.MyCommand.Path),
+    [switch]$FixtureSelfTest
 )
 
 Set-StrictMode -Version 2.0
@@ -16,6 +17,32 @@ $LatestLog = Join-Path $GameDir 'logs\latest.log'
 $CrashDir = Join-Path $GameDir 'crash-reports'
 $SessionFile = Join-Path $GameDir 'openabyss-test-session.txt'
 $Verdict = Join-Path $PackageDir 'official-usability-result.txt'
+
+if ($FixtureSelfTest) {
+    Remove-Item -LiteralPath $GameDir -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path (Join-Path $GameDir 'logs') | Out-Null
+    @(
+        'SESSION_ID=fixture'
+        ('SESSION_START_UTC=' + (Get-Date).ToUniversalTime().AddSeconds(-1).ToString('o'))
+    ) | Set-Content -LiteralPath $SessionFile -Encoding UTF8
+
+    'fixture latest log' | Set-Content -LiteralPath $LatestLog -Encoding UTF8
+    @(
+        ((Get-Date).Ticks.ToString() + "	bootstrap-complete")
+    ) | Set-Content -LiteralPath $Bootstrap -Encoding UTF8
+    @(
+        ((Get-Date).Ticks.ToString() + "	menu-no-world-tick")
+        ((Get-Date).Ticks.ToString() + "	clickgui-open-request")
+        ((Get-Date).Ticks.ToString() + "	clickgui-open-success:Abyss.ui.studio.StudioClickGuiScreen")
+        ((Get-Date).Ticks.ToString() + "	entity-player-join-world")
+        ((Get-Date).Ticks.ToString() + "	world-ready-tick")
+        ((Get-Date).Ticks.ToString() + "	world-module-lifecycle-start")
+        ((Get-Date).Ticks.ToString() + "	world-module-lifecycle-complete")
+    ) | Set-Content -LiteralPath $Runtime -Encoding UTF8
+    '[ABYSSDIAG] fixture' | Set-Content -LiteralPath $Diag -Encoding UTF8
+    1..112 | ForEach-Object { "fixture$($_)	Module$($_)	Misc	0" } |
+        Set-Content -LiteralPath $Census -Encoding UTF8
+}
 
 function Read-All([string]$Path) {
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
@@ -113,6 +140,16 @@ $lines.Add('MODULE_FAILURE=' + $(if (Test-Path -LiteralPath $ModuleFailure -Path
 $lines | Set-Content -LiteralPath $Verdict -Encoding UTF8
 $lines | ForEach-Object { Write-Host $_ }
 Write-Host "Verdict=$Verdict"
+
+if ($FixtureSelfTest) {
+    if (-not $pass) {
+        throw 'Official usability checker fixture self-test did not reach PASS.'
+    }
+    Write-Host 'OPENABYSS_OFFICIAL_USABILITY_CHECKER_SELFTEST=PASS'
+    Remove-Item -LiteralPath $GameDir -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Verdict -Force -ErrorAction SilentlyContinue
+    exit 0
+}
 
 if (-not $pass) {
     Write-Host ''
