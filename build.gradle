@@ -106,6 +106,15 @@ if (project.hasProperty('abyssModsFolder')) {
 
         File modsDir = file("$minecraft.runDir/mods")
         modsDir.mkdirs()
+        fileTree(modsDir) {
+            include 'abyss.jar'
+            include 'OpenAbyss-*.jar'
+        }.files.each { File stale ->
+            if (!stale.delete()) {
+                throw new GradleException("Could not remove stale OpenAbyss mods-folder JAR: " + stale)
+            }
+        }
+
         project.copy {
             from packagedJar
             into modsDir
@@ -116,7 +125,25 @@ if (project.hasProperty('abyssModsFolder')) {
             throw new GradleException("Mods-folder runtime did not install " + installedJar)
         }
 
+        def digest = { File file ->
+            def md = java.security.MessageDigest.getInstance('SHA-256')
+            file.withInputStream { input ->
+                byte[] buffer = new byte[65536]
+                int read
+                while ((read = input.read(buffer)) > 0) {
+                    md.update(buffer, 0, read)
+                }
+            }
+            md.digest().collect { String.format('%02X', it & 0xff) }.join()
+        }
+        String sourceHash = digest(packagedJar)
+        String installedHash = digest(installedJar)
+        if (sourceHash != installedHash) {
+            throw new GradleException("Mods-folder JAR hash mismatch: source=" + sourceHash + " installed=" + installedHash)
+        }
+
         println "ABYSS_MODS_FOLDER_RUNTIME_JAR=" + installedJar.canonicalPath
+        println "ABYSS_MODS_FOLDER_RUNTIME_JAR_SHA256=" + installedHash
         println "ABYSS_MODS_FOLDER_RUNTIME_CLASSPATH_OPENABYSS_PRESENT=0"
         println "ABYSS_MODS_FOLDER_RUNTIME_EXPLICIT_COREMOD_PROPERTY=0"
     }
