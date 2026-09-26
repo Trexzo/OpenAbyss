@@ -209,12 +209,11 @@ extends GuiScreen {
 }
 }
     protected void keyTyped(char ch, int key) {
-        block2: {
-            try {
-                this.keyTypedImpl(ch, key);
+        try {
+            this.keyTypedImpl(ch, key);
 }
-            catch (Throwable ignored) {
-                if (key != 1) break block2;
+        catch (Throwable ignored) {
+            if (key == 1) {
                 this.mc.displayGuiScreen(null);
 }
 }
