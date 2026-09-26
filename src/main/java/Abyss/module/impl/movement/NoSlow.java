@@ -403,9 +403,6 @@ implements EventSubscriber {
             var1.I(0, 0L);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private void swordSlowDown(EntityPlayerSP var1, RedirectIsUsingItemEvent var2) {
         if (mode.R("WATCHDOG_PREDICTION")) {
             if (!NoSlow.combatOwnsSword()) {
