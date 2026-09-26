@@ -6,14 +6,27 @@ param(
     [switch]$DevRuntime,
     [switch]$ReferenceBootstrap,
     [switch]$ReferenceRegistry,
-    [switch]$ReferenceRuntime
+    [switch]$Registry97,
+    [switch]$Registry103,
+    [switch]$ReferenceRuntime,
+    [switch]$SkipChatMenu,
+    [switch]$SkipCheaterDetector,
+    [switch]$SkipAltManager
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$UseReferenceBootstrap = $ReferenceBootstrap -or $ReferenceRuntime
-$UseReferenceRegistry = $ReferenceRegistry -or $ReferenceRuntime
+$UseSkipChatMenu = $SkipChatMenu -or $ReferenceBootstrap -or $ReferenceRuntime
+$UseSkipCheaterDetector = $SkipCheaterDetector -or $ReferenceBootstrap -or $ReferenceRuntime
+$UseSkipAltManager = $SkipAltManager -or $ReferenceBootstrap -or $ReferenceRuntime
+$UseReferenceBootstrap = $UseSkipChatMenu -and $UseSkipCheaterDetector -and $UseSkipAltManager
+
+$RegistrySwitchCount = @($ReferenceRegistry,$Registry97,$Registry103,$ReferenceRuntime | Where-Object { $_ }).Count
+if ($RegistrySwitchCount -gt 1) {
+    throw 'Choose only one registry compatibility stage: -ReferenceRegistry (92), -Registry97, -Registry103, or -ReferenceRuntime.'
+}
+$RegistryTarget = if ($ReferenceRegistry -or $ReferenceRuntime) { 92 } elseif ($Registry97) { 97 } elseif ($Registry103) { 103 } else { 112 }
 
 $Root = Split-Path -Parent $PSScriptRoot
 $Evidence = Join-Path $Root 'physical-smoke-evidence'
@@ -115,8 +128,10 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($UseReferenceBootstrap) { ' -Dabyss.referenceBootstrapCompat=true' } else { '' }) +
-        $(if ($UseReferenceRegistry) { ' -Dabyss.referenceRegistryCompat=true' } else { '' })
+        $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
+        $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
+        $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
+        $(if ($RegistryTarget -ne 112) { " -Dabyss.referenceRegistryCount=$RegistryTarget" } else { '' })
 
     $Meta = @(
         "timestamp=$(Get-Date -Format o)"
@@ -128,7 +143,10 @@ try {
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "reference_bootstrap=$UseReferenceBootstrap"
-        "reference_registry=$UseReferenceRegistry"
+        "skip_chat_menu=$UseSkipChatMenu"
+        "skip_cheater_detector=$UseSkipCheaterDetector"
+        "skip_alt_manager=$UseSkipAltManager"
+        "registry_target=$RegistryTarget"
         "dirty_tracked=$DirtyTracked"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
@@ -258,15 +276,20 @@ try {
         Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0')) 'Packaged runtime dev-output isolation marker is missing.'
     }
 
-    $ExpectedModuleCount = $(if ($UseReferenceRegistry) { 92 } else { 112 })
-    $ExpectedToggleable = $(if ($UseReferenceRegistry) { 89 } else { 109 })
+    $ExpectedModuleCount = $RegistryTarget
+    $ExpectedToggleable = $RegistryTarget - 3
 
     $ExpectedReferenceBootstrap = $(if ($UseReferenceBootstrap) { 'true' } else { 'false' })
-    $ExpectedReferenceRegistry = $(if ($UseReferenceRegistry) { 'true' } else { 'false' })
+    $ExpectedSkipChatMenu = $(if ($UseSkipChatMenu) { 'true' } else { 'false' })
+    $ExpectedSkipCheaterDetector = $(if ($UseSkipCheaterDetector) { 'true' } else { 'false' })
+    $ExpectedSkipAltManager = $(if ($UseSkipAltManager) { 'true' } else { 'false' })
 
     $Required = @(
         "[ABYSSDIAG] reference bootstrap = $ExpectedReferenceBootstrap",
-        "[ABYSSDIAG] reference registry  = $ExpectedReferenceRegistry",
+        "[ABYSSDIAG] skip chat/menu       = $ExpectedSkipChatMenu",
+        "[ABYSSDIAG] skip cheater         = $ExpectedSkipCheaterDetector",
+        "[ABYSSDIAG] skip altmanager      = $ExpectedSkipAltManager",
+        "[ABYSSDIAG] registry target      = $ExpectedModuleCount",
         "[ABYSSDIAG] module count     = $ExpectedModuleCount of $ExpectedModuleCount OK",
         '[ABYSSDIAG] config writable   = writable=true',
         "[ABYSSDIAG] module usability   = toggleable=$ExpectedToggleable stockDisabled=3 invalid=0 nullSettings=0",
@@ -316,7 +339,10 @@ try {
         "JAR_SHA256=$JarHash"
         "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
-        "REFERENCE_REGISTRY=$UseReferenceRegistry"
+        "SKIP_CHAT_MENU=$UseSkipChatMenu"
+        "SKIP_CHEATER_DETECTOR=$UseSkipCheaterDetector"
+        "SKIP_ALT_MANAGER=$UseSkipAltManager"
+        "REGISTRY_TARGET=$RegistryTarget"
         "RUNCLIENT_EXIT=$RuntimeExit"
         "LAST_BOOTSTRAP_STAGE=$LastStage"
         "CRASH_EVIDENCE_FILES=$CrashCount"
