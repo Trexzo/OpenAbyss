@@ -463,79 +463,93 @@ implements EventSubscriber {
 }
 }
 }
-    private static Method d(long var0, long var2) {
-        int var4;
-        Class var23;
-        Class var15;
-        Class[] var14;
-        int var13;
-        String var10;
-        Class var8;
-        block10: {
-            var4 = BlockHit.a(var0, var2);
-            Object var5 = ob[var4];
-            if (!(var5 instanceof String)) {
-                return (Method)var5;
-}
-            String var6 = pb[var4];
-            int var7 = var6.indexOf(8);
-            var8 = BlockHit.b(Long.parseLong(var6.substring(0, var7), 36), 0L);
-            int var9 = var6.indexOf(8, ++var7);
-            var10 = var6.substring(var7, var9);
-            int var11 = -1;
-            int var12 = var9;
-            do {
-                ++var11;
-                ++var12;
-            } while ((var12 = var6.indexOf(8, var12)) > -1);
-            var13 = var11 - 1;
-            var14 = new Class[var13];
-            var15 = null;
-            var12 = var9 + 1;
-            for (int var16 = 0; var16 < var11; ++var16) {
-                int var17 = var6.indexOf(8, var12);
-                var15 = BlockHit.b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
-                if (var16 >= var13) continue;
-                var14[var16] = var15;
-}
-            var23 = var8;
-            do {
-                Method var26;
-                if ((var26 = BlockHit.a(var23, var10, var15, var13, var14)) != null) {
-                    BlockHit.ob[var4] = var26;
-                    return var26;
-}
-                if (var23.getName().equals("java.lang.Object")) break block10;
-            } while ((var23 = var23.getSuperclass()) != null);
-            var23 = BlockHit.b(1375026162649760L, 0L);
-}
-        var23 = var8;
-        while (true) {
-            Class<?>[] var27;
-            if ((var27 = var23.getInterfaces()) != null) {
-                for (int var18 = 0; var18 < var27.length; ++var18) {
-                    Method var19 = BlockHit.b(var27[var18], var10, var15, var13, var14);
-                    if (var19 == null) continue;
-                    BlockHit.ob[var4] = var19;
-                    return var19;
-}
-}
-            if (var23.getName().equals("java.lang.Object")) {
-                StringBuffer var28 = new StringBuffer();
-                var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
-                int var29 = 0;
-                while (var29 < var13) {
-                    var28.append(var14[var29].getName());
-                    if (++var29 >= var13) continue;
-                    var28.append(", ");
-}
-                var28.append(')');
-                throw new RuntimeException(var28.toString());
-}
-            if ((var23 = var23.getSuperclass()) != null) continue;
-            var23 = BlockHit.b(1375026162649760L, 0L);
-}
-}
+   private static Method d(long var0, long var2) {
+      int var4 = a(var0, var2);
+      Object var5 = ob[var4];
+      if (!(var5 instanceof String)) {
+         return (Method)var5;
+      }
+
+      String var6 = pb[var4];
+      int var7 = var6.indexOf(8);
+      Class var8 = b(Long.parseLong(var6.substring(0, var7), 36), 0L);
+      int var9 = var6.indexOf(8, ++var7);
+      String var10 = var6.substring(var7, var9);
+      int var11 = -1;
+      int var12 = var9;
+
+      do {
+         var11++;
+         var12++;
+      } while ((var12 = var6.indexOf(8, var12)) > -1);
+
+      int var13;
+      Class[] var14 = new Class[var13 = var11 - 1];
+      Class var15 = null;
+      var12 = var9 + 1;
+
+      for (int var16 = 0; var16 < var11; var16++) {
+         int var17 = var6.indexOf(8, var12);
+         var15 = b(Long.parseLong(var6.substring(var12, var17), 36), 0L);
+         if (var16 < var13) {
+            var14[var16] = var15;
+         }
+      }
+
+      Class var23 = var8;
+
+      while (true) {
+         Method var26 = a(var23, var10, var15, var13, var14);
+         if (var26 != null) {
+            ob[var4] = var26;
+            return var26;
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            break;
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(1375026162649760L, 0L);
+            break;
+         }
+      }
+
+      var23 = var8;
+
+      while (true) {
+         Class[] var27;
+         if ((var27 = var23.getInterfaces()) != null) {
+            for (int var18 = 0; var18 < var27.length; var18++) {
+               Method var19 = b(var27[var18], var10, var15, var13, var14);
+               if (var19 != null) {
+                  ob[var4] = var19;
+                  return var19;
+               }
+            }
+         }
+
+         if (var23.getName().equals("java.lang.Object")) {
+            StringBuffer var28 = new StringBuffer();
+            var28.append("NoSuchMethodException in ").append(var8.getName()).append(' ').append(var15.getName()).append(' ').append(var10).append('(');
+            int var29 = 0;
+
+            while (var29 < var13) {
+               var28.append(var14[var29].getName());
+               if (++var29 < var13) {
+                  var28.append(", ");
+               }
+            }
+
+            var28.append(')');
+            throw new RuntimeException(var28.toString());
+         }
+
+         if ((var23 = var23.getSuperclass()) == null) {
+            var23 = b(1375026162649760L, 0L);
+         }
+      }
+   }
     private static int a(long var0, long var2) {
         int var16;
         int var4 = (int)((var0 ^= var2 << 48 | var2) >>> 46);
