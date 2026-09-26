@@ -295,6 +295,207 @@ Remove-Item -LiteralPath $CrashOut -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $GameDir,(Join-Path $GameDir 'mods'),$CrashOut | Out-Null
 
 $JarHash = Validate-AbyssJar $Jar
+$BuildInfoPath = Join-Path $LauncherDir 'BUILD-INFO.txt'
+if (Test-Path -LiteralPath $BuildInfoPath -PathType Leaf) {
+    $BuildInfoMap = @{}
+    foreach ($line in @(Get-Content -LiteralPath $BuildInfoPath)) {
+        if ($line -match '^([^=]+)=(.*)
+    $MinecraftDir = Join-Path $env:APPDATA '.minecraft'
+}
+$MinecraftDir = [IO.Path]::GetFullPath($MinecraftDir)
+Require (Test-Path -LiteralPath $MinecraftDir -PathType Container) "Minecraft directory not found: $MinecraftDir"
+
+$Java = Find-Java8
+Require ($null -ne $Java) 'Java 8 was not found. Install a JDK/JRE 8 or pass -Java8.'
+Log "Java 8: $Java"
+Log "Minecraft source directory: $MinecraftDir"
+Log "Isolated game directory: $GameDir"
+
+$versions = Join-Path $MinecraftDir 'versions'
+$forgeDir = Get-ChildItem -LiteralPath $versions -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match '1\.8\.9.*forge|forge.*1\.8\.9' } |
+    Sort-Object Name -Descending |
+    Select-Object -First 1
+Require ($null -ne $forgeDir) 'No installed Forge 1.8.9 version was found under .minecraft\versions.'
+
+$forgeJsonPath = Join-Path $forgeDir.FullName ($forgeDir.Name + '.json')
+if (-not (Test-Path -LiteralPath $forgeJsonPath)) {
+    $firstJson = Get-ChildItem -LiteralPath $forgeDir.FullName -Filter '*.json' -File | Select-Object -First 1
+    if ($firstJson) { $forgeJsonPath = $firstJson.FullName }
+}
+Require (Test-Path -LiteralPath $forgeJsonPath -PathType Leaf) 'Forge version JSON is missing.'
+$forgeJson = Get-Content -LiteralPath $forgeJsonPath -Raw | ConvertFrom-Json
+Log "Forge profile: $($forgeDir.Name)"
+
+$baseDir = Join-Path $versions '1.8.9'
+$baseJsonPath = Join-Path $baseDir '1.8.9.json'
+$baseJar = Join-Path $baseDir '1.8.9.jar'
+Require (Test-Path -LiteralPath $baseJsonPath -PathType Leaf) 'Base Minecraft 1.8.9 JSON is missing.'
+Require (Test-Path -LiteralPath $baseJar -PathType Leaf) 'Base Minecraft 1.8.9 JAR is missing.'
+$baseJson = Get-Content -LiteralPath $baseJsonPath -Raw | ConvertFrom-Json
+
+$libraryRoot = Join-Path $MinecraftDir 'libraries'
+Require (Test-Path -LiteralPath $libraryRoot -PathType Container) 'Minecraft libraries directory is missing.'
+
+$allLibraries = @()
+$forgeLibraries = Get-Prop $forgeJson 'libraries'
+$baseLibraries = Get-Prop $baseJson 'libraries'
+if ($forgeLibraries) { $allLibraries += @($forgeLibraries) }
+if ($baseLibraries) { $allLibraries += @($baseLibraries) }
+
+$classPath = New-Object System.Collections.Generic.List[string]
+$missingLibraries = New-Object System.Collections.Generic.List[string]
+foreach ($lib in $allLibraries) {
+    Add-ClasspathLibrary $lib $libraryRoot $classPath $missingLibraries
+}
+$classPath.Add($baseJar)
+$classPath.Add($Jar)
+Require ($classPath.Count -gt 20) "Too few runtime classpath entries were resolved: $($classPath.Count)"
+
+$criticalJarPatterns = @(
+    'launchwrapper-*.jar',
+    'forge-1.8.9-*.jar',
+    'lwjgl-2.9*.jar',
+    'lwjgl_util-2.9*.jar'
+)
+foreach ($pattern in $criticalJarPatterns) {
+    $hit = @($classPath | Where-Object { [IO.Path]::GetFileName($_) -like $pattern })
+    Require ($hit.Count -gt 0) "Critical runtime library missing from classpath: $pattern"
+}
+
+if ($missingLibraries.Count -gt 0) {
+    Log ("Optional/ruled runtime libraries missing: " + $missingLibraries.Count)
+    $missingLibraries | Set-Content -LiteralPath (Join-Path $LauncherDir 'missing-libraries.txt') -Encoding UTF8
+} else {
+    Remove-Item -LiteralPath (Join-Path $LauncherDir 'missing-libraries.txt') -Force -ErrorAction SilentlyContinue
+}
+
+$nativeCount = Extract-Natives $allLibraries $libraryRoot $NativesDir
+$nativeFiles = @(Get-ChildItem -LiteralPath $NativesDir -Filter '*.dll' -File -ErrorAction SilentlyContinue)
+Require ($nativeFiles.Count -gt 0) 'No Windows native DLLs could be extracted.'
+foreach ($requiredNative in @('lwjgl64.dll','OpenAL64.dll')) {
+    Require (Test-Path -LiteralPath (Join-Path $NativesDir $requiredNative) -PathType Leaf) "Required Windows native missing: $requiredNative"
+}
+Log "Classpath entries: $($classPath.Count)"
+Log "Missing library files: $($missingLibraries.Count)"
+Log "Native library archives extracted: $nativeCount"
+Log "Native DLLs extracted: $($nativeFiles.Count)"
+
+$staleModJar = Join-Path (Join-Path $GameDir 'mods') 'abyss.jar'
+Remove-Item -LiteralPath $staleModJar -Force -ErrorAction SilentlyContinue
+Log 'Using packaged JAR from the classpath/coremod path; no duplicate copy is placed in game\mods.'
+
+$assets = Join-Path $MinecraftDir 'assets'
+Require (Test-Path -LiteralPath $assets -PathType Container) 'Minecraft assets directory is missing.'
+
+$uuid = [Guid]::NewGuid().ToString('N')
+$forgeMainClass = Get-Prop $forgeJson 'mainClass'
+$mainClass = if ($forgeMainClass) { [string]$forgeMainClass } else { 'net.minecraft.launchwrapper.Launch' }
+
+$jvmArgs = @(
+    "-Xmx${RamMB}M",
+    '-XX:+UseG1GC',
+    "-Djava.library.path=$NativesDir",
+    '-Dfml.coreMods.load=Abyss.ASM.CoreMod',
+    '-Dminecraft.launcher.brand=OpenAbyssRecovery',
+    '-Dminecraft.launcher.version=1'
+)
+
+$gameArgs = @(
+    '--username', $Username,
+    '--version', $forgeDir.Name,
+    '--gameDir', $GameDir,
+    '--assetsDir', $assets,
+    '--assetIndex', '1.8',
+    '--uuid', $uuid,
+    '--accessToken', '0',
+    '--userProperties', '{}',
+    '--userType', 'Legacy',
+    '--tweakClass', 'net.minecraftforge.fml.common.launcher.FMLTweaker'
+)
+
+$fullArgs = @($jvmArgs) + @('-cp', ($classPath -join ';'), $mainClass) + $gameArgs
+$argString = ($fullArgs | ForEach-Object { Quote-Arg ([string]$_) }) -join ' '
+
+Log "Main class: $mainClass"
+Log "Launching packaged OpenAbyss..."
+$p = Start-Process -FilePath $Java -ArgumentList $argString -WorkingDirectory $GameDir -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru -Wait
+$exitCode = $p.ExitCode
+Log "Minecraft/OpenAbyss exit code: $exitCode"
+
+$crashDir = Join-Path $GameDir 'crash-reports'
+foreach ($crash in @(Get-ChildItem -LiteralPath $crashDir -File -ErrorAction SilentlyContinue)) {
+    Copy-Item -LiteralPath $crash.FullName -Destination $CrashOut -Force
+}
+foreach ($fatal in @(
+    Get-ChildItem -LiteralPath $GameDir -Filter 'hs_err_pid*.log' -File -ErrorAction SilentlyContinue
+    Get-ChildItem -LiteralPath $LauncherDir -Filter 'hs_err_pid*.log' -File -ErrorAction SilentlyContinue
+)) {
+    Copy-Item -LiteralPath $fatal.FullName -Destination $CrashOut -Force
+}
+
+function Last-Stage([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '<none>' }
+    $lines = @(Get-Content -LiteralPath $Path | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($lines.Count -eq 0) { return '<none>' }
+    return ($lines[-1] -split "\t", 2)[-1]
+}
+
+function Last-Line([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '<none>' }
+    $lines = @(Get-Content -LiteralPath $Path | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($lines.Count -eq 0) { return '<none>' }
+    return $lines[-1]
+}
+
+$lastBootstrap = Last-Stage $BootstrapStage
+$lastRuntime = Last-Stage $RuntimeStage
+$lastModuleFailure = Last-Line $ModuleFailure
+$diagPresent = Test-Path -LiteralPath $BootstrapDiag -PathType Leaf
+$censusCount = if (Test-Path -LiteralPath $Census -PathType Leaf) {
+    @(Get-Content -LiteralPath $Census | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
+} else { -1 }
+
+foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$BootstrapDiag,$Census)) {
+    if (Test-Path -LiteralPath $evidenceFile -PathType Leaf) {
+        Copy-Item -LiteralPath $evidenceFile -Destination $CrashOut -Force
+    }
+}
+
+$result = @(
+    "EXIT_CODE=$exitCode",
+    "JAVA=$Java",
+    "FORGE=$($forgeDir.Name)",
+    "CLASSPATH_COUNT=$($classPath.Count)",
+    "MISSING_LIBRARIES=$($missingLibraries.Count)",
+    "NATIVE_ARCHIVES=$nativeCount",
+    "NATIVE_DLLS=$($nativeFiles.Count)",
+    "JAR_SHA256=$JarHash",
+    "BOOTSTRAP_DIAGNOSTICS=$diagPresent",
+    "MODULE_CENSUS_COUNT=$censusCount",
+    "LAST_BOOTSTRAP_STAGE=$lastBootstrap",
+    "LAST_RUNTIME_STAGE=$lastRuntime",
+    "LAST_MODULE_FAILURE=$lastModuleFailure",
+    "CRASH_FILES=$(@(Get-ChildItem -LiteralPath $CrashOut -File -ErrorAction SilentlyContinue).Count)"
+)
+$result | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
+
+if ($exitCode -ne 0) {
+    throw "OpenAbyss exited with code $exitCode. See minecraft.stderr.log, game\logs\latest.log and crash-evidence."
+}
+
+Log 'OpenAbyss exited normally.'
+) {
+            $BuildInfoMap[$matches[1]] = $matches[2]
+        }
+    }
+    if ($BuildInfoMap.ContainsKey('JAR_SHA256')) {
+        Require ($BuildInfoMap['JAR_SHA256'] -eq $JarHash) "BUILD-INFO.txt JAR hash does not match abyss.jar."
+    }
+    if ($BuildInfoMap.ContainsKey('JAR_BYTES')) {
+        Require ([int64]$BuildInfoMap['JAR_BYTES'] -eq (Get-Item -LiteralPath $Jar).Length) "BUILD-INFO.txt JAR size does not match abyss.jar."
+    }
+}
 Log "OpenAbyss JAR SHA-256: $JarHash"
 
 if (-not $MinecraftDir) {
