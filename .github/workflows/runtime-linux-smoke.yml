@@ -307,6 +307,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] eventbus selftest  = PASS' "$DIAG"; then
+            echo 'EventBus isolated self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
