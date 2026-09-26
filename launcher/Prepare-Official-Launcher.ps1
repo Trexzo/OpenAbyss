@@ -17,6 +17,24 @@ if (-not (Test-Path -LiteralPath $Jar -PathType Leaf)) {
 }
 
 New-Item -ItemType Directory -Force -Path $ModsDir | Out-Null
+
+foreach ($evidenceName in @(
+    'abyss-bootstrap-stage.txt',
+    'abyss-runtime-stage.txt',
+    'abyss-module-failure.txt',
+    'abyss-bootstrap-diagnostics.txt',
+    'abyss-census.tsv'
+)) {
+    Remove-Item -LiteralPath (Join-Path $GameDir $evidenceName) -Force -ErrorAction SilentlyContinue
+}
+
+$SessionId = [Guid]::NewGuid().ToString('N')
+$SessionStart = (Get-Date).ToUniversalTime().ToString('o')
+@(
+    "SESSION_ID=$SessionId"
+    "SESSION_START_UTC=$SessionStart"
+) | Set-Content -LiteralPath (Join-Path $GameDir 'openabyss-test-session.txt') -Encoding UTF8
+
 Copy-Item -LiteralPath $Jar -Destination $Dest -Force
 
 $hash = (Get-FileHash -LiteralPath $Dest -Algorithm SHA256).Hash
@@ -40,6 +58,8 @@ if (Test-Path -LiteralPath $BuildInfo -PathType Leaf) {
     "GAME_DIRECTORY=$GameDir"
     "MOD_JAR=$Dest"
     "MOD_JAR_SHA256=$hash"
+    "SESSION_ID=$SessionId"
+    "SESSION_START_UTC=$SessionStart"
     ''
     'Minecraft Launcher steps:'
     '1. Install/create a Minecraft Java Edition Forge 1.8.9 installation.'
