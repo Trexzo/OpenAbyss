@@ -443,7 +443,16 @@ public final class AbyssConfig {
             if (result.modules != AbyssModuleRegistry.expectedModuleCount()) {
                 return "FAIL modules " + result.modules + "/" + AbyssModuleRegistry.expectedModuleCount();
 }
-            return "PASS";
+            if (result.created != AbyssModuleRegistry.expectedModuleCount()) {
+                return "FAIL fresh-blocks " + result.created + "/" + AbyssModuleRegistry.expectedModuleCount();
+}
+            if (result.settingKeys <= 0) {
+                return "FAIL fresh-settings " + result.settingKeys;
+}
+            if (result.settingsOutsideSchema != 0) {
+                return "FAIL fresh-outside-schema " + result.settingsOutsideSchema;
+}
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys;
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
