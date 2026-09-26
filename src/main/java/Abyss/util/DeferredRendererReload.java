@@ -1,17 +1,22 @@
 /*
  * Decompiled with CFR 0.152.
- * 
+ *
  * Could not load the following classes:
  *  net.minecraft.client.Minecraft
  */
 package Abyss.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import net.minecraft.client.Minecraft;
 
 public final class DeferredRendererReload {
     private static volatile boolean pending;
     private static long lastReloadMs;
     private static final long COOLDOWN_MS = 3000L;
+    private static volatile String lastFailure;
 
     private DeferredRendererReload() {
 }
@@ -33,8 +38,26 @@ public final class DeferredRendererReload {
 }
 }
             catch (Throwable throwable) {
-                // empty catch block
+                DeferredRendererReload.recordFailure(throwable);
 }
 }
+}
+    private static void recordFailure(Throwable failure) {
+        String detail = failure.getClass().getName() + ": "
+                + String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        if (detail.equals(lastFailure)) {
+            return;
+}
+        lastFailure = detail;
+        String line = System.currentTimeMillis() + "\t" + detail;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    (OutputStream)new FileOutputStream(new File("abyss-renderer-failure.txt"), true), "UTF-8");){
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] deferred renderer reload failure " + line);
 }
 }
