@@ -42,7 +42,11 @@ if ($FixtureSelfTest) {
         ((Get-Date).Ticks.ToString() + "	world-module-lifecycle-start")
         ((Get-Date).Ticks.ToString() + "	world-module-lifecycle-complete")
     ) | Set-Content -LiteralPath $Runtime -Encoding UTF8
-    '[ABYSSDIAG] fixture' | Set-Content -LiteralPath $Diag -Encoding UTF8
+    @(
+        '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19 moduleSetting=PASS keybind=TRUSTED config=PASS'
+        '[ABYSSDIAG] command line      = READY'
+        '[ABYSSDIAG] fixture'
+    ) | Set-Content -LiteralPath $Diag -Encoding UTF8
     1..112 | ForEach-Object { "fixture$($_)	Module$($_)	Misc	0" } |
         Set-Content -LiteralPath $Census -Encoding UTF8
 }
