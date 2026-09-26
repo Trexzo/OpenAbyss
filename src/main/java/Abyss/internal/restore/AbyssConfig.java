@@ -411,6 +411,37 @@ public final class AbyssConfig {
             return "<unreadable " + p + '>';
 }
 }
+    public static String selfTest() {
+        String name = "__openabyss_runtime_selftest__";
+        File file = AbyssConfig.target(name);
+        File bak = AbyssConfig.sibling(file, ".bak");
+        File tmp = AbyssConfig.sibling(file, ".tmp");
+        try {
+            file.delete();
+            bak.delete();
+            tmp.delete();
+            SaveResult result = AbyssConfig.save(name);
+            if (result == null || !result.ok) {
+                return "FAIL save " + String.valueOf(result);
+}
+            List<String> bad = AbyssConfig.verify(result, null);
+            if (!bad.isEmpty()) {
+                return "FAIL verify " + bad.get(0);
+}
+            if (result.modules != AbyssModuleRegistry.expectedModuleCount()) {
+                return "FAIL modules " + result.modules + "/" + AbyssModuleRegistry.expectedModuleCount();
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+        finally {
+            file.delete();
+            bak.delete();
+            tmp.delete();
+}
+}
     public static List<String> verify(SaveResult r2, String corrupt) {
         ArrayList<String> bad = new ArrayList<String>();
         JsonObject root = AbyssConfig.parse(new File(r2.path));
