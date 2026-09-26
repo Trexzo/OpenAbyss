@@ -61,6 +61,9 @@ public final class AbyssBootstrap {
 
     private AbyssBootstrap() {
 }
+    private static boolean referenceBootstrapCompat() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat");
+}
     private static void stage(String name) {
         try {
             File f = new File("abyss-bootstrap-stage.txt");
@@ -118,10 +121,16 @@ public final class AbyssBootstrap {
         AbyssAzPump.install(var2, 0L, SUBSCRIBED, PENDING);
         stage("azpump-installed");
         PENDING.addAll(AbyssModuleRegistry.PENDING);
-        AbyssBootstrap.sub(var2, "Abyss.internal.ChatInputHandler", new ChatInputHandler(0L));
-        stage("chat-input-subscribed");
-        AbyssBootstrap.sub(var2, "Abyss.ui.screen.MainMenuTheme", new MainMenuTheme(0L));
-        stage("main-menu-theme-subscribed");
+        if (referenceBootstrapCompat()) {
+            PENDING.add("Abyss.internal.ChatInputHandler reference-bootstrap compatibility: left unsubscribed");
+            PENDING.add("Abyss.ui.screen.MainMenuTheme reference-bootstrap compatibility: left unsubscribed");
+            stage("reference-bootstrap-skipped-chat-menu");
+} else {
+            AbyssBootstrap.sub(var2, "Abyss.internal.ChatInputHandler", new ChatInputHandler(0L));
+            stage("chat-input-subscribed");
+            AbyssBootstrap.sub(var2, "Abyss.ui.screen.MainMenuTheme", new MainMenuTheme(0L));
+            stage("main-menu-theme-subscribed");
+}
         AbyssSettingStatics.apply(PENDING);
         AbyssModuleSettings.apply(PENDING);
         AbyssTruthNames.apply(PENDING);
@@ -134,7 +143,10 @@ public final class AbyssBootstrap {
         stage("commands-installed");
         AbyssBootstrap.subscribeAlways(var2, "Abyss.module.impl.misc.Timer", "Timer");
         stage("timer-subscribed");
-        if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
+        if (referenceBootstrapCompat()) {
+            PENDING.add("Abyss.internal.CheaterDetector reference-bootstrap compatibility: held out of ModuleManager.S and left unsubscribed");
+            stage("reference-bootstrap-skipped-cheater-detector");
+} else if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
             var2.s(AbyssModuleRegistry.PLAIN_LISTENER, 0L);
             SUBSCRIBED.add("Abyss.internal.CheaterDetector (internal service; held out of ModuleManager.S)");
             stage("cheater-detector-subscribed");
@@ -145,13 +157,18 @@ public final class AbyssBootstrap {
         stage("eventbus-batch-ended");
         AbyssClient.w = var2;
         stage("eventbus-published");
-        stage("altmanager-init-start");
-        AltManager.M(0L);
-        stage("altmanager-init-complete");
-        if (AltManager.isInitialized()) {
-            SUBSCRIBED.add("Abyss.ui.screen.ReconnectHandler");
+        if (referenceBootstrapCompat()) {
+            PENDING.add("Abyss.ui.screen.ReconnectHandler reference-bootstrap compatibility: AltManager.M not invoked");
+            stage("reference-bootstrap-skipped-altmanager");
 } else {
-            PENDING.add("Abyss.ui.screen.ReconnectHandler was not initialized by AltManager.M");
+            stage("altmanager-init-start");
+            AltManager.M(0L);
+            stage("altmanager-init-complete");
+            if (AltManager.isInitialized()) {
+                SUBSCRIBED.add("Abyss.ui.screen.ReconnectHandler");
+} else {
+                PENDING.add("Abyss.ui.screen.ReconnectHandler was not initialized by AltManager.M");
+}
 }
         AbyssConfig.apply(PENDING);
         stage("config-applied");
