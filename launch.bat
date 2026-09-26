@@ -8,7 +8,7 @@ echo This launches the packaged recovery JAR through the verified Forge 1.8.9 ru
 echo Runtime evidence is written to physical-smoke-evidence.
 echo.
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\physical-smoke.ps1" -KeepOpen
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\physical-smoke.ps1" -KeepOpen %*
 set "RC=%ERRORLEVEL%"
 
 echo.
