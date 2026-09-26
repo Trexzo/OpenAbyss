@@ -118,6 +118,9 @@ public class AltManager {
 }
 }
 }
+    public static boolean isInitialized() {
+        return I;
+}
     public static void h(int var0, short var1, File var2, char var3, GuiScreen var4) {
         long var5 = ((long)var0 << 32 | (long)var1 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ a;
         long var7 = var5 ^ 0x56B35D472FC1L;
