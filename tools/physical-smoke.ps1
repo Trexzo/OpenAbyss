@@ -150,6 +150,7 @@ try {
 
     $Stdout = Join-Path $Evidence 'runClient.stdout.log'
     $Stderr = Join-Path $Evidence 'runClient.stderr.log'
+    $RuntimeExit = 'RUNNING_OR_TIMEOUT'
     $BootstrapStage = Join-Path $Root 'abyss-bootstrap-stage.txt'
     $BootstrapStageRun = Join-Path $Root 'run\abyss-bootstrap-stage.txt'
     Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun -Force -ErrorAction SilentlyContinue
@@ -176,6 +177,7 @@ try {
         $P.WaitForExit()
         $P.Refresh()
         Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+        $RuntimeExit = [string]$P.ExitCode
         if ($P.ExitCode -ne 0) {
             $UnexpectedExitCode = $P.ExitCode
         }
@@ -188,12 +190,14 @@ try {
 
         if (-not $P.HasExited) {
             Write-Host 'Stopping runClient after evidence window.'
+            $RuntimeExit = 'TIMEOUT_WINDOW_REACHED'
             & taskkill.exe /PID $P.Id /T /F | Out-Null
             Start-Sleep -Seconds 2
         } else {
             $P.WaitForExit()
             $P.Refresh()
             Write-Host "RUNCLIENT_EXIT=$($P.ExitCode)"
+            $RuntimeExit = [string]$P.ExitCode
             if ($P.ExitCode -ne 0) {
                 $UnexpectedExitCode = $P.ExitCode
             }
@@ -287,6 +291,30 @@ try {
         }
     }
     $Graphics | Set-Content -LiteralPath (Join-Path $Evidence 'graphics-session.txt') -Encoding UTF8
+
+    $StageCandidates = @(
+        (Join-Path $Root 'run\abyss-bootstrap-stage.txt'),
+        (Join-Path $Root 'abyss-bootstrap-stage.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $StageFile = $StageCandidates | Select-Object -First 1
+    $LastStage = '<none>'
+    if ($StageFile) {
+        $StageLines = @(Get-Content -LiteralPath $StageFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($StageLines.Count -gt 0) {
+            $LastStage = ($StageLines[-1] -split "\t",2)[-1]
+        }
+    }
+    $CrashCount = @(Get-ChildItem -LiteralPath $CrashEvidence -File -ErrorAction SilentlyContinue).Count
+    @(
+        "HEAD=$Head"
+        "JAR_SHA256=$JarHash"
+        "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
+        "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
+        "REFERENCE_REGISTRY=$UseReferenceRegistry"
+        "RUNCLIENT_EXIT=$RuntimeExit"
+        "LAST_BOOTSTRAP_STAGE=$LastStage"
+        "CRASH_EVIDENCE_FILES=$CrashCount"
+    ) | Set-Content -LiteralPath (Join-Path $Evidence 'RESULT.txt') -Encoding UTF8
 
     if ($UnexpectedExitCode -ne $null) {
         ("RUNCLIENT_UNEXPECTED_EXIT=" + $UnexpectedExitCode) | Set-Content -LiteralPath (Join-Path $Evidence 'FAILED-runtime-exit.txt') -Encoding UTF8
