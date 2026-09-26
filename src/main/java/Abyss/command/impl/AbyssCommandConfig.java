@@ -386,6 +386,23 @@ extends Command {
             // malformed or incompatible config metadata is ignored
 }
 }
+    public static String selfTest() {
+        try {
+            Module probe = new Module(0L);
+            JsonObject block = new JsonObject();
+            block.addProperty("visible", Boolean.TRUE);
+            block.addProperty("suffix-visible", Boolean.FALSE);
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "suffix-visible", "q");
+            if (!probe.D() || probe.r()) {
+                return "FAIL metadata visible=" + probe.D() + " suffix=" + probe.r();
+}
+            return "PASS metadata";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     private static int writeSettingValues(Module var0, JsonObject var1) {
         List<Setting> var2;
         try {
