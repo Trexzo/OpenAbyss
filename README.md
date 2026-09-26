@@ -2,14 +2,42 @@
 
 A deobfuscated and decrypted Forge 1.8.9 client source project.
 
-## Features
-- Complete module source code with all strings and setting definitions decrypted and inlined.
-- Standard Gradle 1.8.9 Forge project structure (`src/main/java`, `src/main/resources`).
-- Ready to build with JDK 8.
+## Recovery branch
 
-## Building
-Run with Java 8:
-```bash
-gradle build
+Active recovery work lives on `recovery/r38-compile-pass`. The branch is intentionally kept separate from `main` while runtime recovery is still being validated.
+
+Current recovery contracts cover the full 112-module registry, config persistence, commands, ClickGUI publication/selection, Minecraft session swapping, Alt Manager menu injection/reconnect initialization, required internal subscribers, and ASM transforms.
+
+## Toolchain
+
+- Java: JDK 8
+- Gradle: 2.14.1
+- Minecraft: 1.8.9
+- Forge: 11.15.1.2318
+- mappings: stable_22
+
+## Build
+
+With Java 8 active:
+
+```powershell
+gradle --no-daemon clean build
 ```
-The compiled output will be generated in `build/libs/`.
+
+The compiled JAR is written to `build/libs/`.
+
+## Physical-PC smoke test
+
+The recovery branch includes a Windows PowerShell harness that reproduces the hosted recovery checks on a real GPU and collects the evidence needed before the recovery PR can be considered runnable on physical hardware.
+
+From the repository root:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1 -Jdk8 "C:\Path\To\JDK8"
+```
+
+The harness verifies Java 8, obtains Gradle 2.14.1 when needed, runs `clean build` and `getAssets`, clears GitHub runtime-token variables plus `ABYSS_PAYLOAD_KEY`, launches Forge with `--offline runClient`, records the branch HEAD and built JAR SHA-256, and captures Minecraft/OpenAbyss bootstrap, census, injection, graphics, and session evidence.
+
+It requires the recovered module/config/EventBus/session/command/ClickGUI/Alt Manager contracts to pass. Evidence is written to `physical-smoke-evidence/`; a successful bootstrap creates `PASS.txt` containing `PHYSICAL_SMOKE_BOOTSTRAP_PASS`.
+
+The harness proves bootstrap/runtime integrity, not every gameplay module or online service. Keep the recovery PR draft until the physical GPU/GUI smoke evidence is clean.
