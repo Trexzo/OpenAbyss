@@ -29,6 +29,41 @@ function Require([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
 
+function Validate-AbyssJar([string]$Path) {
+    Require (Test-Path -LiteralPath $Path -PathType Leaf) "abyss.jar is missing: $Path"
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [IO.Compression.ZipFile]::OpenRead($Path)
+    try {
+        $manifestEntry = $zip.GetEntry('META-INF/MANIFEST.MF')
+        Require ($null -ne $manifestEntry) 'abyss.jar has no META-INF/MANIFEST.MF.'
+        $reader = New-Object IO.StreamReader($manifestEntry.Open())
+        try { $manifest = $reader.ReadToEnd() } finally { $reader.Dispose() }
+
+        foreach ($line in @(
+            'FMLCorePlugin: Abyss.ASM.CoreMod',
+            'FMLCorePluginContainsFMLMod: true',
+            'ForceLoadAsMod: true',
+            'ModSide: CLIENT'
+        )) {
+            Require ($manifest.IndexOf($line, [StringComparison]::Ordinal) -ge 0) "abyss.jar manifest is missing: $line"
+        }
+
+        foreach ($entryName in @(
+            'Abyss/ASM/CoreMod.class',
+            'Abyss/AbyssClient.class',
+            'assets/abyss/asm/mcp-notch.srg',
+            'assets/abyss/asm/mcp-srg.srg',
+            'mcmod.info'
+        )) {
+            Require ($null -ne $zip.GetEntry($entryName)) "abyss.jar is missing required entry: $entryName"
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+}
+
 function Get-Prop([object]$Object, [string]$Name) {
     if ($null -eq $Object) { return $null }
     $prop = $Object.PSObject.Properties[$Name]
@@ -259,7 +294,8 @@ Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFa
 Remove-Item -LiteralPath $CrashOut -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $GameDir,(Join-Path $GameDir 'mods'),$CrashOut | Out-Null
 
-Require (Test-Path -LiteralPath $Jar -PathType Leaf) "abyss.jar is missing beside the launcher: $Jar"
+$JarHash = Validate-AbyssJar $Jar
+Log "OpenAbyss JAR SHA-256: $JarHash"
 
 if (-not $MinecraftDir) {
     $MinecraftDir = Join-Path $env:APPDATA '.minecraft'
@@ -432,7 +468,7 @@ $result = @(
     "MISSING_LIBRARIES=$($missingLibraries.Count)",
     "NATIVE_ARCHIVES=$nativeCount",
     "NATIVE_DLLS=$($nativeFiles.Count)",
-    "JAR_SHA256=$((Get-FileHash -LiteralPath $Jar -Algorithm SHA256).Hash)",
+    "JAR_SHA256=$JarHash",
     "BOOTSTRAP_DIAGNOSTICS=$diagPresent",
     "MODULE_CENSUS_COUNT=$censusCount",
     "LAST_BOOTSTRAP_STAGE=$lastBootstrap",
