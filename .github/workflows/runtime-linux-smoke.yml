@@ -408,7 +408,8 @@ jobs:
             Abyss.AbyssClient \
             Abyss.internal.ChatInputHandler \
             Abyss.module.impl.misc.Timer \
-            Abyss.internal.CheaterDetector
+            Abyss.internal.CheaterDetector \
+            Abyss.ui.screen.ReconnectHandler
           do
             if ! grep -Fq "$SUBSCRIBER" "$DIAG"; then
               echo "Required recovered subscriber missing from bootstrap diagnostics: $SUBSCRIBER"
