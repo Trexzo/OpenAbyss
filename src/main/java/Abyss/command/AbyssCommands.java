@@ -184,6 +184,10 @@ public final class AbyssCommands {
                 if (aliases == null || aliases.length == 0 || aliases[0] == null || aliases[0].trim().isEmpty()) {
                     return "FAIL aliases " + command.getClass().getName();
 }
+                String fallback = AbyssCommands.nativeBaseFallback(command);
+                if (fallback != null) {
+                    return "FAIL native-base-fallback " + command.getClass().getName() + "." + fallback;
+}
                 ++count;
                 if (AbyssCommands.find(aliases[0]) != command) {
                     return "FAIL resolve " + aliases[0] + " -> " + command.getClass().getName();
@@ -217,6 +221,30 @@ public final class AbyssCommands {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
 }
 }
+    private static String nativeBaseFallback(Command command) {
+        try {
+            if (command.getClass().getMethod("J").getDeclaringClass() == Command.class) {
+                return "J";
+}
+            if (command.getClass().getMethod("e", Long.TYPE).getDeclaringClass() == Command.class) {
+                return "e";
+}
+            if (command.getClass().getMethod("g", String[].class, Integer.TYPE, Long.TYPE).getDeclaringClass() == Command.class) {
+                return "g";
+}
+            if (command.getClass().getMethod("h", Long.TYPE).getDeclaringClass() == Command.class) {
+                return "h";
+}
+            if (command.getClass().getMethod("j", String[].class, Long.TYPE).getDeclaringClass() == Command.class) {
+                return "j";
+}
+            return null;
+}
+        catch (Throwable failure) {
+            return "reflection:" + failure.getClass().getName();
+}
+}
+
     private static String names() {
         StringBuilder var0 = new StringBuilder();
         if (StockCommandRegistry.L != null) {
