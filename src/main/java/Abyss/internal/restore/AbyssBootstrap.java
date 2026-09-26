@@ -305,6 +305,8 @@ public final class AbyssBootstrap {
     private static void diag$dump() {
         try {
             StringBuilder b = new StringBuilder("\n[ABYSSDIAG] ==== bootstrap outcome ====\n");
+            b.append("[ABYSSDIAG] reference bootstrap = ").append(referenceBootstrapCompat()).append('\n');
+            b.append("[ABYSSDIAG] reference registry  = ").append(Boolean.getBoolean("abyss.referenceRegistryCompat")).append('\n');
             b.append("[ABYSSDIAG] AZ.w             = ").append(AbyssClient.w == null ? "null" : "live").append('\n');
             b.append("[ABYSSDIAG] subscribed       = ").append(SUBSCRIBED.size()).append(' ').append(SUBSCRIBED).append('\n');
             b.append("[ABYSSDIAG] pending          = ").append(PENDING.size()).append('\n');
