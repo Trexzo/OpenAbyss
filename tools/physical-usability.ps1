@@ -77,9 +77,17 @@ $moduleFailureCandidates = @(
 ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 $moduleFailureFile = $moduleFailureCandidates | Select-Object -First 1
 
+$eventFailureCandidates = @(
+    (Join-Path $Root 'run\abyss-event-failure.txt'),
+    (Join-Path $Root 'abyss-event-failure.txt'),
+    (Join-Path $Evidence 'abyss-event-failure.txt')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+$eventFailureFile = $eventFailureCandidates | Select-Object -First 1
+
 $runtimeText = if ($runtimeFile) { [IO.File]::ReadAllText($runtimeFile) } else { '' }
 $bootstrapText = if ($bootstrapFile) { [IO.File]::ReadAllText($bootstrapFile) } else { '' }
 $moduleFailureText = if ($moduleFailureFile) { [IO.File]::ReadAllText($moduleFailureFile) } else { '' }
+$eventFailureText = if ($eventFailureFile) { [IO.File]::ReadAllText($eventFailureFile) } else { '' }
 
 $checks = [ordered]@{
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
@@ -92,6 +100,7 @@ $checks = [ordered]@{
     ModuleLifecycleStart = $runtimeText.Contains("world-module-lifecycle-start")
     ModuleLifecycleComplete = $runtimeText.Contains("world-module-lifecycle-complete")
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
+    EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
 }
 
 $pass = $checks.BootstrapComplete -and
@@ -104,6 +113,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ModuleLifecycleStart -and
         $checks.ModuleLifecycleComplete -and
         (-not $checks.ModuleLifecycleFailure) -and
+        (-not $checks.EventCallbackFailure) -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
@@ -114,6 +124,7 @@ foreach ($entry in $checks.GetEnumerator()) {
 $lines.Add("RUNTIME_STAGE_FILE=" + $(if ($runtimeFile) { $runtimeFile } else { '<none>' }))
 $lines.Add("BOOTSTRAP_STAGE_FILE=" + $(if ($bootstrapFile) { $bootstrapFile } else { '<none>' }))
 $lines.Add("MODULE_FAILURE_FILE=" + $(if ($moduleFailureFile) { $moduleFailureFile } else { '<none>' }))
+$lines.Add("EVENT_FAILURE_FILE=" + $(if ($eventFailureFile) { $eventFailureFile } else { '<none>' }))
 if ($smokeError) {
     $lines.Add("SMOKE_ERROR=" + $smokeError.Exception.Message)
 }
