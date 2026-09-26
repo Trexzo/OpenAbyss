@@ -110,6 +110,22 @@ AUTHORITY_BACKED_FINDINGS = frozenset({
 })
 
 
+REFLECTION_METHOD_DECLARATION = (
+    "private static Method a(Class var0, String var1, Class var2, "
+    "int var3, Class[] var4)"
+)
+
+# Pinned OpenExpo preserves one labelled outer-method loop and one labelled
+# continue in this exact reflection-signature matcher in each of these files.
+LABELLED_DECLARATION_AUTHORITIES = {
+    "Abyss/module/impl/combat/AutoBlock.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/combat/BlockHit.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/combat/JumpReset.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/module/impl/world/BridgeAssist.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+    "Abyss/util/RotationManager.java": (REFLECTION_METHOD_DECLARATION, 1, 1),
+}
+
+
 # Silent semantic-loss families recovered elsewhere in this tree.
 # These are intentionally narrow so that they complement, rather than
 # duplicate, the broad CFR comment/label inventory.
@@ -424,6 +440,40 @@ def scan_file(path: Path, root: Path):
                     and transfer_count == expected_transfers
                 ):
                     method_start_line = line_number(text, method_match.start())
+                    method_end_line = method_start_line + method_body.count("\n")
+                    for finding in findings:
+                        if (
+                            finding["category"]
+                            in {"synthetic_block_label", "labelled_break_continue"}
+                            and method_start_line <= finding["line"] <= method_end_line
+                        ):
+                            finding["confidence"] = "low"
+
+    declaration_authority = LABELLED_DECLARATION_AUTHORITIES.get(authority_path)
+    if declaration_authority is not None:
+        declaration, expected_labels, expected_transfers = declaration_authority
+        declaration_start = text.find(declaration)
+        if (
+            declaration_start >= 0
+            and text.find(declaration, declaration_start + 1) == -1
+        ):
+            open_brace = text.find("{", declaration_start + len(declaration))
+            method_body = java_brace_block(text, open_brace)
+            if method_body is not None:
+                label_count = len(
+                    re.findall(r"^\s*block\d+\s*:", method_body, re.MULTILINE)
+                )
+                transfer_count = len(
+                    re.findall(
+                        r"\b(?:break|continue)\s+block\d+\s*;",
+                        method_body,
+                    )
+                )
+                if (
+                    label_count == expected_labels
+                    and transfer_count == expected_transfers
+                ):
+                    method_start_line = line_number(text, declaration_start)
                     method_end_line = method_start_line + method_body.count("\n")
                     for finding in findings:
                         if (
