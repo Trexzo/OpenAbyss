@@ -100,6 +100,16 @@ LABELLED_METHOD_AUTHORITIES = {
 }
 
 
+# These warning sites were individually checked against source/cross-build
+# authority. Preserve the warning comments for provenance, but do not treat
+# their presence alone as an unresolved semantic-risk signal.
+AUTHORITY_BACKED_FINDINGS = frozenset({
+    ("Abyss/ASM/ClassNameFilterTransformer.java", "decompiler_warning_marker"),
+    ("Abyss/ASM/Util/BytecodeHelper.java", "decompiler_warning_marker"),
+    ("Abyss/inject/InjectNativeBridge.java", "void_declaration_warning"),
+})
+
+
 # Silent semantic-loss families recovered elsewhere in this tree.
 # These are intentionally narrow so that they complement, rather than
 # duplicate, the broad CFR comment/label inventory.
@@ -207,6 +217,9 @@ def java_brace_block(text: str, open_brace: int):
 
 def scan_file(path: Path, root: Path):
     rel = path.relative_to(root)
+    authority_path = rel.as_posix()
+    if authority_path.startswith("src/main/java/"):
+        authority_path = authority_path[len("src/main/java/"):]
     text = path.read_text(encoding="utf-8", errors="replace")
     lines = text.splitlines()
     findings = []
@@ -235,12 +248,27 @@ def scan_file(path: Path, root: Path):
                     confidence = "medium"
                 else:
                     confidence = "high"
+                if (authority_path, category) in AUTHORITY_BACKED_FINDINGS:
+                    confidence = "low"
                 add(findings, category, rel, idx, line, confidence)
 
         if warning_marker is not None:
             # A decompiler warning is evidence that the original decompilation was
             # uncertain, but it is not proof the current recovered postimage is wrong.
-            add(findings, "decompiler_warning_marker", rel, idx, line, "medium")
+            warning_confidence = (
+                "low"
+                if (authority_path, "decompiler_warning_marker")
+                in AUTHORITY_BACKED_FINDINGS
+                else "medium"
+            )
+            add(
+                findings,
+                "decompiler_warning_marker",
+                rel,
+                idx,
+                line,
+                warning_confidence,
+            )
 
     for m in FINALLY_CONTROL.finditer(text):
         body = m.group("body")
