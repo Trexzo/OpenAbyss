@@ -98,9 +98,6 @@ public class MiscHooks {
 }
         return var0.isUsingItem();
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static void guiMainMenuInit(GuiMainMenu var0, CallbackInfo var1) {
         try {
             if (GuiMainMenuHooks.gateClientAccess()) {
