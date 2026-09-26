@@ -134,6 +134,37 @@ jobs:
             $zip.Dispose()
           }
 
+      - name: Exercise shipped Windows launcher package helpers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-launcher-package-test'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'launch_abyss.ps1') -LauncherDir $out -ResolverSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Packaged launcher resolver self-test failed: $LASTEXITCODE" }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'Prepare-Official-Launcher.ps1') -PackageDir $out
+          if ($LASTEXITCODE -ne 0) { throw "Packaged official-launcher setup helper failed: $LASTEXITCODE" }
+
+          $sourceJar = Join-Path $out 'abyss.jar'
+          $installedJar = Join-Path $out 'official-game\mods\abyss.jar'
+          if (-not (Test-Path -LiteralPath $installedJar -PathType Leaf)) {
+            throw "Official-launcher setup did not create: $installedJar"
+          }
+          $sourceHash = (Get-FileHash -LiteralPath $sourceJar -Algorithm SHA256).Hash
+          $installedHash = (Get-FileHash -LiteralPath $installedJar -Algorithm SHA256).Hash
+          if ($sourceHash -ne $installedHash) {
+            throw "Official-launcher installed JAR hash mismatch: $installedHash != $sourceHash"
+          }
+          $setupRecord = Join-Path $out 'official-launcher-setup.txt'
+          if (-not (Test-Path -LiteralPath $setupRecord -PathType Leaf)) {
+            throw 'Official-launcher setup record was not produced.'
+          }
+          Write-Host "SHIPPED_LAUNCHER_HELPERS_CONTRACT=PASS jar_sha256=$sourceHash"
+
       - name: Validate JAR contract
         shell: powershell
         run: |
