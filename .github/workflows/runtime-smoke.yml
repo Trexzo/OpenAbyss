@@ -94,7 +94,7 @@ jobs:
           $env:ABYSS_PAYLOAD_KEY = $null
           # GitHub-hosted Windows runners have no accelerated WGL pixel format.
           # LWJGL 2 exposes this documented switch to permit a software-only context.
-          $env:JAVA_TOOL_OPTIONS = '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true'
+          $env:JAVA_TOOL_OPTIONS = '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true -Dabyss.runtimeSelfTest=true'
           Write-Host "JAVA_TOOL_OPTIONS=$env:JAVA_TOOL_OPTIONS"
 
           $stdout = Join-Path $env:RUNNER_TEMP 'openabyss-runClient.stdout.log'
@@ -259,6 +259,9 @@ jobs:
             }
             if (-not $diagText.Contains('[ABYSSDIAG] module selftest    = PASS')) {
               throw 'Module state-machine self-test is not green.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] config selftest    = PASS')) {
+              throw 'Config persistence self-test is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
