@@ -42,5 +42,34 @@ public class SessionAccessor {
         catch (Exception exception) {
             // empty catch block
 }
+}    public static String selfTest() {
+        Session original = null;
+        try {
+            original = SessionAccessor.d();
+            Session probe = new Session("__openabyss_selftest__", "00000000000000000000000000000000", "selftest-token", "legacy");
+            SessionAccessor.k(probe);
+            Session got = SessionAccessor.d();
+            if (got == null) {
+                return "FAIL null";
+}
+            if (!"__openabyss_selftest__".equals(got.getUsername())) {
+                return "FAIL username " + got.getUsername();
+}
+            if (!"00000000000000000000000000000000".equals(got.getPlayerID())) {
+                return "FAIL uuid " + got.getPlayerID();
+}
+            if (!"selftest-token".equals(got.getToken())) {
+                return "FAIL token";
+}
+            return "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+        finally {
+            if (original != null) {
+                SessionAccessor.k(original);
+}
+}
 }
 }
