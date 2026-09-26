@@ -221,8 +221,8 @@ jobs:
 
           CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
           echo "MODULE_CENSUS_COUNT=$CENSUS_COUNT"
-          if [ "$CENSUS_COUNT" -ne 92 ]; then
-            echo "Unexpected module census count: $CENSUS_COUNT (expected 92)."
+          if [ "$CENSUS_COUNT" -ne 97 ]; then
+            echo "Unexpected module census count: $CENSUS_COUNT (expected 97)."
             exit 1
           fi
 
@@ -262,7 +262,7 @@ jobs:
             echo 'Bootstrap diagnostic report was not produced.'
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] module count     = 92 of 92 OK' "$DIAG"; then
+          if ! grep -Fq '[ABYSSDIAG] module count     = 97 of 97 OK' "$DIAG"; then
             echo 'Bootstrap diagnostic module-count gate is not green.'
             cat "$DIAG"
             exit 1
@@ -277,8 +277,8 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 92' "$DIAG"; then
-            echo 'Published module-list size is not 92.'
+          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 97' "$DIAG"; then
+            echo 'Published module-list size is not 97.'
             cat "$DIAG"
             exit 1
           fi

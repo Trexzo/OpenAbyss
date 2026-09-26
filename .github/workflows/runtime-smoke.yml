@@ -175,8 +175,8 @@ jobs:
             $censusLines = @(Get-Content -LiteralPath $censusPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
             $censusCount = $censusLines.Count
             Write-Host "MODULE_CENSUS_COUNT=$censusCount"
-            if ($censusCount -ne 92) {
-              throw "Unexpected OpenAbyss module census count: $censusCount (expected 92)."
+            if ($censusCount -ne 97) {
+              throw "Unexpected OpenAbyss module census count: $censusCount (expected 97)."
             }
 
             $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD')
@@ -219,7 +219,7 @@ jobs:
               throw 'Bootstrap diagnostic report was not produced.'
             }
             $diagText = [IO.File]::ReadAllText($diagPath)
-            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 92 of 92 OK')) {
+            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 97 of 97 OK')) {
               throw 'Bootstrap diagnostic module-count gate is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
@@ -228,8 +228,8 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
-            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 92')) {
-              throw 'Published module-list size is not 92.'
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 97')) {
+              throw 'Published module-list size is not 97.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] tD.o (byClass)   = 113')) {
               throw 'By-class module registry size is not 113.'

@@ -507,11 +507,6 @@ public final class AbyssModuleRegistry {
         RETIRED.add("InputFix");
         RETIRED.add("NoObfuscation");
         RETIRED.add("RawInput");
-        RETIRED.add("CustomCape");
-        RETIRED.add("Font");
-        RETIRED.add("Gadgets");
-        RETIRED.add("Language");
-        RETIRED.add("Theme");
         RETIRED.add("VisualSpoof");
         RETIRED.add("BindGUI");
         RETIRED.add("CaveXray");
