@@ -3,7 +3,8 @@ param(
     [int]$RunSeconds = 180,
     [switch]$SkipBuild,
     [switch]$KeepOpen,
-    [switch]$DevRuntime
+    [switch]$DevRuntime,
+    [switch]$ReferenceBootstrap
 )
 
 Set-StrictMode -Version 2.0
@@ -102,7 +103,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
-    $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true'
+    $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' + $(if ($ReferenceBootstrap) { ' -Dabyss.referenceBootstrapCompat=true' } else { '' })
 
     $Meta = @(
         "timestamp=$(Get-Date -Format o)"
@@ -113,6 +114,7 @@ try {
         "keep_open=$KeepOpen"
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
+        "reference_bootstrap=$ReferenceBootstrap"
         "dirty_tracked=$DirtyTracked"
     )
     $Meta | Set-Content -LiteralPath (Join-Path $Evidence 'environment.txt') -Encoding UTF8
