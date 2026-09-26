@@ -194,6 +194,7 @@ try {
     Require ($null -ne $Diag) 'No bootstrap diagnostics were produced.'
     $DiagText = [IO.File]::ReadAllText($Diag)
 
+    $LatestLog = Join-Path $Root 'run\logs\latest.log'
     $Combined = ''
     foreach ($LogPath in @($Stdout,$Stderr,$LatestLog,(Join-Path $env:TEMP 'abyss-inject.log'))) {
         if ($LogPath -and (Test-Path -LiteralPath $LogPath)) {
@@ -227,7 +228,6 @@ try {
         if (-not $DiagText.Contains($Needle)) { $Failures += $Needle }
     }
 
-    $LatestLog = Join-Path $Root 'run\logs\latest.log'
     $Graphics = @()
     if (Test-Path -LiteralPath $LatestLog) {
         $LogText = [IO.File]::ReadAllText($LatestLog)
