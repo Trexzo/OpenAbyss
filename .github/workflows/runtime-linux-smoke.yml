@@ -251,7 +251,7 @@ jobs:
           require_setting_count CustomCape 1
           require_setting_count Font 6
           require_setting_count Gadgets 3
-          require_setting_count Language 6
+          require_setting_count Language 8
           require_setting_count Theme 7
           require_setting_count BlockHit 26
           require_setting_count BedNuker 21

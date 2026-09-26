@@ -197,7 +197,7 @@ jobs:
               CustomCape = 1
               Font        = 6
               Gadgets     = 3
-              Language    = 6
+              Language    = 8
               Theme       = 7
               BlockHit   = 26
               BedNuker   = 21
