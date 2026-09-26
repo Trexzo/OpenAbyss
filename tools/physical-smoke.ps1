@@ -24,6 +24,12 @@ $Gradle = Join-Path $GradleHome 'bin\gradle.bat'
 $GradleUserHome = Join-Path $GradleCache 'gradle-user-home'
 
 New-Item -ItemType Directory -Force -Path $Evidence,$GradleCache,$GradleUserHome | Out-Null
+Remove-Item -LiteralPath @(
+    (Join-Path $Evidence 'PASS.txt'),
+    (Join-Path $Evidence 'RESULT.txt'),
+    (Join-Path $Evidence 'FAILED-contracts.txt'),
+    (Join-Path $Evidence 'FAILED-runtime-exit.txt')
+) -Force -ErrorAction SilentlyContinue
 
 function Require([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
