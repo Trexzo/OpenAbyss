@@ -175,11 +175,11 @@ jobs:
             $censusLines = @(Get-Content -LiteralPath $censusPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
             $censusCount = $censusLines.Count
             Write-Host "MODULE_CENSUS_COUNT=$censusCount"
-            if ($censusCount -ne 103) {
-              throw "Unexpected OpenAbyss module census count: $censusCount (expected 103)."
+            if ($censusCount -ne 112) {
+              throw "Unexpected OpenAbyss module census count: $censusCount (expected 112)."
             }
 
-            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme','InputFix','NoObfuscation','RawInput','VisualSpoof','CaveXray','ItemScale')
+            $requiredModules = @('Scaffold','AutoBlock','KillAura','InvManager','Velocity','ESP','TargetHUD','CustomCape','Font','Gadgets','Language','Theme','InputFix','NoObfuscation','RawInput','VisualSpoof','CaveXray','ItemScale','AntiNick','ContainerKeeper','BindGUI','KeyStrokes','TeamInvisible','ClosestPlayerHUD','FKCounter','FallIndicator','LeapModeHUD')
             foreach ($module in $requiredModules) {
               if (-not ($censusLines -match ("\t" + [regex]::Escape($module) + "\t"))) {
                 throw "Required module missing from census: $module"
@@ -205,6 +205,15 @@ jobs:
               VisualSpoof = 4
               CaveXray    = 2
               ItemScale   = 7
+              AntiNick    = 1
+              ContainerKeeper = 2
+              BindGUI     = 3
+              KeyStrokes  = 3
+              TeamInvisible = 2
+              ClosestPlayerHUD = 11
+              FKCounter   = 4
+              FallIndicator = 3
+              LeapModeHUD = 4
               BlockHit   = 26
               BedNuker   = 21
               BlocksESP  = 17
@@ -230,17 +239,23 @@ jobs:
               throw 'Bootstrap diagnostic report was not produced.'
             }
             $diagText = [IO.File]::ReadAllText($diagPath)
-            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 103 of 103 OK')) {
+            if (-not $diagText.Contains('[ABYSSDIAG] module count     = 112 of 112 OK')) {
               throw 'Bootstrap diagnostic module-count gate is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] config writable   = writable=true')) {
               throw 'Bootstrap diagnostic config-writable gate is not green.'
             }
+            if (-not ($diagText.Contains('retired=0') -and $diagText.Contains('persistable=112') -and $diagText.Contains('missing=0'))) {
+              throw 'Full original module registry is not writable/persistable without retired or missing modules.'
+            }
+            if (-not $diagText.Contains('[ABYSSDIAG] census names       = 112 of 112 (truth 112)')) {
+              throw 'Not all 112 original module names are published.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] ctorcache        = built 32 failed 0')) {
               throw 'Constructor-cache bootstrap gate is not green.'
             }
-            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 103')) {
-              throw 'Published module-list size is not 103.'
+            if (-not $diagText.Contains('[ABYSSDIAG] tD.S (list)      = 112')) {
+              throw 'Published module-list size is not 112.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] tD.o (byClass)   = 113')) {
               throw 'By-class module registry size is not 113.'
@@ -258,12 +273,12 @@ jobs:
                 throw "Recovered ClickGUI contract failed: $guiLine"
               }
             }
-            $expectedCategories = '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=9, Movement=8, Player=12, Visual=16, Visual_utility=15, World=11}'
+            $expectedCategories = '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=11, Movement=8, Player=12, Visual=19, Visual_utility=19, World=11}'
             if (-not $diagText.Contains($expectedCategories)) {
-              throw 'Recovered module category census is not the expected 103-module layout.'
+              throw 'Recovered module category census is not the expected 112-module layout.'
             }
-            if (-not ($diagText.Contains('RavenClickGuiScreen (RAVEN theme) published into zu_3.F') -and $diagText.Contains('103 module rows'))) {
-              throw 'Raven ClickGUI did not publish all 103 active module rows.'
+            if (-not ($diagText.Contains('RavenClickGuiScreen (RAVEN theme) published into zu_3.F') -and $diagText.Contains('112 module rows'))) {
+              throw 'Raven ClickGUI did not publish all 112 active module rows.'
             }
             Write-Host 'CLICKGUI_PUBLICATION_CONTRACT=PASS'
             Write-Host 'MODULE_CATEGORY_CENSUS_CONTRACT=PASS'

@@ -502,15 +502,6 @@ public final class AbyssModuleRegistry {
         PERSISTABLE = new HashSet<Class<? extends Module>>();
         PERSISTABLE_NAMES = new LinkedHashSet<String>();
         RETIRED = new HashSet<String>();
-        RETIRED.add("AntiNick");
-        RETIRED.add("ContainerKeeper");
-        RETIRED.add("BindGUI");
-        RETIRED.add("KeyStrokes");
-        RETIRED.add("TeamInvisible");
-        RETIRED.add("ClosestPlayerHUD");
-        RETIRED.add("FKCounter");
-        RETIRED.add("FallIndicator");
-        RETIRED.add("LeapModeHUD");
         MISSING = new ArrayList<String>();
         DISABLED_UPSTREAM = new String[]{"Abyss.module.impl.combat.AutoProjectiles", "Abyss.module.impl.player.NoFall", "Abyss.module.impl.player.FreeCam"};
 }

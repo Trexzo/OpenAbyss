@@ -221,8 +221,8 @@ jobs:
 
           CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
           echo "MODULE_CENSUS_COUNT=$CENSUS_COUNT"
-          if [ "$CENSUS_COUNT" -ne 103 ]; then
-            echo "Unexpected module census count: $CENSUS_COUNT (expected 103)."
+          if [ "$CENSUS_COUNT" -ne 112 ]; then
+            echo "Unexpected module census count: $CENSUS_COUNT (expected 112)."
             exit 1
           fi
 
@@ -259,6 +259,15 @@ jobs:
           require_setting_count VisualSpoof 4
           require_setting_count CaveXray 2
           require_setting_count ItemScale 7
+          require_setting_count AntiNick 1
+          require_setting_count ContainerKeeper 2
+          require_setting_count BindGUI 3
+          require_setting_count KeyStrokes 3
+          require_setting_count TeamInvisible 2
+          require_setting_count ClosestPlayerHUD 11
+          require_setting_count FKCounter 4
+          require_setting_count FallIndicator 3
+          require_setting_count LeapModeHUD 4
           require_setting_count BlockHit 26
           require_setting_count BedNuker 21
           require_setting_count BlocksESP 17
@@ -273,7 +282,7 @@ jobs:
             echo 'Bootstrap diagnostic report was not produced.'
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] module count     = 103 of 103 OK' "$DIAG"; then
+          if ! grep -Fq '[ABYSSDIAG] module count     = 112 of 112 OK' "$DIAG"; then
             echo 'Bootstrap diagnostic module-count gate is not green.'
             cat "$DIAG"
             exit 1
@@ -283,13 +292,23 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq 'retired=0' "$DIAG" || ! grep -Fq 'persistable=112' "$DIAG" || ! grep -Fq 'missing=0' "$DIAG"; then
+            echo 'Full original module registry is not writable/persistable without retired or missing modules.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] census names       = 112 of 112 (truth 112)' "$DIAG"; then
+            echo 'Not all 112 original module names are published.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 103' "$DIAG"; then
-            echo 'Published module-list size is not 103.'
+          if ! grep -Fq '[ABYSSDIAG] tD.S (list)      = 112' "$DIAG"; then
+            echo 'Published module-list size is not 112.'
             cat "$DIAG"
             exit 1
           fi
@@ -315,13 +334,13 @@ jobs:
               exit 1
             fi
           done
-          if ! grep -Fq '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=9, Movement=8, Player=12, Visual=16, Visual_utility=15, World=11}' "$DIAG"; then
-            echo 'Recovered module category census is not the expected 103-module layout.'
+          if ! grep -Fq '[ABYSSDIAG] census per-cat     = {Combat=17, Configuration=10, Macro=5, Misc=11, Movement=8, Player=12, Visual=19, Visual_utility=19, World=11}' "$DIAG"; then
+            echo 'Recovered module category census is not the expected 112-module layout.'
             cat "$DIAG"
             exit 1
           fi
-          if ! grep -Fq 'RavenClickGuiScreen (RAVEN theme) published into zu_3.F' "$DIAG" || ! grep -Fq '103 module rows' "$DIAG"; then
-            echo 'Raven ClickGUI did not publish all 103 active module rows.'
+          if ! grep -Fq 'RavenClickGuiScreen (RAVEN theme) published into zu_3.F' "$DIAG" || ! grep -Fq '112 module rows' "$DIAG"; then
+            echo 'Raven ClickGUI did not publish all 112 active module rows.'
             cat "$DIAG"
             exit 1
           fi
