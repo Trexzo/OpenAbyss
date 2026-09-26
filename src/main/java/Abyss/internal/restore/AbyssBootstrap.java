@@ -86,12 +86,19 @@ public final class AbyssBootstrap {
     public static void forceEnableCommandLine() {
         try {
             Module cl = ModuleManager.byName("CommandLine");
-            if (cl != null && !cl.o()) {
+            if (cl == null) {
+                PENDING.add("CommandLine module missing while forcing command availability");
+                return;
+}
+            if (!cl.o()) {
                 cl.I(0L, true);
+}
+            if (!cl.o()) {
+                PENDING.add("CommandLine module remained disabled after force-enable");
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PENDING.add("CommandLine force-enable threw " + throwable.getClass().getName() + ": " + String.valueOf(throwable.getMessage()));
 }
 }
     public static void initClient() {
@@ -329,6 +336,8 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] zu_3.F RAVEN     = ").append(ClickGUI.F == null ? "null" : "live").append('\n');
             b.append("[ABYSSDIAG] zu_3 open bind   = ").append(Modules.J(ClickGUI.class) == null ? "null" : KeyBindUtil.p(0L, '\u0000', Modules.J(ClickGUI.class).h())).append('\n');
             b.append("[ABYSSDIAG] t6.L (commands)  = ").append(StockCommandRegistry.L == null ? "null" : String.valueOf(StockCommandRegistry.L.size())).append('\n');
+            Module commandLine = ModuleManager.byName("CommandLine");
+            b.append("[ABYSSDIAG] command line      = ").append(commandLine != null && commandLine.o() ? "READY" : "NOT_READY").append('\n');
             b.append("[ABYSSDIAG] config writable   = ").append(AbyssModuleRegistry.writableNote()).append('\n');
             b.append("[ABYSSDIAG] eventbus selftest  = ").append(EventBus.selfTest()).append('\n');
             b.append("[ABYSSDIAG] module selftest    = ").append(Module.selfTest()).append('\n');
