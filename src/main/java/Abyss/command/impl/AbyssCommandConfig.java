@@ -247,11 +247,14 @@ extends Command {
         for (Module var9 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var9 == null || !AbyssModuleRegistry.isConfigPersistable(var9)) continue;
             JsonElement var10 = var4.get(var9.b());
+            JsonObject var11;
             if (var10 == null || !var10.isJsonObject()) {
+                var11 = new JsonObject();
+                var4.add(var9.b(), (JsonElement)var11);
                 ++var6;
-                continue;
+            } else {
+                var11 = var10.getAsJsonObject();
 }
-            JsonObject var11 = var10.getAsJsonObject();
             var11.addProperty("status", Boolean.valueOf(var9.o()));
             if (var7) {
                 var11.addProperty("keyBind", (Number)var9.h());
