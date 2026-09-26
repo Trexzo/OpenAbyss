@@ -39,6 +39,7 @@ public final class AbyssCommandData {
     public static final String ENEMIES = "enemies.txt";
     public static final String CURRENT = "current.json";
     static final String CHAT_BINDS = "chatBinds";
+    public static volatile String lastLoadNote = "not loaded";
 
     private AbyssCommandData() {
 }
@@ -224,6 +225,10 @@ public final class AbyssCommandData {
 }
 }
     public static void load() {
+        String names = AbyssCommandData.loadNames();
+        String menu = AbyssCommandData.loadMenu();
+        String binds = AbyssCommandData.loadChatBinds();
+        lastLoadNote = names + " | " + menu + " | " + binds;
 }
     private static String loadNames() {
         int var0 = 0;
