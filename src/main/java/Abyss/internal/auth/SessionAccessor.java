@@ -42,6 +42,7 @@ public class SessionAccessor {
         catch (Exception exception) {
             // empty catch block
 }
+}
     public static String selfTest() {
         Session original = null;
         try {
