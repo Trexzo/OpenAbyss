@@ -491,9 +491,6 @@ implements EventSubscriber {
         var1.v(var2, var3 / var5, var4 / var5, var6, var9, textShadow.c());
         GlStateManager.popMatrix();
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private void drawAbyssStyle(String mode) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         EntityLivingBase t2 = this.K;
         if (t2 == null) {
@@ -544,16 +541,24 @@ implements EventSubscriber {
                 RenderingUtils.rectangleBordered(2.0, 2.0, 38.0, 38.0, 0.5, new Color(0, 0, 0, 0).getRGB(), new Color(10, 10, 10).getRGB());
                 RenderingUtils.rectangleBordered(2.5, 2.5, 37.5, 37.5, 0.5, new Color(17, 17, 17).getRGB(), new Color(48, 48, 48).getRGB());
                 GlStateManager.pushMatrix();
-                ScaledResolution exhScale = new ScaledResolution(f);
-                int exhFactor = exhScale.getScaleFactor();
-                float exhTransX = x2.L();
-                float exhTransY = y.L();
-                float sv = scale.L();
-                GL11.glScissor((int)((int)((exhTransX + 3.0f * sv) * (float)exhFactor)), (int)((int)(((float)exhScale.getScaledHeight() - (exhTransY + 37.0f * sv)) * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)));
-                GL11.glEnable((int)3089);
-                this.drawEntityOnScreenExhibition(t2);
-                GL11.glDisable((int)3089);
-                GlStateManager.popMatrix();
+                try {
+                    ScaledResolution exhScale = new ScaledResolution(f);
+                    int exhFactor = exhScale.getScaleFactor();
+                    float exhTransX = x2.L();
+                    float exhTransY = y.L();
+                    float sv = scale.L();
+                    GL11.glScissor((int)((int)((exhTransX + 3.0f * sv) * (float)exhFactor)), (int)((int)(((float)exhScale.getScaledHeight() - (exhTransY + 37.0f * sv)) * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)), (int)((int)(34.0f * sv * (float)exhFactor)));
+                    GL11.glEnable((int)3089);
+                    try {
+                        this.drawEntityOnScreenExhibition(t2);
+                    }
+                    finally {
+                        GL11.glDisable((int)3089);
+                    }
+                }
+                finally {
+                    GlStateManager.popMatrix();
+                }
                 GlStateManager.translate((float)2.0f, (float)0.0f, (float)0.0f);
                 mcFont.drawStringWithShadow(name, 37.0f, 3.0f, -1);
                 float[] exhFractions = new float[]{0.0f, 0.5f, 1.0f};
@@ -795,14 +800,18 @@ implements EventSubscriber {
         RenderManager rm = Minecraft.getMinecraft().getRenderManager();
         rm.setPlayerViewY(180.0f);
         rm.setRenderShadow(false);
-        rm.renderEntityWithPosYaw((Entity)ent, 0.0, 0.0, 0.0, 0.0f, 1.0f);
-        rm.setRenderShadow(true);
-        GlStateManager.popMatrix();
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.setActiveTexture((int)OpenGlHelper.lightmapTexUnit);
-        GlStateManager.disableTexture2D();
-        GlStateManager.setActiveTexture((int)OpenGlHelper.defaultTexUnit);
+        try {
+            rm.renderEntityWithPosYaw((Entity)ent, 0.0, 0.0, 0.0, 0.0f, 1.0f);
+        }
+        finally {
+            rm.setRenderShadow(true);
+            GlStateManager.popMatrix();
+            RenderHelper.disableStandardItemLighting();
+            GlStateManager.disableRescaleNormal();
+            GlStateManager.setActiveTexture((int)OpenGlHelper.lightmapTexUnit);
+            GlStateManager.disableTexture2D();
+            GlStateManager.setActiveTexture((int)OpenGlHelper.defaultTexUnit);
+        }
 }
     private void handleDrag() {
         if (f == null || TargetHUD.f.currentScreen == null || TargetHUD.f.displayWidth <= 0 || TargetHUD.f.displayHeight <= 0) {
