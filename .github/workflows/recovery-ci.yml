@@ -54,6 +54,20 @@ jobs:
           & $gradle --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Validate physical smoke PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = (Resolve-Path '.\tools\physical-smoke.ps1').Path
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw "physical-smoke.ps1 has $($errors.Count) PowerShell parse error(s)."
+          }
+          Write-Host "PHYSICAL_SMOKE_POWERSHELL_PARSE=PASS tokens=$($tokens.Count)"
+
       - name: Compile recovered source
         shell: powershell
         run: |
