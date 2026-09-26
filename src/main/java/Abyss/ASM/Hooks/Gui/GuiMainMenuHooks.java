@@ -11,6 +11,7 @@ package Abyss.ASM.Hooks.Gui;
 import Abyss.ASM.Hooks.CallbackInfo;
 import Abyss.ui.screen.AccountManagerScreen;
 import Abyss.util.MinecraftRef;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -42,6 +43,35 @@ public class GuiMainMenuHooks {
             var8.yPosition = var8.yPosition <= var6 ? var8.yPosition - 12 : var8.yPosition + 12;
 }
         var0.add(new GuiButton(88, var5.xPosition, var5.yPosition + 24, var5.width, var5.height, "Alt Manager"));
+}
+    public static String selfTest() {
+        try {
+            ArrayList<GuiButton> buttons = new ArrayList<GuiButton>();
+            buttons.add(new GuiButton(0, 10, 100, 200, 20, "Singleplayer"));
+            GuiButton anchor = new GuiButton(2, 10, 120, 200, 20, "Options");
+            buttons.add(anchor);
+            buttons.add(new GuiButton(4, 10, 140, 200, 20, "Quit"));
+            GuiMainMenuHooks.onPostInitGUI(buttons, 320, 240);
+            GuiButton alt = GuiMainMenuHooks.byId(buttons, ALT_MANAGER_ID);
+            if (alt == null) {
+                return "FAIL missing";
+}
+            if (!"Alt Manager".equals(alt.displayString)) {
+                return "FAIL label " + alt.displayString;
+}
+            if (alt.xPosition != 10 || alt.yPosition != 132 || alt.width != 200 || alt.height != 20) {
+                return "FAIL bounds " + alt.xPosition + "," + alt.yPosition + " " + alt.width + "x" + alt.height;
+}
+            int size = buttons.size();
+            GuiMainMenuHooks.onPostInitGUI(buttons, 320, 240);
+            if (buttons.size() != size) {
+                return "FAIL duplicate";
+}
+            return gateClientAccess() ? "FAIL gated" : "PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
 }
     private static GuiButton byId(List<GuiButton> var0, int var1) {
         for (GuiButton var4 : var0) {
