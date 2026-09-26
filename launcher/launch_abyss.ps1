@@ -213,7 +213,12 @@ function Quote-Arg([string]$Value) {
 }
 
 Set-Content -LiteralPath $Log -Value ('OpenAbyss standalone launcher ' + (Get-Date -Format o)) -Encoding UTF8
-Remove-Item -LiteralPath $Stdout,$Stderr -Force -ErrorAction SilentlyContinue
+$BootstrapStage = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
+$RuntimeStage = Join-Path $GameDir 'abyss-runtime-stage.txt'
+$ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
+$BootstrapDiag = Join-Path $GameDir 'abyss-bootstrap-diagnostics.txt'
+$Census = Join-Path $GameDir 'abyss-census.tsv'
+Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$RuntimeStage,$ModuleFailure,$BootstrapDiag,$Census -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $CrashOut -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $GameDir,(Join-Path $GameDir 'mods'),$CrashOut | Out-Null
 
@@ -354,13 +359,48 @@ foreach ($fatal in @(
     Copy-Item -LiteralPath $fatal.FullName -Destination $CrashOut -Force
 }
 
+function Last-Stage([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '<none>' }
+    $lines = @(Get-Content -LiteralPath $Path | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($lines.Count -eq 0) { return '<none>' }
+    return ($lines[-1] -split "\t", 2)[-1]
+}
+
+function Last-Line([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return '<none>' }
+    $lines = @(Get-Content -LiteralPath $Path | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($lines.Count -eq 0) { return '<none>' }
+    return $lines[-1]
+}
+
+$lastBootstrap = Last-Stage $BootstrapStage
+$lastRuntime = Last-Stage $RuntimeStage
+$lastModuleFailure = Last-Line $ModuleFailure
+$diagPresent = Test-Path -LiteralPath $BootstrapDiag -PathType Leaf
+$censusCount = if (Test-Path -LiteralPath $Census -PathType Leaf) {
+    @(Get-Content -LiteralPath $Census | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count
+} else { -1 }
+
+foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$BootstrapDiag,$Census)) {
+    if (Test-Path -LiteralPath $evidenceFile -PathType Leaf) {
+        Copy-Item -LiteralPath $evidenceFile -Destination $CrashOut -Force
+    }
+}
+
 $result = @(
     "EXIT_CODE=$exitCode",
     "JAVA=$Java",
     "FORGE=$($forgeDir.Name)",
     "CLASSPATH_COUNT=$($classPath.Count)",
+    "MISSING_LIBRARIES=$($missingLibraries.Count)",
     "NATIVE_ARCHIVES=$nativeCount",
+    "NATIVE_DLLS=$($nativeFiles.Count)",
     "JAR_SHA256=$((Get-FileHash -LiteralPath $Jar -Algorithm SHA256).Hash)",
+    "BOOTSTRAP_DIAGNOSTICS=$diagPresent",
+    "MODULE_CENSUS_COUNT=$censusCount",
+    "LAST_BOOTSTRAP_STAGE=$lastBootstrap",
+    "LAST_RUNTIME_STAGE=$lastRuntime",
+    "LAST_MODULE_FAILURE=$lastModuleFailure",
     "CRASH_FILES=$(@(Get-ChildItem -LiteralPath $CrashOut -File -ErrorAction SilentlyContinue).Count)"
 )
 $result | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
