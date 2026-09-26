@@ -83,6 +83,36 @@ function Find-Java8 {
     return $null
 }
 
+function Test-LibraryAllowed([object]$Lib) {
+    $rules = Get-Prop $Lib 'rules'
+    if (-not $rules) { return $true }
+
+    $allowed = $false
+    foreach ($rule in @($rules)) {
+        $action = [string](Get-Prop $rule 'action')
+        $os = Get-Prop $rule 'os'
+        $matches = $true
+        if ($os) {
+            $name = [string](Get-Prop $os 'name')
+            if ($name -and $name -ne 'windows') { $matches = $false }
+            $arch = [string](Get-Prop $os 'arch')
+            if ($arch -and $arch -notmatch 'x86_64|amd64|64') { $matches = $false }
+            $version = [string](Get-Prop $os 'version')
+            if ($version) {
+                try {
+                    if (-not ([Environment]::OSVersion.VersionString -match $version)) { $matches = $false }
+                } catch {
+                    $matches = $false
+                }
+            }
+        }
+        if ($matches) {
+            $allowed = ($action -eq 'allow')
+        }
+    }
+    return $allowed
+}
+
 function Maven-Path([string]$Coordinate, [string]$LibraryRoot) {
     if (-not $Coordinate) { return $null }
     $coord = $Coordinate
@@ -101,7 +131,8 @@ function Maven-Path([string]$Coordinate, [string]$LibraryRoot) {
     return Join-Path $LibraryRoot (Join-Path $group (Join-Path $artifact (Join-Path $version ($artifact + '-' + $version + $classifier + '.' + $ext))))
 }
 
-function Add-ClasspathLibrary([object]$Lib, [string]$LibraryRoot, [System.Collections.Generic.List[string]]$List) {
+function Add-ClasspathLibrary([object]$Lib, [string]$LibraryRoot, [System.Collections.Generic.List[string]]$List, [System.Collections.Generic.List[string]]$Missing) {
+    if (-not (Test-LibraryAllowed $Lib)) { return }
     $path = $null
     $downloads = Get-Prop $Lib 'downloads'
     $artifactDownload = Get-Prop $downloads 'artifact'
@@ -113,12 +144,15 @@ function Add-ClasspathLibrary([object]$Lib, [string]$LibraryRoot, [System.Collec
     } elseif ($name) {
         $path = Maven-Path ([string]$name) $LibraryRoot
     }
-    if ($path -and (Test-Path -LiteralPath $path -PathType Leaf) -and -not $List.Contains($path)) {
-        $List.Add($path)
+    if ($path -and (Test-Path -LiteralPath $path -PathType Leaf)) {
+        if (-not $List.Contains($path)) { $List.Add($path) }
+    } elseif ($path) {
+        $Missing.Add($path)
     }
 }
 
 function Get-NativeJar([object]$Lib, [string]$LibraryRoot) {
+    if (-not (Test-LibraryAllowed $Lib)) { return $null }
     $natives = Get-Prop $Lib 'natives'
     $windowsNative = Get-Prop $natives 'windows'
     if (-not $windowsNative) { return $null }
@@ -230,17 +264,42 @@ if ($forgeLibraries) { $allLibraries += @($forgeLibraries) }
 if ($baseLibraries) { $allLibraries += @($baseLibraries) }
 
 $classPath = New-Object System.Collections.Generic.List[string]
+$missingLibraries = New-Object System.Collections.Generic.List[string]
 foreach ($lib in $allLibraries) {
-    Add-ClasspathLibrary $lib $libraryRoot $classPath
+    Add-ClasspathLibrary $lib $libraryRoot $classPath $missingLibraries
 }
 $classPath.Add($baseJar)
 $classPath.Add($Jar)
 Require ($classPath.Count -gt 20) "Too few runtime classpath entries were resolved: $($classPath.Count)"
 
+$criticalJarPatterns = @(
+    'launchwrapper-*.jar',
+    'forge-1.8.9-*.jar',
+    'lwjgl-2.9*.jar',
+    'lwjgl_util-2.9*.jar'
+)
+foreach ($pattern in $criticalJarPatterns) {
+    $hit = @($classPath | Where-Object { [IO.Path]::GetFileName($_) -like $pattern })
+    Require ($hit.Count -gt 0) "Critical runtime library missing from classpath: $pattern"
+}
+
+if ($missingLibraries.Count -gt 0) {
+    Log ("Optional/ruled runtime libraries missing: " + $missingLibraries.Count)
+    $missingLibraries | Set-Content -LiteralPath (Join-Path $LauncherDir 'missing-libraries.txt') -Encoding UTF8
+} else {
+    Remove-Item -LiteralPath (Join-Path $LauncherDir 'missing-libraries.txt') -Force -ErrorAction SilentlyContinue
+}
+
 $nativeCount = Extract-Natives $allLibraries $libraryRoot $NativesDir
-Require ((Get-ChildItem -LiteralPath $NativesDir -Filter '*.dll' -File -ErrorAction SilentlyContinue).Count -gt 0) 'No Windows native DLLs could be extracted.'
+$nativeFiles = @(Get-ChildItem -LiteralPath $NativesDir -Filter '*.dll' -File -ErrorAction SilentlyContinue)
+Require ($nativeFiles.Count -gt 0) 'No Windows native DLLs could be extracted.'
+foreach ($requiredNative in @('lwjgl64.dll','OpenAL64.dll')) {
+    Require (Test-Path -LiteralPath (Join-Path $NativesDir $requiredNative) -PathType Leaf) "Required Windows native missing: $requiredNative"
+}
 Log "Classpath entries: $($classPath.Count)"
+Log "Missing library files: $($missingLibraries.Count)"
 Log "Native library archives extracted: $nativeCount"
+Log "Native DLLs extracted: $($nativeFiles.Count)"
 
 $staleModJar = Join-Path (Join-Path $GameDir 'mods') 'abyss.jar'
 Remove-Item -LiteralPath $staleModJar -Force -ErrorAction SilentlyContinue
