@@ -4,6 +4,7 @@
 package Abyss.internal.restore;
 
 import Abyss.AbyssClient;
+import Abyss.ASM.Hooks.Gui.GuiMainMenuHooks;
 import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.internal.BrokenBlockTracker;
@@ -268,6 +269,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
             b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
             b.append("[ABYSSDIAG] clickgui selftest = ").append(ClickGUI.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] altmenu selftest  = ").append(GuiMainMenuHooks.selfTest()).append('\n');
             b.append("[ABYSSDIAG] ctorcache        = built ").append(AbyssCtorCache.built).append(" failed ").append(AbyssCtorCache.failed).append('\n');
             b.append("[ABYSSDIAG] module count     = ").append(ModuleManager.S == null ? -1 : ModuleManager.S.size()).append(" of ").append(AbyssModuleRegistry.expectedModuleCount()).append(' ').append(AbyssModuleRegistry.countGateGreen ? "OK" : "REGRESSION").append(AbyssModuleRegistry.MISSING.isEmpty() ? "" : " missing " + AbyssModuleRegistry.MISSING).append('\n');
             for (String c : AbyssCtorCache.LOG) {
