@@ -122,7 +122,59 @@ if (project.hasProperty('abyssModsFolder')) {
     }
 }
 
-task packageWindowsLauncher(type: Zip, dependsOn: jar) {
+task writeLauncherBuildInfo(dependsOn: jar) {
+    description = 'Writes provenance for the standalone Windows launcher package.'
+    group = 'distribution'
+    outputs.file file("$buildDir/distributions/BUILD-INFO.txt")
+
+    doLast {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        def md = java.security.MessageDigest.getInstance('SHA-256')
+        packagedJar.withInputStream { input ->
+            byte[] buffer = new byte[65536]
+            int read
+            while ((read = input.read(buffer)) > 0) {
+                md.update(buffer, 0, read)
+            }
+        }
+        String jarHash = md.digest().collect { String.format('%02X', it & 0xff) }.join()
+
+        String head = 'UNKNOWN'
+        try {
+            def stdout = new ByteArrayOutputStream()
+            exec {
+                commandLine 'git', 'rev-parse', 'HEAD'
+                standardOutput = stdout
+                errorOutput = new ByteArrayOutputStream()
+                ignoreExitValue = true
+            }
+            String resolved = stdout.toString('UTF-8').trim()
+            if (resolved) {
+                head = resolved
+            }
+        }
+        catch (Throwable ignored) {
+        }
+
+        File info = file("$buildDir/distributions/BUILD-INFO.txt")
+        info.parentFile.mkdirs()
+        info.text = [
+            'OPENABYSS_WINDOWS_LAUNCHER_BUILD=1',
+            'SOURCE_HEAD=' + head,
+            'JAR_FILE=abyss.jar',
+            'JAR_BYTES=' + packagedJar.length(),
+            'JAR_SHA256=' + jarHash,
+            'MC_VERSION=1.8.9',
+            'FORGE_VERSION=11.15.1.2318-1.8.9'
+        ].join(System.lineSeparator()) + System.lineSeparator()
+    }
+}
+
+task packageWindowsLauncher(type: Zip, dependsOn: [jar, writeLauncherBuildInfo]) {
     description = 'Builds the standalone Windows OpenAbyss launcher package.'
     group = 'distribution'
     destinationDir = file("$buildDir/distributions")
@@ -130,6 +182,9 @@ task packageWindowsLauncher(type: Zip, dependsOn: jar) {
 
     from(jar.archivePath) {
         rename { String fileName -> 'abyss.jar' }
+    }
+    from("$buildDir/distributions/BUILD-INFO.txt") {
+        rename { String ignored -> 'BUILD-INFO.txt' }
     }
     from('launcher') {
         include 'Launcher.bat'
