@@ -46,10 +46,15 @@ jar {
 }
 
 def abyssRunClient = tasks.getByName('runClient')
-abyssRunClient.jvmArgs([
-    '-Dfml.coreMods.load=Abyss.ASM.CoreMod',
-    '-Xmx2G'
-])
+def abyssBaseJvmArgs = ['-Xmx2G']
+if (!project.hasProperty('abyssModsFolder')) {
+    abyssBaseJvmArgs += '-Dfml.coreMods.load=Abyss.ASM.CoreMod'
+}
+abyssRunClient.jvmArgs(abyssBaseJvmArgs)
+
+if (project.hasProperty('abyssPackaged') && project.hasProperty('abyssModsFolder')) {
+    throw new GradleException('Choose only one packaged runtime mode: abyssPackaged or abyssModsFolder.')
+}
 
 if (project.hasProperty('abyssPackaged')) {
     abyssRunClient.dependsOn jar
@@ -76,6 +81,46 @@ if (project.hasProperty('abyssPackaged')) {
     }
 }
 
+
+
+if (project.hasProperty('abyssModsFolder')) {
+    abyssRunClient.dependsOn jar
+    abyssRunClient.doFirst {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        Set<String> devOutputs = sourceSets.main.output.files.collect { it.canonicalPath } as Set
+        def filtered = abyssRunClient.classpath.files.findAll {
+            !devOutputs.contains(it.canonicalPath) && it.canonicalPath != packagedJar.canonicalPath
+        }
+        abyssRunClient.classpath = files(filtered)
+
+        def leaked = abyssRunClient.classpath.files.findAll {
+            devOutputs.contains(it.canonicalPath) || it.canonicalPath == packagedJar.canonicalPath
+        }
+        if (!leaked.isEmpty()) {
+            throw new GradleException("Mods-folder runtime classpath still contains OpenAbyss dev/JAR output: " + leaked)
+        }
+
+        File modsDir = file("$minecraft.runDir/mods")
+        modsDir.mkdirs()
+        project.copy {
+            from packagedJar
+            into modsDir
+            rename { String ignored -> 'abyss.jar' }
+        }
+        File installedJar = new File(modsDir, 'abyss.jar')
+        if (!installedJar.isFile()) {
+            throw new GradleException("Mods-folder runtime did not install " + installedJar)
+        }
+
+        println "ABYSS_MODS_FOLDER_RUNTIME_JAR=" + installedJar.canonicalPath
+        println "ABYSS_MODS_FOLDER_RUNTIME_CLASSPATH_OPENABYSS_PRESENT=0"
+        println "ABYSS_MODS_FOLDER_RUNTIME_EXPLICIT_COREMOD_PROPERTY=0"
+    }
+}
 
 task packageWindowsLauncher(type: Zip, dependsOn: jar) {
     description = 'Builds the standalone Windows OpenAbyss launcher package.'
