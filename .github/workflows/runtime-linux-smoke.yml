@@ -323,6 +323,16 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
+            echo 'Persisted command-data loader did not run.'
+            cat "$DIAG"
+            exit 1
+          fi
+          if grep -F '[ABYSSDIAG] command data load = ' "$DIAG" | grep -Fq 'FAILED ('; then
+            echo 'Persisted command-data loader reported a failure.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
