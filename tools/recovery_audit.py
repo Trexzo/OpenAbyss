@@ -371,9 +371,9 @@ def scan_file(path: Path, root: Path):
     if method_authority is not None:
         method_name, expected_labels, expected_transfers = method_authority
         method_match = re.search(
-            r"\\b(?:private\\s+|protected\\s+|public\\s+)?static\\s+void\\s+"
+            r"\b(?:private\s+|protected\s+|public\s+)?static\s+void\s+"
             + re.escape(method_name)
-            + r"\\s*\\([^)]*\\)(?:\\s+throws\\s+[^\\{]+)?\\s*\\{",
+            + r"\s*\([^)]*\)(?:\s+throws\s+[^\{]+)?\s*\{",
             text,
         )
         if method_match is not None:
@@ -381,11 +381,11 @@ def scan_file(path: Path, root: Path):
             method_body = java_brace_block(text, open_brace)
             if method_body is not None:
                 label_count = len(
-                    re.findall(r"^\\s*block\\d+\\s*:", method_body, re.MULTILINE)
+                    re.findall(r"^\s*block\d+\s*:", method_body, re.MULTILINE)
                 )
                 transfer_count = len(
                     re.findall(
-                        r"\\b(?:break|continue)\\s+block\\d+\\s*;",
+                        r"\b(?:break|continue)\s+block\d+\s*;",
                         method_body,
                     )
                 )
@@ -394,7 +394,7 @@ def scan_file(path: Path, root: Path):
                     and transfer_count == expected_transfers
                 ):
                     method_start_line = line_number(text, method_match.start())
-                    method_end_line = method_start_line + method_body.count("\\n")
+                    method_end_line = method_start_line + method_body.count("\n")
                     for finding in findings:
                         if (
                             finding["category"]
