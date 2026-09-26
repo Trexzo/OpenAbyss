@@ -61,6 +61,16 @@ public final class AbyssBootstrap {
 
     private AbyssBootstrap() {
 }
+    private static void stage(String name) {
+        try {
+            File f = new File("abyss-bootstrap-stage.txt");
+            try (OutputStreamWriter w = new OutputStreamWriter((OutputStream)new FileOutputStream(f, true), "UTF-8");){
+                w.write(System.currentTimeMillis() + "\t" + name + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+}
     public static void forceEnableCommandLine() {
         try {
             Module cl = ModuleManager.byName("CommandLine");
@@ -73,12 +83,14 @@ public final class AbyssBootstrap {
 }
 }
     public static void initClient() {
+        stage("init-entry");
         if (AbyssClient.w != null) {
             return;
 }
         SUBSCRIBED.clear();
         PENDING.clear();
         EventBus var2 = new EventBus();
+        stage("eventbus-created");
         if (ModuleManager.S == null) {
             ModuleManager.S = new ArrayList<Module>();
 }
@@ -88,6 +100,7 @@ public final class AbyssBootstrap {
         if (ConfigManagerWindow.D == null) {
             ConfigManagerWindow.D = new ArrayList<String>();
 }
+        stage("base-lists-ready");
         var2.beginBatch();
         AbyssBootstrap.sub(var2, "Abyss.internal.MiningEngine", MiningEngine.uq);
         AbyssBootstrap.sub(var2, "Abyss.util.AutoToolService", AutoToolService.K);
@@ -99,38 +112,58 @@ public final class AbyssBootstrap {
         AbyssBootstrap.sub(var2, "Abyss.util.RotationManager", new RotationManager());
         AbyssBootstrap.sub(var2, "Abyss.util.HypixelGameState", new HypixelGameState());
         AbyssBootstrap.sub(var2, "Abyss.util.packet.PacketManager", new PacketManager());
+        stage("core-subscribers-ready");
         AbyssModuleRegistry.publish();
+        stage("module-registry-published");
         AbyssAzPump.install(var2, 0L, SUBSCRIBED, PENDING);
+        stage("azpump-installed");
         PENDING.addAll(AbyssModuleRegistry.PENDING);
         AbyssBootstrap.sub(var2, "Abyss.internal.ChatInputHandler", new ChatInputHandler(0L));
+        stage("chat-input-subscribed");
         AbyssBootstrap.sub(var2, "Abyss.ui.screen.MainMenuTheme", new MainMenuTheme(0L));
+        stage("main-menu-theme-subscribed");
         AbyssSettingStatics.apply(PENDING);
         AbyssModuleSettings.apply(PENDING);
         AbyssTruthNames.apply(PENDING);
+        stage("settings-and-names-applied");
         AbyssBootstrap.runOrphanedStaticInit();
+        stage("orphaned-static-init-complete");
         AbyssClickGui.install(PENDING);
+        stage("clickgui-installed");
         AbyssCommands.install(PENDING);
+        stage("commands-installed");
         AbyssBootstrap.subscribeAlways(var2, "Abyss.module.impl.misc.Timer", "Timer");
+        stage("timer-subscribed");
         if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
             var2.s(AbyssModuleRegistry.PLAIN_LISTENER, 0L);
             SUBSCRIBED.add("Abyss.internal.CheaterDetector (internal service; held out of ModuleManager.S)");
+            stage("cheater-detector-subscribed");
 } else {
             PENDING.add("Abyss.internal.CheaterDetector internal listener missing from ModuleManager.o");
 }
         var2.endBatch();
+        stage("eventbus-batch-ended");
         AbyssClient.w = var2;
+        stage("eventbus-published");
+        stage("altmanager-init-start");
         AltManager.M(0L);
+        stage("altmanager-init-complete");
         if (AltManager.isInitialized()) {
             SUBSCRIBED.add("Abyss.ui.screen.ReconnectHandler");
 } else {
             PENDING.add("Abyss.ui.screen.ReconnectHandler was not initialized by AltManager.M");
 }
         AbyssConfig.apply(PENDING);
+        stage("config-applied");
         AbyssBootstrap.forceEnableCommandLine();
+        stage("commandline-enabled");
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
         StallWatchdog.start();
+        stage("stall-watchdog-started");
         AbyssBootstrap.startBackgroundWarmup();
+        stage("background-warmup-started");
         AbyssBootstrap.diag$dump();
+        stage("bootstrap-complete");
 }
     private static void startBackgroundWarmup() {
         Thread warm = new Thread(new Runnable(){
