@@ -58,7 +58,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1')) {
+          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\launcher\launch_abyss.ps1')) {
             $path = (Resolve-Path $relative).Path
             $tokens = $null
             $errors = $null
@@ -85,6 +85,30 @@ jobs:
           & $env:OPENABYSS_GRADLE --no-daemon clean build
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
+
+      - name: Build standalone Windows launcher package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon packageWindowsLauncher
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { exit $code }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $package = Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip'
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($package)
+          try {
+            $names = @($zip.Entries | ForEach-Object { $_.FullName })
+            foreach ($required in @('abyss.jar','Launcher.bat','launch_abyss.ps1','README.txt')) {
+              if ($names -notcontains $required) { throw "Standalone launcher package missing: $required" }
+            }
+            $jar = $zip.GetEntry('abyss.jar')
+            if ($jar.Length -lt 10000000) { throw "Packaged abyss.jar unexpectedly small: $($jar.Length)" }
+            Write-Host "WINDOWS_LAUNCHER_PACKAGE_CONTRACT=PASS entries=$($zip.Entries.Count) jar_bytes=$($jar.Length)"
+          }
+          finally {
+            $zip.Dispose()
+          }
 
       - name: Validate JAR contract
         shell: powershell
