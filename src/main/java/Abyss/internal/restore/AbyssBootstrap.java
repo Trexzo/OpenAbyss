@@ -161,9 +161,6 @@ public final class AbyssBootstrap {
         warm.setPriority(1);
         warm.start();
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static String census() {
         StringBuilder t2 = new StringBuilder();
         TreeMap<String, Integer> perCat = new TreeMap<String, Integer>();
