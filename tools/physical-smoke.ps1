@@ -251,7 +251,12 @@ try {
     $ExpectedModuleCount = $(if ($UseReferenceRegistry) { 92 } else { 112 })
     $ExpectedToggleable = $(if ($UseReferenceRegistry) { 89 } else { 109 })
 
+    $ExpectedReferenceBootstrap = $(if ($UseReferenceBootstrap) { 'true' } else { 'false' })
+    $ExpectedReferenceRegistry = $(if ($UseReferenceRegistry) { 'true' } else { 'false' })
+
     $Required = @(
+        "[ABYSSDIAG] reference bootstrap = $ExpectedReferenceBootstrap",
+        "[ABYSSDIAG] reference registry  = $ExpectedReferenceRegistry",
         "[ABYSSDIAG] module count     = $ExpectedModuleCount of $ExpectedModuleCount OK",
         '[ABYSSDIAG] config writable   = writable=true',
         "[ABYSSDIAG] module usability   = toggleable=$ExpectedToggleable stockDisabled=3 invalid=0 nullSettings=0",
