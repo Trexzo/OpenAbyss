@@ -87,6 +87,8 @@ $checks = [ordered]@{
     BootstrapDiagnosticsFresh = Is-Fresh $Diag
     CensusFresh = Is-Fresh $Census
     BootstrapDiagnostics = -not [string]::IsNullOrWhiteSpace($diagText)
+    CommandSelfTest = $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19 moduleSetting=PASS')
+    CommandLineReady = $diagText.Contains('[ABYSSDIAG] command line      = READY')
     BootstrapComplete = $bootstrapText.Contains('bootstrap-complete')
     MenuTick = $runtimeText.Contains('menu-no-world-tick')
     ClickGuiRequest = $runtimeText.Contains('clickgui-open-request')
@@ -121,6 +123,8 @@ $pass = $checks.GameDirectoryExists -and
         $checks.BootstrapDiagnosticsFresh -and
         $checks.CensusFresh -and
         $checks.BootstrapDiagnostics -and
+        $checks.CommandSelfTest -and
+        $checks.CommandLineReady -and
         $checks.BootstrapComplete -and
         $checks.MenuTick -and
         $checks.ClickGuiRequest -and
