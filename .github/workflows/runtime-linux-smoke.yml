@@ -433,6 +433,14 @@ jobs:
           done
           echo 'ASM_TRANSFORM_CONTRACT=PASS'
 
+          MENU_MUSIC_EVENTS="$(grep -c 'minecraft:music.menu' "$COMBINED" || true)"
+          echo "MENU_LOOP_MUSIC_EVENTS=$MENU_MUSIC_EVENTS"
+          if [ "$MENU_MUSIC_EVENTS" -lt 1 ]; then
+            echo 'Minecraft menu-loop evidence was not observed.'
+            exit 1
+          fi
+          echo 'MINECRAFT_MENU_LOOP_CONTRACT=PASS'
+
           GL_LINE="$(grep -m1 'OpenGL:' "$COMBINED" || true)"
           echo "OPENGL_EVIDENCE=$GL_LINE"
 
