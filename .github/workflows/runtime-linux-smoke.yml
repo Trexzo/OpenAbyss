@@ -349,6 +349,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] altmenu selftest  = PASS' "$DIAG"; then
+            echo 'Alt Manager main-menu injection self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] ctorcache        = built 32 failed 0' "$DIAG"; then
             echo 'Constructor-cache bootstrap gate is not green.'
             cat "$DIAG"
