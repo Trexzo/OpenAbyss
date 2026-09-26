@@ -201,9 +201,6 @@ public final class AbyssCtorCache {
 }
         return null;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     static Module build(Plan var0) throws Exception {
         Class<? extends Module> var1 = var0.cls;
         Field var2 = var1.getDeclaredField(var0.seedField);
@@ -286,9 +283,6 @@ public final class AbyssCtorCache {
         LOG.add(var1.getName() + "  OK carrier=" + var18 + " slots=" + AbyssCtorCache.join(var10));
         return var20;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     static Module buildS(SPlan var0) throws Exception {
         Class<? extends Module> var1 = var0.cls;
         Field var2 = var1.getDeclaredField(var0.seedField);
