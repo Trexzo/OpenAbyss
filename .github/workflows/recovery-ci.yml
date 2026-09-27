@@ -366,6 +366,17 @@ jobs:
           python '.\tools\audit_main_menu_body_shape.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era main-menu body-shape gate failed: $LASTEXITCODE" }
 
+      - name: Verify native retransform path remains dormant
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for native retransform dormancy gate.' }
+          python '.\tools\check_inject_retransform_dormancy.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Native retransform dormancy gate failed: $LASTEXITCODE" }
+
       - name: Verify loader_forgemod isolation
         shell: powershell
         run: |
