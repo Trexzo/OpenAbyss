@@ -1,8 +1,8 @@
 # OpenAbyss runnable-era Setting framework authority
 # reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
 # classes=11
-# instance_fields=12
-# non_clinit_methods=56
+# instance_fields=13
+# non_clinit_methods=55
 # format:
 # CLASS internal_name
 # FIELD access name descriptor
