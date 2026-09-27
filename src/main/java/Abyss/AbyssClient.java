@@ -30,6 +30,7 @@ import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
 import Abyss.module.impl.combat.Velocity;
+import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
@@ -137,6 +138,9 @@ implements EventSubscriber {
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
     private int commandRuntimeProbeOutputStart;
+    private int networkCommandProbeStage;
+    private int networkCommandProbeWaitTicks;
+    private boolean networkCommandProbeOriginalEnabled;
     private int clickGuiModeProbeIndex;
     private int clickGuiModeProbePhase;
     private int clickGuiModeProbeWaitTicks;
@@ -403,6 +407,108 @@ implements EventSubscriber {
 }
 }
 
+    private void pumpNetworkCommandProbe() {
+        if (!Boolean.getBoolean("abyss.networkCommandProbe")
+                || this.networkCommandProbeStage < 0
+                || this.networkCommandProbeStage >= 4) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.commandRuntimeProbe") && this.commandRuntimeProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        try {
+            Module probe = Modules.J(CommandLine.class);
+            if (probe == null) {
+                throw new IllegalStateException("CommandLine module is missing");
+}
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+            File done = new File("abyss-network-command-probe-done");
+
+            if (this.networkCommandProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.networkCommandProbeWaitTicks > 160) {
+                        throw new IllegalStateException("Initial CommandLine state did not settle"
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                this.networkCommandProbeOriginalEnabled = stableEnabled;
+                this.networkCommandProbeWaitTicks = 0;
+                if (done.exists() && !done.delete()) {
+                    throw new IllegalStateException("Could not clear stale network command probe handshake");
+}
+                if (this.networkCommandProbeOriginalEnabled) {
+                    this.networkCommandProbeStage = 2;
+                    runtimeMilestone("network-command-probe-ready:CommandLine:original=true");
+                    return;
+}
+                probe.I(0L, true);
+                this.networkCommandProbeStage = 1;
+                runtimeMilestone("network-command-probe-enable-request:CommandLine");
+                return;
+}
+
+            if (this.networkCommandProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.networkCommandProbeWaitTicks > 160) {
+                        throw new IllegalStateException("CommandLine did not enable/subscribe"
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                this.networkCommandProbeWaitTicks = 0;
+                this.networkCommandProbeStage = 2;
+                runtimeMilestone("network-command-probe-ready:CommandLine:original=false");
+                return;
+}
+
+            if (this.networkCommandProbeStage == 2) {
+                if (!done.isFile()) {
+                    if (++this.networkCommandProbeWaitTicks > 2400) {
+                        throw new IllegalStateException("Harness did not complete typed command probe");
+}
+                    return;
+}
+                this.networkCommandProbeWaitTicks = 0;
+                if (this.networkCommandProbeOriginalEnabled) {
+                    this.networkCommandProbeStage = 4;
+                    runtimeMilestone("network-command-probe-pass:CommandLine:restored=true");
+                    return;
+}
+                probe.I(0L, false);
+                this.networkCommandProbeStage = 3;
+                runtimeMilestone("network-command-probe-restore-request:CommandLine");
+                return;
+}
+
+            if (!stableDisabled) {
+                if (++this.networkCommandProbeWaitTicks > 160) {
+                    throw new IllegalStateException("CommandLine did not restore disabled state"
+                            + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                            + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                            + " ownerActive=" + w.isOwnerActive(probe));
+}
+                return;
+}
+            this.networkCommandProbeStage = 4;
+            runtimeMilestone("network-command-probe-pass:CommandLine:restored=false");
+}
+        catch (Throwable failure) {
+            this.networkCommandProbeStage = -1;
+            recordFeatureFailure("NetworkCommandProbe:CommandLine", "enable-intercept-restore", failure);
+            runtimeMilestone("network-command-probe-fail:" + failure.getClass().getName());
+}
+}
+
     private void pumpClickGuiModeProbe() {
         if (!Boolean.getBoolean("abyss.clickGuiModeProbe")
                 || this.clickGuiModeProbeIndex >= CLICKGUI_MODE_PROBE_MODES.length
@@ -417,6 +523,9 @@ implements EventSubscriber {
             return;
 }
         if (Boolean.getBoolean("abyss.commandRuntimeProbe") && this.commandRuntimeProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.networkCommandProbe") && this.networkCommandProbeStage < 4) {
             return;
 }
         String mode = CLICKGUI_MODE_PROBE_MODES[this.clickGuiModeProbeIndex];
@@ -1120,6 +1229,7 @@ implements EventSubscriber {
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
             this.pumpCommandRuntimeProbe();
+            this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
             this.pumpPersistenceSeedProbe();
             if (this.c.currentScreen == null) {
