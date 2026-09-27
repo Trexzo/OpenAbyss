@@ -12,7 +12,9 @@ import Abyss.internal.CheaterDetector;
 import Abyss.internal.ChatInputHandler;
 import Abyss.internal.MiningEngine;
 import Abyss.internal.MiningRenderSubscriber;
+import Abyss.internal.auth.Account;
 import Abyss.internal.auth.AltManager;
+import Abyss.internal.auth.CookieAuthService;
 import Abyss.internal.auth.SessionAccessor;
 import Abyss.internal.auth.TrustAllSslContext;
 import Abyss.internal.jnic.StockCommandRegistry;
@@ -343,6 +345,8 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] module selftest    = ").append(Module.selfTest()).append('\n');
             b.append("[ABYSSDIAG] config selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssConfig.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] session selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? SessionAccessor.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] account selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? Account.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] cookie selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieAuthService.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
             b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
             b.append("[ABYSSDIAG] clickgui selftest = ").append(ClickGUI.selfTest()).append('\n');
