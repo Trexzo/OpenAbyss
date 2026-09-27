@@ -503,6 +503,53 @@ public final class AbyssConfig {
             if (result.settingsOutsideSchema != 0) {
                 return "FAIL fresh-outside-schema " + result.settingsOutsideSchema;
 }
+
+            SaveResult second = AbyssConfig.save(name);
+            if (second == null || !second.ok) {
+                return "FAIL second-save " + String.valueOf(second);
+}
+            if (!bak.isFile() || AbyssConfig.parse(bak) == null) {
+                return "FAIL backup-not-created";
+}
+            if (AbyssConfig.parse(file) == null) {
+                return "FAIL second-current-unreadable";
+}
+
+            Writer corruptWriter = null;
+            try {
+                corruptWriter = new OutputStreamWriter((OutputStream)new FileOutputStream(file), "UTF-8");
+                corruptWriter.write("{broken");
+                corruptWriter.close();
+                corruptWriter = null;
+}
+            finally {
+                if (corruptWriter != null) {
+                    try {
+                        corruptWriter.close();
+}
+                    catch (Throwable ignored) {
+}
+}
+}
+            if (AbyssConfig.parse(file) != null) {
+                return "FAIL corruption-fixture-readable";
+}
+
+            SaveResult recovered = AbyssConfig.save(name);
+            if (recovered == null || !recovered.ok) {
+                return "FAIL backup-recovery-save " + String.valueOf(recovered);
+}
+            if (recovered.topLevelBefore <= 0) {
+                return "FAIL backup-recovery-did-not-seed";
+}
+            List<String> recoveredBad = AbyssConfig.verify(recovered, null);
+            if (!recoveredBad.isEmpty()) {
+                return "FAIL backup-recovery-verify " + recoveredBad.get(0);
+}
+            if (AbyssConfig.parse(file) == null) {
+                return "FAIL backup-recovery-current-unreadable";
+}
+
             JsonObject validStatus = new JsonObject();
             validStatus.addProperty("status", Boolean.TRUE);
             if (!Boolean.TRUE.equals(AbyssConfig.statusValue(validStatus))) {
@@ -526,7 +573,7 @@ public final class AbyssConfig {
             if (!Integer.valueOf(54).equals(AbyssConfig.strictInteger(new JsonPrimitive(Integer.valueOf(54))))) {
                 return "FAIL valid-integer";
 }
-            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata";
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata backup-recovery";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
