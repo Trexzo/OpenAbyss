@@ -1,0 +1,23 @@
+# OpenAbyss runnable-era command registry authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# registry_count=19
+# format=class|aliases(comma-separated)|J
+AbyssCommandBind|bind,b|false
+AbyssCommandBindChat|bindchat,bc|false
+AbyssCommandChangelog|changelog|false
+AbyssCommandCheaters|cheaters,ac,nocheaters|false
+AbyssCommandConfig|config,c,cfg|false
+AbyssCommandDebug|debug,dbg|false
+AbyssCommandNames|enemy,e,target,bl,blacklist|false
+AbyssCommandNames|friend,f,wl,whitelist|false
+AbyssCommandVisible|hide,h|false
+AbyssCommandHelp|help|false
+AbyssCommandInfo|info|false
+AbyssCommandIgn|ign,name|false
+AbyssCommandList|list,l|false
+AbyssCommandMenu|menu|false
+AbyssCommandPartySpam|partyspam,ps|false
+AbyssCommandReset|reset,restet,r|false
+AbyssCommandVisible|show,s|false
+AbyssCommandSuffix|suffix,sfx|false
+AbyssCommandToggle|toggle,t|false
