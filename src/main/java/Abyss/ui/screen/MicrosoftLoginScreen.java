@@ -183,7 +183,9 @@ extends GuiScreen {
                 Account var8x = new Account((String)var9.get(), (String)var10.get(), var3x.getUsername(), var3x.getPlayerID());
                 AltManager.upsert(var8x);
                 AltManager.O(var6x);
-                SessionAccessor.k(var3x);
+                if (!SessionAccessor.set(var3x)) {
+                    throw new IllegalStateException("Minecraft session swap was not applied: " + SessionAccessor.lastSetNote);
+}
                 this.v = true;
             }).exceptionally((Throwable var1x) -> {
                 long var2 = c ^ 0x7BAE80648F53L;
