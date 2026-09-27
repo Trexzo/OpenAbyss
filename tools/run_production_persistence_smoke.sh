@@ -104,7 +104,7 @@ STAGE="$GAME_DIR/abyss-runtime-stage.txt"
 BOOT_STAGE="$GAME_DIR/abyss-bootstrap-stage.txt"
 CONFIG="$GAME_DIR/Abyss/current.json"
 
-launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeSeed=true' CISeedPersistence "$SEED_STDOUT" "$SEED_STDERR"
+launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeSeed=true' CISeed "$SEED_STDOUT" "$SEED_STDERR"
 wait_for_stage "$STAGE" 'world-ready-tick' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_WORLD_READY'
 wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
 
@@ -138,7 +138,7 @@ do
   rm -f "$GAME_DIR/$evidence"
 done
 
-launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75' CIVerifyPersistence "$VERIFY_STDOUT" "$VERIFY_STDERR"
+launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
 
