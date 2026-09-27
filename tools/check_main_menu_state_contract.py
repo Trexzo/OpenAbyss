@@ -57,15 +57,30 @@ def main() -> int:
     )
     require(
         data,
-        r"loadMenu\s*\(\s*\).*?MainMenuTheme\.mode\.i\(var0\.trim\(\)\.toUpperCase\(\)\)",
-        "LOAD_MENU_COUPLING",
+        r"loadMenu\s*\(\s*\).*?MainMenuTheme\.mode\.S\(\).*?equalsIgnoreCase\(requested\).*?MainMenuTheme\.mode\.i\(accepted\)",
+        "LOAD_MENU_VALIDATED_COUPLING",
         regex=True,
     )
     require(
         data,
-        r"loadMenu\s*\(\s*\).*?MainMenuTheme\.music\.v\(Boolean\.parseBoolean\(var1\.trim\(\)\),\s*0L\)",
-        "LOAD_MUSIC_COUPLING",
+        'var2.append("menu.txt INVALID(").append(requested).append(\')\');',
+        "LOAD_MENU_INVALID_REPORTED",
+    )
+    require(
+        data,
+        r'loadMenu\s*\(\s*\).*?"true"\.equalsIgnoreCase\(requested\)\s*\|\|\s*"false"\.equalsIgnoreCase\(requested\).*?MainMenuTheme\.music\.v\(Boolean\.parseBoolean\(requested\),\s*0L\)',
+        "LOAD_MUSIC_STRICT_COUPLING",
         regex=True,
+    )
+    require(
+        data,
+        'var2.append(" menu_music.txt INVALID(").append(requested).append(\')\');',
+        "LOAD_MUSIC_INVALID_REPORTED",
+    )
+    require(
+        data,
+        'return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused',
+        "MALFORMED_MENU_SELFTEST",
     )
 
     print("MAIN_MENU_STATE_GATE=PASS")
