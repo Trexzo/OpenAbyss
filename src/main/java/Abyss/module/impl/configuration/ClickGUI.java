@@ -82,12 +82,13 @@ extends Module {
             if (!mode.S().contains("STUDIO") || !mode.S().contains("RAVEN") || !mode.S().contains("VESTIGE")) {
                 return "FAIL modes " + mode.S();
 }
+            int factoryCode = KeyBindUtil.a(0L, "RSHIFT");
+            if (factoryCode != DEFAULT_BIND) {
+                return "FAIL factory-keybind RSHIFT=" + factoryCode + " expected=" + DEFAULT_BIND;
+}
             int code = KeyBindUtil.a(0L, keybind.X());
             if (code == Integer.MIN_VALUE) {
                 return "FAIL keybind " + keybind.X();
-}
-            if (code != DEFAULT_BIND) {
-                return "FAIL keybind-default text=" + keybind.X() + " code=" + code + " expected=" + DEFAULT_BIND;
 }
             if (B == null || Y == null || F == null) {
                 return "FAIL screens B=" + (B != null) + " Y=" + (Y != null) + " F=" + (F != null);
@@ -104,7 +105,7 @@ extends Module {
             if (ClickGUI.selectedScreen("__UNKNOWN__") != Y) {
                 return "FAIL selector fallback";
 }
-            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code + " default-bind-match screens=3";
+            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code + " factory-rshift=" + factoryCode + " screens=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
