@@ -1,0 +1,79 @@
+# Runnable-era public/protected API compatibility authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# baseline_members_after_reviewed_missing=9177
+# baseline_digest_sha256=B1168964E028709409702D6464183BAFF85F4D3C682F2D995308CD7BC1F3B211
+# format sections:
+#   MISSING|kind|class|name|descriptor
+#   EXTRA|kind|class|name|descriptor|normalized_access_hex
+#   ACCESS|kind|class|name|descriptor|old_access_hex|current_access_hex
+
+MISSING|M|Abyss/command/impl/StockCommandModuleSetting|O|(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+MISSING|M|Abyss/command/impl/StockCommandModuleSetting|w|(Ljava/lang/String;Ljava/lang/String;)Z
+MISSING|M|Abyss/enums/MegaWallsClass|a|(Ljava/lang/String;)LAbyss/enums/MegaWallsClass;
+MISSING|M|Abyss/ui/abyss/AbyssArrayListVisibility$2|run|()V
+MISSING|M|Abyss/util/BlockUtil|a|(LAbyss/util/PlacementTarget;)Lnet/minecraft/util/Vec3;
+MISSING|M|Abyss/util/render/RenderUtil|a|(Lnet/minecraft/block/state/IBlockState;DJDDI)V
+
+ACCESS|M|Abyss/command/impl/StockCommandModuleSetting|g|([Ljava/lang/String;IJ)Ljava/util/List;|0101|0001
+ACCESS|F|Abyss/ui/screen/AccountManagerScreen|q|LAbyss/internal/auth/TimedStatusMessage;|0009|0049
+ACCESS|M|Abyss/command/impl/StockCommandModuleSetting|e|(J)[Ljava/lang/String;|0101|0001
+ACCESS|M|Abyss/command/impl/StockCommandModuleSetting|j|([Ljava/lang/String;J)V|0101|0001
+ACCESS|M|Abyss/internal/auth/AltManager|O|(J)V|0009|0029
+
+EXTRA|F|Abyss/internal/auth/AltManager|lastPersistenceNote|Ljava/lang/String;|0049
+EXTRA|F|Abyss/internal/auth/SessionAccessor|lastSetNote|Ljava/lang/String;|0049
+EXTRA|F|Abyss/internal/restore/AbyssCommandData|lastLoadNote|Ljava/lang/String;|0049
+EXTRA|F|Abyss/module/impl/configuration/ClickGUI|keybind|LAbyss/setting/settings/TextSetting;|0009
+EXTRA|F|Abyss/module/impl/configuration/ClickGUI|mode|LAbyss/setting/settings/ModeSetting;|0009
+EXTRA|M|Abyss/ASM/Hooks/Gui/GuiMainMenuHooks|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/AbyssClient|recordFeatureFailure|(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V|0009
+EXTRA|M|Abyss/AbyssClient|schedulerSelfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/AbyssCommands|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/impl/AbyssCommandBind|gateNote|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/impl/AbyssCommandBind|gateOk|()Z|0029
+EXTRA|M|Abyss/command/impl/AbyssCommandBind|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/impl/AbyssCommandConfig|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/impl/AbyssCommandReset|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/command/impl/StockCommandModuleSetting|J|()Z|0001
+EXTRA|M|Abyss/command/impl/StockCommandModuleSetting|h|(J)V|0001
+EXTRA|M|Abyss/command/impl/StockCommandModuleSetting|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/event/EventBus|isOwnerActive|(Ljava/lang/Object;)Z|0001
+EXTRA|M|Abyss/event/EventBus|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/event/EventBus$1|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$2|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$2$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/event/EventBus$3|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$3$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/event/EventBus$4|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$4$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/event/EventBus$5|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$5$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/event/EventBus$6|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$6$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/event/EventBus$7|x|(JLAbyss/event/EventBus;)V|0001
+EXTRA|M|Abyss/event/EventBus$7$1|c|(JLjava/lang/Object;)V|0001
+EXTRA|M|Abyss/internal/auth/Account|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/auth/AltManager|isInitialized|()Z|0009
+EXTRA|M|Abyss/internal/auth/AltManager|persistenceOk|()Z|0009
+EXTRA|M|Abyss/internal/auth/AltManager|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/auth/AltManager|upsert|(LAbyss/internal/auth/Account;)LAbyss/internal/auth/Account;|0009
+EXTRA|M|Abyss/internal/auth/AuthService|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/auth/CookieAuthService|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/auth/SessionAccessor|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/auth/SessionAccessor|set|(Lnet/minecraft/util/Session;)Z|0009
+EXTRA|M|Abyss/internal/restore/AbyssCommandData|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/restore/AbyssCommandSelect|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/internal/restore/AbyssConfig|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/module/Module|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/module/Module$1ProbeModule|A|(J)V|0001
+EXTRA|M|Abyss/module/Module$1ProbeModule|P|(J)V|0001
+EXTRA|M|Abyss/module/Module$1ProbeModule|i|(J)V|0001
+EXTRA|M|Abyss/module/impl/configuration/ClickGUI|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/ui/abyss/AbyssArrayListVisibility$1|newThread|(Ljava/lang/Runnable;)Ljava/lang/Thread;|0001
+EXTRA|M|Abyss/ui/abyss/AbyssArrayListVisibility$3|run|()V|0001
+EXTRA|M|Abyss/ui/screen/AccessTokenLoginScreen|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/ui/screen/AccountManagerScreen|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/ui/screen/CookieLoginScreen|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/ui/screen/MicrosoftLoginScreen|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/ui/screen/RefreshTokenLoginScreen|selfTest|()Ljava/lang/String;|0009
+EXTRA|M|Abyss/util/KeyBindUtil|selfTest|()Ljava/lang/String;|0009
