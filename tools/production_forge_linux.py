@@ -213,10 +213,17 @@ def prepare(args: argparse.Namespace) -> int:
 
 
 def resolve_artifact(lib: dict, libraries: pathlib.Path) -> pathlib.Path | None:
-    downloads = lib.get("downloads") or {}
+    downloads_prop = lib.get("downloads")
+    downloads = downloads_prop or {}
     artifact = downloads.get("artifact")
     if artifact and artifact.get("path"):
         return libraries / pathlib.PurePosixPath(artifact["path"])
+
+    # Modern Mojang metadata can intentionally contain only native
+    # classifiers (jinput-platform/lwjgl-platform) and no classpath artifact.
+    if downloads_prop is not None:
+        return None
+
     name = lib.get("name")
     if not name:
         return None
