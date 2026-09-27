@@ -263,6 +263,30 @@ grep -Fq 'command-runtime-probe-toggle-pass:FullBright:' "$STAGE"
 grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
 echo 'PRODUCTION_WORLD_COMMAND_RUNTIME=PASS commands=help,list,bind-list,config-list,unknown,toggle,module-setting'
 
+NETWORK_COMMAND_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"; then
+    NETWORK_COMMAND_READY=1
+    break
+  fi
+  if grep -Fq 'network-command-probe-fail:' "$STAGE"; then
+    echo 'Production network command readiness probe failed.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before CommandLine became ready for physical chat probe.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$NETWORK_COMMAND_READY" -ne 1 ]; then
+  echo 'CommandLine did not become ready for physical chat probe.'
+  cat "$STAGE" || true
+  exit 1
+fi
+
 WINDOW=""
 for _ in $(seq 1 30); do
   WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
@@ -278,6 +302,65 @@ fi
 
 DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
 sleep 1
+
+DISPLAY=:99 xdotool key --clearmodifiers t
+sleep 0.35
+DISPLAY=:99 xdotool type --clearmodifiers --delay 35 -- '.help'
+sleep 0.20
+DISPLAY=:99 xdotool key --clearmodifiers Return
+
+CHAT_INTERCEPT_READY=0
+for _ in $(seq 1 120); do
+  if [ -f "$NETWORK_STAGE" ] &&
+     grep -Fq 'command-intercept:.help' "$NETWORK_STAGE" &&
+     grep -Fq 'command-intercept-dispatch:true:.help' "$NETWORK_STAGE"; then
+    CHAT_INTERCEPT_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before typed .help interception completed.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$CHAT_INTERCEPT_READY" -ne 1 ]; then
+  echo 'Typed .help did not reach the recovered NetworkManager command interception path.'
+  cat "$NETWORK_STAGE" 2>/dev/null || true
+  exit 1
+fi
+
+sleep 0.5
+if grep -Fq '.help' "$SERVER_LOG"; then
+  echo 'Typed .help leaked through to the local Minecraft server.'
+  grep -F '.help' "$SERVER_LOG" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_DOT_COMMAND_CANCEL=PASS command=.help'
+
+touch "$GAME_DIR/abyss-network-command-probe-done"
+NETWORK_COMMAND_RESTORED=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"; then
+    NETWORK_COMMAND_RESTORED=1
+    break
+  fi
+  if grep -Fq 'network-command-probe-fail:' "$STAGE"; then
+    echo 'CommandLine restoration failed after typed chat interception.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$NETWORK_COMMAND_RESTORED" -ne 1 ]; then
+  echo 'CommandLine original state was not restored after typed chat interception.'
+  cat "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_TYPED_COMMAND_INTERCEPT=PASS'
+
 DISPLAY=:99 scrot "$PRE_CLICKGUI_SCREENSHOT"
 test -s "$PRE_CLICKGUI_SCREENSHOT"
 
