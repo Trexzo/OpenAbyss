@@ -16,6 +16,7 @@
  */
 package Abyss.internal;
 
+import Abyss.AbyssClient;
 import Abyss.enums.MiningRegionState;
 import Abyss.enums.RotationMode;
 import Abyss.event.EventBus;
@@ -1610,13 +1611,15 @@ implements EventSubscriber {
                             catch (InterruptedException interrupted) {
                                 Thread.currentThread().interrupt();
 }
-                            catch (Throwable ignored) {
+                            catch (Throwable failure) {
+                                AbyssClient.recordFeatureFailure("MiningEngine", "fallback-key-sequence", failure);
 }
                             finally {
                                 try {
                                     KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
 }
-                                catch (Throwable ignored) {
+                                catch (Throwable failure) {
+                                    AbyssClient.recordFeatureFailure("MiningEngine", "release-back-key", failure);
 }
 }
                             F.addScheduledTask(() -> {
