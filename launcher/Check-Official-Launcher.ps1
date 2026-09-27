@@ -106,6 +106,8 @@ $checks = [ordered]@{
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
+    AccountSelfTest = $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')
+    CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
     ModuleCensus112 = $false
 }
 
@@ -142,6 +144,8 @@ $pass = $checks.GameDirectoryExists -and
         (-not $checks.EventCallbackFailure) -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
+        $checks.AccountSelfTest -and
+        $checks.CookieSelfTest -and
         $checks.ModuleCensus112 -and
         ($crashFiles -eq 0)
 
