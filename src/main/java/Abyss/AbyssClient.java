@@ -679,8 +679,15 @@ implements EventSubscriber {
                         w.beginBatch();
                         batching = true;
 }
-                    w.s(var29, 25046058167973L);
-                    var29.A(true);
+                    try {
+                        w.s(var29, 25046058167973L);
+                        var29.A(w.isOwnerActive(var29));
+}
+                    catch (Throwable failure) {
+                        moduleFailure("subscribe", var29, failure);
+                        w.B(var29);
+                        var29.A(false);
+}
                     --subscribesBudget;
                     continue;
 }
