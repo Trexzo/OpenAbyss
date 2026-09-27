@@ -106,7 +106,7 @@ CONFIG="$GAME_DIR/Abyss/current.json"
 
 launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeSeed=true' CISeedPersistence "$SEED_STDOUT" "$SEED_STDERR"
 wait_for_stage "$STAGE" 'world-ready-tick' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_WORLD_READY'
-wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
+wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
 
 test -s "$CONFIG"
 python - "$CONFIG" <<'PY'
@@ -119,7 +119,12 @@ if not isinstance(block, dict):
 value=block.get('Scale')
 if abs(float(value)-1.75)>0.001:
     raise SystemExit(f'PERSISTENCE_CONFIG_SCALE_BAD={value!r}')
-print('PERSISTENCE_CONFIG_DISK_VALUE=PASS scale=1.75')
+full=root.get('FullBright')
+if not isinstance(full, dict):
+    raise SystemExit('PERSISTENCE_CONFIG_FULLBRIGHT_BLOCK_MISSING')
+if full.get('status') is not True:
+    raise SystemExit(f"PERSISTENCE_CONFIG_FULLBRIGHT_STATUS_BAD={full.get('status')!r}")
+print('PERSISTENCE_CONFIG_DISK_VALUE=PASS scale=1.75 fullbright=true')
 PY
 CONFIG_HASH_BEFORE="$(sha256sum "$CONFIG" | awk '{print toupper($1)}')"
 echo "PERSISTENCE_CONFIG_SHA256_BEFORE=$CONFIG_HASH_BEFORE"
@@ -134,7 +139,7 @@ do
 done
 
 launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75' CIVerifyPersistence "$VERIFY_STDOUT" "$VERIFY_STDERR"
-wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:1.75' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
+wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
 
 DIAG="$GAME_DIR/abyss-bootstrap-diagnostics.txt"
