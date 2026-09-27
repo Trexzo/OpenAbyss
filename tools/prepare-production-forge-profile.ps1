@@ -100,7 +100,7 @@ Write-Host "ForgeVersion=$ForgeVersion"
 
 # Mojang 1.8.9 metadata and client.
 $ManifestUrl = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
-$manifest = Invoke-RestMethod -UseBasicParsing -Uri $ManifestUrl
+$manifest = Invoke-RestMethod -Uri $ManifestUrl
 $baseMeta = @($manifest.versions | Where-Object { $_.id -eq '1.8.9' }) | Select-Object -First 1
 if (-not $baseMeta) { throw 'Minecraft 1.8.9 metadata not found.' }
 
