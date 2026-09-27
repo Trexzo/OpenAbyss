@@ -141,12 +141,8 @@ public final class AbyssConfig {
     public static JsonObject read() {
         return AbyssConfig.parse(AbyssConfig.locate());
 }
-    private static Boolean statusValue(JsonObject block) {
-        if (block == null || !block.has("status")) {
-            return null;
-}
+    private static Boolean strictBoolean(JsonElement value) {
         try {
-            JsonElement value = block.get("status");
             if (value == null || !value.isJsonPrimitive()) {
                 return null;
 }
@@ -156,6 +152,29 @@ public final class AbyssConfig {
         catch (Throwable ignored) {
             return null;
 }
+}
+    private static Integer strictInteger(JsonElement value) {
+        try {
+            if (value == null || !value.isJsonPrimitive()) {
+                return null;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isNumber()) {
+                return null;
+}
+            double numeric = primitive.getAsDouble();
+            if (Double.isNaN(numeric) || Double.isInfinite(numeric) || numeric != Math.rint(numeric)
+                    || numeric < Integer.MIN_VALUE || numeric > Integer.MAX_VALUE) {
+                return null;
+}
+            return Integer.valueOf((int)numeric);
+}
+        catch (Throwable ignored) {
+            return null;
+}
+}
+    private static Boolean statusValue(JsonObject block) {
+        return block == null || !block.has("status") ? null : AbyssConfig.strictBoolean(block.get("status"));
 }
     private static void fieldFailure(String field, Class<?> want, String key, Throwable t2, String detail) {
         ++fieldFailures;
@@ -172,14 +191,19 @@ public final class AbyssConfig {
             return 0;
 }
         try {
+            Boolean decoded = AbyssConfig.strictBoolean(o2.get(key));
+            if (decoded == null) {
+                AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "is not a JSON boolean");
+                return 0;
+}
             Field f = Module.class.getDeclaredField(field);
             if (f.getType() != Boolean.TYPE) {
                 AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "is a " + f.getType().getName() + ", not boolean");
                 return 0;
 }
             f.setAccessible(true);
-            f.setBoolean(m2, o2.get(key).getAsBoolean());
-            if (f.getBoolean(m2) != o2.get(key).getAsBoolean()) {
+            f.setBoolean(m2, decoded.booleanValue());
+            if (f.getBoolean(m2) != decoded.booleanValue()) {
                 AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "did not keep the value written to it");
                 return 0;
 }
@@ -195,14 +219,19 @@ public final class AbyssConfig {
             return 0;
 }
         try {
+            Integer decoded = AbyssConfig.strictInteger(o2.get(key));
+            if (decoded == null) {
+                AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "is not an integral JSON number");
+                return 0;
+}
             Field f = Module.class.getDeclaredField(field);
             if (f.getType() != Integer.TYPE) {
                 AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "is a " + f.getType().getName() + ", not int");
                 return 0;
 }
             f.setAccessible(true);
-            f.setInt(m2, o2.get(key).getAsInt());
-            if (f.getInt(m2) != o2.get(key).getAsInt()) {
+            f.setInt(m2, decoded.intValue());
+            if (f.getInt(m2) != decoded.intValue()) {
                 AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "did not keep the value written to it");
                 return 0;
 }
@@ -488,7 +517,16 @@ public final class AbyssConfig {
             if (AbyssConfig.statusValue(missingStatus) != null) {
                 return "FAIL missing-status-accepted";
 }
-            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " malformed-status-refused";
+            if (AbyssConfig.strictBoolean(new JsonPrimitive("true")) != null) {
+                return "FAIL string-boolean-coercion";
+}
+            if (AbyssConfig.strictInteger(new JsonPrimitive(Double.valueOf(1.5d))) != null) {
+                return "FAIL fractional-integer-coercion";
+}
+            if (!Integer.valueOf(54).equals(AbyssConfig.strictInteger(new JsonPrimitive(Integer.valueOf(54))))) {
+                return "FAIL valid-integer";
+}
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
