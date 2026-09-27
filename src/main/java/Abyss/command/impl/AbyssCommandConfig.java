@@ -604,6 +604,46 @@ extends Command {
                 return "FAIL config-safe-name " + String.valueOf(safeConfig);
 }
 
+            File writeProbe = AbyssCommandConfig.resolve("__openabyss_command_write_selftest__");
+            if (writeProbe == null) {
+                return "FAIL command-write-probe-path";
+}
+            File writeProbeBak = new File(writeProbe.getParentFile(), writeProbe.getName() + ".bak");
+            File writeProbeTmp = new File(writeProbe.getParentFile(), writeProbe.getName() + ".tmp");
+            writeProbe.delete();
+            writeProbeBak.delete();
+            writeProbeTmp.delete();
+            try {
+                JsonObject generation1 = new JsonObject();
+                generation1.addProperty("generation", 1);
+                if (!AbyssCommandConfig.write(writeProbe, generation1)) {
+                    return "FAIL command-write-generation1";
+}
+                JsonObject generation2 = new JsonObject();
+                generation2.addProperty("generation", 2);
+                if (!AbyssCommandConfig.write(writeProbe, generation2)) {
+                    return "FAIL command-write-generation2";
+}
+                JsonObject currentGeneration = AbyssCommandConfig.read(writeProbe);
+                JsonObject backupGeneration = AbyssCommandConfig.read(writeProbeBak);
+                if (currentGeneration == null || !currentGeneration.has("generation")
+                        || currentGeneration.get("generation").getAsInt() != 2) {
+                    return "FAIL command-write-current " + String.valueOf(currentGeneration);
+}
+                if (backupGeneration == null || !backupGeneration.has("generation")
+                        || backupGeneration.get("generation").getAsInt() != 1) {
+                    return "FAIL command-write-backup " + String.valueOf(backupGeneration);
+}
+                if (writeProbeTmp.exists()) {
+                    return "FAIL command-write-stale-tmp";
+}
+}
+            finally {
+                writeProbe.delete();
+                writeProbeBak.delete();
+                writeProbeTmp.delete();
+}
+
             ClickGUI liveClick = Modules.J(ClickGUI.class);
             if (liveClick == null) {
                 return "FAIL clickgui-live-null";
@@ -645,7 +685,7 @@ extends Command {
                 ClickGUI.keybind.O(clickKeybind);
 }
             return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.."
-                    + PercentageSetting.maxValue() + " path-safety clickgui-live-roundtrip=3";
+                    + PercentageSetting.maxValue() + " path-safety command-write-rotation clickgui-live-roundtrip=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
