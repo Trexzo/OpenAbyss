@@ -14,6 +14,7 @@ STDOUT="$RUNNER_TEMP/openabyss-production-world-client.stdout.log"
 STDERR="$RUNNER_TEMP/openabyss-production-world-client.stderr.log"
 SERVER_LOG="$RUNNER_TEMP/openabyss-production-world-server.log"
 SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
+THREAD_DUMP="$RUNNER_TEMP/openabyss-production-world-jstack.txt"
 
 CLIENT_PID=""
 SERVER_PID=""
@@ -97,6 +98,13 @@ for _ in $(seq 1 180); do
 done
 if [ "$WORLD_READY" -ne 1 ]; then
   echo 'Production world-ready-tick was not observed.'
+  if [ -n "$CLIENT_PID" ] && kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo "Capturing live production client thread dump for pid=$CLIENT_PID"
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP" 2>&1 || {
+      kill -3 "$CLIENT_PID" 2>/dev/null || true
+      sleep 2
+    }
+  fi
   echo '=== production client stdout tail ==='
   tail -n 500 "$STDOUT" || true
   echo '=== production client stderr tail ==='
