@@ -12,6 +12,7 @@
  */
 package Abyss.module.impl.world;
 
+import Abyss.AbyssClient;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.FastPlaceBinder;
@@ -124,7 +125,7 @@ implements EventSubscriber {
 }
 }
         catch (IndexOutOfBoundsException indexOutOfBoundsException) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("FastPlace", "pre-update-delay", indexOutOfBoundsException);
 }
 }
     @Override
@@ -156,7 +157,7 @@ implements EventSubscriber {
 }
 }
         catch (IndexOutOfBoundsException indexOutOfBoundsException) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("FastPlace", "post-right-click-delay", indexOutOfBoundsException);
 }
 }
     static {
