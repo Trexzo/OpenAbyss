@@ -526,20 +526,47 @@ extends Command {
                 return "FAIL malformed-common-mutated status=" + probe.o() + " key=" + probe.h();
 }
 
+            boolean boolBeforeMalformed = probe.bool.c();
             int percentBeforeMalformed = probe.percent.k();
+            float numberBeforeMalformed = probe.number.L();
+            String modeBeforeMalformed = probe.mode.Y();
+            String colorBeforeMalformed = probe.color.Q();
+            String textBeforeMalformed = probe.text.X();
+
             JsonObject malformedSetting = new JsonObject();
+            malformedSetting.addProperty("Bool", "true");
             malformedSetting.addProperty("Percent", PercentageSetting.maxValue() + 1);
+            malformedSetting.addProperty("Number", 11.0f);
+            malformedSetting.addProperty("Mode", "THREE");
+            malformedSetting.addProperty("Color", "GGGGGG");
+            malformedSetting.addProperty("Text", Boolean.TRUE);
+
             int malformedApplied = AbyssCommandConfig.applySettingValues(probe, malformedSetting);
             if (malformedApplied != 0) {
-                return "FAIL malformed-percentage-applied count=" + malformedApplied;
+                return "FAIL malformed-settings-applied count=" + malformedApplied;
+}
+            if (probe.bool.c() != boolBeforeMalformed) {
+                return "FAIL malformed-boolean-mutated";
 }
             if (probe.percent.k() != percentBeforeMalformed) {
                 return "FAIL malformed-percentage-mutated " + probe.percent.k();
 }
+            if (probe.number.L() != numberBeforeMalformed) {
+                return "FAIL malformed-number-mutated " + probe.number.L();
+}
+            if (!modeBeforeMalformed.equals(probe.mode.Y())) {
+                return "FAIL malformed-mode-mutated " + probe.mode.Y();
+}
+            if (!colorBeforeMalformed.equals(probe.color.Q())) {
+                return "FAIL malformed-color-mutated " + probe.color.Q();
+}
+            if (!textBeforeMalformed.equals(probe.text.X())) {
+                return "FAIL malformed-text-mutated " + probe.text.X();
+}
             if (PercentageSetting.maxValue() != 100) {
                 return "FAIL percentage-max " + PercentageSetting.maxValue();
 }
-            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused percentage-range=0.." + PercentageSetting.maxValue();
+            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.." + PercentageSetting.maxValue();
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
