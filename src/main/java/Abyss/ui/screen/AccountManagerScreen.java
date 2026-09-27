@@ -74,7 +74,16 @@ extends GuiScreen {
                             if (this.K == null) {
                                 this.K = AccountManagerScreen.newLoginExecutor();
 }
-                            String string = var12 = StringUtils.isBlank((CharSequence)(var11 = AltManager.Q.get(this.G)).h()) ? "???" : var11.h();
+                            synchronized (AltManager.Q) {
+                                if (this.G < 0 || this.G >= AltManager.Q.size()) {
+                                    q = new TimedStatusMessage(ChatFormatting.y("&cSelected account is no longer available.&r"), 5000L);
+                                    this.G = -1;
+                                    this.updateScreen();
+                                    return;
+}
+                                var11 = AltManager.Q.get(this.G);
+}
+                            String string = var12 = StringUtils.isBlank((CharSequence)var11.h()) ? "???" : var11.h();
                             if (var11.v() == AccountType.OFFLINE) {
                                 boolean var15 = SessionSwapper.D(var11.h(), 14635617689442L);
                                 q = var15 ? new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", var11.h())), 5000L) : new TimedStatusMessage(ChatFormatting.y(String.format("&cFailed to log in! (%s)&r", var11.h())), 5000L);
@@ -91,7 +100,9 @@ extends GuiScreen {
                                     int var10x = (int)((var5 ^ 0x1B49E992B7C6L) << 16 >>> 32);
                                     int var11x = (int)(var10001x << 48 >>> 48);
                                     if (var3 != null) {
-                                        var14.J(var3.getUsername());
+                                        synchronized (AltManager.Q) {
+                                            var14.J(var3.getUsername());
+}
                                         AltManager.O(var7);
                                         boolean persisted = AltManager.persistenceOk();
                                         if (!SessionAccessor.set(var3)) {
@@ -106,6 +117,17 @@ extends GuiScreen {
                                     q = new TimedStatusMessage(ChatFormatting.y(String.format("&7Refreshing Microsoft access tokens... (%s)&r", var12)), -1L);
                                     return AuthService.A(var14.d(), this.K).thenComposeAsync((Map<String, String> var2xx) -> {
                                         try {
+                                            synchronized (AltManager.Q) {
+                                                String refreshedAccess = var2xx.get("access_token");
+                                                String refreshedRefresh = var2xx.get("refresh_token");
+                                                if (!StringUtils.isBlank((CharSequence)refreshedAccess)) {
+                                                    var14.r(refreshedAccess);
+}
+                                                if (!StringUtils.isBlank((CharSequence)refreshedRefresh)) {
+                                                    var14.H(refreshedRefresh);
+}
+}
+                                            AltManager.O(101554584226764L);
                                             long var3x = a ^ 0x3891B84AC8EDL;
                                             long var10001xx = var3x ^ 0x6C360A1153B4L;
                                             int var5x = (int)((var3x ^ 0x6C360A1153B4L) >>> 48);
@@ -164,7 +186,9 @@ extends GuiScreen {
                                             int var6x = (int)((var2xx ^ 0x4E61A2F10449L) >>> 48);
                                             int var7x = (int)((var2xx ^ 0x4E61A2F10449L) << 16 >>> 32);
                                             int var8x = (int)(var10001xx << 48 >>> 48);
-                                            var14.J(var1xx.getUsername());
+                                            synchronized (AltManager.Q) {
+                                                var14.J(var1xx.getUsername());
+}
                                             AltManager.O(var4xx);
                                             boolean persisted = AltManager.persistenceOk();
                                             if (!SessionAccessor.set(var1xx)) {
@@ -204,12 +228,22 @@ extends GuiScreen {
                         break;
 }
                     case 2: {
-                        if (this.G > -1 && this.G < AltManager.Q.size()) {
-                            int removedIndex = this.G;
-                            Account removed = AltManager.Q.remove(removedIndex);
+                        Account removed = null;
+                        int removedIndex = -1;
+                        synchronized (AltManager.Q) {
+                            if (this.G > -1 && this.G < AltManager.Q.size()) {
+                                removedIndex = this.G;
+                                removed = AltManager.Q.remove(removedIndex);
+}
+}
+                        if (removed != null) {
                             AltManager.O(101554584226764L);
                             if (!AltManager.persistenceOk()) {
-                                AltManager.Q.add(removedIndex, removed);
+                                synchronized (AltManager.Q) {
+                                    if (!AltManager.Q.contains(removed)) {
+                                        AltManager.Q.add(Math.min(removedIndex, AltManager.Q.size()), removed);
+}
+}
                                 q = new TimedStatusMessage(ChatFormatting.y("&cDelete failed: accounts.json was not saved.&r"), 7000L);
 } else {
                                 this.G = -1;
@@ -331,7 +365,14 @@ extends GuiScreen {
 }
     public void updateScreen() {
         if (this.i != null && this.Q != null) {
-            this.i.enabled = this.Q.enabled = this.G >= 0;
+            boolean validSelection;
+            synchronized (AltManager.Q) {
+                validSelection = this.G >= 0 && this.G < AltManager.Q.size();
+}
+            if (!validSelection) {
+                this.G = -1;
+}
+            this.i.enabled = this.Q.enabled = validSelection;
             if (this.I != null && !this.I.isDone()) {
                 this.i.enabled = false;
 }
@@ -384,22 +425,52 @@ extends GuiScreen {
                 if (this.G <= 0) break;
                 --this.G;
                 if (!AccountManagerScreen.isCtrlKeyDown()) break;
-                Collections.swap(AltManager.Q, this.G, this.G + 1);
+                boolean movedUp = false;
+                synchronized (AltManager.Q) {
+                    if (this.G >= 0 && this.G + 1 < AltManager.Q.size()) {
+                        Collections.swap(AltManager.Q, this.G, this.G + 1);
+                        movedUp = true;
+}
+}
+                if (!movedUp) {
+                    this.G = -1;
+                    break;
+}
                 AltManager.O(101554584226764L);
                 if (!AltManager.persistenceOk()) {
-                    Collections.swap(AltManager.Q, this.G, this.G + 1);
+                    synchronized (AltManager.Q) {
+                        if (this.G >= 0 && this.G + 1 < AltManager.Q.size()) {
+                            Collections.swap(AltManager.Q, this.G, this.G + 1);
+}
+}
                     q = new TimedStatusMessage(ChatFormatting.y("&cReorder failed: accounts.json was not saved.&r"), 7000L);
 }
                 break;
 }
             case 208: {
-                if (this.G >= AltManager.Q.size() - 1) break;
+                synchronized (AltManager.Q) {
+                    if (this.G >= AltManager.Q.size() - 1) break;
+}
                 ++this.G;
                 if (!AccountManagerScreen.isCtrlKeyDown()) break;
-                Collections.swap(AltManager.Q, this.G, this.G - 1);
+                boolean movedDown = false;
+                synchronized (AltManager.Q) {
+                    if (this.G > 0 && this.G < AltManager.Q.size()) {
+                        Collections.swap(AltManager.Q, this.G, this.G - 1);
+                        movedDown = true;
+}
+}
+                if (!movedDown) {
+                    this.G = -1;
+                    break;
+}
                 AltManager.O(101554584226764L);
                 if (!AltManager.persistenceOk()) {
-                    Collections.swap(AltManager.Q, this.G, this.G - 1);
+                    synchronized (AltManager.Q) {
+                        if (this.G > 0 && this.G < AltManager.Q.size()) {
+                            Collections.swap(AltManager.Q, this.G, this.G - 1);
+}
+}
                     q = new TimedStatusMessage(ChatFormatting.y("&cReorder failed: accounts.json was not saved.&r"), 7000L);
 }
                 break;
@@ -409,7 +480,15 @@ extends GuiScreen {
 }
 }
         if (AccountManagerScreen.isKeyComboCtrlC((int)var2) && this.G >= 0) {
-            AccountManagerScreen.setClipboardString((String)AltManager.Q.get(this.G).h());
+            String clipboard = null;
+            synchronized (AltManager.Q) {
+                if (this.G < AltManager.Q.size()) {
+                    clipboard = AltManager.Q.get(this.G).h();
+}
+}
+            if (clipboard != null) {
+                AccountManagerScreen.setClipboardString((String)clipboard);
+}
 }
 }
     // R14_AUTH_STUDIO_RECOVERY_MARKER
