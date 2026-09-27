@@ -517,6 +517,14 @@ extends Command {
                 return "FAIL text " + probe.text.X();
 }
 
+            JsonObject lowercaseMode = new JsonObject();
+            lowercaseMode.addProperty("Mode", "two");
+            int lowercaseApplied = AbyssCommandConfig.applySettingValues(probe, lowercaseMode);
+            if (lowercaseApplied != 1 || !"TWO".equals(probe.mode.Y())) {
+                return "FAIL mode-canonicalization applied=" + lowercaseApplied + " value=" + probe.mode.Y();
+}
+            probe.mode.i("ONE");
+
             probe.I(20724619369162L, false);
             probe.z(118276941480361L, 0);
             JsonObject common = new JsonObject();
@@ -808,8 +816,17 @@ extends Command {
                     ModeSetting var14 = (ModeSetting)var5;
                     List<String> var15 = var14.S();
                     String var16 = var9.getAsString();
-                    if (var15 == null || !var15.contains(var16) && !var15.contains(var16.toUpperCase())) continue;
-                    var14.i(var16);
+                    String canonicalMode = null;
+                    if (var15 != null) {
+                        for (String option : var15) {
+                            if (option != null && option.equalsIgnoreCase(var16)) {
+                                canonicalMode = option;
+                                break;
+}
+}
+}
+                    if (canonicalMode == null) continue;
+                    var14.i(canonicalMode);
                     ++var3;
                     continue;
 }
