@@ -80,6 +80,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Official usability checker self-test failed: $LASTEXITCODE" }
           Remove-Item -LiteralPath $checkerFixture -Recurse -Force -ErrorAction SilentlyContinue
 
+      - name: Verify recovered account state contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_account_state_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Recovered account state contract failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
