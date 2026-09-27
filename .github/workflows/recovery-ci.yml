@@ -122,6 +122,13 @@ jobs:
           python '.\tools\check_audio_lifecycle.py'
           if ($LASTEXITCODE -ne 0) { throw "Audio lifecycle contract failed: $LASTEXITCODE" }
 
+      - name: Forbid silent catches in gameplay modules
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_module_impl_empty_catches.py'
+          if ($LASTEXITCODE -ne 0) { throw "Gameplay module silent-catch gate failed: $LASTEXITCODE" }
+
       - name: Inventory silent catch blocks
         shell: powershell
         run: |
