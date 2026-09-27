@@ -249,8 +249,9 @@ extends Command {
             catch (NumberFormatException failure) {
                 return "Expected an integer percentage.";
             }
-            if (parsed < 0 || parsed > 100) {
-                return "Percentage must be between 0 and 100.";
+            int max = PercentageSetting.maxValue();
+            if (parsed < 0 || parsed > max) {
+                return "Percentage must be between 0 and " + max + ".";
             }
             ((PercentageSetting)setting).d(parsed);
             return null;
@@ -333,6 +334,14 @@ extends Command {
             if (bad != null || percentage.k() != 75) {
                 return "FAIL percentage " + bad + " value=" + percentage.k();
             }
+            int percentageBeforeBad = percentage.k();
+            bad = StockCommandModuleSetting.write(percentage, String.valueOf(PercentageSetting.maxValue() + 1));
+            if (bad == null || percentage.k() != percentageBeforeBad) {
+                return "FAIL percentage-range bad=" + bad + " value=" + percentage.k();
+            }
+            if (PercentageSetting.maxValue() != 100) {
+                return "FAIL percentage-max " + PercentageSetting.maxValue();
+            }
 
             ModeSetting mode = new ModeSetting("Mode", "ONE", "TWO");
             bad = StockCommandModuleSetting.write(mode, "two");
@@ -351,7 +360,7 @@ extends Command {
             if (bad != null || !"hello world".equals(text.X())) {
                 return "FAIL text " + bad + " value=" + text.X();
             }
-            return "PASS setting-types=6";
+            return "PASS setting-types=6 percentage-range=0.." + PercentageSetting.maxValue();
         }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
