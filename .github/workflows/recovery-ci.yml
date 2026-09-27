@@ -58,7 +58,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\tools\physical-usability.ps1','.\launcher\launch_abyss.ps1','.\launcher\Prepare-Official-Launcher.ps1','.\launcher\Check-Official-Launcher.ps1')) {
+          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\tools\physical-usability.ps1','.\tools\prepare-production-forge-profile.ps1','.\launcher\launch_abyss.ps1','.\launcher\Prepare-Official-Launcher.ps1','.\launcher\Check-Official-Launcher.ps1')) {
             $path = (Resolve-Path $relative).Path
             $tokens = $null
             $errors = $null
