@@ -428,6 +428,24 @@ jobs:
             Write-Host 'OFFLINE_RUNTIME_SMOKE_PASS'
           }
 
+      - name: Verify semantic 112-module census
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for semantic census gate.' }
+          $census = if (Test-Path -LiteralPath '.\abyss-census.tsv') {
+            (Resolve-Path '.\abyss-census.tsv').Path
+          } elseif (Test-Path -LiteralPath '.\run\abyss-census.tsv') {
+            (Resolve-Path '.\run\abyss-census.tsv').Path
+          } else {
+            throw 'OpenAbyss runtime census file not found.'
+          }
+          python '.\tools\check_live_module_census.py' --jar $jar.FullName --census $census
+          if ($LASTEXITCODE -ne 0) { throw "Semantic 112-module census gate failed: $LASTEXITCODE" }
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
