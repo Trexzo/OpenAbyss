@@ -17,6 +17,8 @@ import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import net.minecraft.client.gui.Gui;
@@ -54,7 +56,7 @@ extends GuiScreen {
         this.buttonList.add(this.q);
         this.O = "&fSelect a cookie file to authenticate&r";
         if (this.Q == null || this.Q.isShutdown()) {
-            this.Q = Executors.newSingleThreadExecutor();
+            this.Q = CookieLoginScreen.newPickerExecutor();
 }
 }
     protected void keyTyped(char var1, int var2) {
@@ -111,6 +113,32 @@ extends GuiScreen {
                     this.mc.displayGuiScreen(this.a);
                     break;
 }
+}
+}
+}
+    private static ExecutorService newPickerExecutor() {
+        return Executors.newSingleThreadExecutor(runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-CookieLogin");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            executor = CookieLoginScreen.newPickerExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL worker-not-daemon";
+}
+            return "PASS daemon-worker";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
 }
 }
 }
