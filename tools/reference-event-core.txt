@@ -1,0 +1,40 @@
+# OpenAbyss runnable-era event-core authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# reviewed_eventbus_field_additions=ownerNames,recordedFailures,failureEvidenceEnabled
+# reviewed_eventbus_method_additions=recordFailure,selfTest
+# reviewed_body_deltas=EventBus.<init>:60->87,EventBus.R:216->238,EventBus.e:130->142,ListenerBinding.S:7->10
+CLASS Abyss/event/EventBus
+FIELD 10 a J
+FIELD 18 Y Ljava/util/Map;
+FIELD 18 P Ljava/util/Map;
+FIELD 10 e J
+FIELD 18 U Ljava/util/Map;
+FIELD 26 PRIORITY_DESC Ljava/util/Comparator;
+FIELD 18 snapshots Ljava/util/Map;
+FIELD 18 rwLock Ljava/util/concurrent/locks/ReentrantReadWriteLock;
+FIELD 66 batchMode Z
+METHOD 1 s (Ljava/lang/Object;J)V 80 0 4 9
+METHOD 1 e (LAbyss/event/Event;J)V 130 1 4 11
+METHOD 10 v (LAbyss/event/ListenerBinding;Ljava/lang/Object;I)V 34 0 4 7
+METHOD 1 z (JLjava/lang/Object;)V 156 3 4 10
+METHOD 2 O (Ljava/lang/Throwable;J)V 88 0 4 8
+METHOD 1 <init> ()V 60 0 3 1
+METHOD 1 B (Ljava/lang/Object;)V 60 0 2 5
+METHOD 1 R (Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V 216 3 4 10
+METHOD 1 beginBatch ()V 6 0 2 1
+METHOD 1 endBatch ()V 153 3 4 6
+CLASS Abyss/event/Event
+FIELD 2 L Z
+FIELD 10 f J
+METHOD 1 a ()Z 5 0 1 1
+METHOD 1 I (IJ)V 6 0 2 4
+METHOD 1 <init> ()V 10 0 2 1
+CLASS Abyss/event/ListenerBinding
+FIELD 18 Q I
+FIELD 18 p LAbyss/event/EventInvoker;
+FIELD 66 z Z
+METHOD 9 k (LAbyss/event/ListenerBinding;)I 5 0 1 1
+METHOD 9 d (LAbyss/event/ListenerBinding;)LAbyss/event/EventInvoker; 5 0 1 1
+METHOD 9 o (LAbyss/event/ListenerBinding;)Z 5 0 1 1
+METHOD 1 <init> (LAbyss/event/EventInvoker;I)V 15 0 2 3
+METHOD 9 S (LAbyss/event/ListenerBinding;Z)Z 7 0 3 2
