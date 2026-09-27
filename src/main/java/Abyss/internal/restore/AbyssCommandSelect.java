@@ -78,4 +78,68 @@ public final class AbyssCommandSelect {
             AbyssCommands.chat("\u00a7cNo module or category named \u00a7f" + UNRESOLVED.get(var0) + "\u00a7c.");
 }
 }
+    public static String selfTest() {
+        try {
+            List<Module> live = AbyssCommandSelect.all();
+            if (live.size() != 112) {
+                return "FAIL all-count " + live.size() + "/112";
+}
+            List<Module> viaAll = AbyssCommandSelect.resolve(new String[]{"all"}, 0, 1);
+            if (viaAll.size() != live.size() || !viaAll.containsAll(live)) {
+                return "FAIL all-resolve " + viaAll.size() + "/" + live.size();
+}
+            int categoryTotal = 0;
+            int categories = 0;
+            for (Category category : Category.values()) {
+                int expected = 0;
+                for (Module module : live) {
+                    if (module.f() == category) {
+                        ++expected;
+}
+}
+                List<Module> resolved = AbyssCommandSelect.resolve(new String[]{category.c()}, 0, 1);
+                if (resolved.size() != expected) {
+                    return "FAIL category " + category + " expected=" + expected + " actual=" + resolved.size();
+}
+                for (Module module : resolved) {
+                    if (module.f() != category) {
+                        return "FAIL category-crosswrite " + category + " -> " + module.b() + "/" + module.f();
+}
+}
+                categoryTotal += resolved.size();
+                ++categories;
+}
+            if (categoryTotal != live.size()) {
+                return "FAIL category-total " + categoryTotal + "/" + live.size();
+}
+            if (live.isEmpty()) {
+                return "FAIL live-empty";
+}
+            Module first = live.get(0);
+            List<Module> named = AbyssCommandSelect.resolve(new String[]{first.b()}, 0, 1);
+            if (named.size() != 1 || named.get(0) != first) {
+                return "FAIL named " + first.b() + " size=" + named.size();
+}
+            List<Module> deduped = AbyssCommandSelect.resolve(new String[]{"all", first.b(), first.f().c(), "all"}, 0, 4);
+            if (deduped.size() != live.size()) {
+                return "FAIL dedupe " + deduped.size() + "/" + live.size();
+}
+            String missing = "__openabyss_missing_selector__";
+            List<Module> unresolved = AbyssCommandSelect.resolve(new String[]{missing}, 0, 1);
+            if (!unresolved.isEmpty() || UNRESOLVED.size() != 1 || !missing.equals(UNRESOLVED.get(0))) {
+                return "FAIL unresolved modules=" + unresolved.size() + " notes=" + UNRESOLVED;
+}
+            List<String> pool = AbyssCommandSelect.pool();
+            if (!pool.contains(ALL) || !pool.contains(first.b())) {
+                return "FAIL pool size=" + pool.size();
+}
+            UNRESOLVED.clear();
+            return "PASS all=112 categories=" + categories + " dedupe unresolved";
+}
+        catch (Throwable failure) {
+            UNRESOLVED.clear();
+            return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
+}
+}
+
 }
