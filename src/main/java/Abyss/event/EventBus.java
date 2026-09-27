@@ -40,6 +40,7 @@ public class EventBus {
     private final Map<Class<?>, List<ListenerBinding<?>>> P;
     private static long e;
     private final Map<Object, List<ListenerBinding<?>>> U = new ConcurrentHashMap();
+    private final Map<Object, Boolean> ownerActive = new ConcurrentHashMap();
     private final Map<ListenerBinding<?>, String> ownerNames = new ConcurrentHashMap();
     private final Map<String, Boolean> recordedFailures = new ConcurrentHashMap();
     private boolean failureEvidenceEnabled = true;
@@ -54,6 +55,7 @@ public class EventBus {
             this.z(var4, var1);
             List<ListenerBinding<?>> var6 = this.U.get(var1);
             if (var6 != null) {
+                this.ownerActive.put(var1, Boolean.TRUE);
                 for (ListenerBinding listenerBinding : var6) {
                     ListenerBinding.S(listenerBinding, true);
 }
@@ -153,6 +155,7 @@ public class EventBus {
                     this.rwLock.writeLock().lock();
                     try {
                         List<ListenerBinding<?>> failedBindings = this.U.remove(var3);
+                        this.ownerActive.remove(var3);
                         if (failedBindings != null && !failedBindings.isEmpty()) {
                             for (ListenerBinding<?> failedBinding : failedBindings) {
                                 this.ownerNames.remove(failedBinding);
@@ -199,13 +202,14 @@ public class EventBus {
     public void B(Object var1) {
         List<ListenerBinding<?>> var2;
         if (var1 != null && (var2 = this.U.get(var1)) != null) {
+            this.ownerActive.put(var1, Boolean.FALSE);
             for (ListenerBinding listenerBinding : var2) {
                 ListenerBinding.S(listenerBinding, false);
 }
 }
 }
     public boolean isOwnerActive(Object owner) {
-        if (owner == null) {
+        if (owner == null || !Boolean.TRUE.equals(this.ownerActive.get(owner))) {
             return false;
 }
         List<ListenerBinding<?>> bindings = this.U.get(owner);
@@ -289,6 +293,14 @@ public class EventBus {
             bus.s(passiveOwner, 0L);
             if (!bus.isOwnerActive(passiveOwner)) {
                 return "FAIL passive-owner-registration";
+}
+            bus.B(passiveOwner);
+            if (bus.isOwnerActive(passiveOwner)) {
+                return "FAIL passive-owner-disable";
+}
+            bus.s(passiveOwner, 0L);
+            if (!bus.isOwnerActive(passiveOwner)) {
+                return "FAIL passive-owner-resubscribe";
 }
             EventSubscriber emptySubscriber = new EventSubscriber(){
                 @Override
@@ -467,7 +479,7 @@ public class EventBus {
             if (bus.recordedFailures.size() != 1) {
                 return "FAIL callback-failure-dedup " + bus.recordedFailures.size();
 }
-            return "PASS priority cancellation resubscribe-idempotence callback-failure-isolation";
+            return "PASS passive-owner-lifecycle priority cancellation resubscribe-idempotence callback-failure-isolation";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
