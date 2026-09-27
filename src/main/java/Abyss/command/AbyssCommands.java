@@ -211,8 +211,9 @@ public final class AbyssCommands {
             if (placeholders != 0) {
                 return "FAIL module-placeholders " + placeholders;
 }
-            if (!AbyssCommandBind.gateOk()) {
-                return "FAIL keybind-gate " + AbyssCommandBind.gateNote();
+            String bindTest = AbyssCommandBind.selfTest();
+            if (!bindTest.startsWith("PASS")) {
+                return "FAIL keybind " + bindTest;
 }
             String configTest = AbyssCommandConfig.selfTest();
             if (!configTest.startsWith("PASS")) {
@@ -227,7 +228,7 @@ public final class AbyssCommands {
                 return "FAIL selector " + selectTest;
 }
             return "PASS commands=" + count + " primaryAliases=" + primaryResolved
-                    + " moduleSetting=PASS keybind=TRUSTED config=PASS reset=PASS selector=PASS";
+                    + " moduleSetting=PASS keybind=PASS config=PASS reset=PASS selector=PASS";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
