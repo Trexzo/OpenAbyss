@@ -220,6 +220,17 @@ jobs:
           python '.\tools\check_module_semantic_static_state.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era semantic-static module state gate failed: $LASTEXITCODE" }
 
+      - name: Verify runnable-era module declaration metadata
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module declaration gate.' }
+          python '.\tools\check_module_declarations.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module declaration gate failed: $LASTEXITCODE" }
+
       - name: Verify runnable-era module constructors
         shell: powershell
         run: |
