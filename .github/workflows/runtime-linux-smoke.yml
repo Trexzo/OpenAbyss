@@ -333,6 +333,10 @@ jobs:
             echo "Account JSON round-trip self-test is not green." >&2
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] authservice selftest= PASS loopback daemon-callback timeout=300s' "$DIAG"; then
+            echo "Microsoft callback contract self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] cookie selftest    = PASS cookie-parsers' "$DIAG"; then
             echo "Microsoft cookie parser self-test is not green." >&2
             exit 1
