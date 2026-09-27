@@ -15,6 +15,8 @@ STDERR="$RUNNER_TEMP/openabyss-production-world-client.stderr.log"
 SERVER_LOG="$RUNNER_TEMP/openabyss-production-world-server.log"
 SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
 THREAD_DUMP="$RUNNER_TEMP/openabyss-production-world-jstack.txt"
+THREAD_DUMP_2="$RUNNER_TEMP/openabyss-production-world-jstack-2.txt"
+THREAD_DUMP_3="$RUNNER_TEMP/openabyss-production-world-jstack-3.txt"
 
 CLIENT_PID=""
 SERVER_PID=""
@@ -92,8 +94,12 @@ for WAIT_ITER in $(seq 1 180); do
   if [ "$STALL_DUMPED" -eq 0 ] && [ "$WAIT_ITER" -ge 12 ] &&
      grep -Eq 'logged in with entity id|joined the game' "$SERVER_LOG" 2>/dev/null &&
      kill -0 "$CLIENT_PID" 2>/dev/null; then
-    echo "Capturing in-stall production client thread dump at wait=${WAIT_ITER}s pid=$CLIENT_PID"
+    echo "Capturing in-stall production client thread dumps at wait=${WAIT_ITER}s pid=$CLIENT_PID"
     "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP" 2>&1 || true
+    sleep 1
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_2" 2>&1 || true
+    sleep 1
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_3" 2>&1 || true
     STALL_DUMPED=1
   fi
   if [ "$STALL_DUMPED" -eq 1 ] && [ "$WAIT_ITER" -ge 20 ]; then
