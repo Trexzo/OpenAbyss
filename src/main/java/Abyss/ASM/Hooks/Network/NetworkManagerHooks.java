@@ -30,7 +30,7 @@ public class NetworkManagerHooks {
     private static final Set<String> RUNTIME_MARKERS =
             Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-    private static void runtimeMarker(String marker) {
+    private static synchronized void runtimeMarker(String marker) {
         if (marker == null || !RUNTIME_MARKERS.add(marker)) {
             return;
 }
@@ -52,7 +52,8 @@ public class NetworkManagerHooks {
             if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).getMessage().startsWith(".")) {
                 String commandMessage = ((C01PacketChatMessage)var0).getMessage();
                 runtimeMarker("command-intercept:" + commandMessage);
-                StockCommandRegistry.E(27284, '\u313f', '\u9352', commandMessage);
+                boolean handled = StockCommandRegistry.E(27284, '\u313f', '\u9352', commandMessage);
+                runtimeMarker("command-intercept-dispatch:" + handled + ":" + commandMessage);
                 var1.cancel();
 }
             if (PacketManager.v.contains(var0)) {
