@@ -115,6 +115,13 @@ jobs:
           python '.\tools\check_raw_input_lifecycle.py'
           if ($LASTEXITCODE -ne 0) { throw "RawInput lifecycle contract failed: $LASTEXITCODE" }
 
+      - name: Verify audio resource lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_audio_lifecycle.py'
+          if ($LASTEXITCODE -ne 0) { throw "Audio lifecycle contract failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
