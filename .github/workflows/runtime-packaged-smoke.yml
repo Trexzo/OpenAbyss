@@ -351,6 +351,10 @@ jobs:
             echo "Account Manager worker lifecycle self-test is not green." >&2
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] altstore selftest  = PASS file-roundtrip' "$DIAG"; then
+            echo "Account-file persistence self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
             echo 'Persisted command-data loader did not run.'
             cat "$DIAG"
