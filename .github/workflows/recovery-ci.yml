@@ -88,6 +88,13 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify Minecraft session swap contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_session_swap_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Minecraft session swap contract failed: $LASTEXITCODE" }
+
       - name: Verify auth HTTP response ownership
         shell: powershell
         run: |
