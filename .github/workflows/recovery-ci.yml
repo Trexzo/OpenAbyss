@@ -101,6 +101,13 @@ jobs:
           python '.\tools\audit_executor_lifecycle.py'
           if ($LASTEXITCODE -ne 0) { throw "Executor lifecycle census failed: $LASTEXITCODE" }
 
+      - name: Verify per-module dispatch isolation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_module_dispatch_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Per-module dispatch contract failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
