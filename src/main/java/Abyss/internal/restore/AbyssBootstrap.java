@@ -349,6 +349,8 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] account selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? Account.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] cookie selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieAuthService.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] accountgui selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccountManagerScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] altstore selftest  = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AltManager.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] altstore last      = ").append(AltManager.lastPersistenceNote).append('\n');
             b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
             b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
             b.append("[ABYSSDIAG] clickgui selftest = ").append(ClickGUI.selfTest()).append('\n');
