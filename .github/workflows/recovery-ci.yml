@@ -157,6 +157,13 @@ jobs:
           python '.\tools\check_renderer_reload_contract.py'
           if ($LASTEXITCODE -ne 0) { throw "Renderer reload contract failed: $LASTEXITCODE" }
 
+      - name: Verify runnable-era command registry
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_command_registry.py'
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era command registry gate failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
