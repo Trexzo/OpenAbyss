@@ -16,29 +16,39 @@ public final class DeferredRendererReload {
     private static volatile boolean pending;
     private static long lastReloadMs;
     private static final long COOLDOWN_MS = 3000L;
+    private static final int MAX_RETRIES = 2;
+    private static int retryCount;
     private static volatile String lastFailure;
 
     private DeferredRendererReload() {
 }
     public static void request() {
+        retryCount = 0;
         pending = true;
 }
     public static void flush() {
-        if (pending) {
-            long now = System.currentTimeMillis();
-            if (now - lastReloadMs < 3000L) {
-                return;
+        if (!pending) {
+            return;
 }
-            pending = false;
-            lastReloadMs = now;
-            try {
-                Minecraft mc = Minecraft.getMinecraft();
-                if (mc != null && mc.renderGlobal != null) {
-                    mc.renderGlobal.loadRenderers();
+        long now = System.currentTimeMillis();
+        if (now - lastReloadMs < COOLDOWN_MS) {
+            return;
 }
+        lastReloadMs = now;
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.renderGlobal == null) {
+            return;
 }
-            catch (Throwable throwable) {
-                DeferredRendererReload.recordFailure(throwable);
+        pending = false;
+        try {
+            mc.renderGlobal.loadRenderers();
+            retryCount = 0;
+}
+        catch (Throwable throwable) {
+            DeferredRendererReload.recordFailure(throwable);
+            if (retryCount < MAX_RETRIES) {
+                ++retryCount;
+                pending = true;
 }
 }
 }
