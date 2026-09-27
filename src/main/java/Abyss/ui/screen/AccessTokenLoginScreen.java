@@ -18,6 +18,7 @@ import Abyss.ui.GuiTextWidget;
 import Abyss.ui.screen.AccountManagerScreen;
 import Abyss.util.ChatFormatting;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.client.gui.GuiButton;
@@ -69,9 +72,9 @@ extends GuiScreen {
         Keyboard.enableRepeatEvents((boolean)false);
         if (this.f != null && !this.f.isDone()) {
             this.f.cancel(true);
-            if (this.T != null && !this.T.isShutdown()) {
-                this.T.shutdownNow();
 }
+        if (this.T != null && !this.T.isShutdown()) {
+            this.T.shutdownNow();
 }
 }
     private void W(List<CompletableFuture<Void>> var1, List<String> var2, List<String> var3) {
@@ -80,6 +83,9 @@ extends GuiScreen {
             this.mc.addScheduledTask(() -> {
                 long var5x = 106134966044692L;
                 String var10 = !var3.isEmpty() && var2.isEmpty() ? String.format("\u00a7aSuccessfully logged in %d account(s)!\u00a7r", var3.size()) : (var3.isEmpty() && !var2.isEmpty() ? String.format("\u00a7cFailed to log in %d account(s).\u00a7r", var2.size()) : String.format("\u00a7aLogged in %d, \u00a7cfailed %d account(s).\u00a7r", var3.size(), var2.size()));
+                if (!AltManager.persistenceOk() && !var3.isEmpty()) {
+                    var10 = "\u00a7eAuthenticated " + var3.size() + " account(s), but accounts.json was not saved.\u00a7r";
+}
                 this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(var5x, this.W, new TimedStatusMessage(ChatFormatting.y(var10), j)));
                 if (!var2.isEmpty()) {
                     var2.forEach(System.err::println);
@@ -116,13 +122,15 @@ extends GuiScreen {
             CompletableFuture<Void> var8 = AuthService.i(var7, this.T).thenAcceptAsync((Session var2x) -> {
                 String var3x = var2x.getUsername();
                 String var4 = var2x.getPlayerID();
-                Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var7)).findFirst();
-                if (var5x.isPresent()) {
-                    Account var6x = var5x.get();
-                    var6x.J(var3x);
-                    var6x.j(var4);
-                } else {
-                    AltManager.Q.add(new Account(var3x, var7, var4));
+                synchronized (AltManager.Q) {
+                    Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var7)).findFirst();
+                    if (var5x.isPresent()) {
+                        Account var6x = var5x.get();
+                        var6x.J(var3x);
+                        var6x.j(var4);
+                    } else {
+                        AltManager.Q.add(new Account(var3x, var7, var4));
+}
 }
                 var6.add(var3x);
             }, this.T).exceptionally((Throwable var2x) -> {
@@ -191,13 +199,15 @@ extends GuiScreen {
                 CompletableFuture<Void> var15 = var14.thenAcceptAsync((Session var2x) -> {
                     String var3 = var2x.getUsername();
                     String var4x = var2x.getPlayerID();
-                    Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var17)).findFirst();
-                    if (var5x.isPresent()) {
-                        Account var6x = var5x.get();
-                        var6x.J(var3);
-                        var6x.j(var4x);
-                    } else {
-                        AltManager.Q.add(new Account(var3, var17, var4x));
+                    synchronized (AltManager.Q) {
+                        Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var17)).findFirst();
+                        if (var5x.isPresent()) {
+                            Account var6x = var5x.get();
+                            var6x.J(var3);
+                            var6x.j(var4x);
+                        } else {
+                            AltManager.Q.add(new Account(var3, var17, var4x));
+}
 }
                     var6.add(var3);
                 }, this.T).exceptionally((Throwable var3) -> {
@@ -246,13 +256,13 @@ extends GuiScreen {
 }
     private void r(String var3) {
         if (this.T == null || this.T.isShutdown()) {
-            this.T = Executors.newFixedThreadPool(5);
+            this.T = AccessTokenLoginScreen.newBatchExecutor();
 }
         this.D = "\u00a77Processing accounts...\u00a7r";
         this.E.enabled = false;
         ArrayList<CompletableFuture<Void>> var8 = new ArrayList<CompletableFuture<Void>>();
-        ArrayList<String> var9 = new ArrayList<String>();
-        ArrayList<String> var10 = new ArrayList<String>();
+        List<String> var9 = Collections.synchronizedList(new ArrayList<String>());
+        List<String> var10 = Collections.synchronizedList(new ArrayList<String>());
         ArrayList<String> var11 = new ArrayList<String>();
         Matcher var12 = R.matcher(var3);
         while (var12.find()) {
@@ -321,6 +331,32 @@ extends GuiScreen {
 }
 }
             this.W(var8, var9, var10);
+}
+}
+    private static ExecutorService newBatchExecutor() {
+        return Executors.newFixedThreadPool(5, runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-AccessToken");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            executor = AccessTokenLoginScreen.newBatchExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL worker-not-daemon";
+}
+            return "PASS daemon-workers synchronized-results";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
 }
 }
     static {
