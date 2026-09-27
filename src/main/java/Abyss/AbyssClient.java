@@ -125,6 +125,13 @@ implements EventSubscriber {
     private int worldFunctionalProbeWaitTicks;
     private float worldFunctionalProbeOriginalGamma;
     private boolean persistenceProbeSeeded;
+    private int categoryLifecycleProbeIndex;
+    private int categoryLifecycleProbePhase;
+    private int categoryLifecycleProbeWaitTicks;
+    private boolean categoryLifecycleProbeOriginalEnabled;
+    private static final String[] CATEGORY_LIFECYCLE_PROBE_MODULES = new String[]{
+            "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay", "NoHitDelay", "AutoTool"
+    };
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -191,6 +198,88 @@ implements EventSubscriber {
         catch (Throwable ignored) {
 }
         System.err.println("[ABYSSDIAG] feature failure " + line);
+}
+
+    private void pumpCategoryLifecycleProbe() {
+        if (!Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                || this.categoryLifecycleProbeIndex >= CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+}
+        String name = CATEGORY_LIFECYCLE_PROBE_MODULES[this.categoryLifecycleProbeIndex];
+        try {
+            Module probe = ModuleManager.byName(name);
+            if (probe == null) {
+                throw new IllegalStateException("Module is missing: " + name);
+}
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.categoryLifecycleProbePhase == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.categoryLifecycleProbeWaitTicks > 100) {
+                        throw new IllegalStateException("Initial module state did not settle: " + name
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                this.categoryLifecycleProbeOriginalEnabled = stableEnabled;
+                this.categoryLifecycleProbeWaitTicks = 0;
+                probe.I(0L, !this.categoryLifecycleProbeOriginalEnabled);
+                this.categoryLifecycleProbePhase = 1;
+                runtimeMilestone("category-lifecycle-probe-transition-request:" + name
+                        + ":target=" + (!this.categoryLifecycleProbeOriginalEnabled));
+                return;
+}
+
+            if (this.categoryLifecycleProbePhase == 1) {
+                boolean targetReached = this.categoryLifecycleProbeOriginalEnabled ? stableDisabled : stableEnabled;
+                if (!targetReached) {
+                    if (++this.categoryLifecycleProbeWaitTicks > 100) {
+                        throw new IllegalStateException("Opposite module state timed out: " + name
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                runtimeMilestone("category-lifecycle-probe-opposite-pass:" + name
+                        + ":enabled=" + probe.o());
+                this.categoryLifecycleProbeWaitTicks = 0;
+                probe.I(0L, this.categoryLifecycleProbeOriginalEnabled);
+                this.categoryLifecycleProbePhase = 2;
+                return;
+}
+
+            boolean restored = this.categoryLifecycleProbeOriginalEnabled ? stableEnabled : stableDisabled;
+            if (!restored) {
+                if (++this.categoryLifecycleProbeWaitTicks > 100) {
+                    throw new IllegalStateException("Original module state restore timed out: " + name
+                            + " originalEnabled=" + this.categoryLifecycleProbeOriginalEnabled
+                            + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                            + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                            + " ownerActive=" + w.isOwnerActive(probe));
+}
+                return;
+}
+            runtimeMilestone("category-lifecycle-probe-module-pass:" + name
+                    + ":restored=" + this.categoryLifecycleProbeOriginalEnabled);
+            ++this.categoryLifecycleProbeIndex;
+            this.categoryLifecycleProbePhase = 0;
+            this.categoryLifecycleProbeWaitTicks = 0;
+            if (this.categoryLifecycleProbeIndex >= CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+                runtimeMilestone("category-lifecycle-probe-pass:" + CATEGORY_LIFECYCLE_PROBE_MODULES.length);
+}
+}
+        catch (Throwable failure) {
+            this.categoryLifecycleProbeIndex = CATEGORY_LIFECYCLE_PROBE_MODULES.length;
+            recordFeatureFailure("CategoryLifecycleProbe:" + name, "transition-restore", failure);
+            runtimeMilestone("category-lifecycle-probe-fail:" + name + ":" + failure.getClass().getName());
+}
 }
 
     private void pumpPersistenceSeedProbe() {
@@ -832,6 +921,7 @@ implements EventSubscriber {
                 w.endBatch();
 }
             this.pumpWorldFunctionalProbe();
+            this.pumpCategoryLifecycleProbe();
             this.pumpPersistenceSeedProbe();
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
