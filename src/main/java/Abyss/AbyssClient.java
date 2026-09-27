@@ -122,6 +122,7 @@ implements EventSubscriber {
     public static EventBus w;
     private static final Set<String> RUNTIME_MILESTONES = new CopyOnWriteArraySet<String>();
     private static final Set<String> MODULE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
+    private static final Set<String> FEATURE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
 
     private static void runtimeMilestone(String name) {
         if (name == null || !RUNTIME_MILESTONES.add(name)) {
@@ -160,6 +161,28 @@ implements EventSubscriber {
 }
         System.err.println("[ABYSSDIAG] module failure " + line);
 }
+    public static void recordFeatureFailure(String owner, String operation, Throwable failure) {
+        String safeOwner = owner == null ? "<unknown>" : owner;
+        String safeOperation = operation == null ? "<unknown>" : operation;
+        String failureType = failure == null ? "<null>" : failure.getClass().getName();
+        String message = failure == null ? "<null>"
+                : String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        String signature = safeOwner + "|" + safeOperation + "|" + failureType + "|" + message;
+        if (!FEATURE_FAILURE_SIGNATURES.add(signature)) {
+            return;
+}
+        String line = System.currentTimeMillis() + "\t" + safeOwner + "\t" + safeOperation + "\t"
+                + failureType + "\t" + message;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    (OutputStream)new FileOutputStream(new File("abyss-feature-failure.txt"), true), "UTF-8")) {
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] feature failure " + line);
+}
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
         if (var3.H instanceof EntityPlayerSP) {
@@ -197,7 +220,7 @@ implements EventSubscriber {
                         this.bedScanActive = true;
 }
                     catch (Throwable throwable) {
-                        // empty catch block
+                        AbyssClient.recordFeatureFailure("BedNuker", "schedule-bed-scan", throwable);
 }
                 }), 3000L, TimeUnit.MILLISECONDS);
 }
