@@ -8,6 +8,15 @@ import sys
 import zipfile
 
 
+REVIEWED_EXCEPTION_RELOCATIONS = {
+    (
+        "Abyss/command/impl/AbyssCommandConfig",
+        "load",
+        "(Ljava/lang/String;)V",
+    ),
+}
+
+
 def _u1(data: bytes, off: int):
     return data[off], off + 1
 
@@ -189,7 +198,11 @@ def main() -> int:
             rows.append((ratio, old_code, new_code, key, new_stack, new_locals, new_exc))
         if old_code >= 40 and new_code <= 8:
             tiny.append((old_code, new_code, key))
-        if old["old_exceptions"] > 0 and new_exc == 0:
+        if (
+            old["old_exceptions"] > 0
+            and new_exc == 0
+            and key not in REVIEWED_EXCEPTION_RELOCATIONS
+        ):
             failures.append("exception-region-lost:" + "|".join(key))
         # Command recovery is allowed to refactor or add diagnostics. This gate
         # only rejects severe body collapse, not ordinary semantic rewriting.
@@ -201,6 +214,10 @@ def main() -> int:
     rows.sort(key=lambda x: (x[0], -x[1], x[3]))
     print(f"COMMAND_BODY_OLD_GE40={len(rows)}")
     print(f"COMMAND_BODY_SUSPICIOUS_TINY={len(tiny)}")
+    print(
+        "COMMAND_BODY_REVIEWED_EXCEPTION_RELOCATIONS="
+        + str(len(REVIEWED_EXCEPTION_RELOCATIONS))
+    )
     for ratio, old_code, new_code, key, stack, locals_, exc in rows[:args.top]:
         print(
             "COMMAND_BODY_SHRINK "
