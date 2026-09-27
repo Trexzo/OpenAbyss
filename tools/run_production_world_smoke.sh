@@ -14,6 +14,7 @@ STDOUT="$RUNNER_TEMP/openabyss-production-world-client.stdout.log"
 STDERR="$RUNNER_TEMP/openabyss-production-world-client.stderr.log"
 SERVER_LOG="$RUNNER_TEMP/openabyss-production-world-server.log"
 SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
+STALL_SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-stall.png"
 THREAD_DUMP="$RUNNER_TEMP/openabyss-production-world-jstack.txt"
 THREAD_DUMP_2="$RUNNER_TEMP/openabyss-production-world-jstack-2.txt"
 THREAD_DUMP_3="$RUNNER_TEMP/openabyss-production-world-jstack-3.txt"
@@ -100,6 +101,7 @@ for WAIT_ITER in $(seq 1 180); do
     "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_2" 2>&1 || true
     sleep 1
     "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_3" 2>&1 || true
+    DISPLAY=:99 scrot "$STALL_SCREENSHOT" || true
     STALL_DUMPED=1
   fi
   if [ "$STALL_DUMPED" -eq 1 ] && [ "$WAIT_ITER" -ge 20 ]; then
