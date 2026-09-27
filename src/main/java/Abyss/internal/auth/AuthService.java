@@ -44,6 +44,7 @@ import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -57,6 +58,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLSocketFactory;
@@ -92,6 +98,45 @@ public final class AuthService {
     public static int P;
     
         public static RequestConfig e;
+    private static final int CALLBACK_PORT = 25575;
+    private static final long CALLBACK_TIMEOUT_SECONDS = 300L;
+
+    private static InetSocketAddress callbackAddress() {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), CALLBACK_PORT);
+}
+    private static ExecutorService newCallbackExecutor() {
+        return Executors.newSingleThreadExecutor(runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-MicrosoftCallback");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            InetSocketAddress address = AuthService.callbackAddress();
+            if (address.getAddress() == null || !address.getAddress().isLoopbackAddress() || address.getPort() != CALLBACK_PORT) {
+                return "FAIL callback-address=" + address;
+}
+            if (CALLBACK_TIMEOUT_SECONDS <= 0L) {
+                return "FAIL timeout";
+}
+            executor = AuthService.newCallbackExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL callback-worker-not-daemon";
+}
+            return "PASS loopback daemon-callback timeout=" + CALLBACK_TIMEOUT_SECONDS + "s";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
+}
+}
 
     public static CompletableFuture<String> P(String var0, String var1, Executor var2) {
         return CompletableFuture.supplyAsync(() -> {
@@ -226,58 +271,85 @@ public final class AuthService {
 }
     public static CompletableFuture<String> S(String var0, Executor var1) {
         return CompletableFuture.supplyAsync(() -> {
+            HttpServer server = null;
+            ExecutorService callbackExecutor = null;
             try {
-                HttpServer var3;
-                long var1x = 49014433104943L;
-                try {
-                    var3 = HttpServer.create(new InetSocketAddress(25575), 0);
-}
-                catch (IOException var12) {
-                    throw new CompletionException("Unable to start local auth server!", var12);
-}
-                CountDownLatch var4 = new CountDownLatch(1);
-                AtomicReference<Object> var5 = new AtomicReference<Object>(null);
-                AtomicReference<Object> var6 = new AtomicReference<Object>(null);
-                var3.createContext("/callback", var4x -> {
-                    Map<String, String> var7x = URLEncodedUtils.parse((String)var4x.getRequestURI().toString().replaceAll("/callback\\?", ""), (Charset)StandardCharsets.UTF_8).stream().collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-                    if (!var0.equals(var7x.get("state"))) {
-                        var6.set(String.format("State mismatch! Expected '%s' but got '%s'.", var0, var7x.get("state")));
-                    } else if (var7x.containsKey("code")) {
-                        var5.set(var7x.get("code"));
-                    } else if (var7x.containsKey("error")) {
-                        var6.set(String.format("%s: %s", var7x.get("error"), var7x.get("error_description")));
-}
-                    InputStream var8 = AuthService.class.getResourceAsStream("/callback.html");
-                    byte[] var9x = var8 != null ? IOUtils.toByteArray((InputStream)var8) : new byte[]{};
-                    var4x.getResponseHeaders().add("Content-Type", "text/html");
-                    var4x.sendResponseHeaders(200, var9x.length);
-                    var4x.getResponseBody().write(var9x);
-                    var4x.getResponseBody().close();
-                    var4.countDown();
-                });
-                try {
-                    var3.start();
-                    var4.await();
-                    String var13 = (String)Optional.ofNullable(var5.get()).filter(var0xx -> !StringUtils.isBlank((CharSequence)((CharSequence)var0xx))).orElseThrow(() -> new Exception((String)Optional.ofNullable(var6.get()).orElse("There was no auth code or error description present.")));
-                    var3.stop(2);
-                    return var13;
-}
-                catch (Throwable var11) {
-                    Throwable var7 = var11;
+                server = HttpServer.create(AuthService.callbackAddress(), 0);
+                callbackExecutor = AuthService.newCallbackExecutor();
+                server.setExecutor(callbackExecutor);
+
+                CountDownLatch latch = new CountDownLatch(1);
+                AtomicReference<String> code = new AtomicReference<String>(null);
+                AtomicReference<String> error = new AtomicReference<String>(null);
+
+                server.createContext("/callback", exchange -> {
                     try {
-                        var3.stop(2);
-                        throw var7;
+                        Map<String, String> query = URLEncodedUtils.parse(
+                                exchange.getRequestURI().toString().replaceFirst("^/callback\\??", ""),
+                                StandardCharsets.UTF_8).stream().collect(Collectors.toMap(
+                                        NameValuePair::getName,
+                                        NameValuePair::getValue,
+                                        (first, second) -> second));
+                        if (!var0.equals(query.get("state"))) {
+                            error.set(String.format("State mismatch! Expected '%s' but got '%s'.", var0, query.get("state")));
+                        } else if (query.containsKey("code")) {
+                            code.set(query.get("code"));
+                        } else if (query.containsKey("error")) {
+                            error.set(String.format("%s: %s", query.get("error"), query.get("error_description")));
+                        } else {
+                            error.set("There was no auth code or error description present.");
 }
-                    catch (InterruptedException var9) {
-                        throw new CancellationException("Microsoft auth code acquisition was cancelled!");
+                        byte[] body;
+                        try (InputStream in = AuthService.class.getResourceAsStream("/callback.html")) {
+                            body = in != null ? IOUtils.toByteArray(in) : new byte[0];
 }
-                    catch (Exception var10) {
-                        throw new CompletionException("Unable to acquire Microsoft auth code!", var10);
+                        exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                        exchange.sendResponseHeaders(200, body.length);
+                        exchange.getResponseBody().write(body);
+                    }
+                    catch (Throwable callbackFailure) {
+                        error.set("Local auth callback failed: " + String.valueOf(callbackFailure.getMessage()));
+                    }
+                    finally {
+                        try {
+                            exchange.getResponseBody().close();
 }
+                        catch (Throwable ignored) {
 }
+                        latch.countDown();
 }
-            catch (Throwable ex) {
-                throw Sneaky.rethrow(ex);
+                });
+
+                server.start();
+                if (!latch.await(CALLBACK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new TimeoutException("Timed out waiting for Microsoft auth callback after "
+                            + CALLBACK_TIMEOUT_SECONDS + " seconds.");
+}
+                String authCode = code.get();
+                if (StringUtils.isBlank(authCode)) {
+                    throw new Exception(error.get() != null
+                            ? error.get()
+                            : "There was no auth code or error description present.");
+}
+                return authCode;
+}
+            catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new CancellationException("Microsoft auth code acquisition was cancelled!");
+}
+            catch (CancellationException cancelled) {
+                throw cancelled;
+}
+            catch (Exception failure) {
+                throw new CompletionException("Unable to acquire Microsoft auth code!", failure);
+}
+            finally {
+                if (server != null) {
+                    server.stop(1);
+}
+                if (callbackExecutor != null) {
+                    callbackExecutor.shutdownNow();
+}
 }
         }, var1);
 }
