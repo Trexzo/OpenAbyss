@@ -23,6 +23,7 @@ import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
+import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -120,6 +121,7 @@ implements EventSubscriber {
     private int worldFunctionalProbeStage;
     private int worldFunctionalProbeWaitTicks;
     private float worldFunctionalProbeOriginalGamma;
+    private boolean persistenceProbeSeeded;
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -186,6 +188,31 @@ implements EventSubscriber {
         catch (Throwable ignored) {
 }
         System.err.println("[ABYSSDIAG] feature failure " + line);
+}
+
+    private void pumpPersistenceSeedProbe() {
+        if (this.persistenceProbeSeeded || !Boolean.getBoolean("abyss.persistenceProbeSeed")) {
+            return;
+}
+        this.persistenceProbeSeeded = true;
+        try {
+            if (ClickGUI.mode == null) {
+                throw new IllegalStateException("ClickGUI.mode is null");
+}
+            ClickGUI.mode.i("RAVEN");
+            if (!"RAVEN".equals(ClickGUI.mode.Y())) {
+                throw new IllegalStateException("ClickGUI mode did not accept RAVEN: " + ClickGUI.mode.Y());
+}
+            AbyssConfig.SaveResult result = AbyssConfig.save("current");
+            if (result == null || !result.ok) {
+                throw new IllegalStateException("current config save failed: " + String.valueOf(result));
+}
+            runtimeMilestone("persistence-probe-seed-pass:RAVEN");
+}
+        catch (Throwable failure) {
+            recordFeatureFailure("PersistenceProbe:ClickGUI", "seed-save", failure);
+            runtimeMilestone("persistence-probe-seed-fail:" + failure.getClass().getName());
+}
 }
 
     private void pumpWorldFunctionalProbe() {
@@ -774,6 +801,7 @@ implements EventSubscriber {
                 w.endBatch();
 }
             this.pumpWorldFunctionalProbe();
+            this.pumpPersistenceSeedProbe();
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
                     runtimeMilestone("clickgui-open-request");
