@@ -366,6 +366,17 @@ jobs:
           python '.\tools\audit_main_menu_body_shape.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era main-menu body-shape gate failed: $LASTEXITCODE" }
 
+      - name: Verify stock config native boundary
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for stock-config native boundary gate.' }
+          python '.\tools\check_stock_config_native_boundary.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Stock-config native boundary gate failed: $LASTEXITCODE" }
+
       - name: Verify legacy native module bootstrap remains dormant
         shell: powershell
         run: |
