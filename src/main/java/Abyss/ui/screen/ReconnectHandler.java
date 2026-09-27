@@ -86,9 +86,15 @@ implements EventSubscriber {
 }
     private static void z(long var0, long var2) {
         AltManager.Q(17200, (short)3883, (short)-9723);
-        for (Account var10 : AltManager.Q) {
-            if (!SessionAccessor.d().getUsername().equals(var10.h())) continue;
-            var10.G(var0);
+        String username = SessionAccessor.d() == null ? null : SessionAccessor.d().getUsername();
+        if (username == null) {
+            return;
+}
+        synchronized (AltManager.Q) {
+            for (Account var10 : AltManager.Q) {
+                if (!username.equals(var10.h())) continue;
+                var10.G(var0);
+}
 }
         AltManager.O(101554584226764L);
 }
