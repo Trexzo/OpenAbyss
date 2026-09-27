@@ -32,8 +32,11 @@ import Abyss.module.Category;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.CustomCape;
+import Abyss.module.impl.configuration.Notifications;
+import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.setting.Setting;
 import Abyss.ui.ModuleTagRenderer;
@@ -224,12 +227,40 @@ public final class AbyssBootstrap {
         float actual = ClickGUI.scale == null ? Float.NaN : ClickGUI.scale.L();
         Module fullBright = ModuleManager.byName("FullBright");
         boolean fullBrightEnabled = fullBright != null && fullBright.o();
-        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f || !fullBrightEnabled) {
-            stage("persistence-probe-verify-fail:scale=" + actual + ",fullbright=" + fullBrightEnabled);
-            throw new IllegalStateException("Persisted state expected ClickGUI scale=" + expected
-                    + " and FullBright=true but was scale=" + actual + " FullBright=" + fullBrightEnabled);
+        boolean matrix = Boolean.getBoolean("abyss.persistenceProbeMatrix");
+        String mode = ClickGUI.mode == null ? null : ClickGUI.mode.Y();
+        String keybind = ClickGUI.keybind == null ? null : ClickGUI.keybind.X();
+        Boolean textShadow = Notifications.textShadow == null ? null : Boolean.valueOf(Notifications.textShadow.c());
+        Integer horizontal = Velocity.horizontal == null ? null : Integer.valueOf(Velocity.horizontal.k());
+        String color = Theme.customColor1 == null ? null : Theme.customColor1.Q();
+
+        boolean matrixOk = !matrix
+                || ("RAVEN".equals(mode)
+                && "LSHIFT".equals(keybind)
+                && Boolean.FALSE.equals(textShadow)
+                && Integer.valueOf(67).equals(horizontal)
+                && "A1B2C3".equals(color));
+
+        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f || !fullBrightEnabled || !matrixOk) {
+            stage("persistence-probe-verify-fail:scale=" + actual + ",fullbright=" + fullBrightEnabled
+                    + ",mode=" + mode + ",keybind=" + keybind + ",textShadow=" + textShadow
+                    + ",horizontal=" + horizontal + ",color=" + color);
+            throw new IllegalStateException("Persisted state expected scale=" + expected
+                    + " FullBright=true"
+                    + (matrix ? " mode=RAVEN keybind=LSHIFT textShadow=false horizontal=67 color=A1B2C3" : "")
+                    + " but was scale=" + actual
+                    + " FullBright=" + fullBrightEnabled
+                    + " mode=" + mode
+                    + " keybind=" + keybind
+                    + " textShadow=" + textShadow
+                    + " horizontal=" + horizontal
+                    + " color=" + color);
 }
         stage("persistence-probe-verify-pass:scale=" + actual + ",fullbright=true");
+        if (matrix) {
+            stage("persistence-matrix-verify-pass:boolean=false,percentage=67,number=" + actual
+                    + ",mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true");
+}
 }
 
     private static void startBackgroundWarmup() {
