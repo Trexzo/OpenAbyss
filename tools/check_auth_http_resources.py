@@ -25,9 +25,18 @@ for path in TARGETS:
             safe += 1
         else:
             bad.append(f"{path}:{line.strip()}")
-    print(f"AUTH_HTTP_RESPONSE_DECLS file={path} total={len(matches)} safe_try_with={safe}")
+    rejects_non_2xx = (
+        'status < 200 || status >= 300' in text
+        and 'throw new IOException("HTTP " + status + " from " + request.getURI())' in text
+    )
+    print(
+        f"AUTH_HTTP_RESPONSE_DECLS file={path} total={len(matches)} "
+        f"safe_try_with={safe} rejects_non_2xx={rejects_non_2xx}"
+    )
     if len(matches) != 1 or safe != 1:
         bad.append(f"{path}:expected exactly one try-with-resources response helper")
+    if not rejects_non_2xx:
+        bad.append(f"{path}:shared auth transport must reject non-2xx responses before JSON parsing")
 
 if bad:
     for item in bad:
