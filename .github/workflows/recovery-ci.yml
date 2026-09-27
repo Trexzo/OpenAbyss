@@ -94,6 +94,13 @@ jobs:
           python '.\tools\check_bed_scan_scheduler.py'
           if ($LASTEXITCODE -ne 0) { throw "Bed scan scheduler contract failed: $LASTEXITCODE" }
 
+      - name: Inventory executor lifecycle surface
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\audit_executor_lifecycle.py'
+          if ($LASTEXITCODE -ne 0) { throw "Executor lifecycle census failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
