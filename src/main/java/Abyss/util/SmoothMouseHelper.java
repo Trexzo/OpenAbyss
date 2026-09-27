@@ -38,7 +38,7 @@ extends MouseHelper {
     private static long b;
 
     public void M() {
-        this.A.shutdown();
+        this.A.shutdownNow();
         this.p = null;
 }
     private void V() {
@@ -70,13 +70,15 @@ extends MouseHelper {
         var1 = b ^ var1;
         int var3 = (int)((var1 ^ 0xFC9C826F8C6L) >>> 56);
         try {
-            MinecraftRef.c((byte)((byte)var3), (long)0L).mouseHelper = this;
             this.p = new ControllerEnvironmentImpl();
             this.A.scheduleAtFixedRate(this::V, 0L, 1L, TimeUnit.MILLISECONDS);
             this.A.scheduleAtFixedRate(this::j, 0L, d, TimeUnit.MILLISECONDS);
+            MinecraftRef.c((byte)((byte)var3), (long)0L).mouseHelper = this;
 }
-        catch (NullPointerException nullPointerException) {
-            // empty catch block
+        catch (Throwable failure) {
+            this.A.shutdownNow();
+            this.p = null;
+            throw new IllegalStateException("RawInput initialization failed", failure);
 }
 }
     private void j() {
