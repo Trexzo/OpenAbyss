@@ -11,6 +11,7 @@
  */
 package Abyss.internal.restore;
 
+import Abyss.AbyssClient;
 import Abyss.internal.restore.AbyssModuleRegistry;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -215,7 +216,7 @@ public final class AbyssConfig {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssConfig", "boot-snapshot", throwable);
 }
         boot = snap;
         bootSnapshot = snap.size();
