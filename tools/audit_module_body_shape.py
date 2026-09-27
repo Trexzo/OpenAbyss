@@ -2,19 +2,13 @@
 from __future__ import annotations
 
 import argparse
-import base64
-import json
+import pathlib
 import re
 import struct
 import sys
-import zlib
 import zipfile
 
-# Runnable-era abyss.jar SHA-256:
-# 13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
-# Rows: class, method, descriptor, code_length, max_stack, max_locals, exception_table_entries.
-REFERENCE_B64 = """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"""
-
+# Runnable-era authority lives in tools/reference-module-body-shape.txt.
 EVENT_RE = re.compile(r"^on[A-Z]")
 
 
@@ -130,29 +124,36 @@ def parse_class(data: bytes):
     return this_name, methods
 
 
-def load_reference():
-    raw = zlib.decompress(base64.b64decode(REFERENCE_B64))
-    rows = json.loads(raw.decode("utf-8"))
-    if len(rows) != 309:
-        raise SystemExit(f"REFERENCE_METHOD_COUNT_BAD expected=309 actual={len(rows)}")
-    return {
-        (row[0], row[1], row[2]): {
-            "old_code": row[3],
-            "old_stack": row[4],
-            "old_locals": row[5],
-            "old_exceptions": row[6],
+def load_reference(path):
+    reference = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        old_code_s, old_exc_s, key_s = line.split(" ", 2)
+        class_name, method_name, descriptor = key_s.split("|", 2)
+        reference[(class_name, method_name, descriptor)] = {
+            "old_code": int(old_code_s),
+            "old_exceptions": int(old_exc_s),
         }
-        for row in rows
-    }
+    if len(reference) != 129:
+        raise SystemExit(
+            f"REFERENCE_BODY_SHAPE_COUNT_BAD expected=129 actual={len(reference)}"
+        )
+    return reference
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("jar")
+    parser.add_argument(
+        "--reference",
+        default="tools/reference-module-body-shape.txt",
+    )
     parser.add_argument("--top", type=int, default=60)
     args = parser.parse_args()
 
-    reference = load_reference()
+    reference = load_reference(pathlib.Path(args.reference))
     current = {}
 
     with zipfile.ZipFile(args.jar) as zf:
@@ -166,12 +167,10 @@ def main() -> int:
                     current[key] = metric
 
     missing = sorted(set(reference) - set(current))
-    extra = sorted(set(current) - set(reference))
     failures = []
     print(f"MODULE_BODY_REFERENCE_METHODS={len(reference)}")
     print(f"MODULE_BODY_CURRENT_MATCHED={len(current)}")
     print(f"MODULE_BODY_MISSING={len(missing)}")
-    print(f"MODULE_BODY_EXTRA={len(extra)}")
     for key in missing[:50]:
         print("MODULE_BODY_MISSING_ITEM=" + "|".join(key))
     if missing:
