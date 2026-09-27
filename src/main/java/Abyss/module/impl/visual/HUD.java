@@ -9,6 +9,7 @@
  */
 package Abyss.module.impl.visual;
 
+import Abyss.AbyssClient;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.HUDBinder;
@@ -163,7 +164,7 @@ implements EventSubscriber {
             GlStateManager.popMatrix();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("HUD", "render-2d", throwable);
 }
 }
     @Override
