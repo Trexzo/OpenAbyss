@@ -97,6 +97,18 @@ for _ in $(seq 1 180); do
 done
 if [ "$WORLD_READY" -ne 1 ]; then
   echo 'Production world-ready-tick was not observed.'
+  echo '=== production client stdout tail ==='
+  tail -n 500 "$STDOUT" || true
+  echo '=== production client stderr tail ==='
+  tail -n 500 "$STDERR" || true
+  echo '=== production server log tail ==='
+  tail -n 300 "$SERVER_LOG" || true
+  echo '=== production runtime stage ==='
+  cat "$STAGE" 2>/dev/null || true
+  echo '=== production bootstrap stage ==='
+  cat "$GAME_DIR/abyss-bootstrap-stage.txt" 2>/dev/null || true
+  echo '=== production bootstrap diagnostics ==='
+  cat "$GAME_DIR/abyss-bootstrap-diagnostics.txt" 2>/dev/null || true
   exit 1
 fi
 
