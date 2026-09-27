@@ -12,6 +12,7 @@
  */
 package Abyss.ui.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.Category;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -131,7 +132,7 @@ extends GuiScreen {
             this.drawScreenImpl(mx, my, pt);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "draw-screen", throwable);
 }
 }
     private void drawScreenImpl(int mx, int my, float pt) {
@@ -186,7 +187,7 @@ extends GuiScreen {
             this.mouseClickedImpl(mx, my, b);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "mouse-click", throwable);
 }
 }
     private void mouseClickedImpl(int mx, int my, int b) {
@@ -213,6 +214,7 @@ extends GuiScreen {
             this.keyTypedImpl(ch, key);
 }
         catch (Throwable ignored) {
+            AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "key-typed", ignored);
             if (key == 1) {
                 this.mc.displayGuiScreen(null);
 }
@@ -430,7 +432,7 @@ extends GuiScreen {
 }
 }
                 catch (Throwable throwable) {
-                    // empty catch block
+                    AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "module-settings", throwable);
 }
                 this.slide = new float[this.vis.size()];
                 for (int i = 0; i < this.vis.size(); ++i) {
@@ -618,7 +620,7 @@ extends GuiScreen {
 }
 }
                 catch (Throwable throwable) {
-                    // empty catch block
+                    AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "module-click", throwable);
 }
                 return true;
 }
@@ -687,7 +689,7 @@ extends GuiScreen {
 }
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "setting-activate", throwable);
 }
 }
         private void setNumber(NumberSetting s, int mx, float x) {
@@ -722,7 +724,9 @@ extends GuiScreen {
                     if (m2 == null || m2.f() == null || !(mine = m2.f() == c || c == Category.Visual && m2.f() == Category.Configuration) || "CommandLine".equals(m2.name())) continue;
                     this.rows.add(new RowEntry(m2));
 }
-                catch (Throwable throwable) {}
+                catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("AbyssClickGuiScreen", "panel-module-enumeration", throwable);
+}
 }
 }
         boolean shown(RowEntry r2) {
