@@ -11,6 +11,7 @@
  */
 package Abyss.command.impl;
 
+import Abyss.AbyssClient;
 import Abyss.command.AbyssCommands;
 import Abyss.command.Command;
 import Abyss.command.impl.AbyssCommandBind;
@@ -203,7 +204,7 @@ extends Command {
                     ++var4;
 }
                 catch (Throwable throwable) {
-                    // empty catch block
+                    AbyssClient.recordFeatureFailure("AbyssCommandConfig", "keybind-load", throwable);
 }
 }
             AbyssCommandConfig.applyModuleBoolean(var8, var10, "visible", "w");
@@ -386,7 +387,7 @@ extends Command {
             field.setBoolean(module, value.getAsBoolean());
 }
         catch (Throwable throwable) {
-            // malformed or incompatible config metadata is ignored
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "module-metadata-apply", throwable);
 }
 }
     public static String selfTest() {
@@ -461,7 +462,9 @@ extends Command {
                 var1.add(var7, (JsonElement)new JsonPrimitive(((TextSetting)var5).X()));
                 ++var3;
 }
-            catch (Throwable throwable) {}
+            catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommandConfig", "setting-serialize", throwable);
+}
 }
         return var3;
 }
@@ -532,7 +535,9 @@ extends Command {
                 ((TextSetting)var5).O(var9.getAsString());
                 ++var3;
 }
-            catch (Throwable throwable) {}
+            catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommandConfig", "setting-apply", throwable);
+}
 }
         return var3;
 }
