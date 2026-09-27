@@ -6,6 +6,7 @@ param(
     [int]$RamMB = 4096,
     [string]$ForgeVersion = "",
     [int]$RunSeconds = 0,
+    [switch]$ModsFolder,
     [switch]$ValidateOnly,
     [switch]$ResolverSelfTest
 )
@@ -379,7 +380,9 @@ foreach ($lib in $allLibraries) {
     Add-ClasspathLibrary $lib $libraryRoot $classPath $missingLibraries
 }
 $classPath.Add($baseJar)
-$classPath.Add($Jar)
+if (-not $ModsFolder) {
+    $classPath.Add($Jar)
+}
 Require ($classPath.Count -gt 20) "Too few runtime classpath entries were resolved: $($classPath.Count)"
 
 $criticalJarPatterns = @(
@@ -413,7 +416,14 @@ Log "Native DLLs extracted: $($nativeFiles.Count)"
 
 $staleModJar = Join-Path (Join-Path $GameDir 'mods') 'abyss.jar'
 Remove-Item -LiteralPath $staleModJar -Force -ErrorAction SilentlyContinue
-Log 'Using packaged JAR from the classpath/coremod path; no duplicate copy is placed in game\mods.'
+if ($ModsFolder) {
+    Copy-Item -LiteralPath $Jar -Destination $staleModJar -Force
+    $installedHash = (Get-FileHash -LiteralPath $staleModJar -Algorithm SHA256).Hash
+    Require ($installedHash -eq $JarHash) 'Mods-folder JAR hash does not match the packaged production JAR.'
+    Log "Using production mods-folder discovery: $staleModJar"
+} else {
+    Log 'Using packaged JAR from the classpath/coremod path; no duplicate copy is placed in game\mods.'
+}
 
 $assets = Join-Path $MinecraftDir 'assets'
 Require (Test-Path -LiteralPath $assets -PathType Container) 'Minecraft assets directory is missing.'
@@ -426,10 +436,12 @@ $jvmArgs = @(
     "-Xmx${RamMB}M",
     '-XX:+UseG1GC',
     "-Djava.library.path=$NativesDir",
-    '-Dfml.coreMods.load=Abyss.ASM.CoreMod',
     '-Dminecraft.launcher.brand=OpenAbyssRecovery',
     '-Dminecraft.launcher.version=1'
 )
+if (-not $ModsFolder) {
+    $jvmArgs += '-Dfml.coreMods.load=Abyss.ASM.CoreMod'
+}
 
 $gameArgs = @(
     '--username', $Username,
@@ -452,6 +464,8 @@ Log "Main class: $mainClass"
 if ($ValidateOnly) {
     @(
         'OPENABYSS_STANDALONE_PREFLIGHT=PASS'
+        "RUNTIME_INSTALL_MODE=$(if ($ModsFolder) { 'mods-folder' } else { 'classpath-coremod' })"
+        "EXPLICIT_COREMOD_PROPERTY=$(if ($ModsFolder) { 'false' } else { 'true' })"
         "JAVA=$Java"
         "FORGE=$($forgeDir.Name)"
         "CLASSPATH_COUNT=$($classPath.Count)"
@@ -530,6 +544,8 @@ $result = @(
     "EXIT_CODE=$exitCode",
     "TIMED_STOP=$TimedStop",
     "RUN_SECONDS=$RunSeconds",
+    "RUNTIME_INSTALL_MODE=$(if ($ModsFolder) { 'mods-folder' } else { 'classpath-coremod' })",
+    "EXPLICIT_COREMOD_PROPERTY=$(if ($ModsFolder) { 'false' } else { 'true' })",
     "JAVA=$Java",
     "FORGE=$($forgeDir.Name)",
     "CLASSPATH_COUNT=$($classPath.Count)",
