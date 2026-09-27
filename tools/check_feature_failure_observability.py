@@ -94,6 +94,15 @@ marker_only_targets = {
         '"notification-enable"',
         '"settings-scan"',
     ],
+    "Abyss/command/impl/AbyssCommandConfig.java": [
+        '"AbyssCommandConfig", "keybind-load"',
+        '"AbyssCommandConfig", "module-metadata-apply"',
+        '"AbyssCommandConfig", "setting-serialize"',
+        '"AbyssCommandConfig", "setting-apply"',
+    ],
+    "Abyss/internal/restore/AbyssConfig.java": [
+        '"AbyssConfig", "boot-snapshot"',
+    ],
 }
 
 for rel, markers in marker_only_targets.items():
