@@ -161,12 +161,18 @@ public class AltManager {
             TrustAllSslContext.j();
             if (!i.exists()) {
                 try {
-                    if ((i.getParentFile().exists() || i.getParentFile().mkdirs()) && !i.createNewFile()) {
-                        // empty if block
+                    File parent = i.getParentFile();
+                    if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                        lastPersistenceNote = "FAIL init-parent path=" + parent.getAbsolutePath();
+                        System.err.println("[AltManager] Failed to create account-store directory: " + parent.getAbsolutePath());
+                    } else if (!i.createNewFile() && !i.exists()) {
+                        lastPersistenceNote = "FAIL init-file path=" + i.getAbsolutePath();
+                        System.err.println("[AltManager] Failed to create account-store file: " + i.getAbsolutePath());
 }
 }
-                catch (IOException iOException) {
-                    // empty catch block
+                catch (IOException failure) {
+                    lastPersistenceNote = "FAIL init " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+                    System.err.println("[AltManager] Failed to initialize account store: " + String.valueOf(failure.getMessage()));
 }
 }
             if (AbyssClient.w != null) {
