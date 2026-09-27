@@ -53,6 +53,13 @@ if (!project.hasProperty('abyssModsFolder')) {
 }
 abyssRunClient.jvmArgs(abyssBaseJvmArgs)
 
+if (project.hasProperty('abyssWorldSmoke')) {
+    String worldSmokeHost = project.hasProperty('abyssWorldSmokeHost') ? project.property('abyssWorldSmokeHost').toString() : '127.0.0.1'
+    String worldSmokePort = project.hasProperty('abyssWorldSmokePort') ? project.property('abyssWorldSmokePort').toString() : '25565'
+    abyssRunClient.args('--server', worldSmokeHost, '--port', worldSmokePort)
+    println "ABYSS_WORLD_SMOKE_AUTOCONNECT=" + worldSmokeHost + ":" + worldSmokePort
+}
+
 if (project.hasProperty('abyssPackaged') && project.hasProperty('abyssModsFolder')) {
     throw new GradleException('Choose only one packaged runtime mode: abyssPackaged or abyssModsFolder.')
 }
