@@ -90,6 +90,18 @@ public enum MegaWallsClass {
     public static MegaWallsClass o(String var0) {
         return v.get(var0);
 }
+    /**
+     * Runnable-era compatibility lookup recovered from exact bytecode.
+     * Matches either the short tag or display class name, case-insensitively.
+     */
+    public static MegaWallsClass a(String var0) {
+        for (MegaWallsClass var4 : MegaWallsClass.values()) {
+            if (var0.equalsIgnoreCase(var4.tag) || var0.equalsIgnoreCase(var4.className)) {
+                return var4;
+}
+}
+        return null;
+}
     private MegaWallsClass(String var3, int var4) {
         this.tag = var3;
         String var5 = this.name().toLowerCase(Locale.ROOT);
