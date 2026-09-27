@@ -236,6 +236,8 @@ public final class AbyssCommandData {
         String oldMode = null;
         boolean oldMusic = true;
         Map<Integer, String> oldBinds = null;
+        LinkedHashSet<String> oldFriends = null;
+        LinkedHashSet<String> oldEnemies = null;
         File testDir = new File(System.getProperty("java.io.tmpdir"),
                 "openabyss-commanddata-selftest-" + System.nanoTime());
         File testCurrent = new File(testDir, CURRENT);
@@ -245,6 +247,8 @@ public final class AbyssCommandData {
             oldBinds = AbyssClient.H == null
                     ? new LinkedHashMap<Integer, String>()
                     : new LinkedHashMap<Integer, String>(AbyssClient.H);
+            oldFriends = new LinkedHashSet<String>(Teams.a());
+            oldEnemies = new LinkedHashSet<String>(Teams.B());
 
             if (!testDir.mkdirs() && !testDir.isDirectory()) {
                 return "FAIL temp-dir " + testDir;
@@ -258,6 +262,10 @@ public final class AbyssCommandData {
 }
             AbyssClient.H.clear();
             AbyssClient.H.put(Integer.valueOf(54), ".help");
+            Teams.a().clear();
+            Teams.B().clear();
+            Teams.E("OpenAbyssFriendFixture");
+            Teams.C("OpenAbyssEnemyFixture");
 
             if (!AbyssCommandData.saveMenu()) {
                 return "FAIL save-menu";
@@ -268,15 +276,25 @@ public final class AbyssCommandData {
             if (!AbyssCommandData.saveChatBinds()) {
                 return "FAIL save-chat-binds";
 }
+            if (!AbyssCommandData.saveFriends()) {
+                return "FAIL save-friends";
+}
+            if (!AbyssCommandData.saveEnemies()) {
+                return "FAIL save-enemies";
+}
             if (!AbyssCommandData.exists(MENU)
                     || !AbyssCommandData.exists(MENU_MUSIC)
-                    || !AbyssCommandData.exists(CURRENT)) {
+                    || !AbyssCommandData.exists(CURRENT)
+                    || !AbyssCommandData.exists(FRIENDS)
+                    || !AbyssCommandData.exists(ENEMIES)) {
                 return "FAIL files-missing";
 }
 
             MainMenuTheme.mode.i("NONE");
             MainMenuTheme.music.v(true, 0L);
             AbyssClient.H.clear();
+            Teams.a().clear();
+            Teams.B().clear();
 
             AbyssCommandData.load();
 
@@ -289,7 +307,13 @@ public final class AbyssCommandData {
             if (!".help".equals(AbyssClient.H.get(Integer.valueOf(54)))) {
                 return "FAIL load-chat-bind " + String.valueOf(AbyssClient.H);
 }
-            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help";
+            if (!Teams.a().contains("OpenAbyssFriendFixture")) {
+                return "FAIL load-friend " + String.valueOf(Teams.a());
+}
+            if (!Teams.B().contains("OpenAbyssEnemyFixture")) {
+                return "FAIL load-enemy " + String.valueOf(Teams.B());
+}
+            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
@@ -306,6 +330,14 @@ public final class AbyssCommandData {
                 AbyssClient.H.clear();
                 if (oldBinds != null) {
                     AbyssClient.H.putAll(oldBinds);
+}
+                Teams.a().clear();
+                Teams.B().clear();
+                if (oldFriends != null) {
+                    Teams.a().addAll(oldFriends);
+}
+                if (oldEnemies != null) {
+                    Teams.B().addAll(oldEnemies);
 }
 }
             catch (Throwable ignored) {
