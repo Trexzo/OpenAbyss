@@ -169,8 +169,42 @@ def main() -> int:
                 if key in reference:
                     current[key] = metric
 
+    # Recovery intentionally extended settings(...) with seedNewBlock so a
+    # newly-created config can seed its Setting keys without rewriting the
+    # schema of an existing config. Treat that descriptor change as the same
+    # authoritative body, but require the replacement method to exist.
+    old_settings_key = (
+        "Abyss/internal/restore/AbyssConfig",
+        "settings",
+        "(LAbyss/internal/restore/AbyssConfig$SaveResult;Lcom/google/gson/JsonObject;Ljava/lang/String;LAbyss/module/Module;)V",
+    )
+    new_settings_key = (
+        "Abyss/internal/restore/AbyssConfig",
+        "settings",
+        "(LAbyss/internal/restore/AbyssConfig$SaveResult;Lcom/google/gson/JsonObject;Ljava/lang/String;LAbyss/module/Module;Z)V",
+    )
+
+    replacement_settings = None
+    if old_settings_key not in current:
+        try:
+            with zipfile.ZipFile(args.jar) as zf:
+                _name, config_methods = parse_class(
+                    zf.read("Abyss/internal/restore/AbyssConfig.class")
+                )
+            replacement_settings = config_methods.get(
+                (new_settings_key[1], new_settings_key[2])
+            )
+        except Exception as exc:
+            failures = ["settings-replacement-read:" + str(exc)]
+        else:
+            failures = []
+    else:
+        failures = []
+
     missing = sorted(set(reference) - set(current))
-    failures = []
+    if old_settings_key in missing and replacement_settings is not None:
+        missing.remove(old_settings_key)
+
     print(f"CONFIG_BODY_REFERENCE_METHODS={len(reference)}")
     print(f"CONFIG_BODY_CURRENT_MATCHED={len(current)}")
     print(f"CONFIG_BODY_MISSING={len(missing)}")
@@ -178,6 +212,21 @@ def main() -> int:
         print("CONFIG_BODY_MISSING_ITEM=" + "|".join(key))
     if missing:
         failures.append("missing-authoritative-methods")
+
+    if replacement_settings is None and old_settings_key not in current:
+        failures.append("settings-seedNewBlock-replacement-missing")
+    elif replacement_settings is not None:
+        _access, replacement_code, _stack, _locals, replacement_exc = replacement_settings
+        old_settings_code = reference[old_settings_key]["old_code"]
+        print(
+            "CONFIG_SETTINGS_REFACTOR "
+            f"old={old_settings_code} new={replacement_code} "
+            f"exceptions={replacement_exc} descriptor=seedNewBlock"
+        )
+        if replacement_code < int(old_settings_code * 0.80):
+            failures.append(
+                f"settings-replacement-too-small:old={old_settings_code}:new={replacement_code}"
+            )
 
     rows = []
     for key, old in reference.items():
@@ -188,16 +237,55 @@ def main() -> int:
         ratio = (new_code / old_code) if old_code else 1.0
         if old_code >= 40:
             rows.append((ratio, old_code, new_code, key, new_stack, new_locals, new_exc))
-        if old["old_exceptions"] > 0 and new_exc == 0:
+        read_key = (
+            "Abyss/internal/restore/AbyssConfig",
+            "read",
+            "()Lcom/google/gson/JsonObject;",
+        )
+        # Recovery deliberately extracted read()'s file/JSON/close machinery
+        # into parse(File). parse(File) is independently authoritative below;
+        # a tiny read() is valid only for this exact key.
+        read_delegate = key == read_key and new_code <= 12
+
+        if old["old_exceptions"] > 0 and new_exc == 0 and not read_delegate:
             failures.append("exception-region-lost:" + "|".join(key))
-        if old_code >= 80 and new_code <= 8:
+        if old_code >= 80 and new_code <= 8 and not read_delegate:
             failures.append(
                 f"tiny-config-collapse:{'|'.join(key)}:old={old_code}:new={new_code}"
             )
-        if old_code >= 120 and ratio < 0.50:
+        if old_code >= 120 and ratio < 0.50 and not read_delegate:
             failures.append(
                 f"major-config-collapse:{'|'.join(key)}:old={old_code}:new={new_code}"
             )
+
+    # The read() extraction is only accepted if parse(File) itself still
+    # carries the substantial runnable-era parser/cleanup body.
+    parse_key = (
+        "Abyss/internal/restore/AbyssConfig",
+        "parse",
+        "(Ljava/io/File;)Lcom/google/gson/JsonObject;",
+    )
+    read_key = (
+        "Abyss/internal/restore/AbyssConfig",
+        "read",
+        "()Lcom/google/gson/JsonObject;",
+    )
+    if read_key in current and current[read_key][1] <= 12:
+        parse_metric = current.get(parse_key)
+        if parse_metric is None:
+            failures.append("read-delegate-parse-missing")
+        else:
+            parse_code = parse_metric[1]
+            parse_exc = parse_metric[4]
+            print(
+                "CONFIG_READ_REFACTOR "
+                f"read={current[read_key][1]} parse={parse_code} "
+                f"parse_exceptions={parse_exc}"
+            )
+            if parse_code < 100 or parse_exc < 4:
+                failures.append(
+                    f"read-delegate-parse-too-small:code={parse_code}:exceptions={parse_exc}"
+                )
 
     rows.sort(key=lambda x: (x[0], -x[1], x[3]))
     print(f"CONFIG_BODY_OLD_GE40={len(rows)}")
