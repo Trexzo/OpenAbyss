@@ -25,10 +25,12 @@ ALLOWED_CODE_LENGTHS = {
     (EVENTBUS, "<init>", "()V"): 87,
     (EVENTBUS, "R", "(Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V"): 240,
     (EVENTBUS, "e", "(LAbyss/event/Event;J)V"): 142,
+    (EVENTBUS, "z", "(JLjava/lang/Object;)V"): 433,
     (LISTENER, "S", "(LAbyss/event/ListenerBinding;Z)Z"): 10,
 }
 ALLOWED_EXCEPTION_REGIONS = {
     (EVENTBUS, "R", "(Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V"): 4,
+    (EVENTBUS, "z", "(JLjava/lang/Object;)V"): 7,
 }
 
 
