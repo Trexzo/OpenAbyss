@@ -1,7 +1,7 @@
 # Runnable-era public/protected API compatibility authority
 # reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
-# baseline_members_after_reviewed_missing=9177
-# baseline_digest_sha256=B1168964E028709409702D6464183BAFF85F4D3C682F2D995308CD7BC1F3B211
+# baseline_members_after_reviewed_missing=9180
+# baseline_digest_sha256=FA389078936371C906F26D7C2EF7A220F7CA28A40181735EEA2B6CBA6FAF1669
 # format sections:
 #   MISSING|kind|class|name|descriptor
 #   EXTRA|kind|class|name|descriptor|normalized_access_hex
@@ -9,10 +9,7 @@
 
 MISSING|M|Abyss/command/impl/StockCommandModuleSetting|O|(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 MISSING|M|Abyss/command/impl/StockCommandModuleSetting|w|(Ljava/lang/String;Ljava/lang/String;)Z
-MISSING|M|Abyss/enums/MegaWallsClass|a|(Ljava/lang/String;)LAbyss/enums/MegaWallsClass;
 MISSING|M|Abyss/ui/abyss/AbyssArrayListVisibility$2|run|()V
-MISSING|M|Abyss/util/BlockUtil|a|(LAbyss/util/PlacementTarget;)Lnet/minecraft/util/Vec3;
-MISSING|M|Abyss/util/render/RenderUtil|a|(Lnet/minecraft/block/state/IBlockState;DJDDI)V
 
 ACCESS|M|Abyss/command/impl/StockCommandModuleSetting|g|([Ljava/lang/String;IJ)Ljava/util/List;|0101|0001
 ACCESS|F|Abyss/ui/screen/AccountManagerScreen|q|LAbyss/internal/auth/TimedStatusMessage;|0009|0049
