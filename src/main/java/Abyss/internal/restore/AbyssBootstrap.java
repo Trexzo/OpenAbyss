@@ -38,6 +38,7 @@ import Abyss.setting.Setting;
 import Abyss.ui.ModuleTagRenderer;
 import Abyss.ui.screen.AccessTokenLoginScreen;
 import Abyss.ui.screen.AccountManagerScreen;
+import Abyss.ui.screen.CookieLoginScreen;
 import Abyss.ui.screen.MainMenuTheme;
 import Abyss.ui.screen.MicrosoftLoginScreen;
 import Abyss.ui.screen.RefreshTokenLoginScreen;
@@ -353,6 +354,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] cookie selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieAuthService.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] accountgui selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccountManagerScreen.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] mslogin selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? MicrosoftLoginScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] cookiegui selftest = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieLoginScreen.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] accesstoken selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccessTokenLoginScreen.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] refreshtoken selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? RefreshTokenLoginScreen.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] altstore selftest  = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AltManager.selfTest() : "SKIPPED").append('\n');
