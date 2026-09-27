@@ -144,8 +144,11 @@ public class CookieAuthService {
                             Session var23 = new Session(var22.g, var22.z, var21.m, "mojang");
                             AltManager.Q.add(new Account("", var21.m, var22.g, var22.z, 0L, AccountType.MINECRAFT));
                             AltManager.O(11006179144378L);
+                            boolean persisted = AltManager.persistenceOk();
                             SessionAccessor.k(var23);
-                            var1.x("&aSuccessfully logged in as " + var23.getUsername() + "&r");
+                            var1.x(persisted
+                                    ? "&aSuccessfully logged in as " + var23.getUsername() + "&r"
+                                    : "&eLogged in as " + var23.getUsername() + ", but accounts.json was not saved.&r");
                             return true;
 }
                         var1.x("&cFailed to get Minecraft profile&r");
