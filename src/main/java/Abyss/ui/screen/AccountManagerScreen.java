@@ -93,8 +93,11 @@ extends GuiScreen {
                                     if (var3 != null) {
                                         var14.J(var3.getUsername());
                                         AltManager.O(var7);
+                                        boolean persisted = AltManager.persistenceOk();
                                         SessionAccessor.k(var3);
-                                        q = new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", var14.h())), 5000L);
+                                        q = new TimedStatusMessage(ChatFormatting.y(persisted
+                                                ? String.format("&aSuccessful login! (%s)&r", var14.h())
+                                                : String.format("&eLogged in as %s, but accounts.json was not saved.&r", var14.h())), 7000L);
                                         return CompletableFuture.<Void>completedFuture(null);
 }
                                     q = new TimedStatusMessage(ChatFormatting.y(String.format("&7Refreshing Microsoft access tokens... (%s)&r", var12)), -1L);
@@ -160,8 +163,11 @@ extends GuiScreen {
                                             int var8x = (int)(var10001xx << 48 >>> 48);
                                             var14.J(var1xx.getUsername());
                                             AltManager.O(var4xx);
+                                            boolean persisted = AltManager.persistenceOk();
                                             SessionAccessor.k(var1xx);
-                                            q = new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", var14.h())), 5000L);
+                                            q = new TimedStatusMessage(ChatFormatting.y(persisted
+                                                    ? String.format("&aSuccessful login! (%s)&r", var14.h())
+                                                    : String.format("&eLogged in as %s, but accounts.json was not saved.&r", var14.h())), 7000L);
 }
                                         catch (Throwable ex) {
                                             throw Sneaky.rethrow(ex);
@@ -193,9 +199,15 @@ extends GuiScreen {
 }
                     case 2: {
                         if (this.G > -1 && this.G < AltManager.Q.size()) {
-                            AltManager.Q.remove(this.G);
+                            int removedIndex = this.G;
+                            Account removed = AltManager.Q.remove(removedIndex);
                             AltManager.O(101554584226764L);
-                            this.G = -1;
+                            if (!AltManager.persistenceOk()) {
+                                AltManager.Q.add(removedIndex, removed);
+                                q = new TimedStatusMessage(ChatFormatting.y("&cDelete failed: accounts.json was not saved.&r"), 7000L);
+} else {
+                                this.G = -1;
+}
                             this.updateScreen();
 }
                         break;
@@ -368,6 +380,10 @@ extends GuiScreen {
                 if (!AccountManagerScreen.isCtrlKeyDown()) break;
                 Collections.swap(AltManager.Q, this.G, this.G + 1);
                 AltManager.O(101554584226764L);
+                if (!AltManager.persistenceOk()) {
+                    Collections.swap(AltManager.Q, this.G, this.G + 1);
+                    q = new TimedStatusMessage(ChatFormatting.y("&cReorder failed: accounts.json was not saved.&r"), 7000L);
+}
                 break;
 }
             case 208: {
@@ -376,6 +392,10 @@ extends GuiScreen {
                 if (!AccountManagerScreen.isCtrlKeyDown()) break;
                 Collections.swap(AltManager.Q, this.G, this.G - 1);
                 AltManager.O(101554584226764L);
+                if (!AltManager.persistenceOk()) {
+                    Collections.swap(AltManager.Q, this.G, this.G - 1);
+                    q = new TimedStatusMessage(ChatFormatting.y("&cReorder failed: accounts.json was not saved.&r"), 7000L);
+}
                 break;
 }
             case 211: {
