@@ -341,6 +341,18 @@ jobs:
             echo "Account Manager worker lifecycle self-test is not green." >&2
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] mslogin selftest   = PASS daemon-worker' "$DIAG"; then
+            echo "Microsoft login worker self-test is not green." >&2
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results' "$DIAG"; then
+            echo "Access-token batch worker self-test is not green." >&2
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] refreshtoken selftest= PASS daemon-workers synchronized-results' "$DIAG"; then
+            echo "Refresh-token batch worker self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] altstore selftest  = PASS file-roundtrip' "$DIAG"; then
             echo "Account-file persistence self-test is not green." >&2
             exit 1
