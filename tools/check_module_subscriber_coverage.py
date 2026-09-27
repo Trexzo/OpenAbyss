@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import hashlib
 import pathlib
 import re
 import subprocess
@@ -25,6 +26,9 @@ X_RE = re.compile(
 EXPECTED_SUBSCRIBERS = 85
 EXPECTED_UNIQUE_BINDERS = 85
 EXPECTED_REFERENCED_REGISTRATIONS = 222
+EXPECTED_RUNNABLE_MAP_SHA256 = (
+    "f8daa749f7636dd5bbbf2a3dad25f3353007046786e6710864927ce62f54ef27"
+)
 
 
 def javap(jar: pathlib.Path, names: list[str]) -> str:
@@ -115,6 +119,25 @@ def main() -> int:
         for binder in referenced_binders
     )
 
+    mapping_payload = "".join(
+        module
+        + "\t"
+        + str(has_x)
+        + "\t"
+        + ",".join(binders)
+        + "\t"
+        + str(registration_counts.get(binders[0], -1) if len(binders) == 1 else -1)
+        + "\n"
+        for module, has_x, binders in subscribers
+    ).encode("utf-8")
+    mapping_sha256 = hashlib.sha256(mapping_payload).hexdigest()
+
+    if mapping_sha256 != EXPECTED_RUNNABLE_MAP_SHA256:
+        failures.append(
+            "runnable-map-sha256:"
+            f"expected={EXPECTED_RUNNABLE_MAP_SHA256}:actual={mapping_sha256}"
+        )
+
     if len(subscribers) != EXPECTED_SUBSCRIBERS:
         failures.append(
             f"subscriber-count:expected={EXPECTED_SUBSCRIBERS}:actual={len(subscribers)}"
@@ -136,6 +159,7 @@ def main() -> int:
         "MODULE_SUBSCRIBER_REFERENCED_REGISTRATIONS="
         + str(referenced_registration_count)
     )
+    print("MODULE_SUBSCRIBER_RUNNABLE_MAP_SHA256=" + mapping_sha256)
     print(
         "MODULE_SUBSCRIBER_EMPTY_BINDERS="
         + str(
