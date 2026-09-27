@@ -6,6 +6,7 @@
  */
 package Abyss.module;
 
+import Abyss.AbyssClient;
 import Abyss.event.events.PreMouseInputEvent;
 import Abyss.internal.jnic.StockClientBootstrap;
 import Abyss.module.Category;
@@ -205,7 +206,7 @@ public class Module {
                         Notifications.G(var8, "\u00a7l" + this.b() + " \u00a7r\u00a7l(\u00a7c\u00a7lOFF\u00a7r\u00a7l)", false);
 }
                     catch (Throwable throwable) {
-                        // empty catch block
+                        AbyssClient.recordFeatureFailure("Module:" + String.valueOf(this.b()), "notification-disable", throwable);
 }
 }
                 this.I(0L, false);
@@ -215,7 +216,7 @@ public class Module {
                         Notifications.G(var8, "\u00a7l" + this.b() + " \u00a7r\u00a7l(\u00a7a\u00a7lON\u00a7r\u00a7l)", true);
 }
                     catch (Throwable throwable) {
-                        // empty catch block
+                        AbyssClient.recordFeatureFailure("Module:" + String.valueOf(this.b()), "notification-enable", throwable);
 }
 }
                 this.I(0L, true);
@@ -394,7 +395,7 @@ public class Module {
                                 this.l.add(var3);
 }
                             catch (Throwable throwable) {
-                                // empty catch block
+                                AbyssClient.recordFeatureFailure("Module:" + String.valueOf(this.b()), "settings-scan", throwable);
 }
 }
 }
