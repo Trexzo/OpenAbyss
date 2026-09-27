@@ -121,6 +121,7 @@ implements EventSubscriber {
     private static final byte[] KEY_OFFSETS;
     public static EventBus w;
     private static final Set<String> RUNTIME_MILESTONES = new CopyOnWriteArraySet<String>();
+    private static final Set<String> MODULE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
 
     private static void runtimeMilestone(String name) {
         if (name == null || !RUNTIME_MILESTONES.add(name)) {
@@ -143,8 +144,13 @@ implements EventSubscriber {
 }
         catch (Throwable ignored) {
 }
+        String message = String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        String signature = phase + "|" + name + "|" + failure.getClass().getName() + "|" + message;
+        if (!MODULE_FAILURE_SIGNATURES.add(signature)) {
+            return;
+}
         String line = System.currentTimeMillis() + "\t" + phase + "\t" + name + "\t"
-                + failure.getClass().getName() + "\t" + String.valueOf(failure.getMessage());
+                + failure.getClass().getName() + "\t" + message;
         try {
             try (OutputStreamWriter out = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-module-failure.txt"), true), "UTF-8");){
                 out.write(line + "\n");
@@ -152,7 +158,7 @@ implements EventSubscriber {
 }
         catch (Throwable ignored) {
 }
-        System.err.println("[ABYSSDIAG] module lifecycle failure " + line);
+        System.err.println("[ABYSSDIAG] module failure " + line);
 }
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
@@ -202,14 +208,19 @@ implements EventSubscriber {
         int var10 = var8.size();
         for (int var9 = 0; var9 < var10; ++var9) {
             Module var11 = var8.get(var9);
-            if (var11.b().equalsIgnoreCase("Timer")) continue;
-            if (var11.l()) {
-                var11.h(122596698849654L);
-            } else if (var11.K()) {
-                var11.Z(110240354022990L);
+            try {
+                if (var11.b().equalsIgnoreCase("Timer")) continue;
+                if (var11.l()) {
+                    var11.h(122596698849654L);
+                } else if (var11.K()) {
+                    var11.Z(110240354022990L);
 }
-            if (var11.o()) continue;
-            var11.d();
+                if (var11.o()) continue;
+                var11.d();
+}
+            catch (Throwable failure) {
+                moduleFailure("pre-update", var11, failure);
+}
 }
 }
     private static long c(int var0, long var1) {
@@ -545,8 +556,8 @@ implements EventSubscriber {
                     var12.u((short)0, 139350548161835L);
                     continue;
 }
-                catch (Throwable throwable) {
-                    // empty catch block
+                catch (Throwable failure) {
+                    moduleFailure("keybind-toggle", var12, failure);
 }
 }
             for (Map.Entry<Integer, String> var18 : H.entrySet()) {
@@ -740,8 +751,13 @@ implements EventSubscriber {
         int var8 = var6.size();
         for (int var7 = 0; var7 < var8; ++var7) {
             Module var9 = var6.get(var7);
-            if (var9.b().equalsIgnoreCase("Timer") || var9.o()) continue;
-            var9.L(var3, 85029904657643L);
+            try {
+                if (var9.b().equalsIgnoreCase("Timer") || var9.o()) continue;
+                var9.L(var3, 85029904657643L);
+}
+            catch (Throwable failure) {
+                moduleFailure("pre-mouse-input", var9, failure);
+}
 }
 }
     private static int b(int var0, long var1) {
