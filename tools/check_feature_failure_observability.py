@@ -107,6 +107,20 @@ marker_only_targets = {
         '"BrowserLauncher", "clipboard-copy"',
         '"BrowserLauncher", "browser-open"',
     ],
+    "Abyss/util/render/abyss/FontManager.java": [
+        '"FontManager", "custom-font-setting"',
+    ],
+    "Abyss/util/SoundEngine.java": [
+        '"SoundEngine", "resource-playback"',
+    ],
+    "Abyss/ui/abyss/AbyssUserInfoRenderer.java": [
+        '"AbyssUserInfoRenderer", "setting-read"',
+        '"AbyssUserInfoRenderer", "render"',
+    ],
+    "Abyss/util/ControllerEnvironmentImpl.java": [
+        '"ControllerEnvironmentImpl", "plugin-directory-load"',
+        '"ControllerEnvironmentImpl", "platform-plugin-load"',
+    ],
 }
 
 for rel, markers in marker_only_targets.items():
