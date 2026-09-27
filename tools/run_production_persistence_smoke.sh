@@ -107,6 +107,7 @@ CONFIG="$GAME_DIR/Abyss/current.json"
 launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeSeed=true' CISeed "$SEED_STDOUT" "$SEED_STDERR"
 wait_for_stage "$STAGE" 'world-ready-tick' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_WORLD_READY'
 wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
+wait_for_stage "$STAGE" 'persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_MATRIX_SEED_SAVE'
 
 test -s "$CONFIG"
 python - "$CONFIG" <<'PY'
@@ -116,15 +117,39 @@ root=json.loads(p.read_text(encoding='utf-8'))
 block=root.get('ClickGUI')
 if not isinstance(block, dict):
     raise SystemExit('PERSISTENCE_CONFIG_CLICKGUI_BLOCK_MISSING')
-value=block.get('Scale')
-if abs(float(value)-1.75)>0.001:
-    raise SystemExit(f'PERSISTENCE_CONFIG_SCALE_BAD={value!r}')
+scale=block.get('Scale')
+if abs(float(scale)-1.75)>0.001:
+    raise SystemExit(f'PERSISTENCE_CONFIG_SCALE_BAD={scale!r}')
+if block.get('Mode') != 'RAVEN':
+    raise SystemExit(f"PERSISTENCE_CONFIG_MODE_BAD={block.get('Mode')!r}")
+if block.get('Keybind') != 'LSHIFT':
+    raise SystemExit(f"PERSISTENCE_CONFIG_TEXT_BAD={block.get('Keybind')!r}")
+
+notifications=root.get('Notifications')
+if not isinstance(notifications, dict):
+    raise SystemExit('PERSISTENCE_CONFIG_NOTIFICATIONS_BLOCK_MISSING')
+if notifications.get('Text-shadow') is not False:
+    raise SystemExit(f"PERSISTENCE_CONFIG_BOOLEAN_BAD={notifications.get('Text-shadow')!r}")
+
+velocity=root.get('Velocity')
+if not isinstance(velocity, dict):
+    raise SystemExit('PERSISTENCE_CONFIG_VELOCITY_BLOCK_MISSING')
+if int(velocity.get('Horizontal')) != 67:
+    raise SystemExit(f"PERSISTENCE_CONFIG_PERCENTAGE_BAD={velocity.get('Horizontal')!r}")
+
+theme=root.get('Theme')
+if not isinstance(theme, dict):
+    raise SystemExit('PERSISTENCE_CONFIG_THEME_BLOCK_MISSING')
+if theme.get('Custom-color-1') != 'A1B2C3':
+    raise SystemExit(f"PERSISTENCE_CONFIG_COLOR_BAD={theme.get('Custom-color-1')!r}")
+
 full=root.get('FullBright')
 if not isinstance(full, dict):
     raise SystemExit('PERSISTENCE_CONFIG_FULLBRIGHT_BLOCK_MISSING')
 if full.get('status') is not True:
     raise SystemExit(f"PERSISTENCE_CONFIG_FULLBRIGHT_STATUS_BAD={full.get('status')!r}")
-print('PERSISTENCE_CONFIG_DISK_VALUE=PASS scale=1.75 fullbright=true')
+
+print('PERSISTENCE_CONFIG_DISK_MATRIX=PASS boolean=false percentage=67 number=1.75 mode=RAVEN color=A1B2C3 text=LSHIFT module=true')
 PY
 CONFIG_HASH_BEFORE="$(sha256sum "$CONFIG" | awk '{print toupper($1)}')"
 echo "PERSISTENCE_CONFIG_SHA256_BEFORE=$CONFIG_HASH_BEFORE"
@@ -138,8 +163,9 @@ do
   rm -f "$GAME_DIR/$evidence"
 done
 
-launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
+launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
+wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
 
 DIAG="$GAME_DIR/abyss-bootstrap-diagnostics.txt"
