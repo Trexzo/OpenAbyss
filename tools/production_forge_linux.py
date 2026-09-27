@@ -412,7 +412,7 @@ def main() -> int:
     p.add_argument("--game-dir", required=True)
     p.add_argument("--abyss-jar", required=True)
     p.add_argument("--java", required=True)
-    p.add_argument("--username", default="CIProductionWorld")
+    p.add_argument("--username", default="CIProdWorld")
     p.add_argument("--server")
     p.add_argument("--port", type=int)
     p.set_defaults(func=launch)
