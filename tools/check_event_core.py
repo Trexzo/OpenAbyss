@@ -12,6 +12,9 @@ EVENTBUS = "Abyss/event/EventBus"
 LISTENER = "Abyss/event/ListenerBinding"
 
 ALLOWED_EVENTBUS_FIELDS = {
+    # Reviewed recovery delta: zero-listener passive owners need explicit
+    # activation state so unsubscribe can distinguish active from cached.
+    (18, "ownerActive", "Ljava/util/Map;"),
     (18, "ownerNames", "Ljava/util/Map;"),
     (18, "recordedFailures", "Ljava/util/Map;"),
     (2, "failureEvidenceEnabled", "Z"),
@@ -22,10 +25,14 @@ ALLOWED_EVENTBUS_METHODS = {
     ("isOwnerActive", "(Ljava/lang/Object;)Z"),
 }
 ALLOWED_CODE_LENGTHS = {
-    (EVENTBUS, "<init>", "()V"): 87,
+    # Reviewed passive-owner lifecycle fix proven by production-world
+    # FullBright enable/subscribe/disable/unsubscribe runtime probe.
+    (EVENTBUS, "<init>", "()V"): 98,
+    (EVENTBUS, "s", "(Ljava/lang/Object;J)V"): 94,
+    (EVENTBUS, "B", "(Ljava/lang/Object;)V"): 74,
     (EVENTBUS, "R", "(Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V"): 240,
     (EVENTBUS, "e", "(LAbyss/event/Event;J)V"): 142,
-    (EVENTBUS, "z", "(JLjava/lang/Object;)V"): 433,
+    (EVENTBUS, "z", "(JLjava/lang/Object;)V"): 444,
     (LISTENER, "S", "(LAbyss/event/ListenerBinding;Z)Z"): 10,
 }
 ALLOWED_EXCEPTION_REGIONS = {
@@ -302,7 +309,7 @@ def main() -> int:
                     )
 
     print("EVENT_CORE_REFERENCE_CLASSES=3")
-    print("EVENT_CORE_EVENTBUS_ALLOWED_FIELDS=3")
+    print("EVENT_CORE_EVENTBUS_ALLOWED_FIELDS=4")
     print("EVENT_CORE_EVENTBUS_ALLOWED_METHODS=3")
     print(
         "EVENT_CORE_REVIEWED_BODY_DELTAS="
