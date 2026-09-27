@@ -557,8 +557,35 @@ implements EventSubscriber {
 }
 }
 }
+    private static ScheduledExecutorService newBedScanScheduler() {
+        return Executors.newScheduledThreadPool(1, runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-BedScan");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String schedulerSelfTest() {
+        ScheduledExecutorService scheduler = null;
+        try {
+            scheduler = AbyssClient.newBedScanScheduler();
+            boolean daemon = scheduler.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()))
+                    .get(5L, TimeUnit.SECONDS).booleanValue();
+            if (!daemon) {
+                return "FAIL bed-scan-worker-not-daemon";
+}
+            return "PASS daemon-bed-scan";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (scheduler != null) {
+                scheduler.shutdownNow();
+}
+}
+}
     public AbyssClient(int var1, char var2, int var3) {
-        this.U = Executors.newScheduledThreadPool(1);
+        this.U = AbyssClient.newBedScanScheduler();
         this.c = MinecraftRef.c((byte)0, 0L);
         this.B = new TimerUtil();
 }
