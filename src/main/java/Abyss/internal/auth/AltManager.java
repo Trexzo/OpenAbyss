@@ -37,6 +37,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
@@ -52,38 +54,73 @@ public class AltManager {
     private static boolean I;
         private static long[] e;
     private static Minecraft X;
+    public static volatile String lastPersistenceNote = "NOT_RUN";
 
     public static void O(long var0) {
-        long var2 = var0 ^ 0x45C7DC4AED40L;
+        if (AltManager.writeAccounts(i, Q)) {
+            lastPersistenceNote = "PASS path=" + i.getAbsolutePath() + " accounts=" + Q.size();
+        } else {
+            lastPersistenceNote = "FAIL path=" + i.getAbsolutePath();
+            System.err.println("[AltManager] Failed to persist accounts.json: " + i.getAbsolutePath());
+}
+}
+    private static boolean writeAccounts(File target, Iterable<Account> accounts) {
+        if (target == null || accounts == null) {
+            return false;
+}
+        File parent = target.getParentFile();
+        if (parent != null && !parent.isDirectory() && !parent.mkdirs()) {
+            return false;
+}
+        File tmp = new File(target.getAbsolutePath() + ".tmp");
         try {
-            JsonArray var4 = new JsonArray();
-            for (Account var6 : Q) {
-                var4.add((JsonElement)var6.F(var2));
+            JsonArray array = new JsonArray();
+            for (Account account : accounts) {
+                if (account != null) {
+                    array.add((JsonElement)account.F(0L));
 }
-            PrintWriter var9 = new PrintWriter(new FileWriter(i));
-            var9.println(J.toJson((JsonElement)var4));
-            var9.close();
 }
-        catch (IOException iOException) {
-            // empty catch block
+            try (PrintWriter writer = new PrintWriter(new FileWriter(tmp))) {
+                writer.println(J.toJson((JsonElement)array));
 }
+            try {
+                Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+}
+            catch (IOException atomicFailure) {
+                Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+}
+            return target.isFile();
+}
+        catch (Throwable failure) {
+            if (tmp.isFile()) {
+                tmp.delete();
+}
+            return false;
+}
+}
+    private static ArrayList<Account> readAccounts(File source) {
+        ArrayList<Account> out = new ArrayList<Account>();
+        if (source == null || !source.isFile()) {
+            return out;
+}
+        try (BufferedReader reader = new BufferedReader(new FileReader(source))) {
+            JsonElement root = new JsonParser().parse((Reader)reader);
+            if (root instanceof JsonArray) {
+                for (JsonElement element : root.getAsJsonArray()) {
+                    if (element != null && element.isJsonObject()) {
+                        out.add(Account.k(element.getAsJsonObject(), 0L));
+}
+}
+}
+}
+        catch (Throwable failure) {
+            return new ArrayList<Account>();
+}
+        return out;
 }
     public static void Q(int var0, short var1, short var2) {
         Q.clear();
-        try {
-            JsonElement var7 = new JsonParser().parse((Reader)new BufferedReader(new FileReader(i)));
-            if (var7 instanceof JsonArray) {
-                for (JsonElement var10 : var7.getAsJsonArray()) {
-                    JsonObject var11 = var10.getAsJsonObject();
-                    Q.add(Account.k(var11, 0L));
-}
-}
-}
-        catch (FileNotFoundException var7) {
-}
-        catch (JsonSyntaxException var13) {
-            System.err.println("Error parsing accounts.json: " + var13.getMessage());
-}
+        Q.addAll(AltManager.readAccounts(i));
 }
     public static void e(short var0, long var1, String var3) {
         long var4 = ((long)var0 << 48 | 0x45D5706E51D9L) ^ a;
@@ -115,6 +152,44 @@ public class AltManager {
             if (AbyssClient.w != null) {
                 AbyssClient.w.s(new ReconnectHandler(), 25046058167973L);
                 I = true;
+}
+}
+}
+    public static String selfTest() {
+        File probe = null;
+        try {
+            probe = File.createTempFile("openabyss-accounts-", ".json");
+            if (!probe.delete()) {
+                return "FAIL temp-delete";
+}
+            ArrayList<Account> sample = new ArrayList<Account>();
+            sample.add(new Account("", "access-a", "OfflineProbe", "", 0L, AccountType.OFFLINE));
+            sample.add(new Account("refresh-b", "access-b", "MicrosoftProbe", "0123456789abcdef", 42L, AccountType.MINECRAFT));
+            if (!AltManager.writeAccounts(probe, sample)) {
+                return "FAIL write";
+}
+            ArrayList<Account> restored = AltManager.readAccounts(probe);
+            if (restored.size() != 2) {
+                return "FAIL count=" + restored.size();
+}
+            Account first = restored.get(0);
+            Account second = restored.get(1);
+            if (!"OfflineProbe".equals(first.h()) || first.v() != AccountType.OFFLINE) {
+                return "FAIL offline-roundtrip";
+}
+            if (!"MicrosoftProbe".equals(second.h()) || !"refresh-b".equals(second.d())
+                    || !"access-b".equals(second.Y()) || second.F() != 42L
+                    || second.v() != AccountType.MINECRAFT) {
+                return "FAIL minecraft-roundtrip";
+}
+            return "PASS file-roundtrip";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (probe != null && probe.isFile()) {
+                probe.delete();
 }
 }
 }
