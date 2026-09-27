@@ -125,6 +125,9 @@ public final class AuthService {
             int status = response.getStatusLine().getStatusCode();
             HttpEntity entity = response.getEntity();
             String body = entity != null ? EntityUtils.toString(entity) : "";
+            if (status < 200 || status >= 300) {
+                throw new IOException("HTTP " + status + " from " + request.getURI());
+}
             return new HttpResult(status, body);
 }
 }
