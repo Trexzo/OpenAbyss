@@ -14,6 +14,7 @@
  */
 package Abyss.module.impl.visual_utility;
 
+import Abyss.AbyssClient;
 import Abyss.enums.MegaWallsClass;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
@@ -229,7 +230,7 @@ implements EventSubscriber {
 }
 }
         catch (Exception exception) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("MegaWallsDetector", "scoreboard-health-lookup", exception);
 }
         return 0;
 }
