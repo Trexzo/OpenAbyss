@@ -83,10 +83,18 @@ CLIENT_PID=$!
 
 STAGE="$GAME_DIR/abyss-runtime-stage.txt"
 WORLD_READY=0
-for _ in $(seq 1 180); do
+STALL_DUMPED=0
+for WAIT_ITER in $(seq 1 180); do
   if [ -f "$STAGE" ] && grep -Fq 'world-ready-tick' "$STAGE"; then
     WORLD_READY=1
     break
+  fi
+  if [ "$STALL_DUMPED" -eq 0 ] && [ "$WAIT_ITER" -ge 12 ] &&
+     grep -Eq 'logged in with entity id|joined the game' "$SERVER_LOG" 2>/dev/null &&
+     kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo "Capturing in-stall production client thread dump at wait=${WAIT_ITER}s pid=$CLIENT_PID"
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP" 2>&1 || true
+    STALL_DUMPED=1
   fi
   if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
     echo 'Production client exited before world-ready-tick.'
