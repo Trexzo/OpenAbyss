@@ -56,9 +56,13 @@ public class AltManager {
     private static Minecraft X;
     public static volatile String lastPersistenceNote = "NOT_RUN";
 
-    public static void O(long var0) {
-        if (AltManager.writeAccounts(i, Q)) {
-            lastPersistenceNote = "PASS path=" + i.getAbsolutePath() + " accounts=" + Q.size();
+    public static synchronized void O(long var0) {
+        ArrayList<Account> snapshot;
+        synchronized (Q) {
+            snapshot = new ArrayList<Account>(Q);
+}
+        if (AltManager.writeAccounts(i, snapshot)) {
+            lastPersistenceNote = "PASS path=" + i.getAbsolutePath() + " accounts=" + snapshot.size();
         } else {
             lastPersistenceNote = "FAIL path=" + i.getAbsolutePath();
             System.err.println("[AltManager] Failed to persist accounts.json: " + i.getAbsolutePath());
@@ -119,22 +123,27 @@ public class AltManager {
         return out;
 }
     public static void Q(int var0, short var1, short var2) {
-        Q.clear();
-        Q.addAll(AltManager.readAccounts(i));
+        ArrayList<Account> restored = AltManager.readAccounts(i);
+        synchronized (Q) {
+            Q.clear();
+            Q.addAll(restored);
+}
 }
     public static void e(short var0, long var1, String var3) {
         long var4 = ((long)var0 << 48 | 0x45D5706E51D9L) ^ a;
         long var6 = var4 ^ 0x4C3E910D10C3L;
-        Optional<Account> var8 = Q.stream().filter(var1x -> var1x.h().equalsIgnoreCase(var3) && var1x.v() == AccountType.OFFLINE).findFirst();
-        if (!var8.isPresent()) {
-            Account added = new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE);
-            Q.add(added);
-            AltManager.O(var6);
-            if (!AltManager.persistenceOk()) {
-                Q.remove(added);
+        synchronized (Q) {
+            Optional<Account> var8 = Q.stream().filter(var1x -> var1x.h().equalsIgnoreCase(var3) && var1x.v() == AccountType.OFFLINE).findFirst();
+            if (!var8.isPresent()) {
+                Account added = new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE);
+                Q.add(added);
+                AltManager.O(var6);
+                if (!AltManager.persistenceOk()) {
+                    Q.remove(added);
 }
-        } else {
-            lastPersistenceNote = "PASS existing-offline account=" + var3;
+            } else {
+                lastPersistenceNote = "PASS existing-offline account=" + var3;
+}
 }
 }
     /*
