@@ -8,9 +8,12 @@
  */
 package Abyss.ui.screen;
 
+import Abyss.internal.auth.AltManager;
 import Abyss.internal.auth.RandomUsernamePool;
 import Abyss.internal.auth.SessionSwapper;
+import Abyss.internal.auth.TimedStatusMessage;
 import Abyss.ui.screen.AccountManagerScreen;
+import Abyss.util.ChatFormatting;
 import java.util.concurrent.CompletableFuture;
 import javax.swing.SwingUtilities;
 import net.minecraft.client.gui.GuiButton;
@@ -80,7 +83,11 @@ extends GuiScreen {
         boolean var8;
         String var7 = this.b.getText().trim();
         if (!var7.isEmpty() && (var8 = SessionSwapper.D(var7, 14635617689442L))) {
-            this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(81800336346822L, this.B));
+            String status = AltManager.persistenceOk()
+                    ? "&aSuccessful offline login! (" + var7 + ")&r"
+                    : "&eLogged in as " + var7 + ", but accounts.json was not saved.&r";
+            this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(
+                    81800336346822L, this.B, new TimedStatusMessage(ChatFormatting.y(status), 7000L)));
 }
 }
     private void U() {
