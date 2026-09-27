@@ -77,7 +77,7 @@ if [ "$SERVER_READY" -ne 1 ]; then
 fi
 echo 'PRODUCTION_WORLD_SERVER_READY=PASS'
 
-python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch   --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC"   --game-dir "$GAME_DIR"   --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR"   --java "$JAVA_HOME/bin/java"   --username CIProductionWorld   --server 127.0.0.1   --port 25565   >"$STDOUT" 2>"$STDERR" &
+python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch   --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC"   --game-dir "$GAME_DIR"   --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR"   --java "$JAVA_HOME/bin/java"   --username CIProdWorld   --server 127.0.0.1   --port 25565   >"$STDOUT" 2>"$STDERR" &
 CLIENT_PID=$!
 
 STAGE="$GAME_DIR/abyss-runtime-stage.txt"
