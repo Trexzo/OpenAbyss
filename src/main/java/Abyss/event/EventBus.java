@@ -277,6 +277,21 @@ public class EventBus {
                 return "FAIL disable " + calls;
 }
             calls.clear();
+            bus.s(high, 0L);
+            bus.s(high, 0L);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("high", "low"))) {
+                return "FAIL resubscribe-idempotence " + calls;
+}
+            calls.clear();
+            bus.B(high);
+            bus.B(high);
+            bus.e(new TestEvent(), 0L);
+            if (!calls.equals(Arrays.asList("low"))) {
+                return "FAIL double-disable " + calls;
+}
+            bus.s(high, 0L);
+            calls.clear();
             EventSubscriber stopper = new EventSubscriber(){
                 @Override
                 public void x(long seed, EventBus target) {
@@ -339,7 +354,7 @@ public class EventBus {
             if (bus.recordedFailures.size() != 1) {
                 return "FAIL callback-failure-dedup " + bus.recordedFailures.size();
 }
-            return "PASS";
+            return "PASS priority cancellation resubscribe-idempotence callback-failure-isolation";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
