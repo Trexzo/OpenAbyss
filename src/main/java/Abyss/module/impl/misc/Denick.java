@@ -252,7 +252,11 @@ implements EventSubscriber {
     static {
         E = 1000L;
         m = 30000L;
-        J = Executors.newFixedThreadPool(2);
+        J = Executors.newFixedThreadPool(2, runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-Denick");
+            worker.setDaemon(true);
+            return worker;
+        });
         refreshRate = new NumberSetting("Refresh-rate", 5000.0f, 500.0f, 15000.0f, 100.0f);
         mode = new ModeSetting("Mode", "DUPLICATE");
 }
