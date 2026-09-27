@@ -345,6 +345,10 @@ jobs:
             echo "Microsoft login worker self-test is not green." >&2
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] cookiegui selftest = PASS daemon-worker' "$DIAG"; then
+            echo "Cookie Login worker self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results' "$DIAG"; then
             echo "Access-token batch worker self-test is not green." >&2
             exit 1
