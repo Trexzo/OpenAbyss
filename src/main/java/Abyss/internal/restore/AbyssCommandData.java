@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import net.minecraft.client.Minecraft;
 
 public final class AbyssCommandData {
@@ -229,6 +230,105 @@ public final class AbyssCommandData {
         String menu = AbyssCommandData.loadMenu();
         String binds = AbyssCommandData.loadChatBinds();
         lastLoadNote = names + " | " + menu + " | " + binds;
+}
+    public static String selfTest() {
+        String oldOverride = System.getProperty("abyss.config");
+        String oldMode = null;
+        boolean oldMusic = true;
+        Map<Integer, String> oldBinds = null;
+        File testDir = new File(System.getProperty("java.io.tmpdir"),
+                "openabyss-commanddata-selftest-" + System.nanoTime());
+        File testCurrent = new File(testDir, CURRENT);
+        try {
+            oldMode = MainMenuTheme.mode.Y();
+            oldMusic = MainMenuTheme.music.c();
+            oldBinds = AbyssClient.H == null
+                    ? new LinkedHashMap<Integer, String>()
+                    : new LinkedHashMap<Integer, String>(AbyssClient.H);
+
+            if (!testDir.mkdirs() && !testDir.isDirectory()) {
+                return "FAIL temp-dir " + testDir;
+}
+            System.setProperty("abyss.config", testCurrent.getAbsolutePath());
+
+            MainMenuTheme.mode.i("RIDDLE_JOKER");
+            MainMenuTheme.music.v(false, 0L);
+            if (AbyssClient.H == null) {
+                AbyssClient.H = new LinkedHashMap<Integer, String>();
+}
+            AbyssClient.H.clear();
+            AbyssClient.H.put(Integer.valueOf(54), ".help");
+
+            if (!AbyssCommandData.saveMenu()) {
+                return "FAIL save-menu";
+}
+            if (!AbyssCommandData.saveMenuMusic()) {
+                return "FAIL save-menu-music";
+}
+            if (!AbyssCommandData.saveChatBinds()) {
+                return "FAIL save-chat-binds";
+}
+            if (!AbyssCommandData.exists(MENU)
+                    || !AbyssCommandData.exists(MENU_MUSIC)
+                    || !AbyssCommandData.exists(CURRENT)) {
+                return "FAIL files-missing";
+}
+
+            MainMenuTheme.mode.i("NONE");
+            MainMenuTheme.music.v(true, 0L);
+            AbyssClient.H.clear();
+
+            AbyssCommandData.load();
+
+            if (!"RIDDLE_JOKER".equals(MainMenuTheme.mode.Y())) {
+                return "FAIL load-menu " + MainMenuTheme.mode.Y();
+}
+            if (MainMenuTheme.music.c()) {
+                return "FAIL load-menu-music true";
+}
+            if (!".help".equals(AbyssClient.H.get(Integer.valueOf(54)))) {
+                return "FAIL load-chat-bind " + String.valueOf(AbyssClient.H);
+}
+            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
+}
+        finally {
+            try {
+                if (oldMode != null) {
+                    MainMenuTheme.mode.i(oldMode);
+}
+                MainMenuTheme.music.v(oldMusic, 0L);
+                if (AbyssClient.H == null) {
+                    AbyssClient.H = new LinkedHashMap<Integer, String>();
+}
+                AbyssClient.H.clear();
+                if (oldBinds != null) {
+                    AbyssClient.H.putAll(oldBinds);
+}
+}
+            catch (Throwable ignored) {
+}
+            if (oldOverride == null) {
+                System.clearProperty("abyss.config");
+}
+            else {
+                System.setProperty("abyss.config", oldOverride);
+}
+            try {
+                new File(testDir, MENU).delete();
+                new File(testDir, MENU_MUSIC).delete();
+                new File(testDir, FRIENDS).delete();
+                new File(testDir, ENEMIES).delete();
+                new File(testDir, CURRENT).delete();
+                new File(testDir, CURRENT + ".bak").delete();
+                new File(testDir, CURRENT + ".tmp").delete();
+                testDir.delete();
+}
+            catch (Throwable ignored) {
+}
+}
 }
     private static String loadNames() {
         int var0 = 0;
