@@ -45,7 +45,7 @@ public class GuiEventHooks {
                 k = true;
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("GuiEventHooks", "alt-manager-init", throwable);
 }
 }
 }
@@ -125,7 +125,7 @@ public class GuiEventHooks {
                 GuiEventHooks.post(new DisconnectedInitEvent(var0, (IChatComponent)G.get(var0)));
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("GuiEventHooks", "disconnected-init", throwable);
 }
 }
 }
