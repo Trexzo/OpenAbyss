@@ -569,6 +569,19 @@ extends Command {
                 return "FAIL percentage-max " + PercentageSetting.maxValue();
 }
 
+            if (AbyssCommandConfig.resolve("../escape") != null
+                    || AbyssCommandConfig.resolve("..\\escape") != null
+                    || AbyssCommandConfig.resolve("nested/name") != null
+                    || AbyssCommandConfig.resolve("nested\\name") != null
+                    || AbyssCommandConfig.resolve("C:escape") != null
+                    || AbyssCommandConfig.resolve("") != null) {
+                return "FAIL config-path-traversal";
+}
+            File safeConfig = AbyssCommandConfig.resolve("__openabyss_safe_name__");
+            if (safeConfig == null || !"__openabyss_safe_name__.json".equals(safeConfig.getName())) {
+                return "FAIL config-safe-name " + String.valueOf(safeConfig);
+}
+
             ClickGUI liveClick = Modules.J(ClickGUI.class);
             if (liveClick == null) {
                 return "FAIL clickgui-live-null";
@@ -610,7 +623,7 @@ extends Command {
                 ClickGUI.keybind.O(clickKeybind);
 }
             return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.."
-                    + PercentageSetting.maxValue() + " clickgui-live-roundtrip=3";
+                    + PercentageSetting.maxValue() + " path-safety clickgui-live-roundtrip=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
