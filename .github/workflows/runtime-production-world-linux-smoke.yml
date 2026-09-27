@@ -181,7 +181,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -206,6 +206,7 @@ jobs:
           grep -Fq 'entity-player-join-world' "$STAGE"
           grep -Fq 'world-ready-tick' "$STAGE"
           grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          grep -Fq 'world-functional-probe-pass' "$STAGE"
           grep -Fq 'clickgui-open-success:' "$STAGE"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
