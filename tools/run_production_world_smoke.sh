@@ -15,6 +15,7 @@ STDERR="$RUNNER_TEMP/openabyss-production-world-client.stderr.log"
 SERVER_LOG="$RUNNER_TEMP/openabyss-production-world-server.log"
 SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
 PRE_CLICKGUI_SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-before-clickgui.png"
+CLICKGUI_MODE_SCREENSHOT_PREFIX="$RUNNER_TEMP/openabyss-production-world-clickgui-mode"
 STALL_SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-stall.png"
 THREAD_DUMP="$RUNNER_TEMP/openabyss-production-world-jstack.txt"
 THREAD_DUMP_2="$RUNNER_TEMP/openabyss-production-world-jstack-2.txt"
@@ -223,6 +224,75 @@ DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
 sleep 1
 DISPLAY=:99 scrot "$PRE_CLICKGUI_SCREENSHOT"
 test -s "$PRE_CLICKGUI_SCREENSHOT"
+
+touch "$GAME_DIR/abyss-clickgui-mode-probe-go"
+for MODE in STUDIO RAVEN VESTIGE; do
+  MODE_READY=0
+  for _ in $(seq 1 120); do
+    if grep -Fq "clickgui-mode-probe-open:$MODE:" "$STAGE"; then
+      MODE_READY=1
+      break
+    fi
+    if grep -Fq 'clickgui-mode-probe-fail:' "$STAGE"; then
+      echo "Production ClickGUI mode probe failed before $MODE rendered."
+      cat "$STAGE"
+      cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+      exit 1
+    fi
+    if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+      echo "Production client exited before ClickGUI mode $MODE rendered."
+      tail -n 300 "$STDOUT" || true
+      tail -n 300 "$STDERR" || true
+      exit 1
+    fi
+    sleep 0.25
+  done
+  if [ "$MODE_READY" -ne 1 ]; then
+    echo "Production ClickGUI mode $MODE did not open."
+    cat "$STAGE" || true
+    exit 1
+  fi
+
+  MODE_LOWER="$(printf '%s' "$MODE" | tr '[:upper:]' '[:lower:]')"
+  MODE_SCREENSHOT="$CLICKGUI_MODE_SCREENSHOT_PREFIX-$MODE_LOWER.png"
+  DISPLAY=:99 scrot "$MODE_SCREENSHOT"
+  test -s "$MODE_SCREENSHOT"
+
+  MODE_DIFF_RAW="$(compare -metric AE "$PRE_CLICKGUI_SCREENSHOT" "$MODE_SCREENSHOT" null: 2>&1 || true)"
+  MODE_DIFF="$(printf '%s' "$MODE_DIFF_RAW" | tr -cd '0-9')"
+  if [ -z "$MODE_DIFF" ]; then
+    echo "Could not parse $MODE framebuffer pixel difference: $MODE_DIFF_RAW"
+    exit 1
+  fi
+  if [ "$MODE_DIFF" -lt 10000 ]; then
+    echo "$MODE framebuffer changed too little: changed_pixels=$MODE_DIFF"
+    exit 1
+  fi
+  echo "PRODUCTION_WORLD_CLICKGUI_MODE_"$MODE"_CHANGED_PIXELS=$MODE_DIFF"
+
+  DISPLAY=:99 xdotool key Escape
+  MODE_CLOSED=0
+  for _ in $(seq 1 120); do
+    if grep -Fq "clickgui-mode-probe-close:$MODE" "$STAGE"; then
+      MODE_CLOSED=1
+      break
+    fi
+    sleep 0.25
+  done
+  if [ "$MODE_CLOSED" -ne 1 ]; then
+    echo "Production ClickGUI mode $MODE did not close cleanly."
+    cat "$STAGE" || true
+    exit 1
+  fi
+done
+
+if ! grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"; then
+  echo 'Production ClickGUI mode cycle did not restore the original mode.'
+  cat "$STAGE"
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_CLICKGUI_MODE_CYCLE=PASS modes=STUDIO,RAVEN,VESTIGE'
+
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
 DISPLAY=:99 xdotool keyup Shift_R
