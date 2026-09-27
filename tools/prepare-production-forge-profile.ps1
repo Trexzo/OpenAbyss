@@ -123,9 +123,14 @@ foreach ($lib in @($baseJson.libraries)) {
         $dest = Join-Path $Libraries ([string]$artifact.Value.path).Replace('/', '\')
         Download-File ([string]$artifact.Value.url) $dest
         $baseLibraryCount++
-    } elseif ($lib.name) {
+    } elseif ((-not $downloads -or -not $downloads.Value) -and $lib.name) {
+        # Legacy metadata without a downloads block: synthesize Maven path.
         [void](Download-Maven ([string]$lib.name) 'https://libraries.minecraft.net/')
         $baseLibraryCount++
+    } else {
+        # Modern metadata can intentionally omit downloads.artifact for
+        # classifier-only libraries such as jinput-platform/lwjgl-platform.
+        Write-Host "CLASSIFIER_ONLY_LIBRARY=$([string]$lib.name)"
     }
 
     $classifiers = if ($downloads -and $downloads.Value) { $downloads.Value.PSObject.Properties['classifiers'] } else { $null }
