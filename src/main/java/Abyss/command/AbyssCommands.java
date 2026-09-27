@@ -217,7 +217,12 @@ public final class AbyssCommands {
             if (!configTest.startsWith("PASS")) {
                 return "FAIL config-metadata " + configTest;
 }
-            return "PASS commands=" + count + " primaryAliases=" + primaryResolved + " moduleSetting=PASS keybind=TRUSTED config=PASS";
+            String resetTest = AbyssCommandReset.selfTest();
+            if (!resetTest.startsWith("PASS")) {
+                return "FAIL reset " + resetTest;
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved
+                    + " moduleSetting=PASS keybind=TRUSTED config=PASS reset=PASS";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
