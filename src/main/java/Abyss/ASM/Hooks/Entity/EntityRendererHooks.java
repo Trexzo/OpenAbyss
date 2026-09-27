@@ -70,7 +70,7 @@ public class EntityRendererHooks {
     private static void announceLoaded() {
         if (!m && Boolean.parseBoolean(System.getProperty("abyss.injection.loaded", "false")) && EntityRendererHooks.Y.thePlayer != null) {
             m = true;
-            new Thread(() -> {
+            Thread announceThread = new Thread(() -> {
                 try {
                     long var0 = 85534997054632L;
                     try {
@@ -90,7 +90,9 @@ public class EntityRendererHooks {
                 catch (Throwable ex) {
                     throw Sneaky.rethrow(ex);
                 }
-            }, "Abyss announce").start();
+            }, "OpenAbyss-Announce");
+            announceThread.setDaemon(true);
+            announceThread.start();
         }
     }
     private static void a() {
