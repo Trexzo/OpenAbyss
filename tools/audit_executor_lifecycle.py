@@ -8,6 +8,7 @@ root = pathlib.Path("src/main/java")
 factory = re.compile(r"Executors\.new(?:SingleThreadExecutor|FixedThreadPool|CachedThreadPool|ScheduledThreadPool|SingleThreadScheduledExecutor|WorkStealingPool)\s*\(")
 
 count = 0
+unsafe: list[str] = []
 for path in sorted(root.rglob("*.java")):
     text = path.read_text(encoding="utf-8", errors="replace")
     for match in factory.finditer(text):
@@ -26,5 +27,13 @@ for path in sorted(root.rglob("*.java")):
         )
         compact = " ".join(window.split())
         print(f"EXECUTOR_CONTEXT={compact[:1800]}")
+        if not daemon:
+            unsafe.append(f"{path.as_posix()}:{line}")
 
 print(f"EXECUTOR_CENSUS_TOTAL={count}")
+print(f"EXECUTOR_NON_DAEMON={len(unsafe)}")
+for item in unsafe:
+    print(f"EXECUTOR_NON_DAEMON_ITEM={item}")
+if unsafe:
+    raise SystemExit("EXECUTOR_DAEMON_GATE=FAIL")
+print("EXECUTOR_DAEMON_GATE=PASS")
