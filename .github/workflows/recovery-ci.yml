@@ -348,6 +348,17 @@ jobs:
           python '.\tools\audit_module_body_shape.py' $jar.FullName --top 80
           if ($LASTEXITCODE -ne 0) { throw "Module body-shape audit failed to execute: $LASTEXITCODE" }
 
+      - name: Audit runnable-era main menu body shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for main-menu body-shape gate.' }
+          python '.\tools\audit_main_menu_body_shape.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era main-menu body-shape gate failed: $LASTEXITCODE" }
+
       - name: Verify dormant native config manager
         shell: powershell
         run: |
