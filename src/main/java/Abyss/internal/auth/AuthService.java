@@ -121,6 +121,12 @@ public final class AuthService {
             if (CALLBACK_TIMEOUT_SECONDS <= 0L) {
                 return "FAIL timeout";
 }
+            URI loginUri = AuthService.P("state-probe");
+            if (loginUri == null
+                    || !loginUri.toString().contains("localhost%3A" + CALLBACK_PORT + "%2Fcallback")
+                    || !loginUri.toString().contains("state=state-probe")) {
+                return "FAIL authorize-uri=" + loginUri;
+}
             executor = AuthService.newCallbackExecutor();
             Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
             if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
@@ -188,7 +194,7 @@ public final class AuthService {
 }
     public static URI P(String var2) {
         try {
-            URIBuilder var3 = new URIBuilder("https://login.live.com/oauth20_authorize.srf").addParameter("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2").addParameter("response_type", "code").addParameter("redirect_uri", String.format("http://localhost:%d/callback", 25575)).addParameter("scope", "XboxLive.signin XboxLive.offline_access").addParameter("state", var2).addParameter("prompt", "select_account");
+            URIBuilder var3 = new URIBuilder("https://login.live.com/oauth20_authorize.srf").addParameter("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2").addParameter("response_type", "code").addParameter("redirect_uri", String.format("http://localhost:%d/callback", CALLBACK_PORT)).addParameter("scope", "XboxLive.signin XboxLive.offline_access").addParameter("state", var2).addParameter("prompt", "select_account");
             return var3.build();
 }
         catch (Exception var4) {
@@ -418,7 +424,7 @@ public final class AuthService {
 }
     static {
         a = 56313239387342L;
-        P = 25575;
+        P = CALLBACK_PORT;
         e = RequestConfig.custom().setConnectionRequestTimeout(30000).setConnectTimeout(30000).setSocketTimeout(30000).build();
 }
 }
