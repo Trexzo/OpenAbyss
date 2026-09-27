@@ -19,6 +19,7 @@ ALLOWED_EVENTBUS_FIELDS = {
 ALLOWED_EVENTBUS_METHODS = {
     ("recordFailure", "(LAbyss/event/ListenerBinding;LAbyss/event/Event;Ljava/lang/Throwable;)V"),
     ("selfTest", "()Ljava/lang/String;"),
+    ("isOwnerActive", "(Ljava/lang/Object;)Z"),
 }
 ALLOWED_CODE_LENGTHS = {
     (EVENTBUS, "<init>", "()V"): 87,
@@ -300,7 +301,7 @@ def main() -> int:
 
     print("EVENT_CORE_REFERENCE_CLASSES=3")
     print("EVENT_CORE_EVENTBUS_ALLOWED_FIELDS=3")
-    print("EVENT_CORE_EVENTBUS_ALLOWED_METHODS=2")
+    print("EVENT_CORE_EVENTBUS_ALLOWED_METHODS=3")
     print(
         "EVENT_CORE_REVIEWED_BODY_DELTAS="
         + str(allowed_deltas)
