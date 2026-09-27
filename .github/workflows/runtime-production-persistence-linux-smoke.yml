@@ -206,7 +206,7 @@ jobs:
           test -s "$BOOT"
           test -s "$DIAG"
           test -s "$CONFIG"
-          grep -Fq 'persistence-probe-verify-pass:1.75' "$BOOT"
+          grep -Fq 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$BOOT"
           grep -Fq 'world-ready-tick' "$STAGE"
           grep -Fq '[ABYSSDIAG] setting restore selftest= PASS strict-setting-writes percentage-range=0..100 number-range mode-options color-hex readback' "$DIAG"
           grep -Eq 'Abyss\.settings by-name applied [1-9][0-9]* config value\(s\)' "$DIAG"
