@@ -7,6 +7,7 @@
  */
 package Abyss.util;
 
+import Abyss.AbyssClient;
 import Abyss.util.MinecraftRef;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public final class PlayerInfoCache {
             byUuid = uuids;
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("PlayerInfoCache", "refresh", throwable);
 }
 }
     public static NetworkPlayerInfo byName(String name) {
