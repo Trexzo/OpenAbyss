@@ -87,6 +87,13 @@ jobs:
           python '.\tools\check_account_state_contract.py'
           if ($LASTEXITCODE -ne 0) { throw "Recovered account state contract failed: $LASTEXITCODE" }
 
+      - name: Verify bed scan scheduler lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_bed_scan_scheduler.py'
+          if ($LASTEXITCODE -ne 0) { throw "Bed scan scheduler contract failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
