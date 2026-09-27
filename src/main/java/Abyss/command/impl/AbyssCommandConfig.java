@@ -525,7 +525,21 @@ extends Command {
             if (probe.o() != statusBeforeMalformed || probe.h() != keyBeforeMalformed) {
                 return "FAIL malformed-common-mutated status=" + probe.o() + " key=" + probe.h();
 }
-            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused";
+
+            int percentBeforeMalformed = probe.percent.k();
+            JsonObject malformedSetting = new JsonObject();
+            malformedSetting.addProperty("Percent", PercentageSetting.maxValue() + 1);
+            int malformedApplied = AbyssCommandConfig.applySettingValues(probe, malformedSetting);
+            if (malformedApplied != 0) {
+                return "FAIL malformed-percentage-applied count=" + malformedApplied;
+}
+            if (probe.percent.k() != percentBeforeMalformed) {
+                return "FAIL malformed-percentage-mutated " + probe.percent.k();
+}
+            if (PercentageSetting.maxValue() != 100) {
+                return "FAIL percentage-max " + PercentageSetting.maxValue();
+}
+            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused percentage-range=0.." + PercentageSetting.maxValue();
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
@@ -626,7 +640,9 @@ extends Command {
 }
                 if (var5 instanceof PercentageSetting) {
                     if (!var9.isNumber()) continue;
-                    ((PercentageSetting)var5).d(var9.getAsInt());
+                    int percent = var9.getAsInt();
+                    if (percent < 0 || percent > PercentageSetting.maxValue()) continue;
+                    ((PercentageSetting)var5).d(percent);
                     ++var3;
                     continue;
 }
