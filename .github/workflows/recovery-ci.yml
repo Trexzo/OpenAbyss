@@ -187,6 +187,17 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify runnable-era module instance state
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module instance-state gate.' }
+          python '.\tools\check_module_instance_state.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module instance-state gate failed: $LASTEXITCODE" }
+
       - name: Audit module handler bytecode body shape
         shell: powershell
         run: |
