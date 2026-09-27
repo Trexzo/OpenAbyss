@@ -94,7 +94,10 @@ extends GuiScreen {
                                         var14.J(var3.getUsername());
                                         AltManager.O(var7);
                                         boolean persisted = AltManager.persistenceOk();
-                                        SessionAccessor.k(var3);
+                                        if (!SessionAccessor.set(var3)) {
+                                            q = new TimedStatusMessage(ChatFormatting.y("&cLogin failed: Minecraft session swap was not applied.&r"), 7000L);
+                                            return CompletableFuture.<Void>completedFuture(null);
+}
                                         q = new TimedStatusMessage(ChatFormatting.y(persisted
                                                 ? String.format("&aSuccessful login! (%s)&r", var14.h())
                                                 : String.format("&eLogged in as %s, but accounts.json was not saved.&r", var14.h())), 7000L);
@@ -164,7 +167,10 @@ extends GuiScreen {
                                             var14.J(var1xx.getUsername());
                                             AltManager.O(var4xx);
                                             boolean persisted = AltManager.persistenceOk();
-                                            SessionAccessor.k(var1xx);
+                                            if (!SessionAccessor.set(var1xx)) {
+                                                q = new TimedStatusMessage(ChatFormatting.y("&cLogin failed: Minecraft session swap was not applied.&r"), 7000L);
+                                                return;
+}
                                             q = new TimedStatusMessage(ChatFormatting.y(persisted
                                                     ? String.format("&aSuccessful login! (%s)&r", var14.h())
                                                     : String.format("&eLogged in as %s, but accounts.json was not saved.&r", var14.h())), 7000L);
