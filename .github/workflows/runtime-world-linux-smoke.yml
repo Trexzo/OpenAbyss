@@ -1,0 +1,425 @@
+name: OpenAbyss Linux World Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-world-linux-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-linux-world-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  linux-world-runtime:
+    name: Linux Mesa / local 1.8.9 world / RSHIFT ClickGUI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install graphics and X11 automation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb mesa-utils x11-xserver-utils xdotool openbox scrot \
+            libgl1-mesa-dri libglx-mesa0 \
+            libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libxrandr2 libxinerama1 libxcursor1 libxxf86vm1 \
+            iproute2 util-linux
+
+      - name: Install Gradle 2.14.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
+          HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
+          USER_HOME="$RUNNER_TEMP/gradle-user-home-world"
+          curl -L --fail --silent --show-error \
+            'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
+            -o "$ZIP"
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
+          GRADLE="$HOME_DIR/bin/gradle"
+          test -x "$GRADLE"
+          echo "OPENABYSS_GRADLE=$GRADLE" >> "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=$USER_HOME" >> "$GITHUB_ENV"
+          "$GRADLE" --version
+
+      - name: Prepare Forge client and official 1.8.9 server while online
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$OPENABYSS_GRADLE" --no-daemon clean build
+
+          set +e
+          timeout --signal=TERM --kill-after=5s 45s "$OPENABYSS_GRADLE" --no-daemon getAssets
+          GET_ASSETS_EXIT=$?
+          set -e
+          echo "GET_ASSETS_EXIT=$GET_ASSETS_EXIT"
+
+          ASSET_INDEX="$GRADLE_USER_HOME/caches/minecraft/assets/indexes/1.8.json"
+          test -f "$ASSET_INDEX"
+          echo "ASSET_INDEX_READY=$ASSET_INDEX"
+
+          SERVER_JAR="$RUNNER_TEMP/minecraft_server.1.8.9.jar"
+          python - "$SERVER_JAR" <<'PY'
+          import hashlib, json, sys, urllib.request
+
+          output = sys.argv[1]
+          manifest = json.load(urllib.request.urlopen(
+              'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+              timeout=30,
+          ))
+          entry = next(v for v in manifest['versions'] if v['id'] == '1.8.9')
+          version = json.load(urllib.request.urlopen(entry['url'], timeout=30))
+          server = version['downloads']['server']
+          with urllib.request.urlopen(server['url'], timeout=60) as response:
+              data = response.read()
+          actual = hashlib.sha1(data).hexdigest()
+          if actual.lower() != server['sha1'].lower():
+              raise SystemExit('SERVER_SHA1_MISMATCH expected=%s actual=%s' % (server['sha1'], actual))
+          open(output, 'wb').write(data)
+          print('MINECRAFT_SERVER_1_8_9_SHA1=' + actual.upper())
+          print('MINECRAFT_SERVER_1_8_9_BYTES=' + str(len(data)))
+          PY
+          test -s "$SERVER_JAR"
+          echo "OPENABYSS_SERVER_JAR=$SERVER_JAR" >> "$GITHUB_ENV"
+
+      - name: Start Mesa X server
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset \
+            >"$RUNNER_TEMP/openabyss-world-xvfb.log" 2>&1 &
+          echo "OPENABYSS_XVFB_PID=$!" >> "$GITHUB_ENV"
+
+          for _ in $(seq 1 30); do
+            if DISPLAY=:99 xdpyinfo >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          DISPLAY=:99 xdpyinfo >/dev/null
+
+          DISPLAY=:99 openbox >"$RUNNER_TEMP/openabyss-world-openbox.log" 2>&1 &
+          echo "OPENABYSS_OPENBOX_PID=$!" >> "$GITHUB_ENV"
+          sleep 2
+
+          DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | tee "$RUNNER_TEMP/openabyss-world-glxinfo.txt"
+          if ! DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | grep -Eq 'OpenGL renderer string:.*(llvmpipe|softpipe|Mesa)'; then
+            echo 'Mesa software renderer was not detected.'
+            exit 1
+          fi
+          echo 'WORLD_SMOKE_MESA=PASS'
+
+      - name: Run isolated local world and open RSHIFT ClickGUI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SERVER_DIR="$RUNNER_TEMP/openabyss-world-server"
+          INNER="$RUNNER_TEMP/openabyss-world-inner.sh"
+          STDOUT="$RUNNER_TEMP/openabyss-world-client.stdout.log"
+          STDERR="$RUNNER_TEMP/openabyss-world-client.stderr.log"
+          SERVER_LOG="$RUNNER_TEMP/openabyss-world-server.log"
+          SCREENSHOT="$RUNNER_TEMP/openabyss-world-clickgui.png"
+
+          rm -rf "$SERVER_DIR"
+          mkdir -p "$SERVER_DIR"
+          printf 'eula=true\n' > "$SERVER_DIR/eula.txt"
+          cat > "$SERVER_DIR/server.properties" <<'PROPS'
+          online-mode=false
+          server-ip=127.0.0.1
+          server-port=25565
+          level-name=world
+          level-type=FLAT
+          generate-structures=false
+          spawn-animals=false
+          spawn-monsters=false
+          spawn-npcs=false
+          allow-nether=false
+          difficulty=0
+          gamemode=1
+          force-gamemode=true
+          spawn-protection=0
+          max-players=2
+          view-distance=3
+          max-tick-time=-1
+          enable-command-block=false
+          PROPS
+
+          cat > "$INNER" <<'INNER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          cleanup() {
+            set +e
+            if [ -n "${CLIENT_PID:-}" ]; then
+              kill "$CLIENT_PID" 2>/dev/null || true
+              pkill -TERM -f 'net.minecraft.launchwrapper.Launch' 2>/dev/null || true
+            fi
+            if [ -n "${SERVER_PID:-}" ]; then
+              kill "$SERVER_PID" 2>/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          cd "$OPENABYSS_SERVER_DIR"
+          "$JAVA_HOME/bin/java" -Xms256M -Xmx768M -jar "$OPENABYSS_SERVER_JAR" nogui \
+            >"$OPENABYSS_SERVER_LOG" 2>&1 &
+          SERVER_PID=$!
+
+          SERVER_READY=0
+          for _ in $(seq 1 120); do
+            if grep -Eq 'Done \([0-9.]+s\)!|Done \(' "$OPENABYSS_SERVER_LOG"; then
+              SERVER_READY=1
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo 'Local Minecraft 1.8.9 server exited before ready.'
+              tail -n 200 "$OPENABYSS_SERVER_LOG" || true
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$SERVER_READY" -ne 1 ]; then
+            echo 'Local Minecraft 1.8.9 server did not become ready.'
+            tail -n 200 "$OPENABYSS_SERVER_LOG" || true
+            exit 1
+          fi
+          echo 'WORLD_SMOKE_SERVER_READY=PASS'
+
+          cd "$GITHUB_WORKSPACE"
+          rm -f run/abyss-runtime-stage.txt run/abyss-module-failure.txt \
+                run/abyss-feature-failure.txt run/abyss-event-failure.txt \
+                run/abyss-config-failure.txt run/abyss-renderer-failure.txt
+
+          "$OPENABYSS_GRADLE" --offline --no-daemon \
+            -PabyssModsFolder=true \
+            -PabyssWorldSmoke=true \
+            -PabyssWorldSmokeHost=127.0.0.1 \
+            -PabyssWorldSmokePort=25565 \
+            runClient -x getAssets \
+            >"$OPENABYSS_CLIENT_STDOUT" 2>"$OPENABYSS_CLIENT_STDERR" &
+          CLIENT_PID=$!
+
+          STAGE="$GITHUB_WORKSPACE/run/abyss-runtime-stage.txt"
+          WORLD_READY=0
+          for _ in $(seq 1 180); do
+            if [ -f "$STAGE" ] && grep -Fq 'world-ready-tick' "$STAGE"; then
+              WORLD_READY=1
+              break
+            fi
+            if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+              echo 'Client exited before world-ready-tick.'
+              tail -n 300 "$OPENABYSS_CLIENT_STDOUT" || true
+              tail -n 300 "$OPENABYSS_CLIENT_STDERR" || true
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$WORLD_READY" -ne 1 ]; then
+            echo 'world-ready-tick was not observed.'
+            exit 1
+          fi
+
+          grep -Fq 'entity-player-join-world' "$STAGE"
+          grep -Fq 'world-module-lifecycle-start' "$STAGE"
+          grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          echo 'WORLD_SMOKE_WORLD_LIFECYCLE=PASS'
+
+          WINDOW=''
+          for _ in $(seq 1 30); do
+            WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
+            if [ -n "$WINDOW" ]; then break; fi
+            sleep 1
+          done
+          if [ -z "$WINDOW" ]; then
+            echo 'Minecraft window not found for RSHIFT input.'
+            DISPLAY=:99 xdotool search --onlyvisible --name '.*' 2>/dev/null || true
+            exit 1
+          fi
+
+          DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+          sleep 1
+          DISPLAY=:99 xdotool keydown Shift_R
+          sleep 0.45
+          DISPLAY=:99 xdotool keyup Shift_R
+
+          CLICKGUI_READY=0
+          for _ in $(seq 1 30); do
+            if grep -Fq 'clickgui-open-success:' "$STAGE"; then
+              CLICKGUI_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$CLICKGUI_READY" -ne 1 ]; then
+            echo 'ClickGUI success milestone was not observed after RSHIFT.'
+            cat "$STAGE" || true
+            exit 1
+          fi
+          if grep -Fq 'clickgui-open-nullpointer:' "$STAGE"; then
+            echo 'ClickGUI swallowed a NullPointerException.'
+            cat "$STAGE"
+            exit 1
+          fi
+
+          DISPLAY=:99 scrot "$OPENABYSS_SCREENSHOT" || true
+          echo 'WORLD_SMOKE_CLICKGUI=PASS'
+
+          for failure in \
+            abyss-module-failure.txt \
+            abyss-feature-failure.txt \
+            abyss-event-failure.txt \
+            abyss-config-failure.txt \
+            abyss-renderer-failure.txt
+          do
+            path="$GITHUB_WORKSPACE/run/$failure"
+            if [ -s "$path" ]; then
+              echo "Failure journal is non-empty: $path"
+              cat "$path"
+              exit 1
+            fi
+          done
+          echo 'WORLD_SMOKE_FAILURE_JOURNALS=PASS'
+
+          CENSUS="$GITHUB_WORKSPACE/run/abyss-census.tsv"
+          test -f "$CENSUS"
+          CENSUS_COUNT="$(grep -cv '^[[:space:]]*$' "$CENSUS")"
+          echo "WORLD_SMOKE_MODULE_CENSUS_COUNT=$CENSUS_COUNT"
+          test "$CENSUS_COUNT" -eq 112
+
+          if ! grep -Eq 'logged in with entity id|joined the game' "$OPENABYSS_SERVER_LOG"; then
+            echo 'Server did not record a real player login.'
+            tail -n 200 "$OPENABYSS_SERVER_LOG"
+            exit 1
+          fi
+          echo 'WORLD_SMOKE_SERVER_LOGIN=PASS'
+
+          DISPLAY=:99 xdotool key Escape || true
+          sleep 5
+
+          echo '=== runtime milestones ==='
+          cat "$STAGE"
+          echo 'OPENABYSS_LINUX_WORLD_SMOKE=PASS'
+          INNER
+          chmod +x "$INNER"
+
+          RUNNER_UID="$(id -u)"
+          RUNNER_GID="$(id -g)"
+
+          sudo unshare --net -- bash -c '
+            set -euo pipefail
+            ip link set lo up
+            ip link add abyss-dummy type dummy
+            ip addr add 192.0.2.1/32 dev abyss-dummy
+            ip link set abyss-dummy up
+            test -z "$(ip route show default)"
+
+            exec setpriv --reuid="$1" --regid="$2" --init-groups \
+              env \
+                HOME="$3" \
+                DISPLAY=:99 \
+                JAVA_HOME="$4" \
+                PATH="$4/bin:$5" \
+                GRADLE_USER_HOME="$6" \
+                GITHUB_WORKSPACE="$7" \
+                RUNNER_TEMP="$8" \
+                OPENABYSS_GRADLE="$9" \
+                OPENABYSS_SERVER_JAR="${10}" \
+                OPENABYSS_SERVER_DIR="${11}" \
+                OPENABYSS_SERVER_LOG="${12}" \
+                OPENABYSS_CLIENT_STDOUT="${13}" \
+                OPENABYSS_CLIENT_STDERR="${14}" \
+                OPENABYSS_SCREENSHOT="${15}" \
+                LIBGL_ALWAYS_SOFTWARE=1 \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true" \
+                GITHUB_TOKEN= \
+                ACTIONS_RUNTIME_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_URL= \
+                ABYSS_PAYLOAD_KEY= \
+                bash "${16}"
+          ' _ \
+            "$RUNNER_UID" "$RUNNER_GID" "$HOME" "$JAVA_HOME" "$PATH" \
+            "$GRADLE_USER_HOME" "$GITHUB_WORKSPACE" "$RUNNER_TEMP" \
+            "$OPENABYSS_GRADLE" "$OPENABYSS_SERVER_JAR" "$SERVER_DIR" \
+            "$SERVER_LOG" "$STDOUT" "$STDERR" "$SCREENSHOT" "$INNER"
+
+      - name: Validate world-smoke evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE="$GITHUB_WORKSPACE/run/abyss-runtime-stage.txt"
+          test -f "$STAGE"
+
+          for milestone in \
+            entity-player-join-world \
+            world-ready-tick \
+            world-module-lifecycle-start \
+            world-module-lifecycle-complete \
+            clickgui-open-request
+          do
+            if ! grep -Fq "$milestone" "$STAGE"; then
+              echo "Missing world smoke milestone: $milestone"
+              exit 1
+            fi
+          done
+          if ! grep -Fq 'clickgui-open-success:' "$STAGE"; then
+            echo 'ClickGUI success milestone is missing.'
+            exit 1
+          fi
+
+          echo 'WORLD_SMOKE_MILESTONE_CONTRACT=PASS'
+          test -s "$RUNNER_TEMP/openabyss-world-clickgui.png"
+          echo 'WORLD_SMOKE_SCREENSHOT_CONTRACT=PASS'
+          echo 'OPENABYSS_LINUX_WORLD_RUNTIME_SMOKE=PASS'
+
+      - name: Upload world runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-linux-world-runtime-smoke
+          path: |
+            run/logs/**
+            run/crash-reports/**
+            run/abyss-*.txt
+            run/abyss-*.tsv
+            ${{ runner.temp }}/openabyss-world-client.stdout.log
+            ${{ runner.temp }}/openabyss-world-client.stderr.log
+            ${{ runner.temp }}/openabyss-world-server.log
+            ${{ runner.temp }}/openabyss-world-xvfb.log
+            ${{ runner.temp }}/openabyss-world-openbox.log
+            ${{ runner.temp }}/openabyss-world-glxinfo.txt
+            ${{ runner.temp }}/openabyss-world-clickgui.png
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Xvfb/Openbox
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [ -n "${OPENABYSS_OPENBOX_PID:-}" ]; then kill "$OPENABYSS_OPENBOX_PID" 2>/dev/null || true; fi
+          if [ -n "${OPENABYSS_XVFB_PID:-}" ]; then kill "$OPENABYSS_XVFB_PID" 2>/dev/null || true; fi
