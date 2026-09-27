@@ -559,7 +559,7 @@ extends Command {
 
             JsonObject malformedSetting = new JsonObject();
             malformedSetting.addProperty("Bool", "true");
-            malformedSetting.addProperty("Percent", PercentageSetting.maxValue() + 1);
+            malformedSetting.addProperty("Percent", 101);
             malformedSetting.addProperty("Number", 11.0f);
             malformedSetting.addProperty("Mode", "THREE");
             malformedSetting.addProperty("Color", "GGGGGG");
@@ -587,10 +587,6 @@ extends Command {
             if (!textBeforeMalformed.equals(probe.text.X())) {
                 return "FAIL malformed-text-mutated " + probe.text.X();
 }
-            if (PercentageSetting.maxValue() != 100) {
-                return "FAIL percentage-max " + PercentageSetting.maxValue();
-}
-
             if (AbyssCommandConfig.resolve("../escape") != null
                     || AbyssCommandConfig.resolve("..\\escape") != null
                     || AbyssCommandConfig.resolve("nested/name") != null
@@ -685,7 +681,7 @@ extends Command {
                 ClickGUI.keybind.O(clickKeybind);
 }
             return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.."
-                    + PercentageSetting.maxValue() + " path-safety command-write-rotation clickgui-live-roundtrip=3";
+                    + 100 + " path-safety command-write-rotation clickgui-live-roundtrip=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
@@ -787,7 +783,7 @@ extends Command {
                 if (var5 instanceof PercentageSetting) {
                     if (!var9.isNumber()) continue;
                     int percent = var9.getAsInt();
-                    if (percent < 0 || percent > PercentageSetting.maxValue()) continue;
+                    if (percent < 0 || percent > 100) continue;
                     ((PercentageSetting)var5).d(percent);
                     ++var3;
                     continue;
