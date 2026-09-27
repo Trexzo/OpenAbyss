@@ -11,6 +11,7 @@ $GameDir = Join-Path $PackageDir 'official-game'
 $Runtime = Join-Path $GameDir 'abyss-runtime-stage.txt'
 $Bootstrap = Join-Path $GameDir 'abyss-bootstrap-stage.txt'
 $ModuleFailure = Join-Path $GameDir 'abyss-module-failure.txt'
+$FeatureFailure = Join-Path $GameDir 'abyss-feature-failure.txt'
 $EventFailure = Join-Path $GameDir 'abyss-event-failure.txt'
 $ConfigFailure = Join-Path $GameDir 'abyss-config-failure.txt'
 $RendererFailure = Join-Path $GameDir 'abyss-renderer-failure.txt'
@@ -70,6 +71,7 @@ function Read-All([string]$Path) {
 $runtimeText = Read-All $Runtime
 $bootstrapText = Read-All $Bootstrap
 $moduleFailureText = Read-All $ModuleFailure
+$featureFailureText = Read-All $FeatureFailure
 $eventFailureText = Read-All $EventFailure
 $configFailureText = Read-All $ConfigFailure
 $rendererFailureText = Read-All $RendererFailure
@@ -112,6 +114,7 @@ $checks = [ordered]@{
     ModuleLifecycleStart = $runtimeText.Contains('world-module-lifecycle-start')
     ModuleLifecycleComplete = $runtimeText.Contains('world-module-lifecycle-complete')
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
+    FeatureFailure = -not [string]::IsNullOrWhiteSpace($featureFailureText)
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
@@ -157,6 +160,7 @@ $pass = $checks.GameDirectoryExists -and
         $checks.ModuleLifecycleStart -and
         $checks.ModuleLifecycleComplete -and
         (-not $checks.ModuleLifecycleFailure) -and
+        (-not $checks.FeatureFailure) -and
         (-not $checks.EventCallbackFailure) -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
@@ -183,6 +187,7 @@ $lines.Add('LATEST_LOG=' + $(if (Test-Path -LiteralPath $LatestLog -PathType Lea
 $lines.Add('RUNTIME_STAGE=' + $(if (Test-Path -LiteralPath $Runtime -PathType Leaf) { $Runtime } else { '<none>' }))
 $lines.Add('BOOTSTRAP_STAGE=' + $(if (Test-Path -LiteralPath $Bootstrap -PathType Leaf) { $Bootstrap } else { '<none>' }))
 $lines.Add('MODULE_FAILURE=' + $(if (Test-Path -LiteralPath $ModuleFailure -PathType Leaf) { $ModuleFailure } else { '<none>' }))
+$lines.Add('FEATURE_FAILURE=' + $(if (Test-Path -LiteralPath $FeatureFailure -PathType Leaf) { $FeatureFailure } else { '<none>' }))
 $lines.Add('EVENT_FAILURE=' + $(if (Test-Path -LiteralPath $EventFailure -PathType Leaf) { $EventFailure } else { '<none>' }))
 $lines.Add('CONFIG_FAILURE=' + $(if (Test-Path -LiteralPath $ConfigFailure -PathType Leaf) { $ConfigFailure } else { '<none>' }))
 $lines.Add('RENDERER_FAILURE=' + $(if (Test-Path -LiteralPath $RendererFailure -PathType Leaf) { $RendererFailure } else { '<none>' }))
