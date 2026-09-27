@@ -19,8 +19,19 @@ MINECRAFT_LIBRARIES = "https://libraries.minecraft.net/"
 FORGE_MAVEN = "https://maven.minecraftforge.net/"
 
 
+def open_url(url: str, timeout: int):
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "OpenAbyss-Recovery/1.0 (+https://github.com/Trexzo/OpenAbyss)",
+            "Accept": "*/*",
+        },
+    )
+    return urllib.request.urlopen(request, timeout=timeout)
+
+
 def fetch_json(url: str):
-    with urllib.request.urlopen(url, timeout=60) as response:
+    with open_url(url, 60) as response:
         return json.load(response)
 
 
@@ -33,7 +44,7 @@ def download(url: str, path: pathlib.Path, expected_sha1: str | None = None) -> 
         else:
             return
     path.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url, timeout=120) as response:
+    with open_url(url, 120) as response:
         data = response.read()
     if expected_sha1:
         actual = hashlib.sha1(data).hexdigest()
