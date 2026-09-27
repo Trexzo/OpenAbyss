@@ -3,6 +3,7 @@
  */
 package Abyss.util;
 
+import Abyss.AbyssClient;
 import Abyss.util.OggStreamPlayer;
 import Abyss.util.SoundCallback;
 import java.io.IOException;
@@ -78,7 +79,7 @@ public class SoundEngine {
             SoundEngine.D(var7, var3, var4);
 }
         catch (IOException iOException) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("SoundEngine", "resource-playback", iOException);
 }
 }
     public static void E(long var0, InputStream var2) {
