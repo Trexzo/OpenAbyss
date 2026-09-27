@@ -314,6 +314,8 @@ def launch(args: argparse.Namespace) -> int:
     classpath: list[pathlib.Path] = []
     missing: list[pathlib.Path] = []
     for lib in libs:
+        if lib.get("clientreq") is False:
+            continue
         if not library_allowed(lib, "linux"):
             continue
         artifact = resolve_artifact(lib, libraries)
