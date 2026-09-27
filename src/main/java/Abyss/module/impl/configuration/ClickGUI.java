@@ -79,6 +79,17 @@ extends Module {
             if (scale == null || mode == null || keybind == null) {
                 return "FAIL settings-null";
 }
+            ClickGUI live = Modules.J(ClickGUI.class);
+            if (live == null) {
+                return "FAIL live-module-null";
+}
+            java.util.List<Setting> liveSettings = live.w();
+            if (liveSettings == null || !liveSettings.contains(scale) || !liveSettings.contains(mode) || !liveSettings.contains(keybind)) {
+                return "FAIL live-settings scale=" + (liveSettings != null && liveSettings.contains(scale))
+                        + " mode=" + (liveSettings != null && liveSettings.contains(mode))
+                        + " keybind=" + (liveSettings != null && liveSettings.contains(keybind))
+                        + " count=" + (liveSettings == null ? -1 : liveSettings.size());
+}
             if (!mode.S().contains("STUDIO") || !mode.S().contains("RAVEN") || !mode.S().contains("VESTIGE")) {
                 return "FAIL modes " + mode.S();
 }
@@ -105,7 +116,8 @@ extends Module {
             if (ClickGUI.selectedScreen("__UNKNOWN__") != Y) {
                 return "FAIL selector fallback";
 }
-            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code + " factory-rshift=" + factoryCode + " screens=3";
+            return "PASS mode=" + mode.Y() + " keybind=" + keybind.X() + " code=" + code
+                    + " factory-rshift=" + factoryCode + " live-settings=" + liveSettings.size() + " screens=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
