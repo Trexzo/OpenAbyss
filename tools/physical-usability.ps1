@@ -77,6 +77,13 @@ $moduleFailureCandidates = @(
 ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 $moduleFailureFile = $moduleFailureCandidates | Select-Object -First 1
 
+$featureFailureCandidates = @(
+    (Join-Path $Root 'run\abyss-feature-failure.txt'),
+    (Join-Path $Root 'abyss-feature-failure.txt'),
+    (Join-Path $Evidence 'abyss-feature-failure.txt')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+$featureFailureFile = $featureFailureCandidates | Select-Object -First 1
+
 $eventFailureCandidates = @(
     (Join-Path $Root 'run\abyss-event-failure.txt'),
     (Join-Path $Root 'abyss-event-failure.txt'),
@@ -101,6 +108,7 @@ $rendererFailureFile = $rendererFailureCandidates | Select-Object -First 1
 $runtimeText = if ($runtimeFile) { [IO.File]::ReadAllText($runtimeFile) } else { '' }
 $bootstrapText = if ($bootstrapFile) { [IO.File]::ReadAllText($bootstrapFile) } else { '' }
 $moduleFailureText = if ($moduleFailureFile) { [IO.File]::ReadAllText($moduleFailureFile) } else { '' }
+$featureFailureText = if ($featureFailureFile) { [IO.File]::ReadAllText($featureFailureFile) } else { '' }
 $eventFailureText = if ($eventFailureFile) { [IO.File]::ReadAllText($eventFailureFile) } else { '' }
 $configFailureText = if ($configFailureFile) { [IO.File]::ReadAllText($configFailureFile) } else { '' }
 $rendererFailureText = if ($rendererFailureFile) { [IO.File]::ReadAllText($rendererFailureFile) } else { '' }
@@ -123,6 +131,7 @@ $checks = [ordered]@{
     ModuleLifecycleStart = $runtimeText.Contains("world-module-lifecycle-start")
     ModuleLifecycleComplete = $runtimeText.Contains("world-module-lifecycle-complete")
     ModuleLifecycleFailure = -not [string]::IsNullOrWhiteSpace($moduleFailureText)
+    FeatureFailure = -not [string]::IsNullOrWhiteSpace($featureFailureText)
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
@@ -147,6 +156,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ModuleLifecycleStart -and
         $checks.ModuleLifecycleComplete -and
         (-not $checks.ModuleLifecycleFailure) -and
+        (-not $checks.FeatureFailure) -and
         (-not $checks.EventCallbackFailure) -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
