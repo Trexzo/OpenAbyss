@@ -67,7 +67,11 @@ def constant_token(opcode: str, argument: str, comment: str):
         return "J:" + opcode[-1]
     if opcode in ("ldc", "ldc_w", "ldc2_w") and comment:
         if comment.startswith("String "):
-            return "S:" + comment[7:]
+            # javap 8 and newer javap releases render literal backslashes
+            # differently. Canonicalize display escaping without changing the
+            # underlying string semantics.
+            value = comment[7:].replace("\\\\", "\\")
+            return "S:" + value
         if comment.startswith("float "):
             return "F:" + comment[6:].rstrip("f")
         if comment.startswith("double "):
