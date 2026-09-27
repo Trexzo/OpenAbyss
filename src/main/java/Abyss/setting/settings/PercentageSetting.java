@@ -40,9 +40,6 @@ extends Setting {
     public int k() {
         return this.n;
 }
-    public static int maxValue() {
-        return (int)f;
-}
     static {
         try {
             long var0 = a ^ 0x69F5DE2E2556L;
