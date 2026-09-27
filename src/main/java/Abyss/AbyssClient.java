@@ -14,6 +14,7 @@
  */
 package Abyss;
 
+import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
@@ -132,6 +133,10 @@ implements EventSubscriber {
     private static final String[] CATEGORY_LIFECYCLE_PROBE_MODULES = new String[]{
             "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay", "NoHitDelay", "AutoTool"
     };
+    private int commandRuntimeProbeStage;
+    private int commandRuntimeProbeWaitTicks;
+    private boolean commandRuntimeProbeOriginalEnabled;
+    private int commandRuntimeProbeOutputStart;
     private int clickGuiModeProbeIndex;
     private int clickGuiModeProbePhase;
     private int clickGuiModeProbeWaitTicks;
@@ -287,6 +292,117 @@ implements EventSubscriber {
 }
 }
 
+    private void pumpCommandRuntimeProbe() {
+        if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
+                || this.commandRuntimeProbeStage < 0
+                || this.commandRuntimeProbeStage >= 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        try {
+            Module probe = Modules.J(FullBright.class);
+            if (probe == null) {
+                throw new IllegalStateException("FullBright module is missing");
+}
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.commandRuntimeProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.commandRuntimeProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial command probe module state did not settle"
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                this.commandRuntimeProbeOriginalEnabled = stableEnabled;
+                this.commandRuntimeProbeWaitTicks = 0;
+                this.commandRuntimeProbeOutputStart = ConfigManagerWindow.D == null ? 0 : ConfigManagerWindow.D.size();
+
+                boolean help = AbyssCommands.dispatch(".help");
+                boolean list = AbyssCommands.dispatch(".list");
+                boolean binds = AbyssCommands.dispatch(".bind list");
+                boolean configs = AbyssCommands.dispatch(".config list");
+                boolean unknown = AbyssCommands.dispatch(".__openabyss_unknown_command__");
+                if (!help || !list || !binds || !configs || !unknown) {
+                    throw new IllegalStateException("Command dispatch was not consumed"
+                            + " help=" + help + " list=" + list + " bind=" + binds
+                            + " config=" + configs + " unknown=" + unknown);
+}
+                int outputNow = ConfigManagerWindow.D == null ? 0 : ConfigManagerWindow.D.size();
+                if (outputNow <= this.commandRuntimeProbeOutputStart) {
+                    throw new IllegalStateException("Command output did not reach local chat buffer"
+                            + " before=" + this.commandRuntimeProbeOutputStart + " after=" + outputNow);
+}
+
+                if (!AbyssCommands.dispatch(".toggle FullBright")) {
+                    throw new IllegalStateException("Toggle command was not consumed");
+}
+                this.commandRuntimeProbeStage = 1;
+                runtimeMilestone("command-runtime-probe-toggle-request:FullBright:target="
+                        + (!this.commandRuntimeProbeOriginalEnabled));
+                return;
+}
+
+            if (this.commandRuntimeProbeStage == 1) {
+                boolean opposite = this.commandRuntimeProbeOriginalEnabled ? stableDisabled : stableEnabled;
+                if (!opposite) {
+                    if (++this.commandRuntimeProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Command toggle did not reach opposite stable state"
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                runtimeMilestone("command-runtime-probe-toggle-pass:FullBright:enabled=" + probe.o());
+                this.commandRuntimeProbeWaitTicks = 0;
+                if (!AbyssCommands.dispatch(".toggle FullBright")) {
+                    throw new IllegalStateException("Restore toggle command was not consumed");
+}
+                this.commandRuntimeProbeStage = 2;
+                runtimeMilestone("command-runtime-probe-restore-request:FullBright:target="
+                        + this.commandRuntimeProbeOriginalEnabled);
+                return;
+}
+
+            boolean restored = this.commandRuntimeProbeOriginalEnabled ? stableEnabled : stableDisabled;
+            if (!restored) {
+                if (++this.commandRuntimeProbeWaitTicks > 120) {
+                    throw new IllegalStateException("Command toggle did not restore original stable state"
+                            + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                            + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                            + " ownerActive=" + w.isOwnerActive(probe));
+}
+                return;
+}
+            if (!AbyssCommands.dispatch(".FullBright")) {
+                throw new IllegalStateException("Module-setting command was not consumed");
+}
+            int outputNow = ConfigManagerWindow.D == null ? 0 : ConfigManagerWindow.D.size();
+            int outputDelta = outputNow - this.commandRuntimeProbeOutputStart;
+            if (outputDelta <= 0) {
+                throw new IllegalStateException("Command output delta is not positive: " + outputDelta);
+}
+            this.commandRuntimeProbeStage = 3;
+            runtimeMilestone("command-runtime-probe-pass:commands=7:outputDelta=" + outputDelta
+                    + ":restored=" + this.commandRuntimeProbeOriginalEnabled);
+}
+        catch (Throwable failure) {
+            this.commandRuntimeProbeStage = -1;
+            recordFeatureFailure("CommandRuntimeProbe", "dispatch-lifecycle", failure);
+            runtimeMilestone("command-runtime-probe-fail:" + failure.getClass().getName());
+}
+}
+
     private void pumpClickGuiModeProbe() {
         if (!Boolean.getBoolean("abyss.clickGuiModeProbe")
                 || this.clickGuiModeProbeIndex >= CLICKGUI_MODE_PROBE_MODES.length
@@ -298,6 +414,9 @@ implements EventSubscriber {
 }
         if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
                 && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.commandRuntimeProbe") && this.commandRuntimeProbeStage < 3) {
             return;
 }
         String mode = CLICKGUI_MODE_PROBE_MODES[this.clickGuiModeProbeIndex];
@@ -1000,6 +1119,7 @@ implements EventSubscriber {
 }
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
+            this.pumpCommandRuntimeProbe();
             this.pumpClickGuiModeProbe();
             this.pumpPersistenceSeedProbe();
             if (this.c.currentScreen == null) {
