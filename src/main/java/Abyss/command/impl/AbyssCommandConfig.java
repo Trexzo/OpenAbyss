@@ -19,6 +19,7 @@ import Abyss.internal.restore.AbyssBootstrap;
 import Abyss.internal.restore.AbyssCommandData;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssModuleRegistry;
+import Abyss.module.Category;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.setting.Setting;
@@ -392,7 +393,22 @@ extends Command {
 }
     public static String selfTest() {
         try {
-            Module probe = new Module(0L);
+            class Probe extends Module {
+                final BooleanSetting bool = new BooleanSetting("Bool", true);
+                final PercentageSetting percent = new PercentageSetting("Percent", 75);
+                final NumberSetting number = new NumberSetting("Number", 3.5f, 0.0f, 10.0f, 0.5f);
+                final ModeSetting mode = new ModeSetting("Mode", "TWO", "ONE", "TWO");
+                final ColorSetting color = new ColorSetting("Color", "A1B2C3");
+                final TextSetting text = new TextSetting("Text", "hello world");
+
+                Probe() {
+                    super(0L);
+                    this.declare("ConfigSelfTest", Category.Misc, "Config command JSON probe",
+                            this.bool, this.percent, this.number, this.mode, this.color, this.text);
+}
+            }
+
+            Probe probe = new Probe();
             JsonObject block = new JsonObject();
             block.addProperty("visible", Boolean.TRUE);
             block.addProperty("suffix-visible", Boolean.FALSE);
@@ -401,7 +417,42 @@ extends Command {
             if (!probe.D() || probe.r()) {
                 return "FAIL metadata visible=" + probe.D() + " suffix=" + probe.r();
 }
-            return "PASS metadata";
+
+            int written = AbyssCommandConfig.writeSettingValues(probe, block);
+            if (written != 6) {
+                return "FAIL setting-write count=" + written + " json=" + block;
+}
+
+            probe.bool.v(false, 0L);
+            probe.percent.d(10);
+            probe.number.o((byte)0, 0L, 1.0f);
+            probe.mode.i("ONE");
+            probe.color.e("000000");
+            probe.text.O("mutated");
+
+            int applied = AbyssCommandConfig.applySettingValues(probe, block);
+            if (applied != 6) {
+                return "FAIL setting-apply count=" + applied + " json=" + block;
+}
+            if (!probe.bool.c()) {
+                return "FAIL boolean";
+}
+            if (probe.percent.k() != 75) {
+                return "FAIL percentage " + probe.percent.k();
+}
+            if (probe.number.L() != 3.5f) {
+                return "FAIL number " + probe.number.L();
+}
+            if (!probe.mode.R("TWO")) {
+                return "FAIL mode " + probe.mode.Y();
+}
+            if (!"A1B2C3".equals(probe.color.Q())) {
+                return "FAIL color " + probe.color.Q();
+}
+            if (!"hello world".equals(probe.text.X())) {
+                return "FAIL text " + probe.text.X();
+}
+            return "PASS metadata setting-json-roundtrip=6";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
