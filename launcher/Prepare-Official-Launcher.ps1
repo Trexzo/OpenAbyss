@@ -24,6 +24,7 @@ foreach ($evidenceName in @(
     'abyss-bootstrap-stage.txt',
     'abyss-runtime-stage.txt',
     'abyss-module-failure.txt',
+    'abyss-feature-failure.txt',
     'abyss-event-failure.txt',
     'abyss-config-failure.txt',
     'abyss-renderer-failure.txt',
