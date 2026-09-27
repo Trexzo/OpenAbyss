@@ -645,6 +645,245 @@ jobs:
             $zip.Dispose()
           }
 
+      - name: Verify canonical shipped JAR content digest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-content-digest-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          $jar = Join-Path $out 'abyss.jar'
+          $infoPath = Join-Path $out 'BUILD-INFO.txt'
+          $info = @{}
+          foreach ($line in @(Get-Content -LiteralPath $infoPath)) {
+            if ($line -match '^([^=]+)=(.*)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-reobf-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_reobf.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped launcher JAR reobfuscation gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exhaustively verify shipped launcher JAR reobfuscation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-reobf-exhaustive-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_reobf_exhaustive.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped exhaustive production reobf gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exhaustively verify shipped Minecraft member references
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-member-ref-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_member_refs.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped production member-ref gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped runtime dependency closure
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-dependency-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_dependency_closure.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped dependency-closure gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped compiled class inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-class-inventory-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_reference_compiled_classes.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped compiled class inventory gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exercise shipped Windows launcher package helpers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-launcher-package-test'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'launch_abyss.ps1') -LauncherDir $out -ResolverSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Packaged launcher resolver self-test failed: $LASTEXITCODE" }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'Prepare-Official-Launcher.ps1') -PackageDir $out
+          if ($LASTEXITCODE -ne 0) { throw "Packaged official-launcher setup helper failed: $LASTEXITCODE" }
+
+          $sourceJar = Join-Path $out 'abyss.jar'
+          $installedJar = Join-Path $out 'official-game\mods\abyss.jar'
+          if (-not (Test-Path -LiteralPath $installedJar -PathType Leaf)) {
+            throw "Official-launcher setup did not create: $installedJar"
+          }
+          $sourceHash = (Get-FileHash -LiteralPath $sourceJar -Algorithm SHA256).Hash
+          $installedHash = (Get-FileHash -LiteralPath $installedJar -Algorithm SHA256).Hash
+          if ($sourceHash -ne $installedHash) {
+            throw "Official-launcher installed JAR hash mismatch: $installedHash != $sourceHash"
+          }
+          $setupRecord = Join-Path $out 'official-launcher-setup.txt'
+          if (-not (Test-Path -LiteralPath $setupRecord -PathType Leaf)) {
+            throw 'Official-launcher setup record was not produced.'
+          }
+          Write-Host "SHIPPED_LAUNCHER_HELPERS_CONTRACT=PASS jar_sha256=$sourceHash"
+
+      - name: Validate JAR contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $jars = @(Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File)
+          if ($jars.Count -ne 1) { throw "Expected exactly one OpenAbyss JAR, found $($jars.Count)." }
+          $jar = $jars[0]
+          $jarHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            $entries = @($zip.Entries)
+            $names = @($entries | ForEach-Object { $_.FullName })
+            $classCount = @($names | Where-Object { $_ -like '*.class' }).Count
+            $javaCount = @($names | Where-Object { $_ -like '*.java' }).Count
+            if ($classCount -lt 1300) { throw "Unexpectedly low class count: $classCount" }
+            if ($javaCount -ne 0) { throw "Source .java files leaked into JAR: $javaCount" }
+            foreach ($required in @(
+              'META-INF/MANIFEST.MF',
+              'Abyss/ASM/CoreMod.class',
+              'mcmod.info',
+              'assets/abyss/asm/mcp-notch.srg',
+              'assets/abyss/asm/mcp-srg.srg',
+              'ssl.jks',
+              'accountmanager-ssl.jks'
+            )) {
+              if ($names -notcontains $required) { throw "Missing required JAR entry: $required" }
+            }
+            function Read-ZipText([string]$name) {
+              $entry = $zip.GetEntry($name)
+              $reader = New-Object System.IO.StreamReader($entry.Open())
+              try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+            $manifest = Read-ZipText 'META-INF/MANIFEST.MF'
+            foreach ($line in @(
+              'ModSide: CLIENT',
+              'FMLCorePluginContainsFMLMod: true',
+              'ForceLoadAsMod: true',
+              'FMLCorePlugin: Abyss.ASM.CoreMod'
+            )) {
+              if ($manifest.IndexOf($line, [System.StringComparison]::Ordinal) -lt 0) {
+                throw "Manifest contract missing: $line"
+              }
+            }
+            $mcmod = (Read-ZipText 'mcmod.info') | ConvertFrom-Json
+            if ($mcmod[0].modid -ne 'abyss') { throw "Unexpected mcmod modid: $($mcmod[0].modid)" }
+            if ($mcmod[0].mcversion -ne '1.8.9') { throw "Unexpected mcmod mcversion: $($mcmod[0].mcversion)" }
+            $notch = $zip.GetEntry('assets/abyss/asm/mcp-notch.srg')
+            $srg = $zip.GetEntry('assets/abyss/asm/mcp-srg.srg')
+            if ($notch.Length -lt 1000000) { throw "mcp-notch.srg unexpectedly small: $($notch.Length)" }
+            if ($srg.Length -lt 2000000) { throw "mcp-srg.srg unexpectedly small: $($srg.Length)" }
+            Write-Host "JAR_CONTRACT_PASS classes=$classCount entries=$($entries.Count) sha256=$jarHash"
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+          $ksDir = Join-Path $env:RUNNER_TEMP 'openabyss-keystores'
+          New-Item -ItemType Directory -Force -Path $ksDir | Out-Null
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            foreach ($name in @('ssl.jks','accountmanager-ssl.jks')) {
+              $entry = $zip.GetEntry($name)
+              $out = Join-Path $ksDir $name
+              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $out, $true)
+            }
+          }
+          finally { $zip.Dispose() }
+          $sslHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'ssl.jks')).Hash
+          $acctHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'accountmanager-ssl.jks')).Hash
+          if ($sslHash -ne $acctHash) { throw 'Bundled truststores differ unexpectedly.' }
+          $keytoolOut = @(& keytool -list -v -keystore (Join-Path $ksDir 'ssl.jks') -storepass changeit 2>&1)
+          if ($LASTEXITCODE -ne 0) { throw 'keytool could not read bundled truststore.' }
+          $trusted = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: trustedCertEntry' }).Count
+          $private = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: PrivateKeyEntry' }).Count
+          if ($trusted -ne 152) { throw "Unexpected truststore certificate count: $trusted" }
+          if ($private -ne 0) { throw "Private-key entries found in bundled truststore: $private" }
+          Write-Host "TRUSTSTORE_CONTRACT_PASS trustedCertEntry=$trusted privateKeyEntry=$private sha256=$sslHash"
+
+      - name: Inspect built JARs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = '.\build\libs'
+          $jars = @(Get-ChildItem -LiteralPath $dir -Filter '*.jar' -File -ErrorAction Stop)
+          if ($jars.Count -eq 0) { throw 'No JAR artifacts found in build\libs.' }
+          Write-Host '=== BUILD ARTIFACTS ==='
+          $report = Join-Path $dir 'openabyss-artifacts.txt'
+          $lines = @()
+          foreach ($jar in $jars) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+            Write-Host ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+            $lines += ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+          }
+          [System.IO.File]::WriteAllLines($report, $lines)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-R38-build
+          path: |
+            build/libs/*.jar
+            build/libs/openabyss-artifacts.txt
+            build/distributions/OpenAbyss-Windows-Launcher.zip
+          if-no-files-found: error
+          retention-days: 14
+) {
+              $info[$matches[1]] = $matches[2]
+            }
+          }
+          if (-not $info.ContainsKey('JAR_CONTENT_SHA256')) {
+            throw 'BUILD-INFO.txt is missing JAR_CONTENT_SHA256.'
+          }
+
+          $digestOutput = @(& python '.\tools\jar_content_digest.py' $jar)
+          if ($LASTEXITCODE -ne 0) {
+            $digestOutput | ForEach-Object { Write-Host $_ }
+            throw "Canonical JAR content digest tool failed: $LASTEXITCODE"
+          }
+          $digestOutput | ForEach-Object { Write-Host $_ }
+          $line = $digestOutput | Where-Object { $_ -match '^JAR_CONTENT_SHA256=' } | Select-Object -First 1
+          if (-not $line) { throw 'Canonical JAR content digest output is missing.' }
+          $actual = ($line -split '=',2)[1].Trim().ToUpperInvariant()
+          $expected = ([string]$info['JAR_CONTENT_SHA256']).Trim().ToUpperInvariant()
+          if ($actual -ne $expected) {
+            throw "BUILD-INFO JAR_CONTENT_SHA256 mismatch: $expected != $actual"
+          }
+          Write-Host "WINDOWS_LAUNCHER_CONTENT_DIGEST_CONTRACT=PASS content_sha256=$actual"
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Verify shipped launcher JAR reobfuscation
         shell: powershell
         run: |
