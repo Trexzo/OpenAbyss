@@ -280,11 +280,19 @@ public final class AbyssConfig {
                 File f = AbyssConfig.target(name);
                 r2.path = f.getPath();
                 JsonObject root = AbyssConfig.parse(f);
+                File backup = AbyssConfig.sibling(f, ".bak");
+                boolean recoveredFromBackup = false;
                 if (root == null) {
-                    root = AbyssConfig.parse(AbyssConfig.sibling(f, ".bak"));
+                    root = AbyssConfig.parse(backup);
+                    recoveredFromBackup = root != null;
 }
                 if (root == null) {
                     root = new JsonObject();
+}
+                if (recoveredFromBackup && f.isFile()) {
+                    if (!f.delete()) {
+                        throw new IllegalStateException("could not remove corrupt current config before backup recovery: " + f);
+}
 }
                 if (!root.has(DESCRIPTION_KEY) || !root.get(DESCRIPTION_KEY).isJsonPrimitive()) {
                     root.addProperty(DESCRIPTION_KEY, DEFAULT_DESCRIPTION);
@@ -549,6 +557,12 @@ public final class AbyssConfig {
             if (AbyssConfig.parse(file) == null) {
                 return "FAIL backup-recovery-current-unreadable";
 }
+            if (!bak.isFile() || AbyssConfig.parse(bak) == null) {
+                return "FAIL backup-recovery-backup-lost";
+}
+            if (tmp.exists()) {
+                return "FAIL backup-recovery-stale-tmp";
+}
 
             JsonObject validStatus = new JsonObject();
             validStatus.addProperty("status", Boolean.TRUE);
@@ -573,7 +587,7 @@ public final class AbyssConfig {
             if (!Integer.valueOf(54).equals(AbyssConfig.strictInteger(new JsonPrimitive(Integer.valueOf(54))))) {
                 return "FAIL valid-integer";
 }
-            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata backup-recovery";
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata backup-recovery-preserved";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
@@ -675,22 +689,47 @@ public final class AbyssConfig {
 }
     private static boolean write(File f, JsonObject root) {
         File tmp = AbyssConfig.sibling(f, ".tmp");
+        File bak = AbyssConfig.sibling(f, ".bak");
         Writer w2 = null;
+        boolean rotated = false;
         try {
+            if (tmp.isFile() && !tmp.delete()) {
+                return false;
+}
             w2 = new OutputStreamWriter((OutputStream)new FileOutputStream(tmp), "UTF-8");
             new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)root, (Appendable)w2);
             w2.close();
             w2 = null;
+
             if (f.isFile()) {
-                File bak = AbyssConfig.sibling(f, ".bak");
-                if (bak.isFile()) {
-                    bak.delete();
+                if (bak.isFile() && !bak.delete()) {
+                    tmp.delete();
+                    return false;
 }
-                f.renameTo(bak);
+                if (!f.renameTo(bak)) {
+                    tmp.delete();
+                    return false;
 }
-            return tmp.renameTo(f);
+                rotated = true;
+}
+            if (tmp.renameTo(f)) {
+                return true;
+}
+            if (rotated && !f.exists() && bak.isFile()) {
+                bak.renameTo(f);
+}
+            tmp.delete();
+            return false;
 }
         catch (Throwable t2) {
+            if (rotated && !f.exists() && bak.isFile()) {
+                try {
+                    bak.renameTo(f);
+}
+                catch (Throwable ignored) {
+}
+}
+            tmp.delete();
             return false;
 }
         finally {
