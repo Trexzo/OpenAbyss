@@ -210,14 +210,21 @@ public final class AbyssBootstrap {
         stage("bootstrap-complete");
 }
     private static void verifyPersistenceProbe() {
-        String expected = System.getProperty("abyss.persistenceProbeExpectedClickGuiMode");
-        if (expected == null || expected.length() == 0) {
+        String expectedRaw = System.getProperty("abyss.persistenceProbeExpectedClickGuiScale");
+        if (expectedRaw == null || expectedRaw.length() == 0) {
             return;
 }
-        String actual = ClickGUI.mode == null ? "<null>" : ClickGUI.mode.Y();
-        if (!expected.equals(actual)) {
+        float expected;
+        try {
+            expected = Float.parseFloat(expectedRaw);
+}
+        catch (NumberFormatException failure) {
+            throw new IllegalStateException("Invalid persistence probe scale: " + expectedRaw, failure);
+}
+        float actual = ClickGUI.scale == null ? Float.NaN : ClickGUI.scale.L();
+        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f) {
             stage("persistence-probe-verify-fail:" + actual);
-            throw new IllegalStateException("Persisted ClickGUI mode expected " + expected + " but was " + actual);
+            throw new IllegalStateException("Persisted ClickGUI scale expected " + expected + " but was " + actual);
 }
         stage("persistence-probe-verify-pass:" + actual);
 }
