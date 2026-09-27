@@ -129,6 +129,13 @@ jobs:
           python '.\tools\audit_empty_catches.py'
           if ($LASTEXITCODE -ne 0) { throw "Silent catch census failed: $LASTEXITCODE" }
 
+      - name: Verify bounded renderer reload recovery
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_renderer_reload_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Renderer reload contract failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
