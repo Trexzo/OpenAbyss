@@ -394,6 +394,8 @@ def launch(args: argparse.Namespace) -> int:
     print("OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0", flush=True)
     print("OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder", flush=True)
     print("OPENABYSS_PRODUCTION_LINUX_EXEC=" + " ".join(cmd[:7]) + " ...", flush=True)
+    os.chdir(game)
+    print(f"OPENABYSS_PRODUCTION_LINUX_CWD={pathlib.Path.cwd()}", flush=True)
     os.execvpe(str(java), cmd, os.environ.copy())
     return 0
 
