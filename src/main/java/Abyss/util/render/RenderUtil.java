@@ -1437,6 +1437,41 @@ public class RenderUtil {
         AxisAlignedBB var29 = new AxisAlignedBB(var23, var25, var27, var23 + var7, var25 + var9, var27 + var11);
         RenderUtil.W(var29, var21, var13, var14, var16, var18);
 }
+    /**
+     * Runnable-era baked block model renderer recovered from exact bytecode.
+     * The long argument is retained for binary compatibility; the original
+     * method did not consume it.
+     */
+    public static void a(IBlockState var0, double var1, long var3, double var5, double var7, int var9) {
+        BlockRendererDispatcher var10 = T.getBlockRendererDispatcher();
+        IBakedModel var11 = var10.getModelFromBlockState(var0, T.theWorld, new BlockPos(var1, var5, var7));
+
+        double var12 = var1 - T.getRenderManager().viewerPosX;
+        double var14 = var5 - T.getRenderManager().viewerPosY;
+        double var16 = var7 - T.getRenderManager().viewerPosZ;
+
+        float var18 = (float)(var9 >> 24 & 0xFF) / 255.0f;
+        float var19 = (float)(var9 >> 16 & 0xFF) / 255.0f;
+        float var20 = (float)(var9 >> 8 & 0xFF) / 255.0f;
+        float var21 = (float)(var9 & 0xFF) / 255.0f;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(var12, var14, var16);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(770, 771);
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableCull();
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.color(var19, var20, var21, var18);
+        RenderUtil.p(var11, var19, var20, var21, var18);
+        GlStateManager.depthMask(true);
+        GlStateManager.enableDepth();
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
+}
     private static void p(IBakedModel var0, float var1, float var2, float var3, float var4) {
         Tessellator var9 = Tessellator.getInstance();
         WorldRenderer var10 = var9.getWorldRenderer();
