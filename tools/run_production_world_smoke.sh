@@ -147,6 +147,32 @@ grep -Fq 'world-module-lifecycle-start' "$STAGE"
 grep -Fq 'world-module-lifecycle-complete' "$STAGE"
 echo 'PRODUCTION_WORLD_LIFECYCLE=PASS'
 
+NETWORK_STAGE="$GAME_DIR/abyss-network-stage.txt"
+NETWORK_READY=0
+for _ in $(seq 1 120); do
+  if [ -f "$NETWORK_STAGE" ] &&
+     grep -Fq 'send-hook:' "$NETWORK_STAGE" &&
+     grep -Fq 'receive-hook:' "$NETWORK_STAGE"; then
+    NETWORK_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before both network hooks were observed.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$NETWORK_READY" -ne 1 ]; then
+  echo 'Production send/receive NetworkManager hooks were not both observed.'
+  cat "$NETWORK_STAGE" 2>/dev/null || true
+  exit 1
+fi
+grep -Fq 'send-hook:' "$NETWORK_STAGE"
+grep -Fq 'receive-hook:' "$NETWORK_STAGE"
+echo 'PRODUCTION_WORLD_NETWORK_HOOKS=PASS'
+
 FUNCTIONAL_READY=0
 for _ in $(seq 1 120); do
   if grep -Fq 'world-functional-probe-pass' "$STAGE"; then
