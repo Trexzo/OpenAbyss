@@ -181,6 +181,40 @@ task writeLauncherBuildInfo(dependsOn: abyssReobfJar) {
         }
         String jarHash = md.digest().collect { String.format('%02X', it & 0xff) }.join()
 
+        def contentMd = java.security.MessageDigest.getInstance('SHA-256')
+        def zip = new java.util.zip.ZipFile(packagedJar)
+        try {
+            def entries = java.util.Collections.list(zip.entries()).findAll { !it.isDirectory() }.sort { a, b -> a.name <=> b.name }
+            entries.each { entry ->
+                byte[] nameBytes = entry.name.getBytes('UTF-8')
+                java.nio.ByteBuffer nameLen = java.nio.ByteBuffer.allocate(4)
+                nameLen.putInt(nameBytes.length)
+                contentMd.update(nameLen.array())
+                contentMd.update(nameBytes)
+
+                long size = entry.size
+                java.nio.ByteBuffer dataLen = java.nio.ByteBuffer.allocate(8)
+                dataLen.putLong(size)
+                contentMd.update(dataLen.array())
+
+                InputStream input = zip.getInputStream(entry)
+                try {
+                    byte[] buffer = new byte[65536]
+                    int read
+                    while ((read = input.read(buffer)) > 0) {
+                        contentMd.update(buffer, 0, read)
+                    }
+                }
+                finally {
+                    input.close()
+                }
+            }
+        }
+        finally {
+            zip.close()
+        }
+        String jarContentHash = contentMd.digest().collect { String.format('%02X', it & 0xff) }.join()
+
         String head = 'UNKNOWN'
         try {
             def stdout = new ByteArrayOutputStream()
@@ -206,6 +240,7 @@ task writeLauncherBuildInfo(dependsOn: abyssReobfJar) {
             'JAR_FILE=abyss.jar',
             'JAR_BYTES=' + packagedJar.length(),
             'JAR_SHA256=' + jarHash,
+            'JAR_CONTENT_SHA256=' + jarContentHash,
             'MC_VERSION=1.8.9',
             'FORGE_VERSION=11.15.1.2318-1.8.9'
         ].join(System.lineSeparator()) + System.lineSeparator()
