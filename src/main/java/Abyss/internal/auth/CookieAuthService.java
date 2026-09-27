@@ -142,7 +142,7 @@ public class CookieAuthService {
                         MinecraftProfileResponse var22 = CookieAuthService.l(42909564680031L, var21.m);
                         if (var22 != null && var22.g != null) {
                             Session var23 = new Session(var22.g, var22.z, var21.m, "mojang");
-                            AltManager.Q.add(new Account("", var21.m, var22.g, var22.z, 0L, AccountType.MINECRAFT));
+                            AltManager.upsert(new Account("", var21.m, var22.g, var22.z, 0L, AccountType.MINECRAFT));
                             AltManager.O(11006179144378L);
                             boolean persisted = AltManager.persistenceOk();
                             SessionAccessor.k(var23);
