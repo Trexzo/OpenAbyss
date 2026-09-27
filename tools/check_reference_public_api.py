@@ -20,8 +20,8 @@ SYNTHETIC = 0x1000
 
 FIELD_MASK = PUB | PROT | STATIC | FINAL | VOLATILE_OR_BRIDGE | TRANSIENT_OR_VARARGS | SYNTHETIC
 METHOD_MASK = PUB | PROT | STATIC | FINAL | SYNC | VOLATILE_OR_BRIDGE | TRANSIENT_OR_VARARGS | NATIVE | SYNTHETIC
-EXPECTED_DIGEST = "B1168964E028709409702D6464183BAFF85F4D3C682F2D995308CD7BC1F3B211"
-EXPECTED_BASELINE_MEMBERS = 9177
+EXPECTED_DIGEST = "FA389078936371C906F26D7C2EF7A220F7CA28A40181735EEA2B6CBA6FAF1669"
+EXPECTED_BASELINE_MEMBERS = 9180
 
 
 def parse_class(data: bytes):
@@ -139,8 +139,8 @@ def load_authority(path: pathlib.Path):
             access[(kind, cls, name, desc)] = (int(old_flags, 16), int(current_flags, 16))
         else:
             raise SystemExit(f"UNKNOWN_AUTHORITY_MODE={mode}")
-    if len(missing) != 6:
-        raise SystemExit(f"API_AUTHORITY_MISSING_COUNT expected=6 actual={len(missing)}")
+    if len(missing) != 3:
+        raise SystemExit(f"API_AUTHORITY_MISSING_COUNT expected=3 actual={len(missing)}")
     if len(extras) != 57:
         raise SystemExit(f"API_AUTHORITY_EXTRA_COUNT expected=57 actual={len(extras)}")
     if len(access) != 5:
