@@ -1,7 +1,7 @@
 # Runnable-era public/protected API compatibility authority
 # reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
-# baseline_members_after_reviewed_missing=9180
-# baseline_digest_sha256=FA389078936371C906F26D7C2EF7A220F7CA28A40181735EEA2B6CBA6FAF1669
+# baseline_members_after_reviewed_missing=9181
+# baseline_digest_sha256=79A6CB6B10553C03F71C7A99F5EA55B6876A9818B7EC2CBCD51EA92BA4964087
 # format sections:
 #   MISSING|kind|class|name|descriptor
 #   EXTRA|kind|class|name|descriptor|normalized_access_hex
@@ -9,7 +9,6 @@
 
 MISSING|M|Abyss/command/impl/StockCommandModuleSetting|O|(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 MISSING|M|Abyss/command/impl/StockCommandModuleSetting|w|(Ljava/lang/String;Ljava/lang/String;)Z
-MISSING|M|Abyss/ui/abyss/AbyssArrayListVisibility$2|run|()V
 
 ACCESS|M|Abyss/command/impl/StockCommandModuleSetting|g|([Ljava/lang/String;IJ)Ljava/util/List;|0101|0001
 ACCESS|F|Abyss/ui/screen/AccountManagerScreen|q|LAbyss/internal/auth/TimedStatusMessage;|0009|0049
@@ -66,8 +65,6 @@ EXTRA|M|Abyss/module/Module$1ProbeModule|A|(J)V|0001
 EXTRA|M|Abyss/module/Module$1ProbeModule|P|(J)V|0001
 EXTRA|M|Abyss/module/Module$1ProbeModule|i|(J)V|0001
 EXTRA|M|Abyss/module/impl/configuration/ClickGUI|selfTest|()Ljava/lang/String;|0009
-EXTRA|M|Abyss/ui/abyss/AbyssArrayListVisibility$1|newThread|(Ljava/lang/Runnable;)Ljava/lang/Thread;|0001
-EXTRA|M|Abyss/ui/abyss/AbyssArrayListVisibility$3|run|()V|0001
 EXTRA|M|Abyss/ui/screen/AccessTokenLoginScreen|selfTest|()Ljava/lang/String;|0009
 EXTRA|M|Abyss/ui/screen/AccountManagerScreen|selfTest|()Ljava/lang/String;|0009
 EXTRA|M|Abyss/ui/screen/CookieLoginScreen|selfTest|()Ljava/lang/String;|0009
