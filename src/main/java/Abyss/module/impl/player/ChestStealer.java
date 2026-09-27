@@ -26,6 +26,7 @@
  */
 package Abyss.module.impl.player;
 
+import Abyss.AbyssClient;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.ChestStealerBinder;
@@ -311,7 +312,7 @@ implements EventSubscriber {
                     ChestStealer.f.playerController.windowClick(ChestStealer.f.thePlayer.openContainer.windowId, slot, 0, 1, (EntityPlayer)ChestStealer.f.thePlayer);
 }
                 catch (Throwable throwable) {
-                    // empty catch block
+                    AbyssClient.recordFeatureFailure("ChestStealer", "window-click", throwable);
 }
                 ++this.stealIndex;
                 this.stealNextActionAt = now + (long)MathUtil.h(minDelay.L(), maxDelay.L());
