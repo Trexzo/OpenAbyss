@@ -78,6 +78,7 @@ extends ControllerEnvironment {
                     AbyssClient.recordFeatureFailure("ControllerEnvironmentImpl", "platform-plugin-load", exception);
 }
 }
+}
         return this.N.toArray(new Controller[0]);
 }
 }
