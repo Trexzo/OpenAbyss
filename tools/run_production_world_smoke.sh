@@ -14,6 +14,7 @@ STDOUT="$RUNNER_TEMP/openabyss-production-world-client.stdout.log"
 STDERR="$RUNNER_TEMP/openabyss-production-world-client.stderr.log"
 SERVER_LOG="$RUNNER_TEMP/openabyss-production-world-server.log"
 SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
+PRE_CLICKGUI_SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-before-clickgui.png"
 STALL_SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-stall.png"
 THREAD_DUMP="$RUNNER_TEMP/openabyss-production-world-jstack.txt"
 THREAD_DUMP_2="$RUNNER_TEMP/openabyss-production-world-jstack-2.txt"
@@ -190,6 +191,8 @@ fi
 
 DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
 sleep 1
+DISPLAY=:99 scrot "$PRE_CLICKGUI_SCREENSHOT"
+test -s "$PRE_CLICKGUI_SCREENSHOT"
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
 DISPLAY=:99 xdotool keyup Shift_R
@@ -215,6 +218,19 @@ fi
 
 DISPLAY=:99 scrot "$SCREENSHOT"
 test -s "$SCREENSHOT"
+
+PIXEL_DIFF_RAW="$(compare -metric AE "$PRE_CLICKGUI_SCREENSHOT" "$SCREENSHOT" null: 2>&1 || true)"
+PIXEL_DIFF="$(printf '%s' "$PIXEL_DIFF_RAW" | tr -cd '0-9')"
+if [ -z "$PIXEL_DIFF" ]; then
+  echo "Could not parse ClickGUI framebuffer pixel difference: $PIXEL_DIFF_RAW"
+  exit 1
+fi
+if [ "$PIXEL_DIFF" -lt 10000 ]; then
+  echo "ClickGUI framebuffer changed too little: changed_pixels=$PIXEL_DIFF"
+  exit 1
+fi
+echo "PRODUCTION_WORLD_CLICKGUI_CHANGED_PIXELS=$PIXEL_DIFF"
+echo 'PRODUCTION_WORLD_CLICKGUI_FRAMEBUFFER=PASS'
 echo 'PRODUCTION_WORLD_CLICKGUI=PASS'
 
 for failure in   abyss-module-failure.txt   abyss-feature-failure.txt   abyss-event-failure.txt   abyss-config-failure.txt   abyss-renderer-failure.txt
