@@ -96,6 +96,10 @@ for WAIT_ITER in $(seq 1 180); do
     "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP" 2>&1 || true
     STALL_DUMPED=1
   fi
+  if [ "$STALL_DUMPED" -eq 1 ] && [ "$WAIT_ITER" -ge 20 ]; then
+    echo "Production client remained without world-ready-tick after in-stall capture; ending diagnostic wait at ${WAIT_ITER}s."
+    break
+  fi
   if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
     echo 'Production client exited before world-ready-tick.'
     tail -n 300 "$STDOUT" || true
