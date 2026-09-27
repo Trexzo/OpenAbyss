@@ -73,6 +73,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -203,7 +205,11 @@ public class CookieAuthService {
             if (!"abc 123".equals(access)) {
                 return "FAIL access-token-parse=" + access;
 }
-            return "PASS cookie-parsers";
+            Future<Boolean> daemonProbe = j.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(daemonProbe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL auth-worker-not-daemon";
+}
+            return "PASS cookie-parsers daemon-workers";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
@@ -744,7 +750,11 @@ public class CookieAuthService {
                                                     var6[var50] = var65 = ((long)var10[0] & 0xFFL) << 56 | ((long)var10[1] & 0xFFL) << 48 | ((long)var10[2] & 0xFFL) << 40 | ((long)var10[3] & 0xFFL) << 32 | ((long)var10[4] & 0xFFL) << 24 | ((long)var10[5] & 0xFFL) << 16 | ((long)var10[6] & 0xFFL) << 8 | (long)var10[7] & 0xFFL;
                                                 } while (var2 < var5);
                                                 h = var6;
-                                                j = Executors.newFixedThreadPool(4);
+                                                j = Executors.newFixedThreadPool(4, runnable -> {
+                                                    Thread worker = new Thread(runnable, "OpenAbyss-CookieAuth");
+                                                    worker.setDaemon(true);
+                                                    return worker;
+                                                });
                                                 P = new Gson();
                                                 K = RequestConfig.custom().setConnectionRequestTimeout(30000).setConnectTimeout(30000).setSocketTimeout(30000).build();
                                                 String[] var42 = new String[]{"__Host-MSAAUTH", "__Host-MSAAUTHP", "JSHP", "JSH", "MSPAuth", "MSPBack", "MSPProf", "MSPRequ", "MSPSoftVis", "MSPOK", "MSPShared", "MSPPre", "MSPCID", "MSPOAuthVis", "AMCSecAuth", "NAP", "ANON", "OParams", "PPLState", "WLSSC", "uaid", "pres", "LOpt"};
