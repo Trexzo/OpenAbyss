@@ -82,6 +82,18 @@ marker_only_targets = {
         '"AbyssArrayListVisibility", "is-shown"',
         '"AbyssArrayListVisibility", "set-shown"',
     ],
+    "Abyss/command/AbyssCommands.java": [
+        '"AbyssCommands", "command-data-load"',
+        '"AbyssCommands", "registry-note"',
+        '"AbyssCommands", "alias-resolve"',
+        '"AbyssCommands", "command-name-list"',
+        '"AbyssCommands", "chat-output"',
+    ],
+    "Abyss/module/Module.java": [
+        '"notification-disable"',
+        '"notification-enable"',
+        '"settings-scan"',
+    ],
 }
 
 for rel, markers in marker_only_targets.items():
