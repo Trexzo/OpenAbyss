@@ -167,12 +167,15 @@ def main() -> int:
 
     missing = sorted(set(reference) - set(current))
     extra = sorted(set(current) - set(reference))
+    failures = []
     print(f"MODULE_BODY_REFERENCE_METHODS={len(reference)}")
     print(f"MODULE_BODY_CURRENT_MATCHED={len(current)}")
     print(f"MODULE_BODY_MISSING={len(missing)}")
     print(f"MODULE_BODY_EXTRA={len(extra)}")
     for key in missing[:50]:
         print("MODULE_BODY_MISSING_ITEM=" + "|".join(key))
+    if missing:
+        failures.append("missing-authoritative-methods")
 
     rows = []
     tiny = []
@@ -187,6 +190,19 @@ def main() -> int:
             rows.append(item)
         if old_code >= 40 and new_code <= 8:
             tiny.append(item)
+        if old["old_exceptions"] > 0 and new_exc == 0:
+            failures.append("exception-region-lost:" + "|".join(key))
+        if old_code >= 80 and ratio < 0.75:
+            # FastPlace's runnable-era bed scan was intentionally extracted into
+            # findBedInRange(int). Validate that moved body separately below.
+            if key != (
+                "Abyss/module/impl/world/FastPlace",
+                "onPreUpdate",
+                "(LAbyss/event/events/PreUpdateEvent;J)V",
+            ):
+                failures.append(
+                    f"major-handler-collapse:{'|'.join(key)}:old={old_code}:new={new_code}"
+                )
 
     rows.sort(key=lambda x: (x[0], -x[1], x[3]))
     print(f"MODULE_BODY_OLD_GE40={len(rows)}")
@@ -199,10 +215,61 @@ def main() -> int:
             f"method={'|'.join(key)}"
         )
 
-    # Audit-only by design. Signature presence is independently hard-gated by
-    # reference-module-event-api.txt. Promote a shrink threshold only after
-    # inspecting real recovery output and ruling out deobfuscation/control-flow cleanup.
-    print("MODULE_BODY_DIFFERENTIAL=AUDIT_ONLY")
+    if tiny:
+        for _ratio, old_code, new_code, key, _stack, _locals, _exc in tiny:
+            failures.append(
+                f"tiny-handler-collapse:{'|'.join(key)}:old={old_code}:new={new_code}"
+            )
+
+    # FastPlace special case: the runnable body inlined the bed scan. Recovery
+    # deliberately extracted it to a private helper. Require that helper to be
+    # substantial and exception-protected, and require the combined body to stay
+    # close to the old inline body rather than merely exempting the shrink.
+    fast_key = (
+        "Abyss/module/impl/world/FastPlace",
+        "onPreUpdate",
+        "(LAbyss/event/events/PreUpdateEvent;J)V",
+    )
+    fast_helper_key = ("findBedInRange", "(I)Lnet/minecraft/util/BlockPos;")
+    fast_class = "Abyss/module/impl/world/FastPlace"
+    helper_metric = None
+    try:
+        with zipfile.ZipFile(args.jar) as zf:
+            _name, fast_methods = parse_class(zf.read(fast_class + ".class"))
+            helper_metric = fast_methods.get(fast_helper_key)
+    except Exception as exc:
+        failures.append("fastplace-helper-read:" + str(exc))
+
+    if helper_metric is None:
+        failures.append("fastplace-helper-missing")
+    else:
+        _access, helper_code, _stack, _locals, helper_exc = helper_metric
+        fast_old = reference[fast_key]["old_code"]
+        fast_new = current[fast_key][1] if fast_key in current else 0
+        combined = fast_new + helper_code
+        print(
+            "FASTPLACE_EXTRACTED_HELPER "
+            f"old_inline={fast_old} new_handler={fast_new} helper={helper_code} "
+            f"combined={combined} helper_exceptions={helper_exc}"
+        )
+        if helper_code < 120:
+            failures.append(f"fastplace-helper-too-small:{helper_code}")
+        if helper_exc < 1:
+            failures.append("fastplace-helper-exception-region-missing")
+        if combined < int(fast_old * 0.90):
+            failures.append(
+                f"fastplace-extracted-body-too-small:old={fast_old}:combined={combined}"
+            )
+
+    print(f"MODULE_BODY_HARD_FAILURES={len(failures)}")
+    for failure in failures:
+        print("MODULE_BODY_HARD_FAILURE=" + failure)
+
+    if failures:
+        print("MODULE_BODY_DIFFERENTIAL_GATE=FAIL")
+        return 1
+
+    print("MODULE_BODY_DIFFERENTIAL_GATE=PASS")
     return 0
 
 
