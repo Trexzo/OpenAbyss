@@ -104,6 +104,13 @@ $moduleFailureText = if ($moduleFailureFile) { [IO.File]::ReadAllText($moduleFai
 $eventFailureText = if ($eventFailureFile) { [IO.File]::ReadAllText($eventFailureFile) } else { '' }
 $configFailureText = if ($configFailureFile) { [IO.File]::ReadAllText($configFailureFile) } else { '' }
 $rendererFailureText = if ($rendererFailureFile) { [IO.File]::ReadAllText($rendererFailureFile) } else { '' }
+$diagCandidates = @(
+    (Join-Path $Root 'run\abyss-bootstrap-diagnostics.txt'),
+    (Join-Path $Root 'abyss-bootstrap-diagnostics.txt'),
+    (Join-Path $Evidence 'abyss-bootstrap-diagnostics.txt')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+$diagFile = $diagCandidates | Select-Object -First 1
+$diagText = if ($diagFile) { [IO.File]::ReadAllText($diagFile) } else { '' }
 
 $checks = [ordered]@{
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
@@ -119,6 +126,8 @@ $checks = [ordered]@{
     EventCallbackFailure = -not [string]::IsNullOrWhiteSpace($eventFailureText)
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
+    AccountSelfTest = $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')
+    CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
 }
 
 $pass = $checks.BootstrapComplete -and
@@ -134,6 +143,8 @@ $pass = $checks.BootstrapComplete -and
         (-not $checks.EventCallbackFailure) -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
+        $checks.AccountSelfTest -and
+        $checks.CookieSelfTest -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
@@ -147,6 +158,7 @@ $lines.Add("MODULE_FAILURE_FILE=" + $(if ($moduleFailureFile) { $moduleFailureFi
 $lines.Add("EVENT_FAILURE_FILE=" + $(if ($eventFailureFile) { $eventFailureFile } else { '<none>' }))
 $lines.Add("CONFIG_FAILURE_FILE=" + $(if ($configFailureFile) { $configFailureFile } else { '<none>' }))
 $lines.Add("RENDERER_FAILURE_FILE=" + $(if ($rendererFailureFile) { $rendererFailureFile } else { '<none>' }))
+$lines.Add("DIAGNOSTICS_FILE=" + $(if ($diagFile) { $diagFile } else { '<none>' }))
 if ($smokeError) {
     $lines.Add("SMOKE_ERROR=" + $smokeError.Exception.Message)
 }
