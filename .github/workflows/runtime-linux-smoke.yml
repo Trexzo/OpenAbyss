@@ -337,6 +337,10 @@ jobs:
             echo "Microsoft cookie parser self-test is not green." >&2
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] accountgui selftest= PASS daemon-worker' "$DIAG"; then
+            echo "Account Manager worker lifecycle self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
             echo 'Persisted command-data loader did not run.'
             cat "$DIAG"
