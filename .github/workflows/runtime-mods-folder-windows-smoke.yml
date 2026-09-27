@@ -329,7 +329,7 @@ jobs:
             if ($diagText.Contains('[ABYSSDIAG] command data load = ') -and $diagText.Contains('FAILED (')) {
               throw 'Persisted command-data loader reported a failure.'
             }
-            if (-not $diagText.Contains('[ABYSSDIAG] commanddata selftest= PASS menu=RIDDLE_JOKER music=false chatBind=54:.help')) {
+            if (-not $diagText.Contains('[ABYSSDIAG] commanddata selftest= PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1')) {
               throw 'Command-data disk round-trip self-test is not green.'
             }
             if (-not $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19')) {
