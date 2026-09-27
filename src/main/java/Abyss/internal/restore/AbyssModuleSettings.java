@@ -216,6 +216,9 @@ public final class AbyssModuleSettings {
 }
             if (s instanceof PercentageSetting) {
                 int v3 = p.getAsInt();
+                if (v3 < 0 || v3 > 100) {
+                    return 2;
+}
                 if (dryRun) {
                     return 0;
 }
@@ -271,6 +274,59 @@ public final class AbyssModuleSettings {
 }
         return 6;
 }
+    static String selfTest() {
+        try {
+            BooleanSetting bool = new BooleanSetting("Bool", false);
+            if (AbyssModuleSettings.write(bool, new JsonPrimitive(Boolean.TRUE), false) != 0 || !bool.c()) {
+                return "FAIL boolean";
+}
+            PercentageSetting pct = new PercentageSetting("Percent", 10);
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(75)), false) != 0 || pct.k() != 75) {
+                return "FAIL percentage-valid";
+}
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(101)), false) != 2 || pct.k() != 75) {
+                return "FAIL percentage-high-range value=" + pct.k();
+}
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(-1)), false) != 2 || pct.k() != 75) {
+                return "FAIL percentage-low-range value=" + pct.k();
+}
+            NumberSetting number = new NumberSetting("Number", 1.0f, 0.0f, 10.0f, 0.5f);
+            if (AbyssModuleSettings.write(number, new JsonPrimitive(Float.valueOf(3.5f)), false) != 0
+                    || number.L() != 3.5f) {
+                return "FAIL number-valid value=" + number.L();
+}
+            if (AbyssModuleSettings.write(number, new JsonPrimitive(Float.valueOf(10.5f)), false) != 2
+                    || number.L() != 3.5f) {
+                return "FAIL number-range value=" + number.L();
+}
+            ModeSetting mode = new ModeSetting("Mode", "ONE", "TWO");
+            if (AbyssModuleSettings.write(mode, new JsonPrimitive("TWO"), false) != 0 || !mode.R("TWO")) {
+                return "FAIL mode-valid value=" + mode.Y();
+}
+            if (AbyssModuleSettings.write(mode, new JsonPrimitive("THREE"), false) != 1 || !mode.R("TWO")) {
+                return "FAIL mode-invalid value=" + mode.Y();
+}
+            ColorSetting color = new ColorSetting("Color", "000000");
+            if (AbyssModuleSettings.write(color, new JsonPrimitive("A1B2C3"), false) != 0
+                    || !"A1B2C3".equals(color.Q())) {
+                return "FAIL color-valid value=" + color.Q();
+}
+            if (AbyssModuleSettings.write(color, new JsonPrimitive("NOPE"), false) != 2
+                    || !"A1B2C3".equals(color.Q())) {
+                return "FAIL color-invalid value=" + color.Q();
+}
+            TextSetting text = new TextSetting("Text", "");
+            if (AbyssModuleSettings.write(text, new JsonPrimitive("hello world"), false) != 0
+                    || !"hello world".equals(text.X())) {
+                return "FAIL text value=" + text.X();
+}
+            return "PASS strict-setting-writes percentage-range=0..100 number-range mode-options color-hex readback";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+}
+
     private static int collect(Class<?> c, Map<String, Setting> byName, List<Setting> declared) {
         int nulls = 0;
         for (Class<?> k = c; k != null && Module.class.isAssignableFrom(k); k = k.getSuperclass()) {
