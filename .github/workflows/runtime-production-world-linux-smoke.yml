@@ -210,6 +210,10 @@ jobs:
           grep -Fq 'entity-player-join-world' "$STAGE"
           grep -Fq 'world-ready-tick' "$STAGE"
           grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          NETWORK_STAGE="$GAME/abyss-network-stage.txt"
+          test -f "$NETWORK_STAGE"
+          grep -Fq 'send-hook:' "$NETWORK_STAGE"
+          grep -Fq 'receive-hook:' "$NETWORK_STAGE"
           grep -Fq 'world-functional-probe-pass' "$STAGE"
           grep -Fq 'category-lifecycle-probe-pass:7' "$STAGE"
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool; do
