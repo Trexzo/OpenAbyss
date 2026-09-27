@@ -8,6 +8,7 @@
  */
 package Abyss.ui.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.impl.visual.HUD;
 import Abyss.util.render.abyss.FontManager;
 import Abyss.util.render.abyss.FontRenderer;
@@ -39,7 +40,7 @@ public final class AbyssUserInfoRenderer {
 }
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("AbyssUserInfoRenderer", "setting-read", throwable);
 }
             if (!showUser && !showVersion) {
                 return;
@@ -83,7 +84,7 @@ public final class AbyssUserInfoRenderer {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssUserInfoRenderer", "render", throwable);
 }
 }
     private static float drawSeg(FontRenderer font, String text, float x, float y, int color) {
