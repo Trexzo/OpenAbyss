@@ -79,18 +79,7 @@ extends GuiScreen {
             List<String> var13 = Collections.synchronizedList(new ArrayList<String>());
             for (String var15 : var10) {
                 CompletableFuture<Void> var16 = AccountLookupService.Y(var15, this.u).thenAcceptAsync((Account var2) -> {
-                    synchronized (AltManager.Q) {
-                        Optional<Account> var3x = AltManager.Q.stream().filter(var2x -> var2x.d().equals(var15) || var2x.Y().equals(var2.Y())).findFirst();
-                        if (var3x.isPresent()) {
-                            Account var4x = var3x.get();
-                            var4x.H(var2.d());
-                            var4x.r(var2.Y());
-                            var4x.J(var2.h());
-                            var4x.j(var2.f());
-                        } else {
-                            AltManager.Q.add((Account)var2);
-}
-}
+                    AltManager.upsert(var2);
                     var13.add(var2.h());
                 }, this.u).exceptionally((Throwable var2) -> {
                     long var3x = a ^ 0x6EAE3E2D0720L;
