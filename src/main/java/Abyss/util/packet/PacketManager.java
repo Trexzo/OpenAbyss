@@ -17,15 +17,20 @@ import Abyss.event.events.SendPacketEvent;
 import Abyss.util.ClientUtil;
 import Abyss.util.MinecraftRef;
 import Abyss.util.packet.OutgoingPacketState;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -47,6 +52,28 @@ implements EventSubscriber {
     public static boolean Z;
     private static long b;
     public static List<Packet<?>> u;
+    private static final Set<String> FAILURE_SIGNATURES =
+            Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private static void recordFailure(String operation, Packet<?> packet, Throwable failure) {
+        String packetName = packet == null ? "<null>" : packet.getClass().getName();
+        String message = String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        String signature = operation + "|" + packetName + "|" + failure.getClass().getName() + "|" + message;
+        if (!FAILURE_SIGNATURES.add(signature)) {
+            return;
+}
+        String line = System.currentTimeMillis() + "\t" + operation + "\t" + packetName + "\t"
+                + failure.getClass().getName() + "\t" + message;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-packet-failure.txt"), true), "UTF-8")) {
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] packet failure " + line);
+}
 
     public static void M(Packet<INetHandlerPlayClient> var0) {
         try {
@@ -57,7 +84,7 @@ implements EventSubscriber {
             var0.processPacket(T.getNetHandler());
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PacketManager.recordFailure("process-incoming-record", var0, throwable);
 }
 }
     @Override
@@ -73,7 +100,7 @@ implements EventSubscriber {
             T.getNetHandler().addToSendQueue(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PacketManager.recordFailure("send-record", var0, throwable);
 }
 }
     public static void k(Packet<INetHandlerPlayClient> var0) {
@@ -84,7 +111,7 @@ implements EventSubscriber {
             var0.processPacket(T.getNetHandler());
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PacketManager.recordFailure("process-incoming", var0, throwable);
 }
 }
     public void onSendPacket(long var1, SendPacketEvent var3) {
@@ -105,7 +132,7 @@ implements EventSubscriber {
             T.getNetHandler().addToSendQueue(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PacketManager.recordFailure("send-direct", var0, throwable);
 }
 }
     public static boolean e() {
@@ -123,7 +150,7 @@ implements EventSubscriber {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PacketManager.recordFailure("flush-buffer", null, throwable);
 }
 }
     public static <H extends INetHandler> Packet<H> s(Packet<?> var0) {
