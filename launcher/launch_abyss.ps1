@@ -507,19 +507,34 @@ Log "Launching packaged OpenAbyss..."
 $p = Start-Process -FilePath $Java -ArgumentList $argString -WorkingDirectory $GameDir -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
 
 $TimedStop = $false
+$NaturalExit = $false
 if ($RunSeconds -gt 0) {
-    if (-not $p.WaitForExit($RunSeconds * 1000)) {
+    $NaturalExit = $p.WaitForExit($RunSeconds * 1000)
+    if (-not $NaturalExit) {
         $TimedStop = $true
         Log "Bounded runtime reached ${RunSeconds}s; stopping Minecraft/OpenAbyss process $($p.Id)."
         Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-        try { $p.WaitForExit() } catch {}
     }
+    try { $p.WaitForExit() } catch {}
 } else {
     $p.WaitForExit()
+    $NaturalExit = $true
 }
 
-$exitCode = if ($TimedStop) { 124 } else { $p.ExitCode }
-Log "Minecraft/OpenAbyss exit code: $exitCode timed_stop=$TimedStop"
+try { $p.Refresh() } catch {}
+
+if ($TimedStop) {
+    $exitCode = 124
+} else {
+    try {
+        $exitCode = [int]$p.ExitCode
+    }
+    catch {
+        $exitCode = -2147483648
+        Log "Could not read child process exit code: $($_.Exception.Message)"
+    }
+}
+Log "Minecraft/OpenAbyss exit code: $exitCode timed_stop=$TimedStop natural_exit=$NaturalExit"
 
 $crashDir = Join-Path $GameDir 'crash-reports'
 foreach ($crash in @(Get-ChildItem -LiteralPath $crashDir -File -ErrorAction SilentlyContinue)) {
