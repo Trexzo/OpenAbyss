@@ -195,18 +195,11 @@ extends Command {
                 continue;
 }
             JsonObject var10 = var9.getAsJsonObject();
-            if (var10.has("status")) {
-                var8.I(20724619369162L, var10.get("status").getAsBoolean());
+            if (AbyssCommandConfig.applyStatus(var8, var10)) {
                 ++var3;
 }
-            if (var10.has("keyBind") && !var8.S() && AbyssCommandConfig.gate()) {
-                try {
-                    var8.z(118276941480361L, var10.get("keyBind").getAsInt());
-                    ++var4;
-}
-                catch (Throwable throwable) {
-                    AbyssClient.recordFeatureFailure("AbyssCommandConfig", "keybind-load", throwable);
-}
+            if (AbyssCommandConfig.applyKeyBind(var8, var10)) {
+                ++var4;
 }
             AbyssCommandConfig.applyModuleBoolean(var8, var10, "visible", "w");
             AbyssCommandConfig.applyModuleBoolean(var8, var10, "suffix-visible", "q");
@@ -371,6 +364,53 @@ extends Command {
     private static boolean gate() {
         return AbyssCommandBind.gateOk();
 }
+    private static boolean applyStatus(Module module, JsonObject block) {
+        if (module == null || block == null || !block.has("status")) {
+            return false;
+}
+        try {
+            JsonElement value = block.get("status");
+            if (value == null || !value.isJsonPrimitive()) {
+                return false;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isBoolean()) {
+                return false;
+}
+            module.I(20724619369162L, primitive.getAsBoolean());
+            return true;
+}
+        catch (Throwable throwable) {
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "status-load", throwable);
+            return false;
+}
+}
+    private static boolean applyKeyBind(Module module, JsonObject block) {
+        if (module == null || block == null || !block.has("keyBind") || module.S() || !AbyssCommandConfig.gate()) {
+            return false;
+}
+        try {
+            JsonElement value = block.get("keyBind");
+            if (value == null || !value.isJsonPrimitive()) {
+                return false;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isNumber()) {
+                return false;
+}
+            double numeric = primitive.getAsDouble();
+            if (Double.isNaN(numeric) || Double.isInfinite(numeric) || numeric != Math.rint(numeric)
+                    || numeric < Integer.MIN_VALUE || numeric > Integer.MAX_VALUE) {
+                return false;
+}
+            module.z(118276941480361L, (int)numeric);
+            return true;
+}
+        catch (Throwable throwable) {
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "keybind-load", throwable);
+            return false;
+}
+}
     private static void applyModuleBoolean(Module module, JsonObject block, String key, String fieldName) {
         if (module == null || block == null || !block.has(key)) {
             return;
@@ -452,7 +492,40 @@ extends Command {
             if (!"hello world".equals(probe.text.X())) {
                 return "FAIL text " + probe.text.X();
 }
-            return "PASS metadata setting-json-roundtrip=6";
+
+            probe.I(20724619369162L, false);
+            probe.z(118276941480361L, 0);
+            JsonObject common = new JsonObject();
+            common.addProperty("status", Boolean.TRUE);
+            common.addProperty("keyBind", (Number)54);
+            if (!AbyssCommandConfig.applyStatus(probe, common)) {
+                return "FAIL status-apply";
+}
+            if (!probe.o()) {
+                return "FAIL status-value";
+}
+            if (AbyssCommandConfig.gate() && !AbyssCommandConfig.applyKeyBind(probe, common)) {
+                return "FAIL keybind-apply";
+}
+            if (AbyssCommandConfig.gate() && probe.h() == 0) {
+                return "FAIL keybind-value " + probe.h();
+}
+
+            boolean statusBeforeMalformed = probe.o();
+            int keyBeforeMalformed = probe.h();
+            JsonObject malformed = new JsonObject();
+            malformed.addProperty("status", "not-a-boolean");
+            malformed.addProperty("keyBind", 1.5d);
+            if (AbyssCommandConfig.applyStatus(probe, malformed)) {
+                return "FAIL malformed-status-accepted";
+}
+            if (AbyssCommandConfig.applyKeyBind(probe, malformed)) {
+                return "FAIL malformed-keybind-accepted";
+}
+            if (probe.o() != statusBeforeMalformed || probe.h() != keyBeforeMalformed) {
+                return "FAIL malformed-common-mutated status=" + probe.o() + " key=" + probe.h();
+}
+            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
