@@ -59,9 +59,13 @@ jobs:
           ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
           HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
           USER_HOME="$RUNNER_TEMP/gradle-user-home-production-world"
+          rm -f "$ZIP"
           curl -L --fail --silent --show-error \
+            --retry 6 --retry-delay 2 --retry-max-time 90 --retry-all-errors \
             'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
             -o "$ZIP"
+          test -s "$ZIP"
+          unzip -tq "$ZIP" >/dev/null
           unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
           GRADLE="$HOME_DIR/bin/gradle"
           test -x "$GRADLE"
