@@ -181,6 +181,9 @@ public class EventBus {
         if (bindings == null) {
             return false;
 }
+        if (bindings.isEmpty()) {
+            return !(owner instanceof EventSubscriber);
+}
         for (ListenerBinding<?> binding : bindings) {
             if (!ListenerBinding.o(binding)) {
                 return false;
@@ -250,6 +253,20 @@ public class EventBus {
             final EventBus bus = new EventBus();
             final List<String> calls = new ArrayList<String>();
             class TestEvent extends Event {
+}
+            Object passiveOwner = new Object();
+            bus.s(passiveOwner, 0L);
+            if (!bus.isOwnerActive(passiveOwner)) {
+                return "FAIL passive-owner-registration";
+}
+            EventSubscriber emptySubscriber = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+}
+            };
+            bus.s(emptySubscriber, 0L);
+            if (bus.isOwnerActive(emptySubscriber)) {
+                return "FAIL empty-subscriber-proven-active";
 }
             EventSubscriber low = new EventSubscriber(){
                 @Override
