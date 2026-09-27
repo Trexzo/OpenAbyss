@@ -282,7 +282,11 @@ extends GuiScreen {
             Gui.drawRect((int)0, (int)(this.height - 58), (int)this.width, (int)this.height, (int)-1811347184);
             Gui.drawRect((int)0, (int)(this.height - 58), (int)this.width, (int)(this.height - 57), (int)accent);
             super.drawScreen(var1, var2, var3);
-            this.drawCenteredString(this.fontRendererObj, ChatFormatting.y(String.format("&r&lAbyss &r&7Alt Manager &8(&7%s&8)&r", AltManager.Q.size())), cx, 8, -1);
+            int accountCount;
+            synchronized (AltManager.Q) {
+                accountCount = AltManager.Q.size();
+}
+            this.drawCenteredString(this.fontRendererObj, ChatFormatting.y(String.format("&r&lAbyss &r&7Alt Manager &8(&7%s&8)&r", accountCount)), cx, 8, -1);
             String var9 = ChatFormatting.y(String.format("&8Logged in: &f%s&r", SessionAccessor.d().getUsername()));
             this.drawString(this.mc.fontRendererObj, var9, 4, 4, -1);
             if (q != null && !q.b()) {
