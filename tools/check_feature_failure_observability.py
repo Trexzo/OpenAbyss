@@ -55,6 +55,14 @@ for rel, markers in targets.items():
     checks[f"{key}_markers"] = all(marker in text for marker in markers)
     checks[f"{key}_no_empty_catch"] = empty.search(text) is None
 
+targets["Abyss/util/PlayerInfoCache.java"] = [
+    '"PlayerInfoCache", "refresh"',
+]
+targets["Abyss/internal/MiningEngine.java"] = [
+    '"MiningEngine", "fallback-key-sequence"',
+    '"MiningEngine", "release-back-key"',
+]
+
 marker_only_targets = {
     "Abyss/ASM/Hooks/Gui/GuiEventHooks.java": [
         '"GuiEventHooks", "alt-manager-init"',
