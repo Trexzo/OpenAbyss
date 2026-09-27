@@ -21,6 +21,8 @@ import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssModuleRegistry;
 import Abyss.module.Category;
 import Abyss.module.Module;
+import Abyss.module.Modules;
+import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.ModuleManager;
 import Abyss.setting.Setting;
 import Abyss.setting.settings.BooleanSetting;
@@ -566,7 +568,49 @@ extends Command {
             if (PercentageSetting.maxValue() != 100) {
                 return "FAIL percentage-max " + PercentageSetting.maxValue();
 }
-            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.." + PercentageSetting.maxValue();
+
+            ClickGUI liveClick = Modules.J(ClickGUI.class);
+            if (liveClick == null) {
+                return "FAIL clickgui-live-null";
+}
+            float clickScale = ClickGUI.scale.L();
+            String clickMode = ClickGUI.mode.Y();
+            String clickKeybind = ClickGUI.keybind.X();
+            try {
+                JsonObject clickBlock = new JsonObject();
+                int clickWritten = AbyssCommandConfig.writeSettingValues(liveClick, clickBlock);
+                if (clickWritten < 3) {
+                    return "FAIL clickgui-setting-write count=" + clickWritten + " json=" + clickBlock;
+}
+                float alternateScale = clickScale == 1.25f ? 1.5f : 1.25f;
+                String alternateMode = "RAVEN".equalsIgnoreCase(clickMode) ? "VESTIGE" : "RAVEN";
+                String alternateKeybind = "LSHIFT".equalsIgnoreCase(clickKeybind) ? "RSHIFT" : "LSHIFT";
+
+                ClickGUI.scale.o((byte)0, 0L, alternateScale);
+                ClickGUI.mode.i(alternateMode);
+                ClickGUI.keybind.O(alternateKeybind);
+
+                int clickApplied = AbyssCommandConfig.applySettingValues(liveClick, clickBlock);
+                if (clickApplied < 3) {
+                    return "FAIL clickgui-setting-apply count=" + clickApplied + " json=" + clickBlock;
+}
+                if (ClickGUI.scale.L() != clickScale) {
+                    return "FAIL clickgui-scale " + ClickGUI.scale.L() + " expected=" + clickScale;
+}
+                if (!clickMode.equals(ClickGUI.mode.Y())) {
+                    return "FAIL clickgui-mode " + ClickGUI.mode.Y() + " expected=" + clickMode;
+}
+                if (!clickKeybind.equals(ClickGUI.keybind.X())) {
+                    return "FAIL clickgui-keybind " + ClickGUI.keybind.X() + " expected=" + clickKeybind;
+}
+}
+            finally {
+                ClickGUI.scale.o((byte)0, 0L, clickScale);
+                ClickGUI.mode.i(clickMode);
+                ClickGUI.keybind.O(clickKeybind);
+}
+            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.."
+                    + PercentageSetting.maxValue() + " clickgui-live-roundtrip=3";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
