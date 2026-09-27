@@ -127,8 +127,14 @@ public class AltManager {
         long var6 = var4 ^ 0x4C3E910D10C3L;
         Optional<Account> var8 = Q.stream().filter(var1x -> var1x.h().equalsIgnoreCase(var3) && var1x.v() == AccountType.OFFLINE).findFirst();
         if (!var8.isPresent()) {
-            Q.add(new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE));
+            Account added = new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE);
+            Q.add(added);
             AltManager.O(var6);
+            if (!AltManager.persistenceOk()) {
+                Q.remove(added);
+}
+        } else {
+            lastPersistenceNote = "PASS existing-offline account=" + var3;
 }
 }
     /*
