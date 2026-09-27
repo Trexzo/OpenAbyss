@@ -212,9 +212,19 @@ foreach ($lib in @($forgeInfo.libraries)) {
     $urlProp = $lib.PSObject.Properties['url']
     $baseUrl = if ($urlProp -and $urlProp.Value) { [string]$urlProp.Value } else { 'https://libraries.minecraft.net/' }
 
-    # Forge itself is hosted on the Forge Maven even if the old profile omits URL.
+    # Forge 1.8.9 installer metadata names the runtime artifact without
+    # a classifier, while the Maven repository publishes the client runtime as
+    # the universal classifier. Install those universal bytes at the
+    # unclassified path expected by the version profile.
     if ([string]$lib.name -like 'net.minecraftforge:forge:*') {
-        $baseUrl = 'https://maven.minecraftforge.net/'
+        $plain = Maven-Parts ([string]$lib.name)
+        $universal = Maven-Parts (([string]$lib.name) + ':universal')
+        $destination = Join-Path $Libraries ([string]$plain.Relative).Replace('/', '\')
+        $url = 'https://maven.minecraftforge.net/' + [string]$universal.Relative
+        Download-File $url $destination
+        Write-Host "FORGE_UNIVERSAL_RUNTIME=$destination"
+        $forgeLibraryCount++
+        continue
     }
 
     try {
