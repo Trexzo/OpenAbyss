@@ -19,12 +19,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: openabyss-linux-production-world-runtime-smoke
+  group: openabyss-linux-production-persistence-restart-smoke
   cancel-in-progress: true
 
 jobs:
-  linux-production-world-runtime:
-    name: Production reobf JAR / normal Forge / local world / RSHIFT
+  linux-production-persistence-restart:
+    name: Production reobf JAR / save / restart / restore
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -150,9 +150,9 @@ jobs:
 
           DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | tee "$RUNNER_TEMP/openabyss-production-persistence-glxinfo.txt"
           DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | grep -Eq 'OpenGL renderer string:.*(llvmpipe|softpipe|Mesa)'
-          echo 'PRODUCTION_WORLD_MESA=PASS'
+          echo 'PRODUCTION_PERSISTENCE_MESA=PASS'
 
-      - name: Run shipped production JAR with no external network
+      - name: Run shipped production JAR twice with no external network
         shell: bash
         run: |
           set -euo pipefail
@@ -181,7 +181,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                          GITHUB_TOKEN= \
+                GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_URL= \
@@ -239,8 +239,10 @@ jobs:
             ${{ runner.temp }}/openabyss-production-persistence-game/abyss-*.txt
             ${{ runner.temp }}/openabyss-production-persistence-game/abyss-*.tsv
             ${{ runner.temp }}/openabyss-production-persistence-game/mods/abyss.jar
-            ${{ runner.temp }}/openabyss-production-persistence-client.stdout.log
-            ${{ runner.temp }}/openabyss-production-persistence-client.stderr.log
+            ${{ runner.temp }}/openabyss-production-persistence-seed.stdout.log
+            ${{ runner.temp }}/openabyss-production-persistence-seed.stderr.log
+            ${{ runner.temp }}/openabyss-production-persistence-verify.stdout.log
+            ${{ runner.temp }}/openabyss-production-persistence-verify.stderr.log
             ${{ runner.temp }}/openabyss-production-persistence-server.log
             ${{ runner.temp }}/openabyss-production-persistence-glxinfo.txt
           if-no-files-found: warn
