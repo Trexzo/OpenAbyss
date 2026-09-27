@@ -57,8 +57,11 @@ if (project.hasProperty('abyssPackaged') && project.hasProperty('abyssModsFolder
     throw new GradleException('Choose only one packaged runtime mode: abyssPackaged or abyssModsFolder.')
 }
 
+// ForgeGradle runClient is a deobfuscated MCP runtime. These two smoke modes
+// intentionally exercise the development jar; production distribution is gated
+// separately through reobfJar below.
 if (project.hasProperty('abyssPackaged')) {
-    abyssRunClient.dependsOn abyssReobfJar
+    abyssRunClient.dependsOn jar
     abyssRunClient.doFirst {
         File packagedJar = jar.archivePath
         if (!packagedJar.isFile()) {
@@ -85,7 +88,7 @@ if (project.hasProperty('abyssPackaged')) {
 
 
 if (project.hasProperty('abyssModsFolder')) {
-    abyssRunClient.dependsOn abyssReobfJar
+    abyssRunClient.dependsOn jar
     abyssRunClient.doFirst {
         File packagedJar = jar.archivePath
         if (!packagedJar.isFile()) {
