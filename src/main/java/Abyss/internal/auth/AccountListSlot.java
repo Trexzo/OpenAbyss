@@ -36,10 +36,14 @@ extends GuiSlot {
         return 308;
 }
     protected int getSize() {
-        return AltManager.Q.size();
+        synchronized (AltManager.Q) {
+            return AltManager.Q.size();
+}
 }
     protected int getContentHeight() {
-        return AltManager.Q.size() * 16;
+        synchronized (AltManager.Q) {
+            return AltManager.Q.size() * 16;
+}
 }
     protected void drawBackground() {
         this.u.drawDefaultBackground();
@@ -54,29 +58,40 @@ extends GuiSlot {
     protected void drawSlot(int var1, int var2, int var3, int var4, int var5, int var6) {
         String var12;
         FontRenderer var13 = AccountManagerScreen.p(this.u);
-        Account var14 = AltManager.Q.get(var1);
+        String username;
+        AccountType accountType;
+        long unban;
+        synchronized (AltManager.Q) {
+            if (var1 < 0 || var1 >= AltManager.Q.size()) {
+                return;
+}
+            Account var14 = AltManager.Q.get(var1);
+            username = var14.h();
+            accountType = var14.v();
+            unban = var14.F();
+}
         if (this.isSelected(var1)) {
             Gui.drawRect((int)(var2 - 4), (int)(var3 - 2), (int)(var2 - 2), (int)(var3 + var4 - 2), (int)AccountListSlot.accent());
 }
         Gui.drawRect((int)(var2 - 2), (int)(var3 + var4 - 1), (int)(var2 + this.getListWidth() - 4), (int)(var3 + var4), (int)0x30FFFFFF);
-        String var15 = var14.h();
+        String var15 = username;
         if (StringUtils.isBlank((CharSequence)var15)) {
             var15 = "&7&l?";
 }
         if (SessionAccessor.d() != null) {
-            if (var14.v() == AccountType.OFFLINE && var15.equals(SessionAccessor.d().getUsername())) {
+            if (accountType == AccountType.OFFLINE && var15.equals(SessionAccessor.d().getUsername())) {
                 var15 = String.format("&a&l%s", var15);
-            } else if (var14.v() == AccountType.MINECRAFT && var14.h().equals(SessionAccessor.d().getUsername())) {
+            } else if (accountType == AccountType.MINECRAFT && var15.equals(SessionAccessor.d().getUsername())) {
                 var15 = String.format("&a&l%s", var15);
 }
 }
-        String var16 = var14.v() == AccountType.OFFLINE ? " &7(Offline)" : " &7(Minecraft)";
+        String var16 = accountType == AccountType.OFFLINE ? " &7(Offline)" : " &7(Minecraft)";
         String var17 = ChatFormatting.y(String.format("&r%s", var15));
         String var18 = ChatFormatting.y(var16);
         this.u.drawString(var13, var17, var2 + 2, var3 + 2, -1);
         this.u.drawString(var13, var18, var2 + 2 + var13.getStringWidth(var17), var3 + 2, -1);
         long var19 = System.currentTimeMillis();
-        long var21 = var14.F();
+        long var21 = unban;
         if (var21 < 0L) {
             var12 = "&4&l\u26a0";
         } else if (var21 <= var19) {
