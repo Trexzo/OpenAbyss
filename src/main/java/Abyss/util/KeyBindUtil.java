@@ -154,6 +154,41 @@ public class KeyBindUtil {
         String var11 = Keyboard.getKeyName((int)var10);
         return var11 != null && !var11.trim().isEmpty() ? var11 : "UNKNOWN";
 }
+    public static String selfTest() {
+        try {
+            int rshift = KeyBindUtil.a(0L, "RSHIFT");
+            int rshiftCompact = KeyBindUtil.a(0L, "R_SHIFT");
+            if (rshift <= 0 || rshiftCompact != rshift) {
+                return "FAIL rshift parse=" + rshift + " compact=" + rshiftCompact;
+}
+            String rshiftName = KeyBindUtil.p(0L, '\u0000', rshift);
+            if (!"RSHIFT".equalsIgnoreCase(rshiftName)) {
+                return "FAIL rshift name=" + rshiftName;
+}
+            if (KeyBindUtil.a(0L, "NONE") != 0) {
+                return "FAIL none";
+}
+            int lmb = KeyBindUtil.a(0L, "LMB");
+            int mouse1 = KeyBindUtil.a(0L, "MOUSE1");
+            if (lmb != -100 || mouse1 != -100 || KeyBindUtil.m(0L, 1000) != -100) {
+                return "FAIL mouse1 lmb=" + lmb + " mouse1=" + mouse1 + " fold=" + KeyBindUtil.m(0L, 1000);
+}
+            if (!"MOUSE1".equals(KeyBindUtil.p(0L, '\u0000', lmb))) {
+                return "FAIL mouse1 name=" + KeyBindUtil.p(0L, '\u0000', lmb);
+}
+            int side2 = KeyBindUtil.a(0L, "SIDE2");
+            if (side2 != -96 || KeyBindUtil.x(side2, 0L) != 4) {
+                return "FAIL side2=" + side2 + " index=" + KeyBindUtil.x(side2, 0L);
+}
+            if (KeyBindUtil.a(0L, "__INVALID__") != Integer.MIN_VALUE) {
+                return "FAIL invalid accepted";
+}
+            return "PASS rshift=" + rshift + " mouse1=" + lmb + " side2=" + side2;
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
     static {
         a = 119759750653330L;
     }
