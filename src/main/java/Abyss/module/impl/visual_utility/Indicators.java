@@ -19,6 +19,7 @@
  */
 package Abyss.module.impl.visual_utility;
 
+import Abyss.AbyssClient;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.IndicatorsBinder;
@@ -185,7 +186,7 @@ implements EventSubscriber {
 }
 }
             catch (Exception exception) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("Indicators", "render-2d", exception);
 }
 }
 }
