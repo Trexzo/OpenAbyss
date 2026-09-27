@@ -8,6 +8,7 @@
  */
 package Abyss.command;
 
+import Abyss.AbyssClient;
 import Abyss.command.Command;
 import Abyss.command.impl.AbyssCommandBind;
 import Abyss.command.impl.AbyssCommandBindChat;
@@ -79,7 +80,7 @@ public final class AbyssCommands {
             AbyssCommandData.load();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "command-data-load", throwable);
 }
         int var10 = 0;
         int var11 = 0;
@@ -95,7 +96,7 @@ public final class AbyssCommands {
             AbyssCommands.note(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "registry-note", throwable);
 }
         if (var0 != null) {
             // empty if block
@@ -165,6 +166,7 @@ public final class AbyssCommands {
 }
 }
             catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommands", "alias-resolve", throwable);
 }
 }
         return null;
@@ -257,7 +259,9 @@ public final class AbyssCommands {
 }
                     var0.append('.').append(var3[0]);
 }
-                catch (Throwable throwable) {}
+                catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("AbyssCommands", "command-name-list", throwable);
+}
 }
 }
         return var0.toString();
@@ -274,7 +278,7 @@ public final class AbyssCommands {
             ConfigManagerWindow.D.add(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "chat-output", throwable);
 }
 }
     public static Module module(String var0) {
