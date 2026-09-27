@@ -132,17 +132,22 @@ public class AltManager {
     public static void e(short var0, long var1, String var3) {
         long var4 = ((long)var0 << 48 | 0x45D5706E51D9L) ^ a;
         long var6 = var4 ^ 0x4C3E910D10C3L;
+        Account added = null;
         synchronized (Q) {
             Optional<Account> var8 = Q.stream().filter(var1x -> var1x.h().equalsIgnoreCase(var3) && var1x.v() == AccountType.OFFLINE).findFirst();
             if (!var8.isPresent()) {
-                Account added = new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE);
+                added = new Account("", "accessToken", var3, "", 0L, AccountType.OFFLINE);
                 Q.add(added);
-                AltManager.O(var6);
-                if (!AltManager.persistenceOk()) {
-                    Q.remove(added);
-}
             } else {
                 lastPersistenceNote = "PASS existing-offline account=" + var3;
+}
+}
+        if (added != null) {
+            AltManager.O(var6);
+            if (!AltManager.persistenceOk()) {
+                synchronized (Q) {
+                    Q.remove(added);
+}
 }
 }
 }
