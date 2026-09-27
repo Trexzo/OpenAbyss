@@ -132,6 +132,11 @@ implements EventSubscriber {
     private static final String[] CATEGORY_LIFECYCLE_PROBE_MODULES = new String[]{
             "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay", "NoHitDelay", "AutoTool"
     };
+    private int clickGuiModeProbeIndex;
+    private int clickGuiModeProbePhase;
+    private int clickGuiModeProbeWaitTicks;
+    private String clickGuiModeProbeOriginalMode;
+    private static final String[] CLICKGUI_MODE_PROBE_MODES = new String[]{"STUDIO", "RAVEN", "VESTIGE"};
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -279,6 +284,79 @@ implements EventSubscriber {
             this.categoryLifecycleProbeIndex = CATEGORY_LIFECYCLE_PROBE_MODULES.length;
             recordFeatureFailure("CategoryLifecycleProbe:" + name, "transition-restore", failure);
             runtimeMilestone("category-lifecycle-probe-fail:" + name + ":" + failure.getClass().getName());
+}
+}
+
+    private void pumpClickGuiModeProbe() {
+        if (!Boolean.getBoolean("abyss.clickGuiModeProbe")
+                || this.clickGuiModeProbeIndex >= CLICKGUI_MODE_PROBE_MODES.length
+                || !new File("abyss-clickgui-mode-probe-go").isFile()) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        String mode = CLICKGUI_MODE_PROBE_MODES[this.clickGuiModeProbeIndex];
+        try {
+            if (ClickGUI.mode == null) {
+                throw new IllegalStateException("ClickGUI.mode is null");
+}
+            if (this.clickGuiModeProbeOriginalMode == null) {
+                this.clickGuiModeProbeOriginalMode = ClickGUI.mode.Y();
+}
+
+            if (this.clickGuiModeProbePhase == 0) {
+                if (this.c.currentScreen != null) {
+                    if (++this.clickGuiModeProbeWaitTicks > 400) {
+                        throw new IllegalStateException("Screen remained open before probe mode " + mode
+                                + ": " + this.c.currentScreen.getClass().getName());
+}
+                    return;
+}
+                this.clickGuiModeProbeWaitTicks = 0;
+                ClickGUI.mode.i(mode);
+                runtimeMilestone("clickgui-mode-probe-request:" + mode);
+                ClickGUI.O(2169, 8663, (char)12652);
+                if (this.c.currentScreen == null) {
+                    throw new IllegalStateException("ClickGUI screen stayed null for mode " + mode);
+}
+                runtimeMilestone("clickgui-mode-probe-open:" + mode + ":" + this.c.currentScreen.getClass().getName());
+                this.clickGuiModeProbePhase = 1;
+                return;
+}
+
+            if (this.c.currentScreen != null) {
+                if (++this.clickGuiModeProbeWaitTicks > 1200) {
+                    throw new IllegalStateException("Probe mode was not closed by harness: " + mode
+                            + " screen=" + this.c.currentScreen.getClass().getName());
+}
+                return;
+}
+
+            runtimeMilestone("clickgui-mode-probe-close:" + mode);
+            ++this.clickGuiModeProbeIndex;
+            this.clickGuiModeProbePhase = 0;
+            this.clickGuiModeProbeWaitTicks = 0;
+            if (this.clickGuiModeProbeIndex >= CLICKGUI_MODE_PROBE_MODES.length) {
+                ClickGUI.mode.i(this.clickGuiModeProbeOriginalMode);
+                runtimeMilestone("clickgui-mode-probe-pass:3:restored=" + this.clickGuiModeProbeOriginalMode);
+}
+}
+        catch (Throwable failure) {
+            this.clickGuiModeProbeIndex = CLICKGUI_MODE_PROBE_MODES.length;
+            if (ClickGUI.mode != null && this.clickGuiModeProbeOriginalMode != null) {
+                try {
+                    ClickGUI.mode.i(this.clickGuiModeProbeOriginalMode);
+}
+                catch (Throwable ignored) {
+}
+}
+            recordFeatureFailure("ClickGuiModeProbe:" + mode, "open-render-close", failure);
+            runtimeMilestone("clickgui-mode-probe-fail:" + mode + ":" + failure.getClass().getName());
 }
 }
 
@@ -922,6 +1000,7 @@ implements EventSubscriber {
 }
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
+            this.pumpClickGuiModeProbe();
             this.pumpPersistenceSeedProbe();
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
