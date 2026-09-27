@@ -1601,15 +1601,23 @@ implements EventSubscriber {
 }
                     if (MiningConstants.x && !this.p && this.K.I()) {
                         this.p = true;
-                        new Thread(() -> {
+                        Thread recoveryThread = new Thread(() -> {
                             try {
                                 KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindForward.getKeyCode(), false);
                                 KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), true);
                                 Thread.sleep(700L);
-                                KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
 }
-                            catch (Exception exception) {
-                                // empty catch block
+                            catch (InterruptedException interrupted) {
+                                Thread.currentThread().interrupt();
+}
+                            catch (Throwable ignored) {
+}
+                            finally {
+                                try {
+                                    KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), false);
+}
+                                catch (Throwable ignored) {
+}
 }
                             F.addScheduledTask(() -> {
                                 long var3x = 129958705539448L;
@@ -1618,7 +1626,9 @@ implements EventSubscriber {
                                 this.a(var3x);
                                 this.p = false;
                             });
-                        }).start();
+                        }, "OpenAbyss-MiningRecovery");
+                        recoveryThread.setDaemon(true);
+                        recoveryThread.start();
                     } else if (this.r) {
                         KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindBack.getKeyCode(), true);
                         KeyBindUtil.A(82009306480869L, MiningEngine.F.gameSettings.keyBindSneak.getKeyCode(), true);
