@@ -187,6 +187,17 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify executable event wiring semantics
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for executable event-wiring gate.' }
+          python '.\tools\check_event_wiring_semantics.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Executable event-wiring semantics gate failed: $LASTEXITCODE" }
+
       - name: Verify runnable-era generated event wiring
         shell: powershell
         run: |
