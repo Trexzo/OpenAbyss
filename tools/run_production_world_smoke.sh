@@ -145,6 +145,36 @@ grep -Fq 'world-module-lifecycle-start' "$STAGE"
 grep -Fq 'world-module-lifecycle-complete' "$STAGE"
 echo 'PRODUCTION_WORLD_LIFECYCLE=PASS'
 
+FUNCTIONAL_READY=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'world-functional-probe-pass' "$STAGE"; then
+    FUNCTIONAL_READY=1
+    break
+  fi
+  if grep -Fq 'world-functional-probe-fail:' "$STAGE"; then
+    echo 'Production live-world functional probe reported failure.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before live-world functional probe completed.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$FUNCTIONAL_READY" -ne 1 ]; then
+  echo 'Production live-world functional probe did not complete.'
+  cat "$STAGE" || true
+  exit 1
+fi
+grep -Fq 'world-functional-probe-enable-request' "$STAGE"
+grep -Fq 'world-functional-probe-enabled' "$STAGE"
+grep -Fq 'world-functional-probe-disable-request' "$STAGE"
+echo 'PRODUCTION_WORLD_FUNCTIONAL_MODULE_LIFECYCLE=PASS'
+
 WINDOW=""
 for _ in $(seq 1 30); do
   WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
