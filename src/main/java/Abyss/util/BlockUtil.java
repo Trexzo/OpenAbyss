@@ -261,6 +261,20 @@ public class BlockUtil {
     public static BlockPos Z() {
         return new BlockPos(BlockUtil.Q.thePlayer.posX, BlockUtil.Q.thePlayer.posY, BlockUtil.Q.thePlayer.posZ);
 }
+    /**
+     * Runnable-era placement hit vector helper recovered from exact bytecode.
+     */
+    public static Vec3 a(PlacementTarget var0) {
+        BlockPos var1 = var0.q;
+        EnumFacing var2 = var0.Z;
+        double var3 = (double)var1.getX() + 0.5;
+        double var5 = (double)var1.getY() + 0.5;
+        double var7 = (double)var1.getZ() + 0.5;
+        return new Vec3(
+                var3 + (double)var2.getFrontOffsetX() / 2.0,
+                var5 + (double)var2.getFrontOffsetY() / 2.0,
+                var7 + (double)var2.getFrontOffsetZ() / 2.0);
+}
     public static boolean i(Block var0) {
         if (var0 instanceof BlockStairs) {
             return false;
