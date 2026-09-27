@@ -128,6 +128,11 @@ $checks = [ordered]@{
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
     AccountSelfTest = $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')
     CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
+    AccountGuiSelfTest = $diagText.Contains('[ABYSSDIAG] accountgui selftest= PASS daemon-worker')
+    MicrosoftLoginSelfTest = $diagText.Contains('[ABYSSDIAG] mslogin selftest   = PASS daemon-worker')
+    AccessTokenSelfTest = $diagText.Contains('[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results')
+    RefreshTokenSelfTest = $diagText.Contains('[ABYSSDIAG] refreshtoken selftest= PASS daemon-workers synchronized-results')
+    AltStoreSelfTest = $diagText.Contains('[ABYSSDIAG] altstore selftest  = PASS file-roundtrip')
 }
 
 $pass = $checks.BootstrapComplete -and
@@ -145,6 +150,11 @@ $pass = $checks.BootstrapComplete -and
         (-not $checks.RendererReloadFailure) -and
         $checks.AccountSelfTest -and
         $checks.CookieSelfTest -and
+        $checks.AccountGuiSelfTest -and
+        $checks.MicrosoftLoginSelfTest -and
+        $checks.AccessTokenSelfTest -and
+        $checks.RefreshTokenSelfTest -and
+        $checks.AltStoreSelfTest -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
