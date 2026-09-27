@@ -82,10 +82,34 @@ function Test-Java8([string]$Candidate) {
         $exe = Join-Path $Candidate 'bin\java.exe'
     }
     if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { return $null }
+
     try {
-        $version = (& $exe -version 2>&1 | Out-String)
-        if ($version -match 'version "1\.8\.' -or $version -match 'version "8') { return $exe }
-    } catch {}
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $exe
+        $psi.Arguments = '-version'
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+
+        $p = New-Object System.Diagnostics.Process
+        $p.StartInfo = $psi
+        [void]$p.Start()
+        $stdout = $p.StandardOutput.ReadToEnd()
+        $stderr = $p.StandardError.ReadToEnd()
+        $p.WaitForExit()
+
+        $version = ($stdout + [Environment]::NewLine + $stderr)
+        if ($p.ExitCode -eq 0 -and (
+            $version -match 'version "1\.8\.' -or
+            $version -match 'version "8(?:\.|")' -or
+            $version -match 'openjdk version "1\.8\.'
+        )) {
+            return $exe
+        }
+    }
+    catch {
+    }
     return $null
 }
 
