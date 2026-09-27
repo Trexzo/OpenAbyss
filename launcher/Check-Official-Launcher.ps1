@@ -49,6 +49,7 @@ if ($FixtureSelfTest) {
         '[ABYSSDIAG] cookie selftest    = PASS cookie-parsers daemon-workers'
         '[ABYSSDIAG] accountgui selftest= PASS daemon-worker'
         '[ABYSSDIAG] mslogin selftest   = PASS daemon-worker'
+        '[ABYSSDIAG] cookiegui selftest = PASS daemon-worker'
         '[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results'
         '[ABYSSDIAG] refreshtoken selftest= PASS daemon-workers synchronized-results'
         '[ABYSSDIAG] altstore selftest  = PASS file-roundtrip upsert'
@@ -117,6 +118,7 @@ $checks = [ordered]@{
     CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
     AccountGuiSelfTest = $diagText.Contains('[ABYSSDIAG] accountgui selftest= PASS daemon-worker')
     MicrosoftLoginSelfTest = $diagText.Contains('[ABYSSDIAG] mslogin selftest   = PASS daemon-worker')
+    CookieGuiSelfTest = $diagText.Contains('[ABYSSDIAG] cookiegui selftest = PASS daemon-worker')
     AccessTokenSelfTest = $diagText.Contains('[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results')
     RefreshTokenSelfTest = $diagText.Contains('[ABYSSDIAG] refreshtoken selftest= PASS daemon-workers synchronized-results')
     AltStoreSelfTest = $diagText.Contains('[ABYSSDIAG] altstore selftest  = PASS file-roundtrip')
@@ -160,6 +162,7 @@ $pass = $checks.GameDirectoryExists -and
         $checks.CookieSelfTest -and
         $checks.AccountGuiSelfTest -and
         $checks.MicrosoftLoginSelfTest -and
+        $checks.CookieGuiSelfTest -and
         $checks.AccessTokenSelfTest -and
         $checks.RefreshTokenSelfTest -and
         $checks.AltStoreSelfTest -and
