@@ -181,13 +181,15 @@ try {
     $RuntimeStageRun = Join-Path $Root 'run\abyss-runtime-stage.txt'
     $ModuleFailure = Join-Path $Root 'abyss-module-failure.txt'
     $ModuleFailureRun = Join-Path $Root 'run\abyss-module-failure.txt'
+    $FeatureFailure = Join-Path $Root 'abyss-feature-failure.txt'
+    $FeatureFailureRun = Join-Path $Root 'run\abyss-feature-failure.txt'
     $EventFailure = Join-Path $Root 'abyss-event-failure.txt'
     $EventFailureRun = Join-Path $Root 'run\abyss-event-failure.txt'
     $ConfigFailure = Join-Path $Root 'abyss-config-failure.txt'
     $ConfigFailureRun = Join-Path $Root 'run\abyss-config-failure.txt'
     $RendererFailure = Join-Path $Root 'abyss-renderer-failure.txt'
     $RendererFailureRun = Join-Path $Root 'run\abyss-renderer-failure.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$FeatureFailure,$FeatureFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -262,6 +264,8 @@ try {
         (Join-Path $Root 'abyss-runtime-stage.txt'),
         (Join-Path $Root 'run\abyss-module-failure.txt'),
         (Join-Path $Root 'abyss-module-failure.txt'),
+        (Join-Path $Root 'run\abyss-feature-failure.txt'),
+        (Join-Path $Root 'abyss-feature-failure.txt'),
         (Join-Path $Root 'run\abyss-event-failure.txt'),
         (Join-Path $Root 'abyss-event-failure.txt'),
         (Join-Path $Root 'run\abyss-config-failure.txt'),
@@ -380,6 +384,19 @@ try {
         }
     }
 
+    $FeatureFailureCandidates = @(
+        (Join-Path $Root 'run\abyss-feature-failure.txt'),
+        (Join-Path $Root 'abyss-feature-failure.txt')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+    $FeatureFailureFile = $FeatureFailureCandidates | Select-Object -First 1
+    $LastFeatureFailure = '<none>'
+    if ($FeatureFailureFile) {
+        $FeatureFailureLines = @(Get-Content -LiteralPath $FeatureFailureFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($FeatureFailureLines.Count -gt 0) {
+            $LastFeatureFailure = $FeatureFailureLines[-1]
+        }
+    }
+
     $EventFailureCandidates = @(
         (Join-Path $Root 'run\abyss-event-failure.txt'),
         (Join-Path $Root 'abyss-event-failure.txt')
@@ -433,6 +450,7 @@ try {
         "LAST_BOOTSTRAP_STAGE=$LastStage"
         "LAST_RUNTIME_STAGE=$LastRuntimeStage"
         "LAST_MODULE_FAILURE=$LastModuleFailure"
+        "LAST_FEATURE_FAILURE=$LastFeatureFailure"
         "LAST_EVENT_FAILURE=$LastEventFailure"
         "LAST_CONFIG_FAILURE=$LastConfigFailure"
         "LAST_RENDERER_FAILURE=$LastRendererFailure"
