@@ -395,6 +395,11 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] keybind selftest  = PASS' "$DIAG"; then
+            echo 'Recovered keybind parser self-test is not green.'
+            cat "$DIAG"
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] clickgui selftest = PASS mode=' "$DIAG"; then
             echo 'Recovered ClickGUI selector self-test is not green.'
             cat "$DIAG"
