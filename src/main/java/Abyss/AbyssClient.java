@@ -203,11 +203,19 @@ implements EventSubscriber {
             if (Math.abs(ClickGUI.scale.L() - 1.75f) > 0.001f) {
                 throw new IllegalStateException("ClickGUI scale did not accept 1.75: " + ClickGUI.scale.L());
 }
+            FullBright persistedModule = Modules.J(FullBright.class);
+            if (persistedModule == null) {
+                throw new IllegalStateException("FullBright module is missing");
+}
+            persistedModule.I(0L, true);
+            if (!persistedModule.o()) {
+                throw new IllegalStateException("FullBright did not enter enabled state before save");
+}
             AbyssConfig.SaveResult result = AbyssConfig.save("current");
             if (result == null || !result.ok) {
                 throw new IllegalStateException("current config save failed: " + String.valueOf(result));
 }
-            runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75");
+            runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true");
 }
         catch (Throwable failure) {
             recordFeatureFailure("PersistenceProbe:ClickGUI", "seed-save", failure);
