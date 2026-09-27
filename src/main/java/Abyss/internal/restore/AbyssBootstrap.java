@@ -14,6 +14,7 @@ import Abyss.internal.MiningEngine;
 import Abyss.internal.MiningRenderSubscriber;
 import Abyss.internal.auth.Account;
 import Abyss.internal.auth.AltManager;
+import Abyss.internal.auth.AuthService;
 import Abyss.internal.auth.CookieAuthService;
 import Abyss.internal.auth.SessionAccessor;
 import Abyss.internal.auth.TrustAllSslContext;
@@ -351,6 +352,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] config selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssConfig.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] session selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? SessionAccessor.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] account selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? Account.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] authservice selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AuthService.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] cookie selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieAuthService.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] accountgui selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccountManagerScreen.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] mslogin selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? MicrosoftLoginScreen.selfTest() : "SKIPPED").append('\n');
