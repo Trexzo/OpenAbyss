@@ -348,6 +348,17 @@ jobs:
           python '.\tools\audit_module_body_shape.py' $jar.FullName --top 80
           if ($LASTEXITCODE -ne 0) { throw "Module body-shape audit failed to execute: $LASTEXITCODE" }
 
+      - name: Verify dormant native config manager
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for config-manager reachability gate.' }
+          python '.\tools\check_config_manager_reachability.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Config-manager reachability gate failed: $LASTEXITCODE" }
+
       - name: Audit runnable-era ClickGUI body shape
         shell: powershell
         run: |
