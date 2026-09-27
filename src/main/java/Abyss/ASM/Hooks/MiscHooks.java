@@ -25,6 +25,7 @@
  */
 package Abyss.ASM.Hooks;
 
+import Abyss.AbyssClient;
 import Abyss.ASM.Hooks.CallbackInfo;
 import Abyss.ASM.Hooks.Entity.EntityHookDispatch;
 import Abyss.ASM.Hooks.Entity.EntityRendererHooks;
@@ -153,7 +154,7 @@ public class MiscHooks {
             var1.cancel();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("MiscHooks", "main-menu-init", throwable);
 }
 }
     public static void guiMainMenuDraw(GuiMainMenu var0, int var1, int var2, float var3, CallbackInfo var4) {
@@ -175,7 +176,7 @@ public class MiscHooks {
             var4.cancel();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("MiscHooks", "main-menu-draw", throwable);
 }
 }
     public static void guiMainMenuAction(GuiButton var0, CallbackInfo var1) {
@@ -186,7 +187,7 @@ public class MiscHooks {
             GuiMainMenuHooks.onPostInitGUI(MiscHooks.buttonList((GuiScreen)var0), var0.width, var0.height);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("MiscHooks", "main-menu-post-init", throwable);
 }
 }
     private MiscHooks() {
@@ -238,7 +239,7 @@ public class MiscHooks {
             var1.cancel();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("MiscHooks", "item-renderer-update", throwable);
 }
 }
     public static void entityRendererOrientCamera(EntityRenderer var0, Minecraft var1, float var2, float var3, float var4, CallbackInfo var5) {
@@ -248,7 +249,7 @@ public class MiscHooks {
                 MiscHooks.writeField(var0, EntityRenderer.class, var8, "cloudFog", "field_78500_U", "B");
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("MiscHooks", "orient-camera-cloud-fog", throwable);
 }
             var5.cancel();
 }
