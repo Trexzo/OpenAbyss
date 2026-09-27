@@ -181,12 +181,7 @@ extends GuiScreen {
                 this.i = null;
                 this.p = null;
                 Account var8x = new Account((String)var9.get(), (String)var10.get(), var3x.getUsername(), var3x.getPlayerID());
-                for (Account var10x : AltManager.Q) {
-                    if (!var8x.h().equals(var10x.h())) continue;
-                    var8x.G(var10x.F());
-                    break;
-}
-                AltManager.Q.add(var8x);
+                AltManager.upsert(var8x);
                 AltManager.O(var6x);
                 SessionAccessor.k(var3x);
                 this.v = true;
