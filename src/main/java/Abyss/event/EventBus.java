@@ -43,6 +43,8 @@ public class EventBus {
     private final Map<Object, Boolean> ownerActive = new ConcurrentHashMap();
     private final Map<ListenerBinding<?>, String> ownerNames = new ConcurrentHashMap();
     private final Map<String, Boolean> recordedFailures = new ConcurrentHashMap();
+    private static final boolean RUNTIME_TRACE = Boolean.getBoolean("abyss.eventRuntimeTrace");
+    private final Map<Class<?>, Boolean> tracedEventTypes = new ConcurrentHashMap();
     private boolean failureEvidenceEnabled = true;
     private static final Comparator<ListenerBinding> PRIORITY_DESC;
     private final Map<Class<?>, ListenerBinding<?>[]> snapshots = new ConcurrentHashMap();
@@ -75,6 +77,7 @@ public class EventBus {
             if (!ListenerBinding.o(var11)) continue;
             try {
                 EventBus.v(var11, var1, 3958);
+                this.traceRuntimeDispatch(var1, var11);
 }
             catch (Throwable var13) {
                 this.recordFailure(var11, var1, var13);
@@ -83,6 +86,38 @@ public class EventBus {
             if (var1.a() || var1 instanceof StoppableEvent && ((StoppableEvent)var1).p()) break;
 }
 }
+    private synchronized void traceRuntimeDispatch(Event event, ListenerBinding<?> binding) {
+        if (!RUNTIME_TRACE || event == null || binding == null) {
+            return;
+}
+        Class<?> type = event.getClass();
+        if (this.tracedEventTypes.putIfAbsent(type, Boolean.TRUE) != null) {
+            return;
+}
+        String owner = this.ownerNames.get(binding);
+        if (owner == null) {
+            owner = "<unknown>";
+}
+        String invoker = "<unknown>";
+        try {
+            EventInvoker callback = ListenerBinding.d(binding);
+            if (callback != null) {
+                invoker = callback.getClass().getName();
+}
+}
+        catch (Throwable ignored) {
+}
+        String line = System.currentTimeMillis() + "\t" + type.getName() + "\t" + owner + "\t" + invoker;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-event-stage.txt"), true), "UTF-8")) {
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+}
+
     private void recordFailure(ListenerBinding<?> binding, Event event, Throwable failure) {
         String owner = this.ownerNames.get(binding);
         if (owner == null) {
