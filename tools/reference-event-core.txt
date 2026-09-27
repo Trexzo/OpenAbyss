@@ -2,7 +2,7 @@
 # reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
 # reviewed_eventbus_field_additions=ownerNames,recordedFailures,failureEvidenceEnabled
 # reviewed_eventbus_method_additions=recordFailure,selfTest
-# reviewed_body_deltas=EventBus.<init>:60->87,EventBus.R:216->238,EventBus.e:130->142,ListenerBinding.S:7->10
+# reviewed_body_deltas=EventBus.<init>:60->87,EventBus.R:216->240,EventBus.e:130->142,ListenerBinding.S:7->10
 CLASS Abyss/event/EventBus
 FIELD 10 a J
 FIELD 18 Y Ljava/util/Map;
