@@ -122,16 +122,7 @@ extends GuiScreen {
             CompletableFuture<Void> var8 = AuthService.i(var7, this.T).thenAcceptAsync((Session var2x) -> {
                 String var3x = var2x.getUsername();
                 String var4 = var2x.getPlayerID();
-                synchronized (AltManager.Q) {
-                    Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var7)).findFirst();
-                    if (var5x.isPresent()) {
-                        Account var6x = var5x.get();
-                        var6x.J(var3x);
-                        var6x.j(var4);
-                    } else {
-                        AltManager.Q.add(new Account(var3x, var7, var4));
-}
-}
+                AltManager.upsert(new Account(var3x, var7, var4));
                 var6.add(var3x);
             }, this.T).exceptionally((Throwable var2x) -> {
                 long var3x = a ^ 0xCCF58EFA7BDL;
@@ -199,16 +190,7 @@ extends GuiScreen {
                 CompletableFuture<Void> var15 = var14.thenAcceptAsync((Session var2x) -> {
                     String var3 = var2x.getUsername();
                     String var4x = var2x.getPlayerID();
-                    synchronized (AltManager.Q) {
-                        Optional<Account> var5x = AltManager.Q.stream().filter(var1xx -> var1xx.Y().equals(var17)).findFirst();
-                        if (var5x.isPresent()) {
-                            Account var6x = var5x.get();
-                            var6x.J(var3);
-                            var6x.j(var4x);
-                        } else {
-                            AltManager.Q.add(new Account(var3, var17, var4x));
-}
-}
+                    AltManager.upsert(new Account(var3, var17, var4x));
                     var6.add(var3);
                 }, this.T).exceptionally((Throwable var3) -> {
                     long var4x = a ^ 0x5B480AF9E4D1L;
