@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineEvent;
 
 public class ClipPlayer {
     private static final ExecutorService AUDIO_THREAD = Executors.newSingleThreadExecutor(r2 -> {
@@ -22,17 +23,30 @@ public class ClipPlayer {
         AUDIO_THREAD.execute(() -> ClipPlayer.playBlocking(var0));
 }
     private static void playBlocking(String var0) {
-        try (InputStream var1 = ClipPlayer.class.getResourceAsStream(var0);){
-            if (var1 != null) {
-                BufferedInputStream var3 = new BufferedInputStream(var1);
-                AudioInputStream var4 = AudioSystem.getAudioInputStream(var3);
-                Clip var5 = AudioSystem.getClip();
-                var5.open(var4);
-                var5.start();
+        try (InputStream var1 = ClipPlayer.class.getResourceAsStream(var0)){
+            if (var1 == null) {
+                return;
+}
+            try (BufferedInputStream var3 = new BufferedInputStream(var1);
+                 AudioInputStream var4 = AudioSystem.getAudioInputStream(var3)){
+                final Clip var5 = AudioSystem.getClip();
+                var5.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        var5.close();
+}
+                });
+                try {
+                    var5.open(var4);
+                    var5.start();
+}
+                catch (Throwable failure) {
+                    var5.close();
+                    throw failure;
 }
 }
-        catch (Exception exception) {
-            // empty catch block
+}
+        catch (Throwable exception) {
+            // audio is cosmetic; playback failure must not break the client
 }
 }
 }
