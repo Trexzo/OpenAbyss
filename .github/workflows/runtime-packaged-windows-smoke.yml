@@ -314,6 +314,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19')) {
               throw 'Recovered command resolver self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] keybind selftest  = PASS')) {
+              throw 'Recovered keybind parser self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] clickgui selftest = PASS mode=')) {
               throw 'Recovered ClickGUI selector self-test is not green.'
             }
