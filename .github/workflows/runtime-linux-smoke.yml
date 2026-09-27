@@ -329,6 +329,14 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
+          if ! grep -Fq '[ABYSSDIAG] account selftest   = PASS json-roundtrip' "$DIAG"; then
+            echo "Account JSON round-trip self-test is not green." >&2
+            exit 1
+          fi
+          if ! grep -Fq '[ABYSSDIAG] cookie selftest    = PASS cookie-parsers' "$DIAG"; then
+            echo "Microsoft cookie parser self-test is not green." >&2
+            exit 1
+          fi
           if ! grep -Fq '[ABYSSDIAG] command data load = friends.txt=' "$DIAG"; then
             echo 'Persisted command-data loader did not run.'
             cat "$DIAG"
