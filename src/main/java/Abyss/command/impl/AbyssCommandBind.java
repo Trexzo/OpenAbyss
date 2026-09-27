@@ -42,7 +42,7 @@ extends Command {
         for (int var4 = 0; var4 < USAGE.length; ++var4) {
             AbyssCommands.chat("\u00a7f" + USAGE[var4]);
 }
-        AbyssCommands.chat("\u00a78Key names are LWJGL names, e.g. R, LSHIFT, NUMPAD0.");
+        AbyssCommands.chat("\u00a78Keys: LWJGL names (R, LSHIFT, NUMPAD0) plus LMB/RMB/MMB, SIDE1/SIDE2, MOUSE1...");
         int var3 = AbyssCommands.placeholderCount();
         if (var3 > 0) {
             AbyssCommands.chat("\u00a78" + var3 + " module(s) have no confirmed name yet and cannot be bound.");
