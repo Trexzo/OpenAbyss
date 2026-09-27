@@ -63,3 +63,6 @@ print(f"THREAD_CENSUS_TOTAL={thread_count}")
 print(f"THREAD_STARTED_NON_DAEMON={len(thread_non_daemon)}")
 for item in thread_non_daemon:
     print(f"THREAD_STARTED_NON_DAEMON_ITEM={item}")
+if thread_non_daemon:
+    raise SystemExit("THREAD_DAEMON_GATE=FAIL")
+print("THREAD_DAEMON_GATE=PASS")
