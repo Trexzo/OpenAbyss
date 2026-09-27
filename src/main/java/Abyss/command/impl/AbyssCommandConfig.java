@@ -335,24 +335,46 @@ extends Command {
 }
     private static boolean write(File var0, JsonObject var1) {
         File var2 = new File(var0.getParentFile(), var0.getName() + ".tmp");
+        File var4 = new File(var0.getParentFile(), var0.getName() + ".bak");
         Writer var3 = null;
+        boolean rotated = false;
 
         try {
+            if (var2.isFile() && !var2.delete()) {
+                return false;
+}
             var3 = new OutputStreamWriter(new FileOutputStream(var2), "UTF-8");
             new GsonBuilder().setPrettyPrinting().create().toJson(var1, var3);
             var3.close();
             var3 = null;
 
             if (var0.isFile()) {
-                File var4 = new File(var0.getParentFile(), var0.getName() + ".bak");
-                if (var4.isFile()) {
-                    var4.delete();
-                }
-                var0.renameTo(var4);
-            }
-
-            return var2.renameTo(var0);
+                if (var4.isFile() && !var4.delete()) {
+                    var2.delete();
+                    return false;
+}
+                if (!var0.renameTo(var4)) {
+                    var2.delete();
+                    return false;
+}
+                rotated = true;
+}
+            if (var2.renameTo(var0)) {
+                return true;
+}
+            if (rotated && !var0.exists() && var4.isFile()) {
+                var4.renameTo(var0);
+}
+            var2.delete();
+            return false;
         } catch (Throwable var5) {
+            if (rotated && !var0.exists() && var4.isFile()) {
+                try {
+                    var4.renameTo(var0);
+                } catch (Throwable ignored) {
+                }
+            }
+            var2.delete();
             return false;
         } finally {
             if (var3 != null) {
