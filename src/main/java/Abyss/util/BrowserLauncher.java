@@ -3,6 +3,7 @@
  */
 package Abyss.util;
 
+import Abyss.AbyssClient;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.net.URI;
@@ -13,7 +14,7 @@ public class BrowserLauncher {
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(var0), null);
 }
         catch (Exception exception) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("BrowserLauncher", "clipboard-copy", exception);
 }
 }
     public static void F(URI var0) {
@@ -23,7 +24,7 @@ public class BrowserLauncher {
             var3.getMethod("browse", URI.class).invoke(var4, var0);
 }
         catch (Exception exception) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("BrowserLauncher", "browser-open", exception);
 }
 }
 }
