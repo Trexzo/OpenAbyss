@@ -127,6 +127,7 @@ $checks = [ordered]@{
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
     AccountSelfTest = $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')
+    AuthServiceSelfTest = $diagText.Contains('[ABYSSDIAG] authservice selftest= PASS loopback daemon-callback timeout=300s')
     CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
     AccountGuiSelfTest = $diagText.Contains('[ABYSSDIAG] accountgui selftest= PASS daemon-worker')
     MicrosoftLoginSelfTest = $diagText.Contains('[ABYSSDIAG] mslogin selftest   = PASS daemon-worker')
@@ -150,6 +151,7 @@ $pass = $checks.BootstrapComplete -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
         $checks.AccountSelfTest -and
+        $checks.AuthServiceSelfTest -and
         $checks.CookieSelfTest -and
         $checks.AccountGuiSelfTest -and
         $checks.MicrosoftLoginSelfTest -and
