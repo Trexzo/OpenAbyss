@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -47,7 +49,12 @@ extends GuiScreen {
 
     public void updateScreen() {
         if (this.v) {
-            this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(106134966044692L, this.J, new TimedStatusMessage(ChatFormatting.y(String.format("&aSuccessful login! (%s)&r", SessionAccessor.d().getUsername())), 5000L)));
+            String user = SessionAccessor.d().getUsername();
+            String status = AltManager.persistenceOk()
+                    ? String.format("&aSuccessful login! (%s)&r", user)
+                    : String.format("&eLogged in as %s, but accounts.json was not saved.&r", user);
+            this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(
+                    106134966044692L, this.J, new TimedStatusMessage(ChatFormatting.y(status), 7000L)));
             this.v = false;
 }
         if (this.i != null && !this.v && this.P != null && !this.P.isDone()) {
@@ -122,6 +129,8 @@ extends GuiScreen {
     public void onGuiClosed() {
         if (this.P != null && !this.P.isDone()) {
             this.P.cancel(true);
+}
+        if (this.a != null && !this.a.isShutdown()) {
             this.a.shutdownNow();
 }
 }
@@ -139,7 +148,7 @@ extends GuiScreen {
         if (this.P == null) {
             this.i = "&fWaiting for login&r";
             if (this.a == null) {
-                this.a = Executors.newSingleThreadExecutor();
+                this.a = MicrosoftLoginScreen.newLoginExecutor();
 }
             AtomicReference<String> var9 = new AtomicReference<String>("");
             AtomicReference<String> var10 = new AtomicReference<String>("");
@@ -189,6 +198,32 @@ extends GuiScreen {
                 this.p = var4x != null && var4x.getMessage() != null ? String.format("&cReason: %s&r", var4x.getMessage()) : "&cUnknown error occurred.&r";
                 return null;
             });
+}
+}
+    private static ExecutorService newLoginExecutor() {
+        return Executors.newSingleThreadExecutor(runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-MicrosoftLogin");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            executor = MicrosoftLoginScreen.newLoginExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL worker-not-daemon";
+}
+            return "PASS daemon-worker";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
 }
 }
     public MicrosoftLoginScreen(GuiScreen var1) {
