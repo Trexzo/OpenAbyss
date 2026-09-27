@@ -234,7 +234,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OpenAbyss-linux-production-world-runtime-smoke
-          path: production-world-evidence/**
+          path: |
+            production-world-evidence/**
+            ${{ runner.temp }}/openabyss-production-world-game/logs/**
+            ${{ runner.temp }}/openabyss-production-world-game/crash-reports/**
+            ${{ runner.temp }}/openabyss-production-world-game/abyss-*.txt
+            ${{ runner.temp }}/openabyss-production-world-game/abyss-*.tsv
+            ${{ runner.temp }}/openabyss-production-world-game/mods/abyss.jar
+            ${{ runner.temp }}/openabyss-production-world-client.stdout.log
+            ${{ runner.temp }}/openabyss-production-world-client.stderr.log
+            ${{ runner.temp }}/openabyss-production-world-server.log
+            ${{ runner.temp }}/openabyss-production-world-glxinfo.txt
+            ${{ runner.temp }}/openabyss-production-world-clickgui.png
           if-no-files-found: warn
           retention-days: 7
 
