@@ -246,6 +246,8 @@ jobs:
             ${{ runner.temp }}/openabyss-production-world-server.log
             ${{ runner.temp }}/openabyss-production-world-glxinfo.txt
             ${{ runner.temp }}/openabyss-production-world-jstack.txt
+            ${{ runner.temp }}/openabyss-production-world-jstack-2.txt
+            ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
             ${{ runner.temp }}/openabyss-production-world-clickgui.png
           if-no-files-found: warn
           retention-days: 7
