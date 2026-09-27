@@ -36,15 +36,15 @@ extends GuiScreen {
     private final GuiScreen J;
     private GuiButton Y = null;
     private final String b;
-    private boolean z = true;
+    private volatile boolean z = true;
     private GuiButton G = null;
     private long o;
     private ExecutorService a = null;
     private int m;
-    private String p = null;
+    private volatile String p = null;
     private CompletableFuture<Void> P = null;
-    private String i = null;
-    private boolean v = false;
+    private volatile String i = null;
+    private volatile boolean v = false;
     private static long c = 11783191072859L;
 
     public void updateScreen() {
