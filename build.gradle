@@ -45,6 +45,7 @@ jar {
     }
 }
 
+def abyssReobfJar = tasks.getByName('reobfJar')
 def abyssRunClient = tasks.getByName('runClient')
 def abyssBaseJvmArgs = ['-Xmx2G']
 if (!project.hasProperty('abyssModsFolder')) {
@@ -57,7 +58,7 @@ if (project.hasProperty('abyssPackaged') && project.hasProperty('abyssModsFolder
 }
 
 if (project.hasProperty('abyssPackaged')) {
-    abyssRunClient.dependsOn jar
+    abyssRunClient.dependsOn abyssReobfJar
     abyssRunClient.doFirst {
         File packagedJar = jar.archivePath
         if (!packagedJar.isFile()) {
@@ -84,7 +85,7 @@ if (project.hasProperty('abyssPackaged')) {
 
 
 if (project.hasProperty('abyssModsFolder')) {
-    abyssRunClient.dependsOn jar
+    abyssRunClient.dependsOn abyssReobfJar
     abyssRunClient.doFirst {
         File packagedJar = jar.archivePath
         if (!packagedJar.isFile()) {
@@ -149,7 +150,7 @@ if (project.hasProperty('abyssModsFolder')) {
     }
 }
 
-task writeLauncherBuildInfo(dependsOn: jar) {
+task writeLauncherBuildInfo(dependsOn: abyssReobfJar) {
     description = 'Writes provenance for the standalone Windows launcher package.'
     group = 'distribution'
     outputs.file file("$buildDir/distributions/BUILD-INFO.txt")
@@ -201,7 +202,7 @@ task writeLauncherBuildInfo(dependsOn: jar) {
     }
 }
 
-task packageWindowsLauncher(type: Zip, dependsOn: [jar, writeLauncherBuildInfo]) {
+task packageWindowsLauncher(type: Zip, dependsOn: [abyssReobfJar, writeLauncherBuildInfo]) {
     description = 'Builds the standalone Windows OpenAbyss launcher package.'
     group = 'distribution'
     destinationDir = file("$buildDir/distributions")
