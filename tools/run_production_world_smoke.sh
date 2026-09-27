@@ -207,6 +207,36 @@ for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoT
 done
 echo 'PRODUCTION_WORLD_CATEGORY_LIFECYCLE=PASS modules=7 plus-FullBright=8-categories'
 
+COMMAND_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'command-runtime-probe-pass:' "$STAGE"; then
+    COMMAND_READY=1
+    break
+  fi
+  if grep -Fq 'command-runtime-probe-fail:' "$STAGE"; then
+    echo 'Production command runtime probe reported failure.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before command runtime probe completed.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$COMMAND_READY" -ne 1 ]; then
+  echo 'Production command runtime probe did not complete.'
+  cat "$STAGE" || true
+  exit 1
+fi
+grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
+grep -Fq 'command-runtime-probe-toggle-pass:FullBright:' "$STAGE"
+grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
+echo 'PRODUCTION_WORLD_COMMAND_RUNTIME=PASS commands=help,list,bind-list,config-list,unknown,toggle,module-setting'
+
 WINDOW=""
 for _ in $(seq 1 30); do
   WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
