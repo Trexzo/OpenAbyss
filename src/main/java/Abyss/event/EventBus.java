@@ -173,6 +173,21 @@ public class EventBus {
 }
 }
 }
+    public boolean isOwnerActive(Object owner) {
+        if (owner == null) {
+            return false;
+}
+        List<ListenerBinding<?>> bindings = this.U.get(owner);
+        if (bindings == null) {
+            return false;
+}
+        for (ListenerBinding<?> binding : bindings) {
+            if (!ListenerBinding.o(binding)) {
+                return false;
+}
+}
+        return true;
+}
     public void R(Object var1, Class var2, int var5, EventInvoker var6) {
         if (var1 == null || var2 == null || var6 == null) throw new NullPointerException("owner, eventType and invoker are required");
         boolean locked = false;
@@ -279,6 +294,9 @@ public class EventBus {
             calls.clear();
             bus.s(high, 0L);
             bus.s(high, 0L);
+            if (!bus.isOwnerActive(high) || !bus.isOwnerActive(low)) {
+                return "FAIL active-proof high=" + bus.isOwnerActive(high) + " low=" + bus.isOwnerActive(low);
+}
             bus.e(new TestEvent(), 0L);
             if (!calls.equals(Arrays.asList("high", "low"))) {
                 return "FAIL resubscribe-idempotence " + calls;
@@ -286,6 +304,9 @@ public class EventBus {
             calls.clear();
             bus.B(high);
             bus.B(high);
+            if (bus.isOwnerActive(high) || !bus.isOwnerActive(low)) {
+                return "FAIL disable-active-proof high=" + bus.isOwnerActive(high) + " low=" + bus.isOwnerActive(low);
+}
             bus.e(new TestEvent(), 0L);
             if (!calls.equals(Arrays.asList("low"))) {
                 return "FAIL double-disable " + calls;
