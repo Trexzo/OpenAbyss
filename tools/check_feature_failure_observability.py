@@ -103,6 +103,10 @@ marker_only_targets = {
     "Abyss/internal/restore/AbyssConfig.java": [
         '"AbyssConfig", "boot-snapshot"',
     ],
+    "Abyss/util/BrowserLauncher.java": [
+        '"BrowserLauncher", "clipboard-copy"',
+        '"BrowserLauncher", "browser-open"',
+    ],
 }
 
 for rel, markers in marker_only_targets.items():
