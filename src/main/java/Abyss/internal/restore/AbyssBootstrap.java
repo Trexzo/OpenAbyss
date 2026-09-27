@@ -196,6 +196,8 @@ public final class AbyssBootstrap {
 }
         AbyssConfig.apply(PENDING);
         stage("config-applied");
+        AbyssModuleSettings.applyByName(PENDING);
+        stage("config-setting-values-applied");
         AbyssBootstrap.forceEnableCommandLine();
         stage("commandline-enabled");
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
@@ -350,6 +352,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] eventbus selftest  = ").append(EventBus.selfTest()).append('\n');
             b.append("[ABYSSDIAG] module selftest    = ").append(Module.selfTest()).append('\n');
             b.append("[ABYSSDIAG] config selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssConfig.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] setting restore selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssModuleSettings.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] session selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? SessionAccessor.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] account selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? Account.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] authservice selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AuthService.selfTest() : "SKIPPED").append('\n');
