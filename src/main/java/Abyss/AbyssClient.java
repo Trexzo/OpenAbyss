@@ -28,7 +28,10 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.configuration.ClickGUI;
+import Abyss.module.impl.configuration.Notifications;
+import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
@@ -196,12 +199,31 @@ implements EventSubscriber {
 }
         this.persistenceProbeSeeded = true;
         try {
-            if (ClickGUI.scale == null) {
-                throw new IllegalStateException("ClickGUI.scale is null");
+            if (ClickGUI.scale == null || ClickGUI.mode == null || ClickGUI.keybind == null
+                    || Notifications.textShadow == null || Velocity.horizontal == null
+                    || Theme.customColor1 == null) {
+                throw new IllegalStateException("Persistence matrix setting is null");
 }
             ClickGUI.scale.o((byte)0, 0L, 1.75f);
-            if (Math.abs(ClickGUI.scale.L() - 1.75f) > 0.001f) {
-                throw new IllegalStateException("ClickGUI scale did not accept 1.75: " + ClickGUI.scale.L());
+            ClickGUI.mode.i("RAVEN");
+            ClickGUI.keybind.O("LSHIFT");
+            Notifications.textShadow.v(false, 0L);
+            Velocity.horizontal.d(67);
+            Theme.customColor1.e("A1B2C3");
+
+            if (Math.abs(ClickGUI.scale.L() - 1.75f) > 0.001f
+                    || !ClickGUI.mode.R("RAVEN")
+                    || !"LSHIFT".equals(ClickGUI.keybind.X())
+                    || Notifications.textShadow.c()
+                    || Velocity.horizontal.k() != 67
+                    || !"A1B2C3".equals(Theme.customColor1.Q())) {
+                throw new IllegalStateException("Persistence matrix did not accept seed values"
+                        + " scale=" + ClickGUI.scale.L()
+                        + " mode=" + ClickGUI.mode.Y()
+                        + " keybind=" + ClickGUI.keybind.X()
+                        + " textShadow=" + Notifications.textShadow.c()
+                        + " horizontal=" + Velocity.horizontal.k()
+                        + " color=" + Theme.customColor1.Q());
 }
             FullBright persistedModule = Modules.J(FullBright.class);
             if (persistedModule == null) {
@@ -216,6 +238,7 @@ implements EventSubscriber {
                 throw new IllegalStateException("current config save failed: " + String.valueOf(result));
 }
             runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true");
+            runtimeMilestone("persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true");
 }
         catch (Throwable failure) {
             recordFeatureFailure("PersistenceProbe:ClickGUI", "seed-save", failure);
