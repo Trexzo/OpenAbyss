@@ -16,6 +16,7 @@ import Abyss.ui.GuiTextWidget;
 import Abyss.ui.screen.AccountManagerScreen;
 import Abyss.util.ChatFormatting;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.client.gui.GuiButton;
@@ -64,7 +67,7 @@ extends GuiScreen {
         int var8 = (int)((var5 ^ 0x4C7BAF8E69FCL) << 32 >>> 48);
         int var9 = (int)((var5 ^ 0x4C7BAF8E69FCL) << 48 >>> 48);
         if (this.u == null || this.u.isShutdown()) {
-            this.u = Executors.newFixedThreadPool(3);
+            this.u = RefreshTokenLoginScreen.newBatchExecutor();
 }
         if ((var10 = RefreshTokenLoginScreen.m(var7, var8, var3, (short)var9)).isEmpty()) {
             this.U = "\u00a7cNo valid refresh tokens found.\u00a7r";
@@ -72,19 +75,21 @@ extends GuiScreen {
             this.U = "\u00a77Processing accounts...\u00a7r";
             this.R.enabled = false;
             ArrayList<CompletableFuture<?>> var11 = new ArrayList<CompletableFuture<?>>();
-            ArrayList<String> var12 = new ArrayList<String>();
-            ArrayList<String> var13 = new ArrayList<String>();
+            List<String> var12 = Collections.synchronizedList(new ArrayList<String>());
+            List<String> var13 = Collections.synchronizedList(new ArrayList<String>());
             for (String var15 : var10) {
                 CompletableFuture<Void> var16 = AccountLookupService.Y(var15, this.u).thenAcceptAsync((Account var2) -> {
-                    Optional<Account> var3x = AltManager.Q.stream().filter(var2x -> var2x.d().equals(var15) || var2x.Y().equals(var2.Y())).findFirst();
-                    if (var3x.isPresent()) {
-                        Account var4x = var3x.get();
-                        var4x.H(var2.d());
-                        var4x.r(var2.Y());
-                        var4x.J(var2.h());
-                        var4x.j(var2.f());
-                    } else {
-                        AltManager.Q.add((Account)var2);
+                    synchronized (AltManager.Q) {
+                        Optional<Account> var3x = AltManager.Q.stream().filter(var2x -> var2x.d().equals(var15) || var2x.Y().equals(var2.Y())).findFirst();
+                        if (var3x.isPresent()) {
+                            Account var4x = var3x.get();
+                            var4x.H(var2.d());
+                            var4x.r(var2.Y());
+                            var4x.J(var2.h());
+                            var4x.j(var2.f());
+                        } else {
+                            AltManager.Q.add((Account)var2);
+}
 }
                     var13.add(var2.h());
                 }, this.u).exceptionally((Throwable var2) -> {
@@ -109,6 +114,9 @@ extends GuiScreen {
                     long var5xx = 106134966044692L;
                     int var7x = (int)((var3xx ^ 0x360947841EAEL) >>> 48);
                     String var10x = !var13.isEmpty() && var12.isEmpty() ? String.format("\u00a7aSuccessfully logged in %d account(s)!\u00a7r", var13.size()) : (var13.isEmpty() && !var12.isEmpty() ? String.format("\u00a7cFailed to log in %d account(s).\u00a7r", var12.size()) : String.format("\u00a7aLogged in %d, \u00a7cfailed %d account(s).\u00a7r", var13.size(), var12.size()));
+                    if (!AltManager.persistenceOk() && !var13.isEmpty()) {
+                        var10x = "\u00a7eAuthenticated " + var13.size() + " account(s), but accounts.json was not saved.\u00a7r";
+}
                     this.mc.displayGuiScreen((GuiScreen)new AccountManagerScreen(var5xx, this.X, new TimedStatusMessage(ChatFormatting.y(var10x), j)));
                     if (!var12.isEmpty()) {
                         for (String string : var12) {
@@ -142,9 +150,9 @@ extends GuiScreen {
         Keyboard.enableRepeatEvents((boolean)false);
         if (this.i != null && !this.i.isDone()) {
             this.i.cancel(true);
-            if (this.u != null && !this.u.isShutdown()) {
-                this.u.shutdownNow();
 }
+        if (this.u != null && !this.u.isShutdown()) {
+            this.u.shutdownNow();
 }
 }
     private static List m(int var0, int var1, String var2, short var3) {
@@ -215,6 +223,32 @@ extends GuiScreen {
     protected void mouseClicked(int var1, int var2, int var3) throws java.io.IOException {
         super.mouseClicked(var1, var2, var3);
         this.W.D(var1, var2, var3);
+}
+    private static ExecutorService newBatchExecutor() {
+        return Executors.newFixedThreadPool(3, runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-RefreshToken");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            executor = RefreshTokenLoginScreen.newBatchExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL worker-not-daemon";
+}
+            return "PASS daemon-workers synchronized-results";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
+}
 }
     static {
         a = 130222794822054L;
