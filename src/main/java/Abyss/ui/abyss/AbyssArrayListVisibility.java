@@ -9,6 +9,7 @@
  */
 package Abyss.ui.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.Module;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -106,6 +107,7 @@ public final class AbyssArrayListVisibility {
 }
 }
             catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "load", throwable);
 }
             finally {
                 if (r2 != null) {
@@ -133,6 +135,7 @@ public final class AbyssArrayListVisibility {
                     w2.flush();
 }
                 catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "save", throwable);
 }
                 finally {
                     if (w2 != null) {
@@ -157,6 +160,7 @@ public final class AbyssArrayListVisibility {
             return !AbyssArrayListVisibility.data().contains(k);
 }
         catch (Throwable ignored) {
+            AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "is-shown", ignored);
             return true;
 }
 }
@@ -180,7 +184,7 @@ public final class AbyssArrayListVisibility {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "set-shown", throwable);
 }
 }
 }
