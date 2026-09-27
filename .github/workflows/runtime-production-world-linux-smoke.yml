@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -215,6 +215,11 @@ jobs:
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
+          for mode in STUDIO RAVEN VESTIGE; do
+            grep -Fq "clickgui-mode-probe-open:$mode:" "$STAGE"
+            grep -Fq "clickgui-mode-probe-close:$mode" "$STAGE"
+          done
+          grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"
           grep -Fq 'clickgui-open-success:' "$STAGE"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
@@ -233,6 +238,7 @@ jobs:
           cp "$RUNNER_TEMP/openabyss-production-world-server.log" "$EVIDENCE/"
           cp "$RUNNER_TEMP/openabyss-production-world-glxinfo.txt" "$EVIDENCE/"
           cp "$SCREENSHOT" "$EVIDENCE/"
+          cp "$RUNNER_TEMP"/openabyss-production-world-clickgui-mode-*.png "$EVIDENCE/"
           cp "$OPENABYSS_PRODUCTION_WORLD_PACKAGE/BUILD-INFO.txt" "$EVIDENCE/"
 
           echo 'PRODUCTION_WORLD_SHIPPED_JAR_HASH_CONTRACT=PASS'
@@ -259,6 +265,7 @@ jobs:
             ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
             ${{ runner.temp }}/openabyss-production-world-stall.png
             ${{ runner.temp }}/openabyss-production-world-before-clickgui.png
+            ${{ runner.temp }}/openabyss-production-world-clickgui-mode-*.png
             ${{ runner.temp }}/openabyss-production-world-clickgui.png
           if-no-files-found: warn
           retention-days: 7
