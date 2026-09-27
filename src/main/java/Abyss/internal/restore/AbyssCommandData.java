@@ -213,11 +213,26 @@ public final class AbyssCommandData {
 }
 }
     public static boolean patchCurrent(String var0, JsonElement var1) {
+        Path currentPath = AbyssCommandData.resolve(CURRENT);
+        Path backupPath = currentPath.resolveSibling(CURRENT + ".bak");
+        boolean primaryExists = Files.isRegularFile(currentPath, new LinkOption[0]);
+        boolean primaryReadable = primaryExists && AbyssCommandData.parseJson(currentPath) != null;
+        boolean backupReadable = AbyssCommandData.parseJson(backupPath) != null;
+
         JsonObject var2 = AbyssCommandData.readJson(CURRENT);
         if (var2 == null) {
             var2 = new JsonObject();
 }
         var2.add(var0, var1);
+
+        if (primaryExists && !primaryReadable && backupReadable) {
+            try {
+                Files.delete(currentPath);
+}
+            catch (Throwable failure) {
+                return false;
+}
+}
         return AbyssCommandData.writeJson(CURRENT, var2);
 }
     static JsonObject currentChild(String var0) {
@@ -409,11 +424,37 @@ public final class AbyssCommandData {
             if (recoveredProbe == null || recoveredProbe.get("generation").getAsInt() != 1) {
                 return "FAIL json-backup-read " + String.valueOf(recoveredProbe);
 }
+
+            Path currentPath = AbyssCommandData.resolve(CURRENT);
+            Path currentBak = currentPath.resolveSibling(CURRENT + ".bak");
+            JsonObject seedCurrent1 = new JsonObject();
+            seedCurrent1.addProperty("seed", Integer.valueOf(1));
+            JsonObject seedCurrent2 = new JsonObject();
+            seedCurrent2.addProperty("seed", Integer.valueOf(2));
+            if (!AbyssCommandData.writeJson(CURRENT, seedCurrent1)
+                    || !AbyssCommandData.writeJson(CURRENT, seedCurrent2)) {
+                return "FAIL patch-recovery-seed";
+}
+            Files.write(currentPath, "{broken".getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            if (!AbyssCommandData.patchCurrent("patched", new JsonPrimitive("ok"))) {
+                return "FAIL patch-recovery-write";
+}
+            JsonObject patchedCurrent = AbyssCommandData.parseJson(currentPath);
+            JsonObject preservedBackup = AbyssCommandData.parseJson(currentBak);
+            if (patchedCurrent == null || !"ok".equals(patchedCurrent.get("patched").getAsString())
+                    || patchedCurrent.get("seed").getAsInt() != 1) {
+                return "FAIL patch-recovery-current " + String.valueOf(patchedCurrent);
+}
+            if (preservedBackup == null || preservedBackup.get("seed").getAsInt() != 1) {
+                return "FAIL patch-recovery-backup " + String.valueOf(preservedBackup);
+}
+
             Files.deleteIfExists(probePath);
             Files.deleteIfExists(probeBak);
             Files.deleteIfExists(probeTmp);
 
-            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused json-backup-recovery";
+            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused json-backup-recovery patch-backup-preserved";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
