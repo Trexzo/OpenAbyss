@@ -129,6 +129,13 @@ jobs:
           python '.\tools\audit_empty_catches.py'
           if ($LASTEXITCODE -ne 0) { throw "Silent catch census failed: $LASTEXITCODE" }
 
+      - name: Verify live feature failure observability
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_feature_failure_observability.py'
+          if ($LASTEXITCODE -ne 0) { throw "Feature failure observability gate failed: $LASTEXITCODE" }
+
       - name: Verify bounded renderer reload recovery
         shell: powershell
         run: |
