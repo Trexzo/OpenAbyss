@@ -53,7 +53,7 @@ extends GuiScreen {
     private GuiButton Q = null;
     private GuiButton i = null;
     private AccountListSlot P = null;
-        public static TimedStatusMessage q;
+        public static volatile TimedStatusMessage q;
     private CompletableFuture<Void> I = null;
     private static Map g;
     private ExecutorService K = null;
