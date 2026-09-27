@@ -20,6 +20,8 @@ $Census = Join-Path $GameDir 'abyss-census.tsv'
 $LatestLog = Join-Path $GameDir 'logs\latest.log'
 $CrashDir = Join-Path $GameDir 'crash-reports'
 $SessionFile = Join-Path $GameDir 'openabyss-test-session.txt'
+$InstalledJar = Join-Path $GameDir 'mods\abyss.jar'
+$BuildInfo = Join-Path $PackageDir 'BUILD-INFO.txt'
 $Verdict = Join-Path $PackageDir 'official-usability-result.txt'
 
 if ($FixtureSelfTest) {
@@ -29,6 +31,14 @@ if ($FixtureSelfTest) {
         'SESSION_ID=fixture'
         ('SESSION_START_UTC=' + (Get-Date).ToUniversalTime().AddSeconds(-1).ToString('o'))
     ) | Set-Content -LiteralPath $SessionFile -Encoding UTF8
+
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $InstalledJar) | Out-Null
+    'fixture jar bytes' | Set-Content -LiteralPath $InstalledJar -Encoding ASCII
+    $fixtureHash = (Get-FileHash -LiteralPath $InstalledJar -Algorithm SHA256).Hash.ToUpperInvariant()
+    @(
+        'OPENABYSS_WINDOWS_LAUNCHER_BUILD=1'
+        ('JAR_SHA256=' + $fixtureHash)
+    ) | Set-Content -LiteralPath $BuildInfo -Encoding UTF8
 
     'fixture latest log' | Set-Content -LiteralPath $LatestLog -Encoding UTF8
     @(
@@ -92,8 +102,23 @@ function Is-Fresh([string]$Path) {
     return (Get-Item -LiteralPath $Path).LastWriteTimeUtc -ge $sessionStartUtc.AddSeconds(-2)
 }
 
+$expectedJarHash = $null
+if (Test-Path -LiteralPath $BuildInfo -PathType Leaf) {
+    foreach ($line in @(Get-Content -LiteralPath $BuildInfo)) {
+        if ($line -match '^JAR_SHA256=([0-9A-Fa-f]{64})$') {
+            $expectedJarHash = $matches[1].ToUpperInvariant()
+        }
+    }
+}
+$installedJarHash = if (Test-Path -LiteralPath $InstalledJar -PathType Leaf) {
+    (Get-FileHash -LiteralPath $InstalledJar -Algorithm SHA256).Hash.ToUpperInvariant()
+} else { $null }
+
 $checks = [ordered]@{
     GameDirectoryExists = Test-Path -LiteralPath $GameDir -PathType Container
+    InstalledJarExists = Test-Path -LiteralPath $InstalledJar -PathType Leaf
+    BuildInfoJarHash = $null -ne $expectedJarHash
+    InstalledJarHashMatch = ($null -ne $expectedJarHash -and $installedJarHash -eq $expectedJarHash)
     SessionMarker = $null -ne $sessionStartUtc
     LatestLogExists = Test-Path -LiteralPath $LatestLog -PathType Leaf
     LatestLogFresh = Is-Fresh $LatestLog
@@ -140,6 +165,9 @@ $crashFiles = if (Test-Path -LiteralPath $CrashDir -PathType Container) {
 } else { 0 }
 
 $pass = $checks.GameDirectoryExists -and
+        $checks.InstalledJarExists -and
+        $checks.BuildInfoJarHash -and
+        $checks.InstalledJarHashMatch -and
         $checks.SessionMarker -and
         $checks.LatestLogExists -and
         $checks.LatestLogFresh -and
@@ -183,6 +211,9 @@ foreach ($entry in $checks.GetEnumerator()) {
 }
 $lines.Add('CRASH_FILES=' + $crashFiles)
 $lines.Add('GAME_DIRECTORY=' + $GameDir)
+$lines.Add('INSTALLED_JAR=' + $(if (Test-Path -LiteralPath $InstalledJar -PathType Leaf) { $InstalledJar } else { '<none>' }))
+$lines.Add('EXPECTED_JAR_SHA256=' + $(if ($expectedJarHash) { $expectedJarHash } else { '<none>' }))
+$lines.Add('INSTALLED_JAR_SHA256=' + $(if ($installedJarHash) { $installedJarHash } else { '<none>' }))
 $lines.Add('LATEST_LOG=' + $(if (Test-Path -LiteralPath $LatestLog -PathType Leaf) { $LatestLog } else { '<none>' }))
 $lines.Add('RUNTIME_STAGE=' + $(if (Test-Path -LiteralPath $Runtime -PathType Leaf) { $Runtime } else { '<none>' }))
 $lines.Add('BOOTSTRAP_STAGE=' + $(if (Test-Path -LiteralPath $Bootstrap -PathType Leaf) { $Bootstrap } else { '<none>' }))
