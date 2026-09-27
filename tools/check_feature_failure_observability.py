@@ -55,6 +55,40 @@ for rel, markers in targets.items():
     checks[f"{key}_markers"] = all(marker in text for marker in markers)
     checks[f"{key}_no_empty_catch"] = empty.search(text) is None
 
+marker_only_targets = {
+    "Abyss/ASM/Hooks/Gui/GuiEventHooks.java": [
+        '"GuiEventHooks", "alt-manager-init"',
+        '"GuiEventHooks", "disconnected-init"',
+    ],
+    "Abyss/ASM/Hooks/MiscHooks.java": [
+        '"MiscHooks", "main-menu-init"',
+        '"MiscHooks", "main-menu-draw"',
+        '"MiscHooks", "main-menu-post-init"',
+        '"MiscHooks", "item-renderer-update"',
+        '"MiscHooks", "orient-camera-cloud-fog"',
+    ],
+    "Abyss/ui/abyss/AbyssClickGuiScreen.java": [
+        '"AbyssClickGuiScreen", "draw-screen"',
+        '"AbyssClickGuiScreen", "mouse-click"',
+        '"AbyssClickGuiScreen", "key-typed"',
+        '"AbyssClickGuiScreen", "module-settings"',
+        '"AbyssClickGuiScreen", "module-click"',
+        '"AbyssClickGuiScreen", "setting-activate"',
+        '"AbyssClickGuiScreen", "panel-module-enumeration"',
+    ],
+    "Abyss/ui/abyss/AbyssArrayListVisibility.java": [
+        '"AbyssArrayListVisibility", "load"',
+        '"AbyssArrayListVisibility", "save"',
+        '"AbyssArrayListVisibility", "is-shown"',
+        '"AbyssArrayListVisibility", "set-shown"',
+    ],
+}
+
+for rel, markers in marker_only_targets.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    key = rel.rsplit("/", 1)[-1].replace(".java", "")
+    checks[f"{key}_feature_markers"] = all(marker in text for marker in markers)
+
 for name, ok in checks.items():
     print(f"FEATURE_FAILURE_CONTRACT {name}={'PASS' if ok else 'FAIL'}")
 
