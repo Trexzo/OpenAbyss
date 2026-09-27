@@ -1,0 +1,247 @@
+name: OpenAbyss Linux Production World Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-production-world-linux-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
+      - launcher/**
+      - tools/production_forge_linux.py
+      - tools/run_production_world_smoke.sh
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-linux-production-world-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  linux-production-world-runtime:
+    name: Production reobf JAR / normal Forge / local world / RSHIFT
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install graphics and network-isolation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb mesa-utils x11-xserver-utils x11-utils xdotool openbox scrot \
+            libgl1-mesa-dri libglx-mesa0 \
+            libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libxrandr2 libxinerama1 libxcursor1 libxxf86vm1 \
+            iproute2 util-linux
+
+      - name: Install Gradle 2.14.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
+          HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
+          USER_HOME="$RUNNER_TEMP/gradle-user-home-production-world"
+          curl -L --fail --silent --show-error \
+            'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
+            -o "$ZIP"
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
+          GRADLE="$HOME_DIR/bin/gradle"
+          test -x "$GRADLE"
+          echo "OPENABYSS_GRADLE=$GRADLE" >> "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=$USER_HOME" >> "$GITHUB_ENV"
+          "$GRADLE" --version
+
+      - name: Build exact shipped production package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/production_forge_linux.py
+          bash -n tools/run_production_world_smoke.sh
+
+          "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher
+          PACKAGE="$GITHUB_WORKSPACE/build/distributions/OpenAbyss-Windows-Launcher.zip"
+          OUT="$RUNNER_TEMP/openabyss-production-world-package"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          unzip -q "$PACKAGE" -d "$OUT"
+
+          test -s "$OUT/abyss.jar"
+          test -s "$OUT/BUILD-INFO.txt"
+          JAR_HASH="$(sha256sum "$OUT/abyss.jar" | awk '{print toupper($1)}')"
+          INFO_HASH="$(grep '^JAR_SHA256=' "$OUT/BUILD-INFO.txt" | cut -d= -f2- | tr '[:lower:]' '[:upper:]')"
+          test "$JAR_HASH" = "$INFO_HASH"
+
+          echo "OPENABYSS_PRODUCTION_WORLD_PACKAGE=$OUT" >> "$GITHUB_ENV"
+          echo "OPENABYSS_PRODUCTION_WORLD_JAR=$OUT/abyss.jar" >> "$GITHUB_ENV"
+          echo "PRODUCTION_WORLD_SHIPPED_JAR_SHA256=$JAR_HASH"
+
+      - name: Prepare normal Forge profile, official assets, and local server
+        shell: bash
+        run: |
+          set -euo pipefail
+          MC="$RUNNER_TEMP/openabyss-production-world-minecraft"
+          rm -rf "$MC"
+          python tools/production_forge_linux.py prepare \
+            --minecraft-dir "$MC" \
+            --download-assets
+
+          grep -Fq 'OPENABYSS_PRODUCTION_FORGE_PROFILE=READY' "$MC/openabyss-production-profile.txt"
+          cat "$MC/openabyss-production-profile.txt"
+          echo "OPENABYSS_PRODUCTION_WORLD_MC=$MC" >> "$GITHUB_ENV"
+
+          SERVER_JAR="$RUNNER_TEMP/minecraft_server.1.8.9.jar"
+          python - "$SERVER_JAR" <<'PY'
+          import hashlib, json, sys, urllib.request
+          output = sys.argv[1]
+          manifest = json.load(urllib.request.urlopen(
+              'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+              timeout=30,
+          ))
+          entry = next(v for v in manifest['versions'] if v['id'] == '1.8.9')
+          version = json.load(urllib.request.urlopen(entry['url'], timeout=30))
+          server = version['downloads']['server']
+          with urllib.request.urlopen(server['url'], timeout=60) as response:
+              data = response.read()
+          actual = hashlib.sha1(data).hexdigest()
+          if actual.lower() != server['sha1'].lower():
+              raise SystemExit('SERVER_SHA1_MISMATCH expected=%s actual=%s' % (server['sha1'], actual))
+          open(output, 'wb').write(data)
+          print('MINECRAFT_SERVER_1_8_9_SHA1=' + actual.upper())
+          print('MINECRAFT_SERVER_1_8_9_BYTES=' + str(len(data)))
+          PY
+          test -s "$SERVER_JAR"
+          echo "OPENABYSS_SERVER_JAR=$SERVER_JAR" >> "$GITHUB_ENV"
+
+      - name: Start Mesa X server
+        shell: bash
+        run: |
+          set -euo pipefail
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset \
+            >"$RUNNER_TEMP/openabyss-production-world-xvfb.log" 2>&1 &
+          echo "OPENABYSS_XVFB_PID=$!" >> "$GITHUB_ENV"
+
+          for _ in $(seq 1 30); do
+            if DISPLAY=:99 xdpyinfo >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          DISPLAY=:99 xdpyinfo >/dev/null
+
+          DISPLAY=:99 openbox >"$RUNNER_TEMP/openabyss-production-world-openbox.log" 2>&1 &
+          echo "OPENABYSS_OPENBOX_PID=$!" >> "$GITHUB_ENV"
+          sleep 2
+
+          DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | tee "$RUNNER_TEMP/openabyss-production-world-glxinfo.txt"
+          DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | grep -Eq 'OpenGL renderer string:.*(llvmpipe|softpipe|Mesa)'
+          echo 'PRODUCTION_WORLD_MESA=PASS'
+
+      - name: Run shipped production JAR with no external network
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/run_production_world_smoke.sh
+
+          RUNNER_UID="$(id -u)"
+          RUNNER_GID="$(id -g)"
+
+          sudo unshare --net -- bash -c '
+            set -euo pipefail
+            ip link set lo up
+            ip link add abyss-dummy type dummy
+            ip addr add 192.0.2.1/32 dev abyss-dummy
+            ip link set abyss-dummy up
+            test -z "$(ip route show default)"
+
+            exec setpriv --reuid="$1" --regid="$2" --init-groups \
+              env \
+                HOME="$3" \
+                DISPLAY=:99 \
+                JAVA_HOME="$4" \
+                PATH="$4/bin:$5" \
+                GITHUB_WORKSPACE="$6" \
+                RUNNER_TEMP="$7" \
+                OPENABYSS_SERVER_JAR="$8" \
+                OPENABYSS_PRODUCTION_WORLD_MC="$9" \
+                OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
+                LIBGL_ALWAYS_SOFTWARE=1 \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true" \
+                GITHUB_TOKEN= \
+                ACTIONS_RUNTIME_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_URL= \
+                ABYSS_PAYLOAD_KEY= \
+                bash "$6/tools/run_production_world_smoke.sh"
+          ' _ \
+            "$RUNNER_UID" "$RUNNER_GID" "$HOME" "$JAVA_HOME" "$PATH" \
+            "$GITHUB_WORKSPACE" "$RUNNER_TEMP" "$OPENABYSS_SERVER_JAR" \
+            "$OPENABYSS_PRODUCTION_WORLD_MC" "$OPENABYSS_PRODUCTION_WORLD_JAR"
+
+      - name: Validate and stage production-world evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/openabyss-production-world-game"
+          STAGE="$GAME/abyss-runtime-stage.txt"
+          STDOUT="$RUNNER_TEMP/openabyss-production-world-client.stdout.log"
+          SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
+
+          test -f "$STAGE"
+          grep -Fq 'entity-player-join-world' "$STAGE"
+          grep -Fq 'world-ready-tick' "$STAGE"
+          grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          grep -Fq 'clickgui-open-success:' "$STAGE"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
+          test -s "$SCREENSHOT"
+
+          SOURCE_HASH="$(sha256sum "$OPENABYSS_PRODUCTION_WORLD_JAR" | awk '{print toupper($1)}')"
+          MOD_HASH="$(sha256sum "$GAME/mods/abyss.jar" | awk '{print toupper($1)}')"
+          test "$SOURCE_HASH" = "$MOD_HASH"
+
+          EVIDENCE="$GITHUB_WORKSPACE/production-world-evidence"
+          rm -rf "$EVIDENCE"
+          mkdir -p "$EVIDENCE"
+          cp -a "$GAME/." "$EVIDENCE/game"
+          cp "$RUNNER_TEMP/openabyss-production-world-client.stdout.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-client.stderr.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-server.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-glxinfo.txt" "$EVIDENCE/"
+          cp "$SCREENSHOT" "$EVIDENCE/"
+          cp "$OPENABYSS_PRODUCTION_WORLD_PACKAGE/BUILD-INFO.txt" "$EVIDENCE/"
+
+          echo 'PRODUCTION_WORLD_SHIPPED_JAR_HASH_CONTRACT=PASS'
+          echo 'OPENABYSS_LINUX_PRODUCTION_WORLD_RUNTIME_SMOKE=PASS'
+
+      - name: Upload production world runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-linux-production-world-runtime-smoke
+          path: production-world-evidence/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Xvfb/Openbox
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [ -n "$OPENABYSS_OPENBOX_PID" ]; then kill "$OPENABYSS_OPENBOX_PID" 2>/dev/null || true; fi
+          if [ -n "$OPENABYSS_XVFB_PID" ]; then kill "$OPENABYSS_XVFB_PID" 2>/dev/null || true; fi
