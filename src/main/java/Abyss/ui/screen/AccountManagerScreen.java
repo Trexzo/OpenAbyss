@@ -31,6 +31,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
@@ -70,7 +72,7 @@ extends GuiScreen {
                             Account var11;
                             String var12;
                             if (this.K == null) {
-                                this.K = Executors.newSingleThreadExecutor();
+                                this.K = AccountManagerScreen.newLoginExecutor();
 }
                             String string = var12 = StringUtils.isBlank((CharSequence)(var11 = AltManager.Q.get(this.G)).h()) ? "???" : var11.h();
                             if (var11.v() == AccountType.OFFLINE) {
@@ -243,6 +245,32 @@ extends GuiScreen {
             throw Sneaky.rethrow(ex);
 }
 }
+    private static ExecutorService newLoginExecutor() {
+        return Executors.newSingleThreadExecutor(runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-AccountLogin");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            executor = AccountManagerScreen.newLoginExecutor();
+            Future<Boolean> daemon = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(daemon.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL login-worker-not-daemon";
+}
+            return "PASS daemon-worker";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
+}
+}
     private static int accent() {
         try {
             return Theme.S(0.0, 35338930340239L);
@@ -255,6 +283,8 @@ extends GuiScreen {
         Keyboard.enableRepeatEvents((boolean)false);
         if (this.I != null && !this.I.isDone()) {
             this.I.cancel(true);
+}
+        if (this.K != null && !this.K.isShutdown()) {
             this.K.shutdownNow();
 }
 }
