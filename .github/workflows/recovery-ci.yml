@@ -542,6 +542,17 @@ jobs:
           python '.\tools\check_reference_public_api.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era public API compatibility gate failed: $LASTEXITCODE" }
 
+      - name: Verify exact runnable-era top-level class set
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for exact class-set gate.' }
+          python '.\tools\check_reference_classset.py' --jar $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Exact runnable-era class-set gate failed: $LASTEXITCODE" }
+
       - name: Verify runnable-era class package shape
         shell: powershell
         run: |
