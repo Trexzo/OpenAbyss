@@ -35,7 +35,6 @@ REVIEWED_RECOVERY_EXTRAS = {
     "Abyss/internal/auth/AuthService$1.class",
     "Abyss/internal/auth/AuthService$HttpResult.class",
     "Abyss/module/Module$1ProbeModule.class",
-    "Abyss/ui/abyss/AbyssArrayListVisibility$3.class",
 }
 
 
