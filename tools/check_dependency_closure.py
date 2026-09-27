@@ -20,6 +20,8 @@ RUNTIME_PREFIXES = (
     "net/minecraft/",
     "net/minecraftforge/",
     "net/java/games/input/",
+    "net/java/games/util/",
+    "com/jcraft/",
     "org/lwjgl/",
     "org/apache/logging/log4j/",
     "org/apache/commons/",
@@ -73,12 +75,25 @@ def parse_class_dependencies(data: bytes) -> set[str]:
         elif tag == 7:
             name_index, off = u2(data, off)
             cp[i] = ("Class", name_index)
-        elif tag in (8, 16, 19, 20):
+        elif tag == 8:
             off += 2
-        elif tag in (9, 10, 11, 12, 17, 18):
-            off += 4
+        elif tag in (9, 10, 11):
+            class_index, off = u2(data, off)
+            nt_index, off = u2(data, off)
+            cp[i] = ("Ref", tag, class_index, nt_index)
+        elif tag == 12:
+            name_index, off = u2(data, off)
+            desc_index, off = u2(data, off)
+            cp[i] = ("NameAndType", name_index, desc_index)
         elif tag == 15:
             off += 3
+        elif tag == 16:
+            desc_index, off = u2(data, off)
+            cp[i] = ("MethodType", desc_index)
+        elif tag in (17, 18):
+            off += 4
+        elif tag in (19, 20):
+            off += 2
         else:
             raise ValueError(f"unsupported constant-pool tag {tag}")
         i += 1
@@ -89,10 +104,15 @@ def parse_class_dependencies(data: bytes) -> set[str]:
             return str(entry[1])
         return None
 
+    def add_descriptor(deps: set[str], descriptor: str | None) -> None:
+        if not descriptor:
+            return
+        for match in DESCRIPTOR_CLASS.finditer(descriptor):
+            deps.add(match.group(1))
+
     deps: set[str] = set()
 
-    # CONSTANT_Class references cover bytecode instructions, catch types,
-    # superclasses/interfaces and many verifier-visible symbolic refs.
+    # CONSTANT_Class entries are verifier-visible symbolic references.
     for entry in cp:
         if not (isinstance(entry, tuple) and entry and entry[0] == "Class"):
             continue
@@ -100,33 +120,55 @@ def parse_class_dependencies(data: bytes) -> set[str]:
         if not name:
             continue
         if name.startswith("["):
-            for match in DESCRIPTOR_CLASS.finditer(name):
-                deps.add(match.group(1))
+            add_descriptor(deps, name)
         else:
             deps.add(name)
 
-    # Parse declared field/method descriptors as well. Descriptor Utf8 entries
-    # can reference a type without requiring a standalone CONSTANT_Class entry.
+    # Parse only descriptor slots that the class-file format identifies as
+    # descriptors. Do not inspect arbitrary Utf8 constants: OpenAbyss contains
+    # encrypted strings that can accidentally resemble JVM descriptors.
     for entry in cp:
-        if not (isinstance(entry, tuple) and entry and entry[0] == "Utf8"):
+        if not isinstance(entry, tuple) or not entry:
             continue
-        value = str(entry[1])
-        if not ("L" in value and ";" in value):
-            continue
-        # Restrict this to descriptor/signature-looking strings, avoiding
-        # arbitrary text resources and encrypted constants.
-        if not (
-            value.startswith("(")
-            or value.startswith("L")
-            or value.startswith("[")
-            or "<" in value
-        ):
-            continue
-        for match in DESCRIPTOR_CLASS.finditer(value):
-            deps.add(match.group(1))
+        if entry[0] == "NameAndType":
+            add_descriptor(deps, utf(int(entry[2])))
+        elif entry[0] == "MethodType":
+            add_descriptor(deps, utf(int(entry[1])))
+
+    # Continue through the class structure to cover descriptors of fields and
+    # methods declared by this class even when they have no NameAndType ref.
+    _access, off = u2(data, off)
+    _this, off = u2(data, off)
+    _super, off = u2(data, off)
+
+    interface_count, off = u2(data, off)
+    off += interface_count * 2
+
+    field_count, off = u2(data, off)
+    for _ in range(field_count):
+        _field_access, off = u2(data, off)
+        _field_name, off = u2(data, off)
+        field_desc, off = u2(data, off)
+        add_descriptor(deps, utf(field_desc))
+        attr_count, off = u2(data, off)
+        for __ in range(attr_count):
+            _attr_name, off = u2(data, off)
+            length, off = u4(data, off)
+            off += length
+
+    method_count, off = u2(data, off)
+    for _ in range(method_count):
+        _method_access, off = u2(data, off)
+        _method_name, off = u2(data, off)
+        method_desc, off = u2(data, off)
+        add_descriptor(deps, utf(method_desc))
+        attr_count, off = u2(data, off)
+        for __ in range(attr_count):
+            _attr_name, off = u2(data, off)
+            length, off = u4(data, off)
+            off += length
 
     return deps
-
 
 def namespace(name: str) -> str:
     parts = name.split("/")
