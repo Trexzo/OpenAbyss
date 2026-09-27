@@ -375,7 +375,7 @@ jobs:
             cat "$DIAG"
             exit 1
           fi
-          if ! grep -Fq '[ABYSSDIAG] commanddata selftest= PASS menu=RIDDLE_JOKER music=false chatBind=54:.help' "$DIAG"; then
+          if ! grep -Fq '[ABYSSDIAG] commanddata selftest= PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1' "$DIAG"; then
             echo 'Command-data disk round-trip self-test is not green.'
             cat "$DIAG"
             exit 1
