@@ -222,11 +222,14 @@ public final class AbyssBootstrap {
             throw new IllegalStateException("Invalid persistence probe scale: " + expectedRaw, failure);
 }
         float actual = ClickGUI.scale == null ? Float.NaN : ClickGUI.scale.L();
-        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f) {
-            stage("persistence-probe-verify-fail:" + actual);
-            throw new IllegalStateException("Persisted ClickGUI scale expected " + expected + " but was " + actual);
+        Module fullBright = ModuleManager.byName("FullBright");
+        boolean fullBrightEnabled = fullBright != null && fullBright.o();
+        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f || !fullBrightEnabled) {
+            stage("persistence-probe-verify-fail:scale=" + actual + ",fullbright=" + fullBrightEnabled);
+            throw new IllegalStateException("Persisted state expected ClickGUI scale=" + expected
+                    + " and FullBright=true but was scale=" + actual + " FullBright=" + fullBrightEnabled);
 }
-        stage("persistence-probe-verify-pass:" + actual);
+        stage("persistence-probe-verify-pass:scale=" + actual + ",fullbright=true");
 }
 
     private static void startBackgroundWarmup() {
