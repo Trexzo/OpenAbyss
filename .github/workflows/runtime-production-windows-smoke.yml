@@ -140,6 +140,12 @@ jobs:
           Write-Host "PRODUCTION_SHIPPED_JAR_SHA256=$jarHash"
           Write-Host "PRODUCTION_MODS_FOLDER_SHA256=$modsHash"
           Write-Host 'PRODUCTION_INSTALL_MODE_CONTRACT=PASS'
+
+          $profileEvidence = Join-Path $env:OPENABYSS_PRODUCTION_MC 'openabyss-production-profile.txt'
+          if (Test-Path -LiteralPath $profileEvidence -PathType Leaf) {
+            Copy-Item -LiteralPath $profileEvidence -Destination (Join-Path $out 'openabyss-production-profile.txt') -Force
+          }
+
           "OPENABYSS_PRODUCTION_PACKAGE=$out" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Block Java outbound traffic for production runtime
@@ -302,6 +308,6 @@ jobs:
             ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\game\abyss-*.tsv
             ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\abyss.jar
             ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\BUILD-INFO.txt
-            ${{ env.OPENABYSS_PRODUCTION_MC }}\openabyss-production-profile.txt
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\openabyss-production-profile.txt
           if-no-files-found: warn
           retention-days: 7
