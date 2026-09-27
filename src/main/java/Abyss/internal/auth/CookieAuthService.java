@@ -169,6 +169,46 @@ public class CookieAuthService {
     public static void K() {
         j.shutdown();
 }
+    public static String selfTest() {
+        try {
+            String json = "["
+                    + "{\"domain\":\".live.com\",\"name\":\"__Host-MSAAUTH\",\"value\":\"token-a\"},"
+                    + "{\"domain\":\".live.com\",\"name\":\"JSH\",\"value\":\"token-b\"},"
+                    + "{\"domain\":\".example.com\",\"name\":\"__Host-MSAAUTH\",\"value\":\"reject-domain\"},"
+                    + "{\"domain\":\".live.com\",\"name\":\"unrelated\",\"value\":\"reject-name\"}"
+                    + "]";
+            Map parsedJson = CookieAuthService.n(json);
+            if (!"token-a".equals(parsedJson.get("__Host-MSAAUTH")) || !"token-b".equals(parsedJson.get("JSH"))) {
+                return "FAIL json-cookie-parse keys=" + parsedJson.keySet();
+}
+            if (parsedJson.containsValue("reject-domain") || parsedJson.containsValue("reject-name")) {
+                return "FAIL json-cookie-filter";
+}
+            if (!CookieAuthService.d(parsedJson)) {
+                return "FAIL auth-cookie-detection";
+}
+            String netscape = ".live.com\tTRUE\t/\tTRUE\t2147483647\t__Host-MSAAUTH\ttoken-c\n";
+            Map parsedNetscape = CookieAuthService.A(netscape);
+            if (!"token-c".equals(parsedNetscape.get("__Host-MSAAUTH"))) {
+                return "FAIL netscape-cookie-parse";
+}
+            Map header = CookieAuthService.L("__Host-MSAAUTH=token-d; JSH=token-e; unrelated=nope");
+            if (!"token-d".equals(header.get("__Host-MSAAUTH")) || !"token-e".equals(header.get("JSH"))) {
+                return "FAIL header-cookie-parse";
+}
+            if (header.containsKey("unrelated")) {
+                return "FAIL header-cookie-filter";
+}
+            String access = CookieAuthService.J("https://example.invalid/#access_token=abc%20123&token_type=bearer");
+            if (!"abc 123".equals(access)) {
+                return "FAIL access-token-parse=" + access;
+}
+            return "PASS cookie-parsers";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+}
     private static Map L(String var0) {
         LinkedHashMap var7 = new LinkedHashMap();
         String var8 = var0.replace("\n", "").replace("\r", "");
