@@ -129,15 +129,31 @@ public final class AbyssCommandData {
 }
         return AbyssCommandData.writeText(var0, var2.toString());
 }
+    private static JsonObject parseJson(Path path) {
+        try {
+            if (path == null || !Files.isRegularFile(path, new LinkOption[0])) {
+                return null;
+}
+            String text = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            JsonElement parsed = new JsonParser().parse(text);
+            return parsed != null && parsed.isJsonObject() ? parsed.getAsJsonObject() : null;
+}
+        catch (Throwable ignored) {
+            return null;
+}
+}
     public static JsonObject readJson(String var0) {
         try {
             Path var1 = AbyssCommandData.resolve(var0);
             if (!Files.isRegularFile(var1, new LinkOption[0])) {
                 return null;
 }
-            String var2 = new String(Files.readAllBytes(var1), StandardCharsets.UTF_8);
-            JsonElement var3 = new JsonParser().parse(var2);
-            return var3 != null && var3.isJsonObject() ? var3.getAsJsonObject() : null;
+            JsonObject primary = AbyssCommandData.parseJson(var1);
+            if (primary != null) {
+                return primary;
+}
+            Path backup = var1.resolveSibling(var0 + ".bak");
+            return AbyssCommandData.parseJson(backup);
 }
         catch (Throwable var4) {
             return null;
@@ -366,7 +382,38 @@ public final class AbyssCommandData {
                 return "FAIL malformed-menu-not-reported " + malformedMenu;
 }
 
-            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused";
+            String probeName = "__openabyss_commanddata_json_selftest__.json";
+            Path probePath = AbyssCommandData.resolve(probeName);
+            Path probeBak = probePath.resolveSibling(probeName + ".bak");
+            Path probeTmp = probePath.resolveSibling(probeName + ".tmp");
+            Files.deleteIfExists(probePath);
+            Files.deleteIfExists(probeBak);
+            Files.deleteIfExists(probeTmp);
+            JsonObject generation1 = new JsonObject();
+            generation1.addProperty("generation", Integer.valueOf(1));
+            JsonObject generation2 = new JsonObject();
+            generation2.addProperty("generation", Integer.valueOf(2));
+            if (!AbyssCommandData.writeJson(probeName, generation1)
+                    || !AbyssCommandData.writeJson(probeName, generation2)) {
+                return "FAIL json-rotation-write";
+}
+            JsonObject currentProbe = AbyssCommandData.parseJson(probePath);
+            JsonObject backupProbe = AbyssCommandData.parseJson(probeBak);
+            if (currentProbe == null || currentProbe.get("generation").getAsInt() != 2
+                    || backupProbe == null || backupProbe.get("generation").getAsInt() != 1) {
+                return "FAIL json-rotation current=" + currentProbe + " backup=" + backupProbe;
+}
+            Files.write(probePath, "{broken".getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+            JsonObject recoveredProbe = AbyssCommandData.readJson(probeName);
+            if (recoveredProbe == null || recoveredProbe.get("generation").getAsInt() != 1) {
+                return "FAIL json-backup-read " + String.valueOf(recoveredProbe);
+}
+            Files.deleteIfExists(probePath);
+            Files.deleteIfExists(probeBak);
+            Files.deleteIfExists(probeTmp);
+
+            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused json-backup-recovery";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
@@ -409,6 +456,9 @@ public final class AbyssCommandData {
                 new File(testDir, CURRENT).delete();
                 new File(testDir, CURRENT + ".bak").delete();
                 new File(testDir, CURRENT + ".tmp").delete();
+                new File(testDir, "__openabyss_commanddata_json_selftest__.json").delete();
+                new File(testDir, "__openabyss_commanddata_json_selftest__.json.bak").delete();
+                new File(testDir, "__openabyss_commanddata_json_selftest__.json.tmp").delete();
                 testDir.delete();
 }
             catch (Throwable ignored) {
