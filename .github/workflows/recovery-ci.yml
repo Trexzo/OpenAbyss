@@ -88,6 +88,13 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify auth HTTP response ownership
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_auth_http_resources.py'
+          if ($LASTEXITCODE -ne 0) { throw "Auth HTTP resource gate failed: $LASTEXITCODE" }
+
       - name: Clean full build
         shell: powershell
         run: |
