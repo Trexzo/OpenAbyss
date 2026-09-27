@@ -20,6 +20,7 @@
  */
 package Abyss.module.impl.movement;
 
+import Abyss.AbyssClient;
 import Abyss.enums.RotationMode;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
@@ -181,7 +182,7 @@ implements EventSubscriber {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("NoSlow", "blink-ownership-check", throwable);
 }
         if (PacketManager.e()) {
             return;
@@ -208,7 +209,7 @@ implements EventSubscriber {
             KeyBindUtil.o(0L, NoSlow.R.gameSettings.keyBindUseItem.getKeyCode());
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("NoSlow", "restore-use-key", throwable);
 }
 }
     private void stopRotating() {
@@ -279,7 +280,7 @@ implements EventSubscriber {
                 this.releasedUseKey = true;
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("NoSlow", "release-use-key", throwable);
 }
 }
 }
@@ -445,7 +446,7 @@ implements EventSubscriber {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("NoSlow", "killaura-ownership-check", throwable);
 }
         try {
             return Modules.J(AutoBlock.class).o() && !AutoBlock.mode.R("NONE");
