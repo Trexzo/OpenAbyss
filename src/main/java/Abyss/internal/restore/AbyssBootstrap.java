@@ -362,6 +362,7 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] altstore selftest  = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AltManager.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] altstore last      = ").append(AltManager.lastPersistenceNote).append('\n');
             b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
+            b.append("[ABYSSDIAG] commanddata selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssCommandData.selfTest() : "SKIPPED").append('\n');
             b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
             b.append("[ABYSSDIAG] clickgui selftest = ").append(ClickGUI.selfTest()).append('\n');
             b.append("[ABYSSDIAG] altmenu selftest  = ").append(GuiMainMenuHooks.selfTest()).append('\n');
