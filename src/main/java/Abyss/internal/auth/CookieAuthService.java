@@ -145,7 +145,10 @@ public class CookieAuthService {
                             AltManager.upsert(new Account("", var21.m, var22.g, var22.z, 0L, AccountType.MINECRAFT));
                             AltManager.O(11006179144378L);
                             boolean persisted = AltManager.persistenceOk();
-                            SessionAccessor.k(var23);
+                            if (!SessionAccessor.set(var23)) {
+                                var1.x("&cLogin failed: Minecraft session swap was not applied.&r");
+                                return false;
+}
                             var1.x(persisted
                                     ? "&aSuccessfully logged in as " + var23.getUsername() + "&r"
                                     : "&eLogged in as " + var23.getUsername() + ", but accounts.json was not saved.&r");
