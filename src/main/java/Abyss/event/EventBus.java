@@ -146,7 +146,38 @@ public class EventBus {
                 this.rwLock.writeLock().unlock();
 }
             if (needInit && var3 instanceof EventSubscriber) {
-                ((EventSubscriber)var3).x(var4, this);
+                try {
+                    ((EventSubscriber)var3).x(var4, this);
+}
+                catch (RuntimeException | Error failure) {
+                    this.rwLock.writeLock().lock();
+                    try {
+                        List<ListenerBinding<?>> failedBindings = this.U.remove(var3);
+                        if (failedBindings != null && !failedBindings.isEmpty()) {
+                            for (ListenerBinding<?> failedBinding : failedBindings) {
+                                this.ownerNames.remove(failedBinding);
+}
+                            for (Map.Entry<Class<?>, List<ListenerBinding<?>>> entry : this.P.entrySet()) {
+                                List<ListenerBinding<?>> listeners = entry.getValue();
+                                if (!listeners.removeAll(failedBindings)) {
+                                    continue;
+}
+                                if (listeners.isEmpty()) {
+                                    this.P.remove(entry.getKey(), listeners);
+                                    this.snapshots.remove(entry.getKey());
+}
+                                else {
+                                    listeners.sort(PRIORITY_DESC);
+                                    this.snapshots.put(entry.getKey(), listeners.toArray(new ListenerBinding[0]));
+}
+}
+}
+}
+                    finally {
+                        this.rwLock.writeLock().unlock();
+}
+                    throw failure;
+}
 }
 }
 }
@@ -268,6 +299,50 @@ public class EventBus {
             if (bus.isOwnerActive(emptySubscriber)) {
                 return "FAIL empty-subscriber-proven-active";
 }
+
+            final EventBus rollbackBus = new EventBus();
+            final List<String> retryCalls = new ArrayList<String>();
+            final int[] registrationAttempts = new int[]{0};
+            EventSubscriber flakySubscriber = new EventSubscriber(){
+                @Override
+                public void x(long seed, EventBus target) {
+                    ++registrationAttempts[0];
+                    target.R(this, TestEvent.class, 3, new EventInvoker(){
+                        @Override
+                        public void c(long callbackSeed, Object event) {
+                            retryCalls.add("retry");
+}
+                    });
+                    if (registrationAttempts[0] == 1) {
+                        throw new IllegalStateException("registration-probe");
+}
+}
+            };
+            boolean registrationFailed = false;
+            try {
+                rollbackBus.s(flakySubscriber, 0L);
+}
+            catch (IllegalStateException expected) {
+                registrationFailed = true;
+}
+            if (!registrationFailed || rollbackBus.isOwnerActive(flakySubscriber)) {
+                return "FAIL registration-rollback-state attempts=" + registrationAttempts[0]
+                        + " active=" + rollbackBus.isOwnerActive(flakySubscriber);
+}
+            rollbackBus.e(new TestEvent(), 0L);
+            if (!retryCalls.isEmpty()) {
+                return "FAIL registration-rollback-visible " + retryCalls;
+}
+            rollbackBus.s(flakySubscriber, 0L);
+            if (!rollbackBus.isOwnerActive(flakySubscriber) || registrationAttempts[0] != 2) {
+                return "FAIL registration-retry attempts=" + registrationAttempts[0]
+                        + " active=" + rollbackBus.isOwnerActive(flakySubscriber);
+}
+            rollbackBus.e(new TestEvent(), 0L);
+            if (!retryCalls.equals(Arrays.asList("retry"))) {
+                return "FAIL registration-retry-dispatch " + retryCalls;
+}
+
             EventSubscriber low = new EventSubscriber(){
                 @Override
                 public void x(long seed, EventBus target) {
