@@ -1,0 +1,8 @@
+# OpenAbyss runnable-era executable event-wiring authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# BINDER_REG tuple=(binder_internal_name,event_class,priority,invoker_internal_name)
+# INVOKER_CALL tuple=(invoker_internal_name,event_cast,target_calls,long_constants)
+# aggregate_payload=sorted Python tuple repr + newline
+# format=kind tuples sha256
+BINDER_REG 260 e2e67cabb1502d5cc4356873736837368b05e1782ff8f62db470784b3f94efaa
+INVOKER_CALL 260 0f3938aae2d7934e7cd087d3a36aaab82391705ce32c5a1b77070c5fb8e630ac
