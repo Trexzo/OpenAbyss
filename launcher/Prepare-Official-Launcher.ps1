@@ -1,5 +1,6 @@
 param(
-    [string]$PackageDir = (Split-Path -Parent $MyInvocation.MyCommand.Path)
+    [string]$PackageDir = (Split-Path -Parent $MyInvocation.MyCommand.Path),
+    [string]$MinecraftDir = ""
 )
 
 Set-StrictMode -Version 2.0
@@ -11,6 +12,24 @@ $GameDir = Join-Path $PackageDir 'official-game'
 $ModsDir = Join-Path $GameDir 'mods'
 $Dest = Join-Path $ModsDir 'abyss.jar'
 $Info = Join-Path $PackageDir 'official-launcher-setup.txt'
+
+if (-not $MinecraftDir) {
+    $MinecraftDir = Join-Path $env:APPDATA '.minecraft'
+}
+$MinecraftDir = [IO.Path]::GetFullPath($MinecraftDir)
+$ForgeProfile = $null
+$VersionsDir = Join-Path $MinecraftDir 'versions'
+if (Test-Path -LiteralPath $VersionsDir -PathType Container) {
+    $ForgeProfile = Get-ChildItem -LiteralPath $VersionsDir -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '1\.8\.9.*forge|forge.*1\.8\.9' } |
+        Where-Object {
+            $json = Join-Path $_.FullName ($_.Name + '.json')
+            Test-Path -LiteralPath $json -PathType Leaf
+        } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+}
+$ForgeReady = $null -ne $ForgeProfile
 
 if (-not (Test-Path -LiteralPath $Jar -PathType Leaf)) {
     throw "abyss.jar is missing beside the installer: $Jar"
@@ -66,6 +85,9 @@ if (Test-Path -LiteralPath $BuildInfo -PathType Leaf) {
     "MOD_JAR_SHA256=$hash"
     "SESSION_ID=$SessionId"
     "SESSION_START_UTC=$SessionStart"
+    "MINECRAFT_DIRECTORY=$MinecraftDir"
+    "FORGE_1_8_9_READY=$ForgeReady"
+    "FORGE_PROFILE=$(if ($ForgeReady) { $ForgeProfile.Name } else { '<none>' })"
     ''
     'Minecraft Launcher steps:'
     '1. Install/create a Minecraft Java Edition Forge 1.8.9 installation.'
@@ -81,6 +103,12 @@ Write-Host 'OpenAbyss official-launcher game directory is ready.' -ForegroundCol
 Write-Host "Game Directory: $GameDir"
 Write-Host "Installed JAR : $Dest"
 Write-Host "SHA-256       : $hash"
+Write-Host "Minecraft dir : $MinecraftDir"
+if ($ForgeReady) {
+    Write-Host "Forge profile : $($ForgeProfile.Name)" -ForegroundColor Green
+} else {
+    Write-Warning 'No installed Forge 1.8.9 profile was detected. Install Forge 1.8.9 in Minecraft Launcher before launching this game directory.'
+}
 Write-Host ''
 Write-Host 'Use that Game Directory on a Forge 1.8.9 installation in Minecraft Launcher.'
 Write-Host "Setup record: $Info"
