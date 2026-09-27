@@ -29,21 +29,16 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import net.minecraft.client.Minecraft;
 
 public final class AbyssArrayListVisibility {
     private static final String FILE = "abyss-arraylist.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
-    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor(new ThreadFactory(){
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable, "Abyss-ArrayList-save");
-            thread.setDaemon(true);
-            return thread;
-        }
+    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "Abyss-ArrayList-save");
+        thread.setDaemon(true);
+        return thread;
     });
     private static volatile Set<String> hidden;
 
