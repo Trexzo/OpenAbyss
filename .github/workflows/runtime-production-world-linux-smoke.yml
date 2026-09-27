@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -215,6 +215,10 @@ jobs:
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
+          grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-toggle-pass:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-pass:commands=7:' "$STAGE"
           for mode in STUDIO RAVEN VESTIGE; do
             grep -Fq "clickgui-mode-probe-open:$mode:" "$STAGE"
             grep -Fq "clickgui-mode-probe-close:$mode" "$STAGE"
