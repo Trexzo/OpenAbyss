@@ -234,6 +234,17 @@ jobs:
           python '.\tools\check_production_member_refs.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Production Minecraft member-ref gate failed: $LASTEXITCODE" }
 
+      - name: Verify production runtime dependency closure
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for dependency-closure gate.' }
+          python '.\tools\check_dependency_closure.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Production dependency-closure gate failed: $LASTEXITCODE" }
+
       - name: Verify runnable-era module registry order
         shell: powershell
         run: |
@@ -638,6 +649,19 @@ jobs:
           $jar = Join-Path $out 'abyss.jar'
           python '.\tools\check_production_member_refs.py' $jar
           if ($LASTEXITCODE -ne 0) { throw "Shipped production member-ref gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped runtime dependency closure
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-dependency-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_dependency_closure.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped dependency-closure gate failed: $LASTEXITCODE" }
           Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
 
       - name: Exercise shipped Windows launcher package helpers
