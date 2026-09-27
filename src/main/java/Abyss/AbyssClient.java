@@ -196,18 +196,18 @@ implements EventSubscriber {
 }
         this.persistenceProbeSeeded = true;
         try {
-            if (ClickGUI.mode == null) {
-                throw new IllegalStateException("ClickGUI.mode is null");
+            if (ClickGUI.scale == null) {
+                throw new IllegalStateException("ClickGUI.scale is null");
 }
-            ClickGUI.mode.i("RAVEN");
-            if (!"RAVEN".equals(ClickGUI.mode.Y())) {
-                throw new IllegalStateException("ClickGUI mode did not accept RAVEN: " + ClickGUI.mode.Y());
+            ClickGUI.scale.o((byte)0, 0L, 1.75f);
+            if (Math.abs(ClickGUI.scale.L() - 1.75f) > 0.001f) {
+                throw new IllegalStateException("ClickGUI scale did not accept 1.75: " + ClickGUI.scale.L());
 }
             AbyssConfig.SaveResult result = AbyssConfig.save("current");
             if (result == null || !result.ok) {
                 throw new IllegalStateException("current config save failed: " + String.valueOf(result));
 }
-            runtimeMilestone("persistence-probe-seed-pass:RAVEN");
+            runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75");
 }
         catch (Throwable failure) {
             recordFeatureFailure("PersistenceProbe:ClickGUI", "seed-save", failure);
