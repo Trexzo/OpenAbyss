@@ -24,6 +24,7 @@
  */
 package Abyss.module.impl.visual_utility;
 
+import Abyss.AbyssClient;
 import Abyss.enums.MinecraftColor;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
@@ -843,7 +844,9 @@ implements EventSubscriber {
                     x2.o((byte)0, 0L, nx);
                     y.o((byte)0, 0L, ny);
 }
-                catch (Throwable throwable) {}
+                catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("TargetHUD", "persist-drag-position", throwable);
+}
 }
         } else {
             this.thudDragging = false;
