@@ -46,6 +46,7 @@ if ($FixtureSelfTest) {
         '[ABYSSDIAG] command selftest  = PASS commands=19 primaryAliases=19 moduleSetting=PASS keybind=TRUSTED config=PASS'
         '[ABYSSDIAG] command line      = READY'
         '[ABYSSDIAG] account selftest   = PASS json-roundtrip'
+        '[ABYSSDIAG] authservice selftest= PASS loopback daemon-callback timeout=300s'
         '[ABYSSDIAG] cookie selftest    = PASS cookie-parsers daemon-workers'
         '[ABYSSDIAG] accountgui selftest= PASS daemon-worker'
         '[ABYSSDIAG] mslogin selftest   = PASS daemon-worker'
@@ -115,6 +116,7 @@ $checks = [ordered]@{
     ConfigSaveFailure = -not [string]::IsNullOrWhiteSpace($configFailureText)
     RendererReloadFailure = -not [string]::IsNullOrWhiteSpace($rendererFailureText)
     AccountSelfTest = $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')
+    AuthServiceSelfTest = $diagText.Contains('[ABYSSDIAG] authservice selftest= PASS loopback daemon-callback timeout=300s')
     CookieSelfTest = $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')
     AccountGuiSelfTest = $diagText.Contains('[ABYSSDIAG] accountgui selftest= PASS daemon-worker')
     MicrosoftLoginSelfTest = $diagText.Contains('[ABYSSDIAG] mslogin selftest   = PASS daemon-worker')
@@ -159,6 +161,7 @@ $pass = $checks.GameDirectoryExists -and
         (-not $checks.ConfigSaveFailure) -and
         (-not $checks.RendererReloadFailure) -and
         $checks.AccountSelfTest -and
+        $checks.AuthServiceSelfTest -and
         $checks.CookieSelfTest -and
         $checks.AccountGuiSelfTest -and
         $checks.MicrosoftLoginSelfTest -and
