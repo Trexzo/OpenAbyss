@@ -198,6 +198,7 @@ public final class AbyssBootstrap {
         stage("config-applied");
         AbyssModuleSettings.applyByName(PENDING);
         stage("config-setting-values-applied");
+        AbyssBootstrap.verifyPersistenceProbe();
         AbyssBootstrap.forceEnableCommandLine();
         stage("commandline-enabled");
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
@@ -208,6 +209,19 @@ public final class AbyssBootstrap {
         AbyssBootstrap.diag$dump();
         stage("bootstrap-complete");
 }
+    private static void verifyPersistenceProbe() {
+        String expected = System.getProperty("abyss.persistenceProbeExpectedClickGuiMode");
+        if (expected == null || expected.length() == 0) {
+            return;
+}
+        String actual = ClickGUI.mode == null ? "<null>" : ClickGUI.mode.Y();
+        if (!expected.equals(actual)) {
+            stage("persistence-probe-verify-fail:" + actual);
+            throw new IllegalStateException("Persisted ClickGUI mode expected " + expected + " but was " + actual);
+}
+        stage("persistence-probe-verify-pass:" + actual);
+}
+
     private static void startBackgroundWarmup() {
         Thread warm = new Thread(new Runnable(){
 
