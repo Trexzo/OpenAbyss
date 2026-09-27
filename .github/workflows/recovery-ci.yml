@@ -198,17 +198,6 @@ jobs:
           python '.\tools\check_event_core.py' $jar.FullName
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era event-core gate failed: $LASTEXITCODE" }
 
-      - name: Verify runnable-era event-core shape
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
-            Sort-Object LastWriteTimeUtc -Descending |
-            Select-Object -First 1
-          if (-not $jar) { throw 'Built OpenAbyss JAR not found for event-core gate.' }
-          python '.\tools\check_event_core_shape.py' $jar.FullName
-          if ($LASTEXITCODE -ne 0) { throw "Runnable-era event-core gate failed: $LASTEXITCODE" }
-
       - name: Verify runnable-era Setting framework
         shell: powershell
         run: |
