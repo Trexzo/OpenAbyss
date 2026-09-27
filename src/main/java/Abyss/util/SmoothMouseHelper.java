@@ -59,7 +59,11 @@ extends MouseHelper {
         this.I = new AtomicDouble();
         this.a = new AtomicDouble();
         this.M = new AtomicBoolean(false);
-        this.A = Executors.newScheduledThreadPool((int)c);
+        this.A = Executors.newScheduledThreadPool((int)c, runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-RawInput");
+            worker.setDaemon(true);
+            return worker;
+        });
         this.o = new HashSet<Mouse>();
 }
     public void f(long var1) {
