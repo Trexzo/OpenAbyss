@@ -111,6 +111,23 @@ public final class AuthService {
             return worker;
         });
 }
+    private static final class HttpResult {
+        private final int status;
+        private final String body;
+
+        private HttpResult(int status, String body) {
+            this.status = status;
+            this.body = body;
+}
+}
+    private static HttpResult execute(CloseableHttpClient client, HttpUriRequest request) throws IOException {
+        try (CloseableHttpResponse response = client.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            String body = entity != null ? EntityUtils.toString(entity) : "";
+            return new HttpResult(status, body);
+}
+}
     public static String selfTest() {
         ExecutorService executor = null;
         try {
@@ -151,8 +168,8 @@ public final class AuthService {
                 var8.setConfig(e);
                 var8.setHeader("Content-Type", "application/json");
                 var8.setEntity((HttpEntity)new StringEntity(String.format("{\"identityToken\": \"XBL3.0 x=%s;%s\"}", var1, var0)));
-                CloseableHttpResponse var9 = var6.execute((HttpUriRequest)var8);
-                JsonObject var10 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var9.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var6, (HttpUriRequest)var8);
+                JsonObject var10 = new JsonParser().parse(http.body).getAsJsonObject();
                 String string = Optional.ofNullable(var10.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception(var10.has("error") ? String.format("%s: %s", var10.get("error").getAsString(), var10.get("errorMessage").getAsString()) : "There was no access token or error description present."));
                 return string;
 }
@@ -179,8 +196,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/json");
                 var7.setEntity((HttpEntity)new StringEntity(var8.toString()));
-                CloseableHttpResponse var10 = var5.execute((HttpUriRequest)var7);
-                JsonObject var11 = var10.getStatusLine().getStatusCode() == 200 ? new JsonParser().parse(EntityUtils.toString((HttpEntity)var10.getEntity())).getAsJsonObject() : new JsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var11 = http.status == 200 ? new JsonParser().parse(http.body).getAsJsonObject() : new JsonObject();
                 String string = Optional.ofNullable(var11.get("Token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception(var11.has("XErr") ? String.format("%s: %s", var11.get("XErr").getAsString(), var11.get("Message").getAsString()) : "There was no access token or error description present."));
                 return string;
 }
@@ -208,8 +225,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/x-www-form-urlencoded");
                 var7.setEntity((HttpEntity)new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2"), new BasicNameValuePair("grant_type", "authorization_code"), new BasicNameValuePair("code", var0), new BasicNameValuePair("redirect_uri", String.format("http://localhost:%d/callback", 25575))), "UTF-8"));
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 String var10 = Optional.ofNullable(var9.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> {
                     long var1xx = a ^ 0x3816C65E69DCL;
                     return new Exception(var9.has("error") ? String.format("%s: %s", var9.get("error").getAsString(), var9.get("error_description").getAsString()) : "There was no Microsoft access token or error description present.");
@@ -248,8 +265,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/json");
                 var7.setEntity((HttpEntity)new StringEntity(var8.toString()));
-                CloseableHttpResponse var11 = var5.execute((HttpUriRequest)var7);
-                JsonObject var12 = var11.getStatusLine().getStatusCode() == 200 ? new JsonParser().parse(EntityUtils.toString((HttpEntity)var11.getEntity())).getAsJsonObject() : new JsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var12 = http.status == 200 ? new JsonParser().parse(http.body).getAsJsonObject() : new JsonObject();
                 Map map = Optional.ofNullable(var12.get("Token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).map(var1xx -> {
                     String var4 = var12.get("DisplayClaims").getAsJsonObject().get("xui").getAsJsonArray().get(0).getAsJsonObject().get("uhs").getAsString();
                     HashMap<String, String> var5x = new HashMap<String, String>();
@@ -365,8 +382,8 @@ public final class AuthService {
                 HttpGet var7 = new HttpGet(URI.create("https://api.minecraftservices.com/minecraft/profile"));
                 var7.setConfig(e);
                 var7.setHeader("Authorization", "Bearer " + var0);
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 if (var9.has("error")) {
                     throw new Exception(String.format("%s: %s", var9.get("error").getAsString(), var9.get("errorMessage").getAsString()));
 }
@@ -388,8 +405,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/x-www-form-urlencoded");
                 var7.setEntity((HttpEntity)new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2"), new BasicNameValuePair("grant_type", "refresh_token"), new BasicNameValuePair("refresh_token", var0), new BasicNameValuePair("redirect_uri", String.format("http://localhost:%d/callback", 25575))), "UTF-8"));
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 String var10 = Optional.ofNullable(var9.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> {
                     long var1xx = a ^ 0x44814E318172L;
                     return new Exception(var9.has("error") ? String.format("%s: %s", var9.get("error").getAsString(), var9.get("error_description").getAsString()) : "There was no Microsoft access token or error description present.");
