@@ -30,6 +30,7 @@ import Abyss.module.Modules;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Freelook;
+import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
@@ -116,6 +117,9 @@ implements EventSubscriber {
     private int bedScanSpanY;
     private int bedScanSpanZ;
     private int bedScanVolume;
+    private int worldFunctionalProbeStage;
+    private int worldFunctionalProbeWaitTicks;
+    private float worldFunctionalProbeOriginalGamma;
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -182,6 +186,68 @@ implements EventSubscriber {
         catch (Throwable ignored) {
 }
         System.err.println("[ABYSSDIAG] feature failure " + line);
+}
+
+    private void pumpWorldFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.worldFunctionalProbe") || this.worldFunctionalProbeStage < 0
+                || this.worldFunctionalProbeStage >= 3) {
+            return;
+}
+        try {
+            FullBright probe = Modules.J(FullBright.class);
+            if (probe == null) {
+                throw new IllegalStateException("FullBright module is missing");
+}
+            if (this.worldFunctionalProbeStage == 0) {
+                if (probe.o() || probe.l() || probe.K() || probe.P() || w.isOwnerActive(probe)) {
+                    throw new IllegalStateException("FullBright did not start disabled/idle");
+}
+                this.worldFunctionalProbeOriginalGamma = this.c.gameSettings.gammaSetting;
+                probe.I(0L, true);
+                ++this.worldFunctionalProbeStage;
+                this.worldFunctionalProbeWaitTicks = 0;
+                runtimeMilestone("world-functional-probe-enable-request");
+                return;
+}
+            if (this.worldFunctionalProbeStage == 1) {
+                ++this.worldFunctionalProbeWaitTicks;
+                if (probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe)
+                        && Math.abs(this.c.gameSettings.gammaSetting - 15.0f) < 0.001f) {
+                    runtimeMilestone("world-functional-probe-enabled");
+                    probe.I(0L, false);
+                    ++this.worldFunctionalProbeStage;
+                    this.worldFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("world-functional-probe-disable-request");
+                    return;
+}
+                if (this.worldFunctionalProbeWaitTicks > 80) {
+                    throw new IllegalStateException("FullBright enable/subscribe lifecycle timed out enabled="
+                            + probe.o() + " pendingEnable=" + probe.l() + " pendingDisable=" + probe.K()
+                            + " subscribed=" + probe.P() + " ownerActive=" + w.isOwnerActive(probe)
+                            + " gamma=" + this.c.gameSettings.gammaSetting);
+}
+                return;
+}
+            ++this.worldFunctionalProbeWaitTicks;
+            if (!probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe)
+                    && Math.abs(this.c.gameSettings.gammaSetting - this.worldFunctionalProbeOriginalGamma) < 0.001f) {
+                runtimeMilestone("world-functional-probe-pass");
+                ++this.worldFunctionalProbeStage;
+                return;
+}
+            if (this.worldFunctionalProbeWaitTicks > 80) {
+                throw new IllegalStateException("FullBright disable/unsubscribe lifecycle timed out enabled="
+                        + probe.o() + " pendingEnable=" + probe.l() + " pendingDisable=" + probe.K()
+                        + " subscribed=" + probe.P() + " ownerActive=" + w.isOwnerActive(probe)
+                        + " gamma=" + this.c.gameSettings.gammaSetting
+                        + " expectedGamma=" + this.worldFunctionalProbeOriginalGamma);
+}
+}
+        catch (Throwable failure) {
+            this.worldFunctionalProbeStage = -1;
+            recordFeatureFailure("WorldFunctionalProbe:FullBright", "lifecycle", failure);
+            runtimeMilestone("world-functional-probe-fail:" + failure.getClass().getName());
+}
 }
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
@@ -707,6 +773,7 @@ implements EventSubscriber {
             if (batching) {
                 w.endBatch();
 }
+            this.pumpWorldFunctionalProbe();
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
                     runtimeMilestone("clickgui-open-request");
