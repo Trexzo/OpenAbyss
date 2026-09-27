@@ -161,6 +161,48 @@ public class AltManager {
 }
 }
 }
+    private static Account upsertInto(List<Account> accounts, Account incoming) {
+        if (accounts == null || incoming == null) {
+            return null;
+}
+        Account existing = null;
+        for (Account candidate : accounts) {
+            if (candidate == null) {
+                continue;
+}
+            boolean usernameMatch = incoming.h() != null && candidate.h() != null
+                    && !incoming.h().isEmpty() && incoming.h().equalsIgnoreCase(candidate.h());
+            boolean refreshMatch = incoming.d() != null && candidate.d() != null
+                    && !incoming.d().isEmpty() && incoming.d().equals(candidate.d());
+            boolean accessMatch = incoming.Y() != null && candidate.Y() != null
+                    && !incoming.Y().isEmpty() && incoming.Y().equals(candidate.Y());
+            if (candidate.v() == incoming.v() && (usernameMatch || refreshMatch || accessMatch)) {
+                existing = candidate;
+                break;
+}
+}
+        if (existing == null) {
+            accounts.add(incoming);
+            return incoming;
+}
+        long priorUnban = existing.F();
+        existing.H(incoming.d());
+        existing.r(incoming.Y());
+        existing.J(incoming.h());
+        existing.j(incoming.f());
+        existing.g(incoming.v());
+        if (incoming.F() != 0L) {
+            existing.G(incoming.F());
+        } else {
+            existing.G(priorUnban);
+}
+        return existing;
+}
+    public static Account upsert(Account incoming) {
+        synchronized (Q) {
+            return AltManager.upsertInto(Q, incoming);
+}
+}
     public static boolean persistenceOk() {
         return lastPersistenceNote != null && lastPersistenceNote.startsWith("PASS ");
 }
@@ -191,7 +233,17 @@ public class AltManager {
                     || second.v() != AccountType.MINECRAFT) {
                 return "FAIL minecraft-roundtrip";
 }
-            return "PASS file-roundtrip";
+            ArrayList<Account> upsertProbe = new ArrayList<Account>();
+            Account prior = new Account("old-refresh", "old-access", "SameUser", "old-uuid", 9876L, AccountType.MINECRAFT);
+            upsertProbe.add(prior);
+            Account merged = AltManager.upsertInto(upsertProbe,
+                    new Account("new-refresh", "new-access", "sameuser", "new-uuid", 0L, AccountType.MINECRAFT));
+            if (upsertProbe.size() != 1 || merged != prior
+                    || !"new-refresh".equals(prior.d()) || !"new-access".equals(prior.Y())
+                    || !"new-uuid".equals(prior.f()) || prior.F() != 9876L) {
+                return "FAIL upsert";
+}
+            return "PASS file-roundtrip upsert";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
