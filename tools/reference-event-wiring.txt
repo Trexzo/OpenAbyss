@@ -1,0 +1,7 @@
+# OpenAbyss runnable-era generated event wiring authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# class_fingerprint=sorted Abyss/Minecraft CONSTANT_Class + Methodref/InterfaceMethodref + Fieldref
+# aggregate_payload=sorted(class_internal_name<TAB>class_fingerprint<NL>)
+# format=kind classes sha256 class_refs method_refs field_refs
+BINDER 100 44493f5cf5776bdaacc1e9ed31526f3352577afe08d64bc13fc761d3daefc3d9 717 460 0
+INVOKER 260 5c289e5a744ea8ef54a3c086862fe7bb69a296a4585ef36675165ca1c95d07dc 1039 520 260
