@@ -30,6 +30,7 @@ import Abyss.command.impl.AbyssCommandToggle;
 import Abyss.command.impl.AbyssCommandVisible;
 import Abyss.command.impl.StockCommandModuleSetting;
 import Abyss.internal.jnic.StockCommandRegistry;
+import Abyss.internal.restore.AbyssCommandSelect;
 import Abyss.internal.restore.AbyssCommandData;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -221,8 +222,12 @@ public final class AbyssCommands {
             if (!resetTest.startsWith("PASS")) {
                 return "FAIL reset " + resetTest;
 }
+            String selectTest = AbyssCommandSelect.selfTest();
+            if (!selectTest.startsWith("PASS")) {
+                return "FAIL selector " + selectTest;
+}
             return "PASS commands=" + count + " primaryAliases=" + primaryResolved
-                    + " moduleSetting=PASS keybind=TRUSTED config=PASS reset=PASS";
+                    + " moduleSetting=PASS keybind=TRUSTED config=PASS reset=PASS selector=PASS";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
