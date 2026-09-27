@@ -144,20 +144,55 @@ public final class AbyssCommandData {
 }
 }
     static boolean writeJson(String var0, JsonObject var1) {
+        Path var2 = null;
+        Path var3 = null;
+        Path var5 = null;
+        boolean rotated = false;
         try {
-            Path var2 = AbyssCommandData.resolve(var0);
-            Path var3 = var2.resolveSibling(var0 + ".tmp");
+            var2 = AbyssCommandData.resolve(var0);
+            var3 = var2.resolveSibling(var0 + ".tmp");
+            var5 = var2.resolveSibling(var0 + ".bak");
+            Files.deleteIfExists(var3);
             String var4 = new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)var1);
             Files.write(var3, var4.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
             if (Files.isRegularFile(var2, new LinkOption[0])) {
-                Path var5 = var2.resolveSibling(var0 + ".bak");
                 Files.deleteIfExists(var5);
                 Files.move(var2, var5, new CopyOption[0]);
+                rotated = true;
 }
-            Files.move(var3, var2, new CopyOption[0]);
-            return true;
+            try {
+                Files.move(var3, var2, new CopyOption[0]);
+                return true;
+}
+            catch (Throwable promoteFailure) {
+                if (rotated && !Files.exists(var2, new LinkOption[0]) && Files.isRegularFile(var5, new LinkOption[0])) {
+                    try {
+                        Files.move(var5, var2, new CopyOption[0]);
+}
+                    catch (Throwable ignored) {
+}
+}
+                Files.deleteIfExists(var3);
+                return false;
+}
 }
         catch (Throwable var6) {
+            try {
+                if (rotated && var2 != null && var5 != null
+                        && !Files.exists(var2, new LinkOption[0])
+                        && Files.isRegularFile(var5, new LinkOption[0])) {
+                    Files.move(var5, var2, new CopyOption[0]);
+}
+}
+            catch (Throwable ignored) {
+}
+            try {
+                if (var3 != null) {
+                    Files.deleteIfExists(var3);
+}
+}
+            catch (Throwable ignored) {
+}
             return false;
 }
 }
@@ -313,7 +348,25 @@ public final class AbyssCommandData {
             if (!Teams.B().contains("OpenAbyssEnemyFixture")) {
                 return "FAIL load-enemy " + String.valueOf(Teams.B());
 }
-            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1";
+
+            MainMenuTheme.mode.i("RIDDLE_JOKER");
+            MainMenuTheme.music.v(true, 0L);
+            if (!AbyssCommandData.writeText(MENU, "__INVALID_THEME__")
+                    || !AbyssCommandData.writeText(MENU_MUSIC, "not-a-boolean")) {
+                return "FAIL malformed-menu-fixture-write";
+}
+            String malformedMenu = AbyssCommandData.loadMenu();
+            if (!"RIDDLE_JOKER".equals(MainMenuTheme.mode.Y())) {
+                return "FAIL malformed-menu-mutated " + MainMenuTheme.mode.Y() + " note=" + malformedMenu;
+}
+            if (!MainMenuTheme.music.c()) {
+                return "FAIL malformed-menu-music-mutated note=" + malformedMenu;
+}
+            if (malformedMenu.indexOf("INVALID") < 0) {
+                return "FAIL malformed-menu-not-reported " + malformedMenu;
+}
+
+            return "PASS menu=RIDDLE_JOKER music=false chatBind=54:.help friends=1 enemies=1 malformed-menu-refused";
 }
         catch (Throwable failure) {
             return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
@@ -393,8 +446,23 @@ public final class AbyssCommandData {
         StringBuilder var2 = new StringBuilder();
         try {
             if (var0 != null && !var0.trim().isEmpty()) {
-                MainMenuTheme.mode.i(var0.trim().toUpperCase());
-                var2.append("menu.txt=").append(MainMenuTheme.mode.Y());
+                String requested = var0.trim();
+                String accepted = null;
+                List<String> options = MainMenuTheme.mode.S();
+                if (options != null) {
+                    for (String option : options) {
+                        if (option != null && option.equalsIgnoreCase(requested)) {
+                            accepted = option;
+                            break;
+}
+}
+}
+                if (accepted != null) {
+                    MainMenuTheme.mode.i(accepted);
+                    var2.append("menu.txt=").append(MainMenuTheme.mode.Y());
+} else {
+                    var2.append("menu.txt INVALID(").append(requested).append(')');
+}
             } else {
                 var2.append("menu.txt absent");
 }
@@ -404,8 +472,13 @@ public final class AbyssCommandData {
 }
         try {
             if (var1 != null && !var1.trim().isEmpty()) {
-                MainMenuTheme.music.v(Boolean.parseBoolean(var1.trim()), 0L);
-                var2.append(" menu_music.txt=").append(MainMenuTheme.music.c());
+                String requested = var1.trim();
+                if ("true".equalsIgnoreCase(requested) || "false".equalsIgnoreCase(requested)) {
+                    MainMenuTheme.music.v(Boolean.parseBoolean(requested), 0L);
+                    var2.append(" menu_music.txt=").append(MainMenuTheme.music.c());
+} else {
+                    var2.append(" menu_music.txt INVALID(").append(requested).append(')');
+}
             } else {
                 var2.append(" menu_music.txt absent");
 }
