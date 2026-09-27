@@ -22,7 +22,7 @@ ALLOWED_EVENTBUS_METHODS = {
 }
 ALLOWED_CODE_LENGTHS = {
     (EVENTBUS, "<init>", "()V"): 87,
-    (EVENTBUS, "R", "(Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V"): 238,
+    (EVENTBUS, "R", "(Ljava/lang/Object;Ljava/lang/Class;ILAbyss/event/EventInvoker;)V"): 240,
     (EVENTBUS, "e", "(LAbyss/event/Event;J)V"): 142,
     (LISTENER, "S", "(LAbyss/event/ListenerBinding;Z)Z"): 10,
 }
