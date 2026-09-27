@@ -2,6 +2,7 @@
 # reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
 # classes=100
 # recipes=812
+# javap_string_normalization=collapse doubled backslash display escaping
 # format=count sha256 class_internal_name
 18 dab1eafd9ceb98ca7943d15152f67de11af8cff0914ebf937e38377918f445d0 Abyss/module/impl/combat/AimAssist
 4 3c99b820bc9994baf7927a1a383293e7e351494140eacfc4d158f458583772e3 Abyss/module/impl/combat/AntiFireball
@@ -27,7 +28,7 @@
 8 64c8ceff1ae7711f0a790af076b76a26c3542f50517a835d13cb3a60dd05e508 Abyss/module/impl/configuration/Language
 10 81974e5a68b17f4349fe5cd27973a5a63f502f6e5db79d6f5b7d6903dabde097 Abyss/module/impl/configuration/Notifications
 8 68c5bf7ff5ba3916d77b38c10b7aa9b579563e5d791443d854c7546aed897d04 Abyss/module/impl/configuration/ScoreBoard
-2 1c0337dd91e99ca110c8a7419b4510bf670f68ea26c56cf58b18be3a5835efda Abyss/module/impl/configuration/Teams
+2 9fd329d139714eb7d584942c04d6791f43d95e91899437c40a663c2a9ed9d8e0 Abyss/module/impl/configuration/Teams
 7 1a4a90406755b84e80bd68e7c600517d7afaffa7e20825f5c33a8b1ea9c0ed19 Abyss/module/impl/configuration/Theme
 4 ca517a11dac49ee5dfdc5662713d0f3255947120e5646c4f60581b1154926c8d Abyss/module/impl/configuration/VisualSpoof
 5 f5f455787f46eeca7d14f36a15d29c0559a62f3b8a883efdc1410d1c040b42fd Abyss/module/impl/macro/Macro1
