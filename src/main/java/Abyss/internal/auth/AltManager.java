@@ -155,6 +155,9 @@ public class AltManager {
 }
 }
 }
+    public static boolean persistenceOk() {
+        return lastPersistenceNote != null && lastPersistenceNote.startsWith("PASS ");
+}
     public static String selfTest() {
         File probe = null;
         try {
