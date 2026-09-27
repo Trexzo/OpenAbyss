@@ -284,6 +284,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] accountgui selftest= PASS daemon-worker')) {
               throw 'Account Manager worker lifecycle self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] altstore selftest  = PASS file-roundtrip')) {
+              throw 'Account-file persistence self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] command data load = friends.txt=')) {
               throw 'Persisted command-data loader did not run.'
             }
