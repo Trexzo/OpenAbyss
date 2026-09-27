@@ -72,6 +72,7 @@ public final class AbyssConfig {
         int applied = 0;
         int skippedPlaceholder = 0;
         int unmatched = 0;
+        int malformedStatus = 0;
         String note;
         try {
             File f = AbyssConfig.locate();
@@ -102,12 +103,16 @@ public final class AbyssConfig {
                     continue;
 }
                 JsonObject o2 = entry.getAsJsonObject();
-                if (!o2.has("status")) {
+                Boolean statusValue = AbyssConfig.statusValue(o2);
+                if (statusValue == null) {
                     ++unmatched;
+                    if (o2.has("status")) {
+                        ++malformedStatus;
+}
                     continue;
 }
                 ++matched;
-                boolean status = o2.get("status").getAsBoolean();
+                boolean status = statusValue.booleanValue();
                 m2.I(MODULE_I_CARRIER, status);
                 if (status) {
                     ++applied;
@@ -117,7 +122,7 @@ public final class AbyssConfig {
                 meta += AbyssConfig.writeBool(m2, "w", o2, "visible");
                 meta += AbyssConfig.writeBool(m2, "q", o2, "suffix-visible");
 }
-            note = "Abyss.config applied from " + f.getPath() + " -- configured=" + configured + " matched=" + matched + " enabled=" + applied + " skipped_placeholder=" + skippedPlaceholder + " unmatched=" + unmatched + " meta=" + meta + " field_failures=" + fieldFailures + " on=" + on;
+            note = "Abyss.config applied from " + f.getPath() + " -- configured=" + configured + " matched=" + matched + " enabled=" + applied + " skipped_placeholder=" + skippedPlaceholder + " unmatched=" + unmatched + " malformed_status=" + malformedStatus + " meta=" + meta + " field_failures=" + fieldFailures + " on=" + on;
             if (fieldFailures > 0) {
                 List<String> list = fieldFailureNotes;
                 synchronized (list) {
@@ -135,6 +140,22 @@ public final class AbyssConfig {
 }
     public static JsonObject read() {
         return AbyssConfig.parse(AbyssConfig.locate());
+}
+    private static Boolean statusValue(JsonObject block) {
+        if (block == null || !block.has("status")) {
+            return null;
+}
+        try {
+            JsonElement value = block.get("status");
+            if (value == null || !value.isJsonPrimitive()) {
+                return null;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            return primitive.isBoolean() ? Boolean.valueOf(primitive.getAsBoolean()) : null;
+}
+        catch (Throwable ignored) {
+            return null;
+}
 }
     private static void fieldFailure(String field, Class<?> want, String key, Throwable t2, String detail) {
         ++fieldFailures;
@@ -453,7 +474,21 @@ public final class AbyssConfig {
             if (result.settingsOutsideSchema != 0) {
                 return "FAIL fresh-outside-schema " + result.settingsOutsideSchema;
 }
-            return "PASS modules=" + result.modules + " settings=" + result.settingKeys;
+            JsonObject validStatus = new JsonObject();
+            validStatus.addProperty("status", Boolean.TRUE);
+            if (!Boolean.TRUE.equals(AbyssConfig.statusValue(validStatus))) {
+                return "FAIL valid-status";
+}
+            JsonObject malformedStatus = new JsonObject();
+            malformedStatus.addProperty("status", "true");
+            if (AbyssConfig.statusValue(malformedStatus) != null) {
+                return "FAIL malformed-status-accepted";
+}
+            JsonObject missingStatus = new JsonObject();
+            if (AbyssConfig.statusValue(missingStatus) != null) {
+                return "FAIL missing-status-accepted";
+}
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " malformed-status-refused";
 }
         catch (Throwable throwable) {
             return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
