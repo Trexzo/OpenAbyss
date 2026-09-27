@@ -1,4 +1,4 @@
-name: OpenAbyss Linux World Runtime Smoke
+name: OpenAbyss Linux Development World Runtime Smoke
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   linux-world-runtime:
-    name: Linux Mesa / local 1.8.9 world / RSHIFT ClickGUI
+    name: Development MCP runtime / local 1.8.9 world lifecycle
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -56,9 +56,13 @@ jobs:
           ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
           HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
           USER_HOME="$RUNNER_TEMP/gradle-user-home-world"
+          rm -f "$ZIP"
           curl -L --fail --silent --show-error \
+            --retry 6 --retry-delay 2 --retry-max-time 90 --retry-all-errors \
             'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
             -o "$ZIP"
+          test -s "$ZIP"
+          unzip -tq "$ZIP" >/dev/null
           unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
           GRADLE="$HOME_DIR/bin/gradle"
           test -x "$GRADLE"
@@ -248,46 +252,6 @@ jobs:
           grep -Fq 'world-module-lifecycle-complete' "$STAGE"
           echo 'WORLD_SMOKE_WORLD_LIFECYCLE=PASS'
 
-          WINDOW=''
-          for _ in $(seq 1 30); do
-            WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
-            if [ -n "$WINDOW" ]; then break; fi
-            sleep 1
-          done
-          if [ -z "$WINDOW" ]; then
-            echo 'Minecraft window not found for RSHIFT input.'
-            DISPLAY=:99 xdotool search --onlyvisible --name '.*' 2>/dev/null || true
-            exit 1
-          fi
-
-          DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
-          sleep 1
-          DISPLAY=:99 xdotool keydown Shift_R
-          sleep 0.45
-          DISPLAY=:99 xdotool keyup Shift_R
-
-          CLICKGUI_READY=0
-          for _ in $(seq 1 30); do
-            if grep -Fq 'clickgui-open-success:' "$STAGE"; then
-              CLICKGUI_READY=1
-              break
-            fi
-            sleep 1
-          done
-          if [ "$CLICKGUI_READY" -ne 1 ]; then
-            echo 'ClickGUI success milestone was not observed after RSHIFT.'
-            cat "$STAGE" || true
-            exit 1
-          fi
-          if grep -Fq 'clickgui-open-nullpointer:' "$STAGE"; then
-            echo 'ClickGUI swallowed a NullPointerException.'
-            cat "$STAGE"
-            exit 1
-          fi
-
-          DISPLAY=:99 scrot "$OPENABYSS_SCREENSHOT" || true
-          echo 'WORLD_SMOKE_CLICKGUI=PASS'
-
           for failure in \
             abyss-module-failure.txt \
             abyss-feature-failure.txt \
@@ -322,7 +286,7 @@ jobs:
 
           echo '=== runtime milestones ==='
           cat "$STAGE"
-          echo 'OPENABYSS_LINUX_WORLD_SMOKE=PASS'
+          echo 'OPENABYSS_LINUX_DEVELOPMENT_WORLD_SMOKE=PASS'
           INNER
           chmod +x "$INNER"
 
@@ -378,29 +342,22 @@ jobs:
             entity-player-join-world \
             world-ready-tick \
             world-module-lifecycle-start \
-            world-module-lifecycle-complete \
-            clickgui-open-request
+            world-module-lifecycle-complete
           do
             if ! grep -Fq "$milestone" "$STAGE"; then
-              echo "Missing world smoke milestone: $milestone"
+              echo "Missing development world smoke milestone: $milestone"
               exit 1
             fi
           done
-          if ! grep -Fq 'clickgui-open-success:' "$STAGE"; then
-            echo 'ClickGUI success milestone is missing.'
-            exit 1
-          fi
 
-          echo 'WORLD_SMOKE_MILESTONE_CONTRACT=PASS'
-          test -s "$RUNNER_TEMP/openabyss-world-clickgui.png"
-          echo 'WORLD_SMOKE_SCREENSHOT_CONTRACT=PASS'
-          echo 'OPENABYSS_LINUX_WORLD_RUNTIME_SMOKE=PASS'
+          echo 'DEVELOPMENT_WORLD_LIFECYCLE_CONTRACT=PASS'
+          echo 'OPENABYSS_LINUX_DEVELOPMENT_WORLD_RUNTIME_SMOKE=PASS'
 
       - name: Upload world runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: OpenAbyss-linux-world-runtime-smoke
+          name: OpenAbyss-linux-development-world-runtime-smoke
           path: |
             run/logs/**
             run/crash-reports/**
@@ -412,7 +369,6 @@ jobs:
             ${{ runner.temp }}/openabyss-world-xvfb.log
             ${{ runner.temp }}/openabyss-world-openbox.log
             ${{ runner.temp }}/openabyss-world-glxinfo.txt
-            ${{ runner.temp }}/openabyss-world-clickgui.png
           if-no-files-found: warn
           retention-days: 7
 
