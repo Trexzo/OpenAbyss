@@ -186,10 +186,18 @@ public class AltManager {
             return incoming;
 }
         long priorUnban = existing.F();
-        existing.H(incoming.d());
-        existing.r(incoming.Y());
-        existing.J(incoming.h());
-        existing.j(incoming.f());
+        if (incoming.d() != null && !incoming.d().isEmpty()) {
+            existing.H(incoming.d());
+}
+        if (incoming.Y() != null && !incoming.Y().isEmpty()) {
+            existing.r(incoming.Y());
+}
+        if (incoming.h() != null && !incoming.h().isEmpty()) {
+            existing.J(incoming.h());
+}
+        if (incoming.f() != null && !incoming.f().isEmpty()) {
+            existing.j(incoming.f());
+}
         existing.g(incoming.v());
         if (incoming.F() != 0L) {
             existing.G(incoming.F());
