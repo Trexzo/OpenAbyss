@@ -175,15 +175,20 @@ jobs:
 
           $launcher = Join-Path $env:OPENABYSS_PRODUCTION_PACKAGE 'launch_abyss.ps1'
           & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -LauncherDir $env:OPENABYSS_PRODUCTION_PACKAGE -MinecraftDir $env:OPENABYSS_PRODUCTION_MC -Java8 $env:JAVA_HOME -ModsFolder -RunSeconds 100 -Username CIProduction
-          if ($LASTEXITCODE -ne 0) {
-            throw "Production bounded launcher failed: $LASTEXITCODE"
-          }
+          $launcherCode = $LASTEXITCODE
+          Write-Host "PRODUCTION_LAUNCHER_COMMAND_EXIT=$launcherCode"
+          "OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT=$launcherCode" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           $result = Join-Path $env:OPENABYSS_PRODUCTION_PACKAGE 'launcher-result.txt'
           if (-not (Test-Path -LiteralPath $result -PathType Leaf)) {
-            throw 'Production launcher result is missing.'
+            throw "Production launcher result is missing after launcher exit $launcherCode."
           }
           Get-Content -LiteralPath $result | Out-Host
+
+          # A software-OpenGL runner can terminate Minecraft before the bounded
+          # timeout. Do not classify that here: the next step inspects Forge,
+          # Abyss bootstrap/census, linkage failures, and the exact GL failure.
+          Write-Host 'PRODUCTION_RUNTIME_EXIT_DEFERRED_TO_EVIDENCE_VALIDATOR'
 
       - name: Validate exact production runtime evidence
         shell: powershell
@@ -274,14 +279,26 @@ jobs:
             Write-Host 'PRODUCTION_BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
           }
 
+          $launcherCommandExit = -1
+          if ($env:OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT -match '^-?\d+$') {
+            $launcherCommandExit = [int]$env:OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT
+          }
+          Write-Host "PRODUCTION_LAUNCHER_COMMAND_EXIT_EVIDENCE=$launcherCommandExit"
+
           if (-not $censusReady -and -not $diagReady) {
             if ($graphicsLimited) {
               Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_GRAPHICS_LIMITED'
             } else {
               throw 'Normal Forge process launched but production Abyss bootstrap evidence was not produced.'
             }
+          } elseif ($graphicsLimited) {
+            Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_PASS_GRAPHICS_LIMITED'
           } else {
             Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_PASS'
+          }
+
+          if ($launcherCommandExit -ne 0 -and -not $graphicsLimited) {
+            throw "Production launcher returned $launcherCommandExit without the known graphics-limited runner condition."
           }
 
           if (Test-Path -LiteralPath $moduleFailure -PathType Leaf) {
