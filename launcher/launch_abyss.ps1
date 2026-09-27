@@ -5,6 +5,7 @@ param(
     [string]$Username = "Player",
     [int]$RamMB = 4096,
     [string]$ForgeVersion = "",
+    [int]$RunSeconds = 0,
     [switch]$ValidateOnly,
     [switch]$ResolverSelfTest
 )
@@ -465,9 +466,22 @@ if ($ValidateOnly) {
 }
 
 Log "Launching packaged OpenAbyss..."
-$p = Start-Process -FilePath $Java -ArgumentList $argString -WorkingDirectory $GameDir -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru -Wait
-$exitCode = $p.ExitCode
-Log "Minecraft/OpenAbyss exit code: $exitCode"
+$p = Start-Process -FilePath $Java -ArgumentList $argString -WorkingDirectory $GameDir -RedirectStandardOutput $Stdout -RedirectStandardError $Stderr -PassThru
+
+$TimedStop = $false
+if ($RunSeconds -gt 0) {
+    if (-not $p.WaitForExit($RunSeconds * 1000)) {
+        $TimedStop = $true
+        Log "Bounded runtime reached ${RunSeconds}s; stopping Minecraft/OpenAbyss process $($p.Id)."
+        Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+        try { $p.WaitForExit() } catch {}
+    }
+} else {
+    $p.WaitForExit()
+}
+
+$exitCode = if ($TimedStop) { 124 } else { $p.ExitCode }
+Log "Minecraft/OpenAbyss exit code: $exitCode timed_stop=$TimedStop"
 
 $crashDir = Join-Path $GameDir 'crash-reports'
 foreach ($crash in @(Get-ChildItem -LiteralPath $crashDir -File -ErrorAction SilentlyContinue)) {
@@ -514,6 +528,8 @@ foreach ($evidenceFile in @($BootstrapStage,$RuntimeStage,$ModuleFailure,$Featur
 
 $result = @(
     "EXIT_CODE=$exitCode",
+    "TIMED_STOP=$TimedStop",
+    "RUN_SECONDS=$RunSeconds",
     "JAVA=$Java",
     "FORGE=$($forgeDir.Name)",
     "CLASSPATH_COUNT=$($classPath.Count)",
@@ -534,8 +550,12 @@ $result = @(
 )
 $result | Set-Content -LiteralPath (Join-Path $LauncherDir 'launcher-result.txt') -Encoding UTF8
 
-if ($exitCode -ne 0) {
+if ($exitCode -ne 0 -and -not $TimedStop) {
     throw "OpenAbyss exited with code $exitCode. See minecraft.stderr.log, game\logs\latest.log and crash-evidence."
 }
 
-Log 'OpenAbyss exited normally.'
+if ($TimedStop) {
+    Log 'OpenAbyss bounded runtime smoke completed; the process was stopped by the launcher timeout.'
+} else {
+    Log 'OpenAbyss exited normally.'
+}
