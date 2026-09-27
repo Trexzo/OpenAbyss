@@ -233,6 +233,33 @@ for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoT
 done
 echo 'PRODUCTION_WORLD_CATEGORY_LIFECYCLE=PASS modules=7 plus-FullBright=8-categories'
 
+EVENT_STAGE="$GAME_DIR/abyss-event-stage.txt"
+EVENT_TRACE_READY=0
+for _ in $(seq 1 160); do
+  if [ -f "$EVENT_STAGE" ] &&
+     grep -Fq 'Abyss.event.events.PostTickEvent' "$EVENT_STAGE" &&
+     grep -Fq 'Abyss.event.events.PreUpdateEvent' "$EVENT_STAGE" &&
+     grep -Fq 'Abyss.event.events.EntityJoinWorldEvent' "$EVENT_STAGE" &&
+     grep -Fq 'Abyss.event.events.SendPacketEvent' "$EVENT_STAGE" &&
+     grep -Fq 'Abyss.event.events.ReceivePacketEvent' "$EVENT_STAGE" &&
+     grep -Fq 'Abyss.event.events.Render2DEvent' "$EVENT_STAGE"; then
+    EVENT_TRACE_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before required EventBus dispatches were observed.'
+    cat "$EVENT_STAGE" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$EVENT_TRACE_READY" -ne 1 ]; then
+  echo 'Required production EventBus dispatches were not all observed.'
+  cat "$EVENT_STAGE" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_EVENTBUS_DISPATCH=PASS events=PostTick,PreUpdate,EntityJoinWorld,SendPacket,ReceivePacket,Render2D'
+
 COMMAND_READY=0
 for _ in $(seq 1 240); do
   if grep -Fq 'command-runtime-probe-pass:' "$STAGE"; then
