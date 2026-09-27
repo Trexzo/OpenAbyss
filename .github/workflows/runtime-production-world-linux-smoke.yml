@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            xvfb mesa-utils x11-xserver-utils x11-utils xdotool openbox scrot \
+            xvfb mesa-utils x11-xserver-utils x11-utils xdotool openbox scrot imagemagick \
             libgl1-mesa-dri libglx-mesa0 \
             libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
             libxrandr2 libxinerama1 libxcursor1 libxxf86vm1 \
@@ -250,6 +250,7 @@ jobs:
             ${{ runner.temp }}/openabyss-production-world-jstack-2.txt
             ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
             ${{ runner.temp }}/openabyss-production-world-stall.png
+            ${{ runner.temp }}/openabyss-production-world-before-clickgui.png
             ${{ runner.temp }}/openabyss-production-world-clickgui.png
           if-no-files-found: warn
           retention-days: 7
