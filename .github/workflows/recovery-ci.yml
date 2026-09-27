@@ -164,6 +164,13 @@ jobs:
           python '.\tools\check_command_registry.py'
           if ($LASTEXITCODE -ne 0) { throw "Runnable-era command registry gate failed: $LASTEXITCODE" }
 
+      - name: Verify main menu state and persistence contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_main_menu_state_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Main-menu state/persistence gate failed: $LASTEXITCODE" }
+
       - name: Compile recovered source
         shell: powershell
         run: |
