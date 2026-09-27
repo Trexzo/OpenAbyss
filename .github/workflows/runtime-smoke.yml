@@ -279,6 +279,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] mslogin selftest   = PASS daemon-worker')) {
               throw 'Microsoft login worker self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] cookiegui selftest = PASS daemon-worker')) {
+              throw 'Cookie Login worker self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results')) {
               throw 'Access-token batch worker self-test is not green.'
             }
