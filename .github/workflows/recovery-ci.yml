@@ -129,12 +129,12 @@ jobs:
           python '.\tools\check_module_impl_empty_catches.py'
           if ($LASTEXITCODE -ne 0) { throw "Gameplay module silent-catch gate failed: $LASTEXITCODE" }
 
-      - name: Inventory empty gameplay handlers
+      - name: Forbid empty gameplay handlers
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           python '.\tools\audit_module_empty_handlers.py'
-          if ($LASTEXITCODE -ne 0) { throw "Gameplay empty-handler audit failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Gameplay empty-handler gate failed: $LASTEXITCODE" }
 
       - name: Inventory silent catch blocks
         shell: powershell
