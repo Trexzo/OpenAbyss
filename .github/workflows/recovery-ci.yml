@@ -187,6 +187,17 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) { exit $code }
 
+      - name: Verify runnable-era module registry order
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module registry-order gate.' }
+          python '.\tools\check_module_registry_order.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module registry-order gate failed: $LASTEXITCODE" }
+
       - name: Verify executable event wiring semantics
         shell: powershell
         run: |
