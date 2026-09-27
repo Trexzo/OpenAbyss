@@ -270,6 +270,9 @@ jobs:
             if (-not $diagText.Contains('[ABYSSDIAG] account selftest   = PASS json-roundtrip')) {
               throw 'Account JSON round-trip self-test is not green.'
             }
+            if (-not $diagText.Contains('[ABYSSDIAG] authservice selftest= PASS loopback daemon-callback timeout=300s')) {
+              throw 'Microsoft callback contract self-test is not green.'
+            }
             if (-not $diagText.Contains('[ABYSSDIAG] cookie selftest    = PASS cookie-parsers')) {
               throw 'Microsoft cookie parser self-test is not green.'
             }
