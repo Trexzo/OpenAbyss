@@ -8,6 +8,7 @@
  */
 package Abyss.util;
 
+import Abyss.AbyssClient;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,7 @@ extends ControllerEnvironment {
 }
 }
             catch (Exception exception) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("ControllerEnvironmentImpl", "plugin-directory-load", exception);
 }
 }
 }
@@ -73,7 +74,8 @@ extends ControllerEnvironment {
                     this.k(var10.getControllers());
                     this.x.add(var10.getClass().getName());
 }
-                catch (Exception exception) {}
+                catch (Exception exception) {
+                    AbyssClient.recordFeatureFailure("ControllerEnvironmentImpl", "platform-plugin-load", exception);
 }
 }
         return this.N.toArray(new Controller[0]);
