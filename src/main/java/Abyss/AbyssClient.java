@@ -47,6 +47,7 @@ import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
+import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
@@ -187,6 +188,10 @@ implements EventSubscriber {
     private String macroFunctionalProbeOriginalMode;
     private String macroFunctionalProbeOriginalMessage;
     private static final String MACRO_FUNCTIONAL_PROBE_SENTINEL = "OPENABYSS_MACRO_PROBE_7E51";
+    private int visualUtilityFunctionalProbeStage;
+    private int visualUtilityFunctionalProbeWaitTicks;
+    private boolean visualUtilityFunctionalProbeOriginalEnabled;
+    private ItemStack visualUtilityFunctionalProbeOriginalSlot9;
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -1228,6 +1233,188 @@ implements EventSubscriber {
         }
     }
 
+
+    private ItemStack[] inventoryHudCacheForProbe(InventoryHUD probe) throws Exception {
+        Field cacheField = InventoryHUD.class.getDeclaredField("p");
+        cacheField.setAccessible(true);
+        return (ItemStack[])cacheField.get(probe);
+    }
+
+    private boolean inventoryHudCacheMatches(ItemStack cached, ItemStack expected) {
+        if (cached == null || expected == null) {
+            return cached == null && expected == null;
+        }
+        return cached.getItem() == expected.getItem()
+                && cached.getItemDamage() == expected.getItemDamage()
+                && cached.stackSize == expected.stackSize;
+    }
+
+    private void restoreVisualUtilityFunctionalProbeState(InventoryHUD probe) {
+        try {
+            if (this.c.thePlayer != null && this.c.thePlayer.inventory != null) {
+                this.c.thePlayer.inventory.mainInventory[9] = this.visualUtilityFunctionalProbeOriginalSlot9;
+            }
+            if (probe != null && probe.o() != this.visualUtilityFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.visualUtilityFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("VisualUtilityFunctionalProbe:InventoryHUD", "restore", restoreFailure);
+        }
+    }
+
+    private void verifyVisualUtilityFunctionalProbeRestored(InventoryHUD probe) throws Exception {
+        if (this.c.thePlayer == null || this.c.thePlayer.inventory == null
+                || this.c.thePlayer.inventory.mainInventory[9] != this.visualUtilityFunctionalProbeOriginalSlot9) {
+            throw new IllegalStateException("Inventory slot 9 was not restored after InventoryHUD probe");
+        }
+        ItemStack[] cache = inventoryHudCacheForProbe(probe);
+        if (cache == null || cache.length != 27) {
+            throw new IllegalStateException("InventoryHUD cache shape changed");
+        }
+        if (this.visualUtilityFunctionalProbeOriginalEnabled) {
+            if (!inventoryHudCacheMatches(cache[0], this.visualUtilityFunctionalProbeOriginalSlot9)) {
+                throw new IllegalStateException("InventoryHUD cache did not return to restored slot 9 state");
+            }
+        } else {
+            for (ItemStack item : cache) {
+                if (item != null) {
+                    throw new IllegalStateException("InventoryHUD disabled cache was not cleared");
+                }
+            }
+        }
+        runtimeMilestone("visual-utility-functional-probe-restore-state-pass:InventoryHUD");
+    }
+
+    private void pumpVisualUtilityFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.visualUtilityFunctionalProbe")
+                || this.visualUtilityFunctionalProbeStage < 0
+                || this.visualUtilityFunctionalProbeStage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.combatFunctionalProbe") && this.combatFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.macroFunctionalProbe") && this.macroFunctionalProbeStage < 4) {
+            return;
+        }
+
+        InventoryHUD probe = Modules.J(InventoryHUD.class);
+        try {
+            if (probe == null || this.c.thePlayer == null || this.c.thePlayer.inventory == null) {
+                throw new IllegalStateException("InventoryHUD/player inventory is unavailable");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.visualUtilityFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.visualUtilityFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial InventoryHUD state did not settle");
+                    }
+                    return;
+                }
+                this.visualUtilityFunctionalProbeOriginalEnabled = stableEnabled;
+                this.visualUtilityFunctionalProbeOriginalSlot9 =
+                        this.c.thePlayer.inventory.mainInventory[9];
+
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.visualUtilityFunctionalProbeStage = 1;
+                    this.visualUtilityFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("visual-utility-functional-probe-enable-request:InventoryHUD");
+                    return;
+                }
+                this.visualUtilityFunctionalProbeStage = 1;
+            }
+
+            if (this.visualUtilityFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.visualUtilityFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("InventoryHUD did not enable/subscribe");
+                    }
+                    return;
+                }
+                this.c.thePlayer.inventory.mainInventory[9] = new ItemStack(Blocks.stone, 3);
+                this.visualUtilityFunctionalProbeStage = 2;
+                this.visualUtilityFunctionalProbeWaitTicks = 0;
+                runtimeMilestone("visual-utility-functional-probe-await-natural-posttick:InventoryHUD:slot9=stone*3");
+                return;
+            }
+
+            if (this.visualUtilityFunctionalProbeStage == 2) {
+                ItemStack[] cache = inventoryHudCacheForProbe(probe);
+                ItemStack cached = cache == null || cache.length == 0 ? null : cache[0];
+                boolean copied = cached != null
+                        && cached.getItem() == ItemStack.class.cast(new ItemStack(Blocks.stone)).getItem()
+                        && cached.stackSize == 3;
+                if (!copied) {
+                    if (++this.visualUtilityFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("InventoryHUD natural PostTick did not cache slot 9 stone*3");
+                    }
+                    return;
+                }
+                runtimeMilestone("visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3");
+                this.c.thePlayer.inventory.mainInventory[9] = this.visualUtilityFunctionalProbeOriginalSlot9;
+
+                if (!this.visualUtilityFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                }
+                this.visualUtilityFunctionalProbeStage = 3;
+                this.visualUtilityFunctionalProbeWaitTicks = 0;
+                runtimeMilestone("visual-utility-functional-probe-restore-request:InventoryHUD:enabled="
+                        + this.visualUtilityFunctionalProbeOriginalEnabled);
+                return;
+            }
+
+            boolean moduleRestored = this.visualUtilityFunctionalProbeOriginalEnabled ? stableEnabled : stableDisabled;
+            if (!moduleRestored) {
+                if (++this.visualUtilityFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("InventoryHUD module state did not restore");
+                }
+                return;
+            }
+
+            try {
+                verifyVisualUtilityFunctionalProbeRestored(probe);
+            }
+            catch (IllegalStateException notReady) {
+                if (++this.visualUtilityFunctionalProbeWaitTicks <= 120) {
+                    return;
+                }
+                throw notReady;
+            }
+            this.visualUtilityFunctionalProbeStage = 4;
+            runtimeMilestone("visual-utility-functional-probe-pass:InventoryHUD:restored="
+                    + this.visualUtilityFunctionalProbeOriginalEnabled);
+        }
+        catch (Throwable failure) {
+            this.visualUtilityFunctionalProbeStage = -1;
+            restoreVisualUtilityFunctionalProbeState(probe);
+            recordFeatureFailure("VisualUtilityFunctionalProbe:InventoryHUD", "natural-posttick-cache-effect", failure);
+            runtimeMilestone("visual-utility-functional-probe-fail:InventoryHUD:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpCommandRuntimeProbe() {
         if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
                 || this.commandRuntimeProbeStage < 0
@@ -1251,6 +1438,10 @@ implements EventSubscriber {
             return;
 }
         if (Boolean.getBoolean("abyss.macroFunctionalProbe") && this.macroFunctionalProbeStage < 4) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.visualUtilityFunctionalProbe")
+                && this.visualUtilityFunctionalProbeStage < 4) {
             return;
 }
         try {
@@ -2189,6 +2380,7 @@ implements EventSubscriber {
             this.pumpCombatFunctionalProbe();
             this.pumpPacketFunctionalProbe();
             this.pumpMacroFunctionalProbe();
+            this.pumpVisualUtilityFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
