@@ -21,9 +21,11 @@ import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
 import Abyss.event.events.PreMouseInputEvent;
+import Abyss.event.events.PreTickEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
+import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssNameMap;
@@ -32,6 +34,7 @@ import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
@@ -146,6 +149,11 @@ implements EventSubscriber {
     private int eventFunctionalProbeOriginalRightClickDelay;
     private int eventFunctionalProbeInventorySlot = -1;
     private ItemStack eventFunctionalProbeOriginalItem;
+    private int movementFunctionalProbeStage;
+    private int movementFunctionalProbeWaitTicks;
+    private boolean movementFunctionalProbeOriginalEnabled;
+    private float movementFunctionalProbeOriginalSetting;
+    private int movementFunctionalProbeOriginalJumpTicks;
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -434,6 +442,122 @@ implements EventSubscriber {
         }
     }
 
+
+    private void restoreMovementFunctionalProbeState(NoJumpDelay probe) {
+        try {
+            if (NoJumpDelay.jumpTicks != null) {
+                NoJumpDelay.jumpTicks.o((byte)0, 0L, this.movementFunctionalProbeOriginalSetting);
+            }
+            if (this.c.thePlayer != null) {
+                EntityLivingBaseStateAccessor.x(0, this.c.thePlayer, this.movementFunctionalProbeOriginalJumpTicks);
+            }
+            if (probe != null && probe.o() != this.movementFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.movementFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("MovementFunctionalProbe:NoJumpDelay", "restore", restoreFailure);
+        }
+    }
+
+    private void pumpMovementFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.movementFunctionalProbe")
+                || this.movementFunctionalProbeStage < 0
+                || this.movementFunctionalProbeStage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+
+        NoJumpDelay probe = Modules.J(NoJumpDelay.class);
+        try {
+            if (probe == null || NoJumpDelay.jumpTicks == null) {
+                throw new IllegalStateException("NoJumpDelay module/Jump-ticks setting is missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.movementFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.movementFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial NoJumpDelay state did not settle");
+                    }
+                    return;
+                }
+                this.movementFunctionalProbeOriginalEnabled = stableEnabled;
+                this.movementFunctionalProbeOriginalSetting = NoJumpDelay.jumpTicks.L();
+                this.movementFunctionalProbeOriginalJumpTicks =
+                        EntityLivingBaseStateAccessor.C(this.c.thePlayer);
+
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.movementFunctionalProbeStage = 1;
+                    this.movementFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("movement-functional-probe-enable-request:NoJumpDelay");
+                    return;
+                }
+                this.movementFunctionalProbeStage = 1;
+            }
+
+            if (this.movementFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.movementFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("NoJumpDelay did not enable/subscribe");
+                    }
+                    return;
+                }
+
+                NoJumpDelay.jumpTicks.o((byte)0, 0L, 0.0f);
+                EntityLivingBaseStateAccessor.x(0, this.c.thePlayer, 7);
+                runtimeMilestone("movement-functional-probe-dispatch:NoJumpDelay:jumpTicks=7");
+                w.e(new PreTickEvent(), 0L);
+                int actual = EntityLivingBaseStateAccessor.C(this.c.thePlayer);
+                if (actual != 1) {
+                    throw new IllegalStateException("NoJumpDelay PreTick did not clamp jumpTicks to 1: " + actual);
+                }
+                runtimeMilestone("movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1");
+
+                NoJumpDelay.jumpTicks.o((byte)0, 0L, this.movementFunctionalProbeOriginalSetting);
+                EntityLivingBaseStateAccessor.x(0, this.c.thePlayer, this.movementFunctionalProbeOriginalJumpTicks);
+
+                if (!this.movementFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                    this.movementFunctionalProbeStage = 2;
+                    this.movementFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("movement-functional-probe-restore-request:NoJumpDelay:enabled=false");
+                    return;
+                }
+
+                this.movementFunctionalProbeStage = 3;
+                runtimeMilestone("movement-functional-probe-pass:NoJumpDelay:restored=true");
+                return;
+            }
+
+            if (!stableDisabled) {
+                if (++this.movementFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("NoJumpDelay did not restore disabled state");
+                }
+                return;
+            }
+            this.movementFunctionalProbeStage = 3;
+            runtimeMilestone("movement-functional-probe-pass:NoJumpDelay:restored=false");
+        }
+        catch (Throwable failure) {
+            this.movementFunctionalProbeStage = -1;
+            restoreMovementFunctionalProbeState(probe);
+            recordFeatureFailure("MovementFunctionalProbe:NoJumpDelay", "pretick-jump-delay-effect", failure);
+            runtimeMilestone("movement-functional-probe-fail:NoJumpDelay:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpCommandRuntimeProbe() {
         if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
                 || this.commandRuntimeProbeStage < 0
@@ -448,6 +572,9 @@ implements EventSubscriber {
             return;
 }
         if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
             return;
 }
         try {
@@ -1381,6 +1508,7 @@ implements EventSubscriber {
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
             this.pumpEventFunctionalProbe();
+            this.pumpMovementFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
