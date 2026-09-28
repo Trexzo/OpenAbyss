@@ -216,14 +216,13 @@ jobs:
           grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
 
           NETWORK_STAGE="$GAME/abyss-network-stage.txt"
-          EVENT_STAGE="$GAME/abyss-event-stage.txt"
           test -s "$NETWORK_STAGE"
           grep -Fq 'send-hook:' "$NETWORK_STAGE"
           grep -Fq 'receive-hook:' "$NETWORK_STAGE"
-          test -s "$EVENT_STAGE"
-          for event in PostTickEvent PreUpdateEvent EntityJoinWorldEvent SendPacketEvent ReceivePacketEvent Render2DEvent; do
-            grep -Fq "Abyss.event.events.$event" "$EVENT_STAGE"
-          done
+          grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"
+          grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
+          grep -Fq '[ABYSSDIAG] eventbus selftest  = PASS' "$DIAG"
 
           grep -Fq '[ABYSSDIAG] setting restore selftest= PASS strict-setting-writes percentage-range=0..100 number-range mode-options color-hex readback' "$DIAG"
           grep -Eq 'Abyss\.settings by-name applied [1-9][0-9]* config value\(s\)' "$DIAG"
