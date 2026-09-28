@@ -174,6 +174,9 @@ launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClic
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
 wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
+wait_for_stage "$STAGE" 'network-command-probe-ready:CommandLine:original=' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_COMMAND_READY'
+touch "$GAME_DIR/abyss-network-command-probe-done"
+echo 'PERSISTENCE_RESTART_COMMAND_HANDSHAKE=PASS'
 wait_for_stage "$STAGE" 'network-command-probe-pass:CommandLine:restored=' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_COMMAND_WIRING'
 
 DIAG="$GAME_DIR/abyss-bootstrap-diagnostics.txt"
