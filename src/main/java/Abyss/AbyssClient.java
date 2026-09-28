@@ -10798,6 +10798,17 @@ implements EventSubscriber {
         }
     }
 
+    private String describeProbeStack(ItemStack stack) {
+        if (stack == null) {
+            return "<null>";
+        }
+        return stack.getItem().getUnlocalizedName()
+                + "*"
+                + stack.stackSize
+                + "@"
+                + stack.getItemDamage();
+    }
+
     private void syncCreativeProbeSlot(int inventoryIndex, ItemStack stack) {
         ItemStack local = stack == null ? null : stack.copy();
         this.c.thePlayer.inventory.setInventorySlotContents(
@@ -11042,6 +11053,43 @@ implements EventSubscriber {
                             new GuiInventory(this.c.thePlayer));
 
                     this.setModuleEnabledRawForProbe(probe, true);
+
+                    Pair bestSwordBefore =
+                            ItemUtil.q(
+                                    0L,
+                                    (net.minecraft.inventory.IInventory)
+                                            this.c.thePlayer.inventory);
+                    ItemStack bestSwordStackBefore =
+                            bestSwordBefore == null
+                                    ? null
+                                    : (ItemStack)bestSwordBefore.a();
+                    Object bestSwordIndexBefore =
+                            bestSwordBefore == null
+                                    ? null
+                                    : bestSwordBefore.p();
+                    ItemStack containerHotbarBefore =
+                            this.c.thePlayer.inventoryContainer
+                                    .getSlot(36)
+                                    .getStack();
+                    ItemStack containerSourceBefore =
+                            this.c.thePlayer.inventoryContainer
+                                    .getSlot(10)
+                                    .getStack();
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-decision:"
+                                    + "swordSlot=" + InvManager.swordSlot.L()
+                                    + ":bestIndex=" + String.valueOf(bestSwordIndexBefore)
+                                    + ":bestItem="
+                                    + (bestSwordStackBefore == null
+                                            ? "<null>"
+                                            : bestSwordStackBefore.getItem().getUnlocalizedName())
+                                    + ":inv0=" + this.describeProbeStack(
+                                            this.c.thePlayer.inventory.getStackInSlot(0))
+                                    + ":inv10=" + this.describeProbeStack(
+                                            this.c.thePlayer.inventory.getStackInSlot(10))
+                                    + ":container36=" + this.describeProbeStack(containerHotbarBefore)
+                                    + ":container10=" + this.describeProbeStack(containerSourceBefore));
+
                     EventBus fixtureBus = new EventBus();
                     fixtureBus.s(probe, 0L);
                     if (!fixtureBus.isOwnerActive(probe)) {
@@ -11056,6 +11104,28 @@ implements EventSubscriber {
                             this.c.thePlayer.inventory.getStackInSlot(0);
                     ItemStack displacedSword =
                             this.c.thePlayer.inventory.getStackInSlot(10);
+                    Pair bestSwordAfter =
+                            ItemUtil.q(
+                                    0L,
+                                    (net.minecraft.inventory.IInventory)
+                                            this.c.thePlayer.inventory);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-post:"
+                                    + "bestIndex="
+                                    + String.valueOf(
+                                            bestSwordAfter == null
+                                                    ? null
+                                                    : bestSwordAfter.p())
+                                    + ":inv0=" + this.describeProbeStack(sortedHotbar)
+                                    + ":inv10=" + this.describeProbeStack(displacedSword)
+                                    + ":container36=" + this.describeProbeStack(
+                                            this.c.thePlayer.inventoryContainer
+                                                    .getSlot(36)
+                                                    .getStack())
+                                    + ":container10=" + this.describeProbeStack(
+                                            this.c.thePlayer.inventoryContainer
+                                                    .getSlot(10)
+                                                    .getStack()));
                     if (sortedHotbar == null
                             || sortedHotbar.getItem()
                                     != Items.diamond_sword
