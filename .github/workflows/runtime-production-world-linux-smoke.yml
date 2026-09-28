@@ -338,6 +338,16 @@ jobs:
           cp "$RUNNER_TEMP"/openabyss-production-world-clickgui-mode-*.png "$EVIDENCE/"
           cp "$OPENABYSS_PRODUCTION_WORLD_PACKAGE/BUILD-INFO.txt" "$EVIDENCE/"
 
+          grep -Fq 'world-session-join:1' "$STAGE"
+          grep -Fq 'world-session-exit:1' "$STAGE"
+          grep -Fq 'world-session-menu-cleanup:1:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
+          grep -Fq 'world-session-join:2' "$STAGE"
+          grep -Fq 'world-session-lifecycle-complete:2' "$STAGE"
+          grep -Fq 'world-session-heartbeat:2:300' "$STAGE"
+          LOGIN_COUNT="$(grep -Ec 'CIProdWorld.*logged in with entity id' "$RUNNER_TEMP/openabyss-production-world-server.log" || true)"
+          test "$LOGIN_COUNT" -ge 2
+          echo 'PRODUCTION_WORLD_SAME_PROCESS_RECONNECT_CONTRACT=PASS sessions=2'
+
           echo 'PRODUCTION_WORLD_SHIPPED_JAR_HASH_CONTRACT=PASS'
           echo 'OPENABYSS_LINUX_PRODUCTION_WORLD_RUNTIME_SMOKE=PASS'
 
@@ -361,6 +371,8 @@ jobs:
             ${{ runner.temp }}/openabyss-production-world-jstack-2.txt
             ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
             ${{ runner.temp }}/openabyss-production-world-stall.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-exit-fail.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-join-fail.png
             ${{ runner.temp }}/openabyss-production-world-before-clickgui.png
             ${{ runner.temp }}/openabyss-production-world-clickgui-mode-*.png
             ${{ runner.temp }}/openabyss-production-world-clickgui.png
