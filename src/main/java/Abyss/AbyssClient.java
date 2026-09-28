@@ -373,6 +373,11 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe22Stage;
     private int highRiskFunctionalProbe23Stage;
     private int highRiskFunctionalProbe24Stage;
+    private int highRiskFunctionalProbe25Stage;
+    private int highRiskFunctionalProbe25WaitTicks;
+    private boolean highRiskFunctionalProbe25OriginalEnabled;
+    private boolean highRiskFunctionalProbe25Saved;
+    private long highRiskFunctionalProbe25TakeoverBaseline;
     private boolean highRiskFunctionalProbe22Saved;
     private boolean highRiskFunctionalProbe22OriginalRawEnabled;
     private MouseHelper highRiskFunctionalProbe22OriginalMouseHelper;
@@ -5913,6 +5918,140 @@ implements EventSubscriber {
         }
     }
 
+    private void finishHighRiskFunctionalProbe25(InputFix probe) {
+        if (!this.highRiskFunctionalProbe25OriginalEnabled) {
+            if (probe.o() || probe.l() || probe.K()) {
+                return;
+            }
+        }
+        this.highRiskFunctionalProbe25Stage = 5;
+        runtimeMilestone("high-risk-functional-probe25-restore-pass:InputFix:enabled="
+                + this.highRiskFunctionalProbe25OriginalEnabled);
+        runtimeMilestone("high-risk-functional-probe25-module-pass:InputFix");
+        runtimeMilestone("high-risk-functional-probe25-pass:1");
+    }
+
+    private void pumpHighRiskFunctionalProbe25() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe25")
+                || this.highRiskFunctionalProbe25Stage < 0
+                || this.highRiskFunctionalProbe25Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe24")
+                && this.highRiskFunctionalProbe24Stage < 1) return;
+
+        InputFix probe = Modules.J(InputFix.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(InputFix.class) != probe
+                    || ModuleManager.byName("InputFix") != probe) {
+                throw new IllegalStateException("InputFix live module authority unavailable");
+            }
+
+            if (this.highRiskFunctionalProbe25Stage == 0) {
+                if (probe.l() || probe.K()) {
+                    return;
+                }
+                this.highRiskFunctionalProbe25OriginalEnabled = probe.o();
+                this.highRiskFunctionalProbe25Saved = true;
+                if (!probe.o()) {
+                    probe.I(0L, true);
+                    this.highRiskFunctionalProbe25Stage = 1;
+                    runtimeMilestone("high-risk-functional-probe25-request:InputFix:enable");
+                    return;
+                }
+                this.highRiskFunctionalProbe25Stage = 2;
+            }
+
+            if (this.highRiskFunctionalProbe25Stage == 1) {
+                if (probe.l() || probe.K()) {
+                    return;
+                }
+                if (!probe.o()) {
+                    throw new IllegalStateException("InputFix enable transition did not complete");
+                }
+                this.highRiskFunctionalProbe25Stage = 2;
+            }
+
+            if (this.highRiskFunctionalProbe25Stage == 2) {
+                this.highRiskFunctionalProbe25TakeoverBaseline =
+                        Abyss.ASM.Hooks.Gui.GuiScreenHooks.inputFixTakeoverCount();
+                this.highRiskFunctionalProbe25WaitTicks = 0;
+                this.highRiskFunctionalProbe25Stage = 3;
+                runtimeMilestone("high-risk-functional-probe25-ready:InputFix:"
+                        + "baseline=" + this.highRiskFunctionalProbe25TakeoverBaseline);
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe25Stage == 3) {
+                ++this.highRiskFunctionalProbe25WaitTicks;
+                if (this.c.currentScreen instanceof net.minecraft.client.gui.GuiChat) {
+                    String text = Abyss.internal.accessor.GuiChatAccessor.z(
+                            '\u0000', '\u2876', 245891786,
+                            (net.minecraft.client.gui.GuiChat)this.c.currentScreen).getText();
+                    if ("OPENABYSS_INPUTFIX_7E51".equals(text)) {
+                        long takeovers =
+                                Abyss.ASM.Hooks.Gui.GuiScreenHooks.inputFixTakeoverCount()
+                                        - this.highRiskFunctionalProbe25TakeoverBaseline;
+                        if (takeovers <= 0L) {
+                            throw new IllegalStateException(
+                                    "InputFix text arrived without ASM keyboard takeover");
+                        }
+                        runtimeMilestone(
+                                "high-risk-functional-probe25-effect-pass:InputFix:"
+                                        + "text=true:takeovers=" + takeovers);
+                        if (this.highRiskFunctionalProbe25OriginalEnabled) {
+                            this.finishHighRiskFunctionalProbe25(probe);
+                        } else {
+                            probe.I(0L, false);
+                            this.highRiskFunctionalProbe25Stage = 4;
+                            runtimeMilestone(
+                                    "high-risk-functional-probe25-request:InputFix:disable");
+                        }
+                        return;
+                    }
+                }
+                if (this.highRiskFunctionalProbe25WaitTicks > 600) {
+                    throw new IllegalStateException(
+                            "InputFix physical text sentinel was not observed in time");
+                }
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe25Stage == 4) {
+                if (probe.l() || probe.K()) {
+                    return;
+                }
+                if (probe.o()) {
+                    throw new IllegalStateException(
+                            "InputFix original-disabled state did not restore");
+                }
+                this.finishHighRiskFunctionalProbe25(probe);
+            }
+        }
+        catch (Throwable failure) {
+            if (this.highRiskFunctionalProbe25Saved && probe != null) {
+                try {
+                    this.setModuleEnabledRawForProbe(
+                            probe, this.highRiskFunctionalProbe25OriginalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe25:InputFix",
+                            "restore",
+                            restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe25Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe25:InputFix",
+                    "physical-keyboard",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe25-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -6895,6 +7034,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe22();
         this.pumpHighRiskFunctionalProbe23();
         this.pumpHighRiskFunctionalProbe24();
+        this.pumpHighRiskFunctionalProbe25();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
