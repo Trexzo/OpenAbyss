@@ -215,8 +215,8 @@ jobs:
           grep -Fq 'send-hook:' "$NETWORK_STAGE"
           grep -Fq 'receive-hook:' "$NETWORK_STAGE"
           grep -Fq 'world-functional-probe-pass' "$STAGE"
-          grep -Fq 'category-lifecycle-probe-pass:8' "$STAGE"
-          for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool Tracers; do
+          grep -Fq 'category-lifecycle-probe-pass:9' "$STAGE"
+          for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
           grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
