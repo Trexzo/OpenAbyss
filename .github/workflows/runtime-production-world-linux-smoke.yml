@@ -222,7 +222,7 @@ jobs:
 
           test -f "$STAGE"
           test -f "$STDOUT"
-          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=46' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=47' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
@@ -242,7 +242,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe28=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe29=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe30=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=46'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe31=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=47'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -581,6 +582,15 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL30=PASS modules=Scaffold'
+          grep -Fq 'high-risk-functional-probe31-effect-pass:BedNuker:scanFixture=1:cursor=1:active=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe31-module-pass:BedNuker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe31-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe31-fail:' "$STAGE"; then
+            echo 'BedNuker bounded-scan probe reported a failure.'
+            grep -F 'high-risk-functional-probe31-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL31=PASS modules=BedNuker'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
