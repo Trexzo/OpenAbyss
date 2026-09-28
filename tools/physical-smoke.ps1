@@ -374,6 +374,7 @@ try {
                 'combat-functional-probe-pass:KeepSprint:',
                 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true',
                 'render-functional-probe-effect-pass:Ambience:worldTime=6000',
+                'render-functional-probe-worldtime-restore-pass:Ambience',
                 'packet-functional-probe-restore-state-pass:Ambience',
                 'packet-functional-probe-pass:Ambience:',
                 'macro-functional-probe-client-send-pass:Macro1:OPENABYSS_MACRO_PROBE_7E51',
