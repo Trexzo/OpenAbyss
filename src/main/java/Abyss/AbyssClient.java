@@ -71,6 +71,7 @@ import Abyss.module.impl.visual.BarrierVisible;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.NoHurtCam;
+import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.BedNuker;
@@ -282,6 +283,10 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe7WaitTicks;
     private boolean highRiskFunctionalProbe7OriginalEnabled;
     private boolean highRiskFunctionalProbe7Saved;
+    private int highRiskFunctionalProbe8Stage;
+    private int highRiskFunctionalProbe8WaitTicks;
+    private boolean highRiskFunctionalProbe8OriginalEnabled;
+    private boolean highRiskFunctionalProbe8Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3319,6 +3324,153 @@ implements EventSubscriber {
         }
     }
 
+    private void verifyViewClipHookEffect(boolean expectTakeover, String phase) {
+        ViewClip probe = Modules.J(ViewClip.class);
+        if (probe == null || ModuleManager.h != probe) {
+            throw new IllegalStateException("ViewClip hook singleton differs from registry singleton");
+        }
+        if (this.c.getRenderViewEntity() == null || this.c.renderGlobal == null) {
+            throw new IllegalStateException("ViewClip probe render state unavailable");
+        }
+
+        int originalThirdPerson = this.c.gameSettings.thirdPersonView;
+        boolean originalDebugCam = this.c.gameSettings.debugCamEnable;
+        int previousMode = GL11.glGetInteger(GL11.GL_MATRIX_MODE);
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+        GL11.glPushMatrix();
+        Boolean result = null;
+        try {
+            this.c.gameSettings.thirdPersonView = 1;
+            this.c.gameSettings.debugCamEnable = false;
+            result = EntityRendererHooks.orientCamera(this.c, 0.0f, 4.0f, 4.0f);
+        }
+        finally {
+            GL11.glPopMatrix();
+            GL11.glMatrixMode(previousMode);
+            this.c.gameSettings.thirdPersonView = originalThirdPerson;
+            this.c.gameSettings.debugCamEnable = originalDebugCam;
+        }
+
+        if (expectTakeover) {
+            if (result == null) {
+                throw new IllegalStateException("ViewClip enabled hook did not take over phase=" + phase);
+            }
+        }
+        else if (result != null) {
+            throw new IllegalStateException("ViewClip disabled hook unexpectedly took over phase="
+                    + phase + " result=" + result);
+        }
+
+        runtimeMilestone("high-risk-functional-probe8-effect-pass:ViewClip:" + phase
+                + ":takeover=" + (result != null)
+                + ":result=" + String.valueOf(result));
+    }
+
+    private void restoreHighRiskFunctionalProbe8() {
+        if (!this.highRiskFunctionalProbe8Saved) {
+            return;
+        }
+        try {
+            ViewClip probe = Modules.J(ViewClip.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe8OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe8OriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe8:ViewClip", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe8() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe8")
+                || this.highRiskFunctionalProbe8Stage < 0
+                || this.highRiskFunctionalProbe8Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe7")
+                && this.highRiskFunctionalProbe7Stage < 4) return;
+
+        try {
+            ViewClip probe = Modules.J(ViewClip.class);
+            if (probe == null || ModuleManager.h != probe) {
+                throw new IllegalStateException("ViewClip module/singleton unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe8Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe8OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe8Saved = true;
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe8Stage;
+                    this.highRiskFunctionalProbe8WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe8-state-request:ViewClip:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe8WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyViewClipHookEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe8Stage;
+                        this.highRiskFunctionalProbe8WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe8-state-request:ViewClip:enabled=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe8WaitTicks > 160) {
+                        throw new IllegalStateException("ViewClip did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe8WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyViewClipHookEffect(true, "enabled");
+                        if (!this.highRiskFunctionalProbe8OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe8Stage;
+                        this.highRiskFunctionalProbe8WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe8-restore-request:ViewClip:enabled="
+                                + this.highRiskFunctionalProbe8OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe8WaitTicks > 160) {
+                        throw new IllegalStateException("ViewClip did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe8WaitTicks;
+                    if (probe.o() == this.highRiskFunctionalProbe8OriginalEnabled
+                            && !probe.l() && !probe.K()) {
+                        this.verifyViewClipHookEffect(
+                                this.highRiskFunctionalProbe8OriginalEnabled, "restored");
+                        runtimeMilestone("high-risk-functional-probe8-restore-pass:ViewClip:enabled="
+                                + this.highRiskFunctionalProbe8OriginalEnabled);
+                        ++this.highRiskFunctionalProbe8Stage;
+                        runtimeMilestone("high-risk-functional-probe8-module-pass:ViewClip");
+                        runtimeMilestone("high-risk-functional-probe8-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe8WaitTicks > 160) {
+                        throw new IllegalStateException("ViewClip original state did not restore");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe8();
+            this.highRiskFunctionalProbe8Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe8:ViewClip", "camera-hook", failure);
+            runtimeMilestone("high-risk-functional-probe8-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4264,6 +4416,7 @@ implements EventSubscriber {
             this.pumpHighRiskFunctionalProbe5();
         this.pumpHighRiskFunctionalProbe6();
         this.pumpHighRiskFunctionalProbe7();
+        this.pumpHighRiskFunctionalProbe8();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
