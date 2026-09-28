@@ -2901,6 +2901,11 @@ implements EventSubscriber {
 
                 case 2:
                     ++this.invMovePhysicalProbeWaitTicks;
+                    int inventoryKey = this.c.gameSettings.keyBindInventory.getKeyCode();
+                    boolean physicalInventory = KeyBindUtil.V(inventoryKey, 64165991731362L);
+                    if (physicalInventory) {
+                        runtimeMilestone("invmove-physical-probe-input-seen:inventory=true");
+                    }
                     if (this.c.currentScreen instanceof GuiInventory) {
                         ++this.invMovePhysicalProbeStage;
                         this.invMovePhysicalProbeWaitTicks = 0;
@@ -2909,7 +2914,10 @@ implements EventSubscriber {
                         return;
                     }
                     if (this.invMovePhysicalProbeWaitTicks > 600) {
-                        throw new IllegalStateException("InvMove did not observe physical inventory open");
+                        throw new IllegalStateException("InvMove did not observe physical inventory open physicalInventory="
+                                + physicalInventory + " inventoryKey=" + inventoryKey
+                                + " currentScreen=" + (this.c.currentScreen == null
+                                ? "<null>" : this.c.currentScreen.getClass().getName()));
                     }
                     return;
 
