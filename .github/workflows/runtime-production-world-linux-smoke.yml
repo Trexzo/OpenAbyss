@@ -222,11 +222,12 @@ jobs:
 
           test -f "$STAGE"
           test -f "$STDOUT"
-          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=30' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=31' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=30'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe15=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=31'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -383,6 +384,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL14=PASS modules=ItemScale'
+          grep -Fq 'high-risk-functional-probe15-effect-pass:AntiNick:version1=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-effect-pass:AntiNick:version4=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-restore-pass:AntiNick:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-module-pass:AntiNick' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe15-fail:' "$STAGE"; then
+            echo 'AntiNick player-name probe reported a failure.'
+            grep -F 'high-risk-functional-probe15-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL15=PASS modules=AntiNick'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
