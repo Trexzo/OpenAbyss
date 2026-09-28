@@ -28,6 +28,8 @@ import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.AttackEntityEvent;
+import Abyss.event.events.KnockbackEvent;
+import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
@@ -58,6 +60,7 @@ import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.HitSelect;
+import Abyss.module.impl.combat.JumpReset;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.KillAura;
 import Abyss.module.impl.combat.Velocity;
@@ -456,6 +459,25 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe34OriginalPitch;
     private Object highRiskFunctionalProbe34OriginalCachedAngles;
     private int highRiskFunctionalProbe34FixtureId;
+    private int highRiskFunctionalProbe35Stage;
+    private int highRiskFunctionalProbe35WaitTicks;
+    private boolean highRiskFunctionalProbe35Saved;
+    private boolean highRiskFunctionalProbe35OriginalEnabled;
+    private int highRiskFunctionalProbe35OriginalChance;
+    private boolean highRiskFunctionalProbe35OriginalRequireMoving;
+    private boolean highRiskFunctionalProbe35OriginalReduce;
+    private boolean highRiskFunctionalProbe35OriginalPlayers;
+    private boolean highRiskFunctionalProbe35OriginalMobs;
+    private boolean highRiskFunctionalProbe35OriginalAnimals;
+    private boolean highRiskFunctionalProbe35OriginalBosses;
+    private boolean highRiskFunctionalProbe35OriginalFriends;
+    private boolean highRiskFunctionalProbe35OriginalEnemies;
+    private boolean highRiskFunctionalProbe35OriginalTeammates;
+    private boolean highRiskFunctionalProbe35OriginalBots;
+    private float highRiskFunctionalProbe35OriginalFov;
+    private float highRiskFunctionalProbe35OriginalRange;
+    private boolean highRiskFunctionalProbe35OriginalSprinting;
+    private int highRiskFunctionalProbe35FixtureId;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -8242,6 +8264,271 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe35() {
+        if (!this.highRiskFunctionalProbe35Saved) {
+            return;
+        }
+        try {
+            JumpReset probe = Modules.J(JumpReset.class);
+
+            if (this.highRiskFunctionalProbe35FixtureId != 0
+                    && this.c.theWorld != null) {
+                this.c.theWorld.removeEntityFromWorld(
+                        this.highRiskFunctionalProbe35FixtureId);
+            }
+
+            JumpReset.chance.d(this.highRiskFunctionalProbe35OriginalChance);
+            JumpReset.requireMoving.v(
+                    this.highRiskFunctionalProbe35OriginalRequireMoving, 0L);
+            JumpReset.reduce.v(
+                    this.highRiskFunctionalProbe35OriginalReduce, 0L);
+            JumpReset.players.v(
+                    this.highRiskFunctionalProbe35OriginalPlayers, 0L);
+            JumpReset.mobs.v(
+                    this.highRiskFunctionalProbe35OriginalMobs, 0L);
+            JumpReset.animals.v(
+                    this.highRiskFunctionalProbe35OriginalAnimals, 0L);
+            JumpReset.bosses.v(
+                    this.highRiskFunctionalProbe35OriginalBosses, 0L);
+            JumpReset.friends.v(
+                    this.highRiskFunctionalProbe35OriginalFriends, 0L);
+            JumpReset.enemies.v(
+                    this.highRiskFunctionalProbe35OriginalEnemies, 0L);
+            JumpReset.teammates.v(
+                    this.highRiskFunctionalProbe35OriginalTeammates, 0L);
+            JumpReset.bots.v(
+                    this.highRiskFunctionalProbe35OriginalBots, 0L);
+            JumpReset.fov.o(
+                    (byte)0, 0L, this.highRiskFunctionalProbe35OriginalFov);
+            JumpReset.range.o(
+                    (byte)0, 0L, this.highRiskFunctionalProbe35OriginalRange);
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.setSprinting(
+                        this.highRiskFunctionalProbe35OriginalSprinting);
+            }
+
+            if (probe != null) {
+                probe.A(0L);
+                if (probe.o() != this.highRiskFunctionalProbe35OriginalEnabled) {
+                    probe.I(0L, this.highRiskFunctionalProbe35OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe35:JumpReset",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        this.highRiskFunctionalProbe35Saved = false;
+        this.highRiskFunctionalProbe35WaitTicks = 0;
+        this.highRiskFunctionalProbe35FixtureId = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe35() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe35")
+                || this.highRiskFunctionalProbe35Stage < 0
+                || this.highRiskFunctionalProbe35Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe34")
+                && this.highRiskFunctionalProbe34Stage < 4) {
+            return;
+        }
+
+        JumpReset probe = Modules.J(JumpReset.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(JumpReset.class) != probe
+                    || ModuleManager.byName("JumpReset") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "JumpReset live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe35Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe35OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe35OriginalChance =
+                            JumpReset.chance.k();
+                    this.highRiskFunctionalProbe35OriginalRequireMoving =
+                            JumpReset.requireMoving.c();
+                    this.highRiskFunctionalProbe35OriginalReduce =
+                            JumpReset.reduce.c();
+                    this.highRiskFunctionalProbe35OriginalPlayers =
+                            JumpReset.players.c();
+                    this.highRiskFunctionalProbe35OriginalMobs =
+                            JumpReset.mobs.c();
+                    this.highRiskFunctionalProbe35OriginalAnimals =
+                            JumpReset.animals.c();
+                    this.highRiskFunctionalProbe35OriginalBosses =
+                            JumpReset.bosses.c();
+                    this.highRiskFunctionalProbe35OriginalFriends =
+                            JumpReset.friends.c();
+                    this.highRiskFunctionalProbe35OriginalEnemies =
+                            JumpReset.enemies.c();
+                    this.highRiskFunctionalProbe35OriginalTeammates =
+                            JumpReset.teammates.c();
+                    this.highRiskFunctionalProbe35OriginalBots =
+                            JumpReset.bots.c();
+                    this.highRiskFunctionalProbe35OriginalFov =
+                            JumpReset.fov.L();
+                    this.highRiskFunctionalProbe35OriginalRange =
+                            JumpReset.range.L();
+                    this.highRiskFunctionalProbe35OriginalSprinting =
+                            this.c.thePlayer.isSprinting();
+                    this.highRiskFunctionalProbe35Saved = true;
+
+                    JumpReset.chance.d(100);
+                    JumpReset.requireMoving.v(false, 0L);
+                    JumpReset.reduce.v(false, 0L);
+                    JumpReset.players.v(false, 0L);
+                    JumpReset.mobs.v(true, 0L);
+                    JumpReset.animals.v(false, 0L);
+                    JumpReset.bosses.v(false, 0L);
+                    JumpReset.friends.v(false, 0L);
+                    JumpReset.enemies.v(false, 0L);
+                    JumpReset.teammates.v(false, 0L);
+                    JumpReset.bots.v(false, 0L);
+                    JumpReset.fov.o((byte)0, 0L, 360.0f);
+                    JumpReset.range.o((byte)0, 0L, 8.0f);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+
+                    this.highRiskFunctionalProbe35Stage = 1;
+                    this.highRiskFunctionalProbe35WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe35-enable-request:"
+                                    + "JumpReset");
+                    return;
+                }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe35WaitTicks;
+                    boolean active =
+                            probe.o()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!active) {
+                        if (this.highRiskFunctionalProbe35WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "JumpReset did not enter enabled/subscribed state"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    if (this.c.thePlayer.isPotionActive(Potion.jump)) {
+                        throw new IllegalStateException(
+                                "JumpReset fixture player unexpectedly has jump potion");
+                    }
+
+                    EntityZombie target =
+                            new EntityZombie(this.c.theWorld);
+                    target.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe35FixtureId = -73535;
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe35FixtureId,
+                            target);
+                    this.c.thePlayer.setSprinting(true);
+
+                    probe.onKnockback(
+                            new KnockbackEvent(1.0, 0.5, 0.0),
+                            0L);
+
+                    MoveInputEvent movement =
+                            new MoveInputEvent(
+                                    0.25f,
+                                    -0.5f,
+                                    false,
+                                    false,
+                                    0.0);
+                    probe.onMoveInput(0L, movement);
+
+                    if (Math.abs(movement.t() - 1.0f) > 0.0001f
+                            || !movement.d()) {
+                        throw new IllegalStateException(
+                                "JumpReset move-input effect mismatch"
+                                        + " forward=" + movement.t()
+                                        + " strafe=" + movement.R()
+                                        + " jump=" + movement.d());
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe35-effect-pass:"
+                                    + "JumpReset:forward="
+                                    + movement.t()
+                                    + ":jump="
+                                    + movement.d()
+                                    + ":target=mobs");
+                    this.highRiskFunctionalProbe35Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    MoveInputEvent cleared =
+                            new MoveInputEvent(
+                                    0.25f,
+                                    -0.5f,
+                                    false,
+                                    false,
+                                    0.0);
+                    probe.onMoveInput(0L, cleared);
+                    if (Math.abs(cleared.t() - 0.25f) > 0.0001f
+                            || cleared.d()) {
+                        throw new IllegalStateException(
+                                "JumpReset one-shot reset mismatch"
+                                        + " forward=" + cleared.t()
+                                        + " jump=" + cleared.d());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe35-reset-pass:"
+                                    + "JumpReset:oneShot=true");
+                    this.highRiskFunctionalProbe35Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    runtimeMilestone(
+                            "high-risk-functional-probe35-module-pass:"
+                                    + "JumpReset");
+                    runtimeMilestone(
+                            "high-risk-functional-probe35-pass:1");
+                    this.highRiskFunctionalProbe35Stage = 4;
+                    this.restoreHighRiskFunctionalProbe35();
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe35Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe35:JumpReset",
+                    "knockback-moveinput-state-machine",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe35-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe35();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -9240,6 +9527,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe32();
         this.pumpHighRiskFunctionalProbe33();
         this.pumpHighRiskFunctionalProbe34();
+        this.pumpHighRiskFunctionalProbe35();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
