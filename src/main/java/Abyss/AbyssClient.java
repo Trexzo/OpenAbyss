@@ -374,6 +374,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe23Stage;
     private int highRiskFunctionalProbe24Stage;
     private int highRiskFunctionalProbe25Stage;
+    private int highRiskFunctionalProbe26Stage;
     private int highRiskFunctionalProbe25WaitTicks;
     private boolean highRiskFunctionalProbe25OriginalEnabled;
     private boolean highRiskFunctionalProbe25Saved;
@@ -6052,6 +6053,185 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe26() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe26")
+                || this.highRiskFunctionalProbe26Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe25")
+                && this.highRiskFunctionalProbe25Stage < 5) return;
+
+        Abyss.module.impl.visual_utility.FKCounter probe =
+                Modules.J(Abyss.module.impl.visual_utility.FKCounter.class);
+        Field jField = null;
+        Field dField = null;
+        Field nField = null;
+        Field gField = null;
+        Field yField = null;
+        Field bField = null;
+        Field eField = null;
+        Field widthField = null;
+        String[] savedJ = null;
+        int[] savedD = null;
+        List<Map<String, Integer>> savedN = null;
+        Map<String, Integer> savedG = null;
+        java.util.Set<String> savedY = null;
+        String savedB = null;
+        List savedE = null;
+        int savedWidth = 0;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Abyss.module.impl.visual_utility.FKCounter.class) != probe
+                    || ModuleManager.byName("FKCounter") != probe) {
+                throw new IllegalStateException("FKCounter live module authority unavailable");
+            }
+
+            Class<?> type = Abyss.module.impl.visual_utility.FKCounter.class;
+            jField = type.getDeclaredField("J");
+            dField = type.getDeclaredField("D");
+            nField = type.getDeclaredField("N");
+            gField = type.getDeclaredField("g");
+            yField = type.getDeclaredField("y");
+            bField = type.getDeclaredField("B");
+            eField = type.getDeclaredField("e");
+            widthField = type.getDeclaredField("n");
+            for (Field field : new Field[]{
+                    jField, dField, nField, gField, yField, bField, eField, widthField}) {
+                field.setAccessible(true);
+            }
+
+            String[] teams = (String[])jField.get(probe);
+            int[] totals = (int[])dField.get(probe);
+            List<Map<String, Integer>> pending =
+                    (List<Map<String, Integer>>)nField.get(probe);
+            Map<String, Integer> global =
+                    (Map<String, Integer>)gField.get(probe);
+            java.util.Set<String> finalized =
+                    (java.util.Set<String>)yField.get(probe);
+            List entries = (List)eField.get(probe);
+
+            savedJ = Arrays.copyOf(teams, teams.length);
+            savedD = Arrays.copyOf(totals, totals.length);
+            savedN = new ArrayList<Map<String, Integer>>(pending.size());
+            for (Map<String, Integer> map : pending) {
+                savedN.add(new HashMap<String, Integer>(map));
+            }
+            savedG = new HashMap<String, Integer>(global);
+            savedY = new java.util.HashSet<String>(finalized);
+            savedB = (String)bField.get(probe);
+            savedE = new ArrayList(entries);
+            savedWidth = widthField.getInt(probe);
+            saved = true;
+
+            String[] fixtureTeams = new String[]{"c", "a", "e", "9"};
+            System.arraycopy(fixtureTeams, 0, teams, 0, 4);
+            Arrays.fill(totals, 0);
+            global.clear();
+            finalized.clear();
+            entries.clear();
+            for (Map<String, Integer> map : pending) {
+                map.clear();
+            }
+
+            Method mergeMethod = type.getDeclaredMethod("merge", String.class, String.class);
+            mergeMethod.setAccessible(true);
+            Method removeMethod = type.getDeclaredMethod("i", String.class, String.class);
+            removeMethod.setAccessible(true);
+            Method rebuildMethod = type.getDeclaredMethod("v", long.class);
+            rebuildMethod.setAccessible(true);
+
+            final String victim = "AbyssFKProbe";
+            mergeMethod.invoke(probe, victim, "c");
+            if (totals[0] != 1
+                    || !Integer.valueOf(1).equals(pending.get(0).get(victim))
+                    || !Integer.valueOf(1).equals(global.get(victim))
+                    || finalized.contains(victim)) {
+                throw new IllegalStateException(
+                        "FKCounter merge state mismatch total=" + totals[0]
+                                + " pending=" + pending.get(0).get(victim)
+                                + " global=" + global.get(victim)
+                                + " finalized=" + finalized.contains(victim));
+            }
+            rebuildMethod.invoke(probe, 0L);
+            String rendered = (String)bField.get(probe);
+            if (rendered == null || rendered.length() == 0 || !rendered.contains("1")) {
+                throw new IllegalStateException(
+                        "FKCounter rendered state did not expose incremented count: "
+                                + rendered);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe26-effect-pass:FKCounter:merge=1");
+
+            int removed = ((Integer)removeMethod.invoke(probe, victim, "c")).intValue();
+            if (removed != 1
+                    || totals[0] != 0
+                    || pending.get(0).containsKey(victim)
+                    || global.containsKey(victim)
+                    || !finalized.contains(victim)) {
+                throw new IllegalStateException(
+                        "FKCounter final-kill state mismatch removed=" + removed
+                                + " total=" + totals[0]
+                                + " pending=" + pending.get(0).containsKey(victim)
+                                + " global=" + global.containsKey(victim)
+                                + " finalized=" + finalized.contains(victim));
+            }
+            rebuildMethod.invoke(probe, 0L);
+            runtimeMilestone(
+                    "high-risk-functional-probe26-effect-pass:FKCounter:finalize=1");
+
+            this.highRiskFunctionalProbe26Stage = 1;
+            runtimeMilestone("high-risk-functional-probe26-module-pass:FKCounter");
+            runtimeMilestone("high-risk-functional-probe26-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe26Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe26:FKCounter",
+                    "kill-accounting-core",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe26-fail:" + failure.getClass().getName());
+        }
+        finally {
+            if (saved && probe != null) {
+                try {
+                    String[] teams = (String[])jField.get(probe);
+                    int[] totals = (int[])dField.get(probe);
+                    List<Map<String, Integer>> pending =
+                            (List<Map<String, Integer>>)nField.get(probe);
+                    Map<String, Integer> global =
+                            (Map<String, Integer>)gField.get(probe);
+                    java.util.Set<String> finalized =
+                            (java.util.Set<String>)yField.get(probe);
+                    List entries = (List)eField.get(probe);
+
+                    System.arraycopy(savedJ, 0, teams, 0, savedJ.length);
+                    System.arraycopy(savedD, 0, totals, 0, savedD.length);
+                    global.clear();
+                    global.putAll(savedG);
+                    finalized.clear();
+                    finalized.addAll(savedY);
+                    for (int i = 0; i < pending.size(); ++i) {
+                        pending.get(i).clear();
+                        pending.get(i).putAll(savedN.get(i));
+                    }
+                    entries.clear();
+                    entries.addAll(savedE);
+                    bField.set(probe, savedB);
+                    widthField.setInt(probe, savedWidth);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe26:FKCounter",
+                            "restore",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -7035,6 +7215,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe23();
         this.pumpHighRiskFunctionalProbe24();
         this.pumpHighRiskFunctionalProbe25();
+        this.pumpHighRiskFunctionalProbe26();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
