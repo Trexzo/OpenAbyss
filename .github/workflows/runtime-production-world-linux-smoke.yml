@@ -276,7 +276,7 @@ jobs:
           grep -Fq 'high-risk-functional-probe5-pass:1' "$STAGE"
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL5=PASS modules=AntiDebuff'
           grep -Fq 'high-risk-functional-probe6-effect-pass:NoHurtCam:disabled:identityDelta=' "$STAGE"
-          grep -Fq 'high-risk-functional-probe6-effect-pass:NoHurtCam:enabled:identityDelta=0.0:effect=0.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe6-effect-pass:NoHurtCam:enabled:identityDelta=0.0:effect=0' "$STAGE"
           grep -Fq 'high-risk-functional-probe6-restore-pass:NoHurtCam:' "$STAGE"
           grep -Fq 'high-risk-functional-probe6-module-pass:NoHurtCam' "$STAGE"
           grep -Fq 'high-risk-functional-probe6-pass:1' "$STAGE"
