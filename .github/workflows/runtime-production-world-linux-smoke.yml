@@ -288,6 +288,10 @@ jobs:
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
+          grep -Fq 'category-lifecycle-probe-hitbox-border:opposite:enabled=true:' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-hitbox-border:restored:enabled=false:' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-hitbox-effect-pass:delta=0.35' "$STAGE"
+          echo 'PRODUCTION_WORLD_HITBOX_ASM_COLLISION_EFFECT=PASS'
           grep -Fq 'category-lifecycle-probe-namehider-effect-pass:opposite:enabled=true:alias=' "$STAGE"
           grep -Fq 'category-lifecycle-probe-namehider-effect-pass:restored:enabled=false:alias=' "$STAGE"
           echo 'PRODUCTION_WORLD_NAMEHIDER_TRANSFORM_EFFECT=PASS'
