@@ -10254,6 +10254,25 @@ implements EventSubscriber {
                                         + (targets == null ? -1 : targets.size()));
                     }
 
+                    Field timerField = null;
+                    for (Field field : LagRange.class.getDeclaredFields()) {
+                        if (TimerUtil.class.isAssignableFrom(field.getType())) {
+                            timerField = field;
+                            break;
+                        }
+                    }
+                    if (timerField == null) {
+                        throw new IllegalStateException(
+                                "LagRange delay timer field not found");
+                    }
+                    timerField.setAccessible(true);
+                    TimerUtil delayTimer = (TimerUtil)timerField.get(probe);
+                    if (delayTimer == null) {
+                        throw new IllegalStateException(
+                                "LagRange delay timer was null");
+                    }
+                    delayTimer.W();
+
                     runtimeMilestone(
                             "high-risk-functional-probe41-target-pass:"
                                     + "LagRange:distance=5.0");
