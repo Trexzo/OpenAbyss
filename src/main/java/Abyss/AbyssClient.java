@@ -38,6 +38,7 @@ import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.configuration.ClickGUI;
@@ -274,6 +275,30 @@ implements EventSubscriber {
         System.err.println("[ABYSSDIAG] feature failure " + line);
 }
 
+    private void verifyNameHiderProbeEffect(boolean expectedEnabled, String phase) {
+        if (this.c.thePlayer == null) {
+            throw new IllegalStateException("NameHider probe has no local player");
+}
+        String playerName = this.c.thePlayer.getName();
+        if (playerName == null || playerName.length() == 0) {
+            throw new IllegalStateException("NameHider probe local player has no name");
+}
+        if (NameHider.name == null || NameHider.name.X() == null) {
+            throw new IllegalStateException("NameHider replacement setting is unavailable");
+}
+        String input = "OPENABYSS_NAMEHIDER_" + playerName + "_END";
+        String expected = expectedEnabled
+                ? input.replace(playerName, NameHider.name.X())
+                : input;
+        String actual = NameHider.U(input);
+        if (!expected.equals(actual)) {
+            throw new IllegalStateException("NameHider transform mismatch phase=" + phase
+                    + " enabled=" + expectedEnabled + " expected=" + expected + " actual=" + actual);
+}
+        runtimeMilestone("category-lifecycle-probe-namehider-effect-pass:" + phase
+                + ":enabled=" + expectedEnabled + ":alias=" + NameHider.name.X());
+}
+
     private void pumpCategoryLifecycleProbe() {
         if (!Boolean.getBoolean("abyss.categoryLifecycleProbe")
                 || this.categoryLifecycleProbeIndex >= CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
@@ -323,6 +348,9 @@ implements EventSubscriber {
 }
                 runtimeMilestone("category-lifecycle-probe-opposite-pass:" + name
                         + ":enabled=" + probe.o());
+                if ("NameHider".equals(name)) {
+                    this.verifyNameHiderProbeEffect(probe.o(), "opposite");
+}
                 this.categoryLifecycleProbeWaitTicks = 0;
                 probe.I(0L, this.categoryLifecycleProbeOriginalEnabled);
                 this.categoryLifecycleProbePhase = 2;
@@ -339,6 +367,9 @@ implements EventSubscriber {
                             + " ownerActive=" + w.isOwnerActive(probe));
 }
                 return;
+}
+            if ("NameHider".equals(name)) {
+                this.verifyNameHiderProbeEffect(this.categoryLifecycleProbeOriginalEnabled, "restored");
 }
             runtimeMilestone("category-lifecycle-probe-module-pass:" + name
                     + ":restored=" + this.categoryLifecycleProbeOriginalEnabled);
