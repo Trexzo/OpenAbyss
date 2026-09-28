@@ -55,6 +55,7 @@ import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
+import Abyss.module.impl.combat.KillAura;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
@@ -379,6 +380,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe25Stage;
     private int highRiskFunctionalProbe26Stage;
     private int highRiskFunctionalProbe27Stage;
+    private int highRiskFunctionalProbe28Stage;
     private int highRiskFunctionalProbe25WaitTicks;
     private boolean highRiskFunctionalProbe25OriginalEnabled;
     private boolean highRiskFunctionalProbe25Saved;
@@ -6434,6 +6436,236 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe28() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe28")
+                || this.highRiskFunctionalProbe28Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe27")
+                && this.highRiskFunctionalProbe27Stage < 1) return;
+
+        KillAura probe = Modules.J(KillAura.class);
+        final int nearId = -2147483501;
+        final int farId = -2147483502;
+        EntityZombie near = null;
+        EntityZombie far = null;
+        Method selector = null;
+        Field indexField = null;
+        Field switchTimerField = null;
+
+        String savedMode = null;
+        String savedSort = null;
+        float savedAttackRange = 0.0f;
+        float savedSwingRange = 0.0f;
+        float savedFov = 0.0f;
+        float savedSwitchDelay = 0.0f;
+        boolean savedThroughWall = false;
+        boolean savedPlayers = false;
+        boolean savedMobs = false;
+        boolean savedAnimals = false;
+        boolean savedBosses = false;
+        boolean savedFriends = false;
+        boolean savedEnemies = false;
+        boolean savedTeammates = false;
+        boolean savedBots = false;
+        boolean savedSilverfishes = false;
+        boolean savedGolems = false;
+        int savedIndex = 0;
+        long savedSwitchTimer = 0L;
+        boolean savedSwitchAdvance = false;
+        net.minecraft.entity.EntityLivingBase savedTarget = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(KillAura.class) != probe
+                    || ModuleManager.byName("KillAura") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || KillAura.mode == null
+                    || KillAura.sort == null
+                    || KillAura.attackRange == null
+                    || KillAura.swingRange == null
+                    || KillAura.fov == null
+                    || KillAura.switchDelay == null
+                    || KillAura.throughWall == null
+                    || KillAura.players == null
+                    || KillAura.mobs == null
+                    || KillAura.animals == null
+                    || KillAura.bosses == null
+                    || KillAura.friends == null
+                    || KillAura.enemies == null
+                    || KillAura.teammates == null
+                    || KillAura.bots == null
+                    || KillAura.silverfishes == null
+                    || KillAura.golems == null) {
+                throw new IllegalStateException(
+                        "KillAura target-selector authority unavailable");
+            }
+            if (this.c.theWorld.getEntityByID(nearId) != null
+                    || this.c.theWorld.getEntityByID(farId) != null) {
+                throw new IllegalStateException(
+                        "KillAura fixture entity ids are already occupied");
+            }
+
+            selector = KillAura.class.getDeclaredMethod("b", Long.TYPE);
+            selector.setAccessible(true);
+            indexField = KillAura.class.getDeclaredField("m");
+            indexField.setAccessible(true);
+            switchTimerField = KillAura.class.getDeclaredField("C");
+            switchTimerField.setAccessible(true);
+
+            savedMode = KillAura.mode.Y();
+            savedSort = KillAura.sort.Y();
+            savedAttackRange = KillAura.attackRange.L();
+            savedSwingRange = KillAura.swingRange.L();
+            savedFov = KillAura.fov.L();
+            savedSwitchDelay = KillAura.switchDelay.L();
+            savedThroughWall = KillAura.throughWall.c();
+            savedPlayers = KillAura.players.c();
+            savedMobs = KillAura.mobs.c();
+            savedAnimals = KillAura.animals.c();
+            savedBosses = KillAura.bosses.c();
+            savedFriends = KillAura.friends.c();
+            savedEnemies = KillAura.enemies.c();
+            savedTeammates = KillAura.teammates.c();
+            savedBots = KillAura.bots.c();
+            savedSilverfishes = KillAura.silverfishes.c();
+            savedGolems = KillAura.golems.c();
+            savedIndex = indexField.getInt(probe);
+            savedSwitchTimer = switchTimerField.getLong(probe);
+            savedSwitchAdvance = KillAura.x;
+            savedTarget = KillAura.H6;
+            saved = true;
+
+            KillAura.players.v(false, 0L);
+            KillAura.mobs.v(true, 0L);
+            KillAura.animals.v(false, 0L);
+            KillAura.bosses.v(false, 0L);
+            KillAura.friends.v(false, 0L);
+            KillAura.enemies.v(false, 0L);
+            KillAura.teammates.v(false, 0L);
+            KillAura.bots.v(false, 0L);
+            KillAura.silverfishes.v(false, 0L);
+            KillAura.golems.v(false, 0L);
+            KillAura.throughWall.v(true, 0L);
+            KillAura.attackRange.o((byte)0, 0L, 8.0f);
+            KillAura.swingRange.o((byte)0, 0L, 8.0f);
+            KillAura.fov.o((byte)0, 0L, 360.0f);
+            KillAura.switchDelay.o((byte)0, 0L, 0.0f);
+
+            near = new EntityZombie(this.c.theWorld);
+            near.setHealth(18.0f);
+            near.setPosition(
+                    this.c.thePlayer.posX + 2.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            far = new EntityZombie(this.c.theWorld);
+            far.setHealth(4.0f);
+            far.setPosition(
+                    this.c.thePlayer.posX + 5.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(nearId, near);
+            this.c.theWorld.addEntityToWorld(farId, far);
+
+            KillAura.mode.i("SINGLE");
+            KillAura.sort.i("DISTANCE");
+            Object distanceSelected = selector.invoke(probe, 0L);
+            if (distanceSelected != near) {
+                throw new IllegalStateException(
+                        "KillAura DISTANCE selector did not choose near fixture: "
+                                + String.valueOf(distanceSelected));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe28-effect-pass:KillAura:"
+                            + "distance=near");
+
+            KillAura.sort.i("HEALTH");
+            Object healthSelected = selector.invoke(probe, 0L);
+            if (healthSelected != far) {
+                throw new IllegalStateException(
+                        "KillAura HEALTH selector did not choose low-health fixture: "
+                                + String.valueOf(healthSelected));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe28-effect-pass:KillAura:"
+                            + "health=low");
+
+            KillAura.mode.i("SWITCH");
+            KillAura.sort.i("DISTANCE");
+            indexField.setInt(probe, 0);
+            switchTimerField.setLong(probe, 0L);
+            KillAura.x = true;
+            Object switched = selector.invoke(probe, 0L);
+            if (switched != far || indexField.getInt(probe) != 1) {
+                throw new IllegalStateException(
+                        "KillAura SWITCH selector did not advance to second fixture"
+                                + " selected=" + String.valueOf(switched)
+                                + " index=" + indexField.getInt(probe));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe28-effect-pass:KillAura:"
+                            + "switch=second");
+
+            this.highRiskFunctionalProbe28Stage = 1;
+            runtimeMilestone(
+                    "high-risk-functional-probe28-module-pass:KillAura");
+            runtimeMilestone("high-risk-functional-probe28-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe28Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe28:KillAura",
+                    "target-selector",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe28-fail:"
+                            + failure.getClass().getName());
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(nearId);
+                    this.c.theWorld.removeEntityFromWorld(farId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    KillAura.mode.i(savedMode);
+                    KillAura.sort.i(savedSort);
+                    KillAura.attackRange.o((byte)0, 0L, savedAttackRange);
+                    KillAura.swingRange.o((byte)0, 0L, savedSwingRange);
+                    KillAura.fov.o((byte)0, 0L, savedFov);
+                    KillAura.switchDelay.o((byte)0, 0L, savedSwitchDelay);
+                    KillAura.throughWall.v(savedThroughWall, 0L);
+                    KillAura.players.v(savedPlayers, 0L);
+                    KillAura.mobs.v(savedMobs, 0L);
+                    KillAura.animals.v(savedAnimals, 0L);
+                    KillAura.bosses.v(savedBosses, 0L);
+                    KillAura.friends.v(savedFriends, 0L);
+                    KillAura.enemies.v(savedEnemies, 0L);
+                    KillAura.teammates.v(savedTeammates, 0L);
+                    KillAura.bots.v(savedBots, 0L);
+                    KillAura.silverfishes.v(savedSilverfishes, 0L);
+                    KillAura.golems.v(savedGolems, 0L);
+                    indexField.setInt(probe, savedIndex);
+                    switchTimerField.setLong(probe, savedSwitchTimer);
+                    KillAura.x = savedSwitchAdvance;
+                    KillAura.H6 = savedTarget;
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe28:KillAura",
+                            "restore",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -7419,6 +7651,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe25();
         this.pumpHighRiskFunctionalProbe26();
         this.pumpHighRiskFunctionalProbe27();
+        this.pumpHighRiskFunctionalProbe28();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
