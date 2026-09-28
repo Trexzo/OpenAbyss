@@ -273,7 +273,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe6Stage;
     private int highRiskFunctionalProbe6WaitTicks;
     private boolean highRiskFunctionalProbe6OriginalEnabled;
-    private float highRiskFunctionalProbe6OriginalEffect;
+    private int highRiskFunctionalProbe6OriginalEffect;
     private boolean highRiskFunctionalProbe6Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
@@ -3042,7 +3042,7 @@ implements EventSubscriber {
             if (expectSuppressed) {
                 if (delta > 0.0005f) {
                     throw new IllegalStateException("NoHurtCam expected identity transform phase=" + phase
-                            + " delta=" + delta + " effect=" + NoHurtCam.effect.L());
+                            + " delta=" + delta + " effect=" + NoHurtCam.effect.k());
                 }
             }
             else if (delta < 0.01f) {
@@ -3050,7 +3050,7 @@ implements EventSubscriber {
                         + phase + " delta=" + delta);
             }
             runtimeMilestone("high-risk-functional-probe6-effect-pass:NoHurtCam:" + phase
-                    + ":identityDelta=" + delta + ":effect=" + NoHurtCam.effect.L());
+                    + ":identityDelta=" + delta + ":effect=" + NoHurtCam.effect.k());
         }
         finally {
             this.c.thePlayer.hurtTime = originalHurtTime;
@@ -3064,7 +3064,7 @@ implements EventSubscriber {
             return;
         }
         try {
-            NoHurtCam.effect.o((byte)0, 0L, this.highRiskFunctionalProbe6OriginalEffect);
+            NoHurtCam.effect.d(this.highRiskFunctionalProbe6OriginalEffect);
             NoHurtCam probe = Modules.J(NoHurtCam.class);
             if (probe != null && probe.o() != this.highRiskFunctionalProbe6OriginalEnabled) {
                 probe.I(0L, this.highRiskFunctionalProbe6OriginalEnabled);
@@ -3096,9 +3096,9 @@ implements EventSubscriber {
             switch (this.highRiskFunctionalProbe6Stage) {
                 case 0:
                     this.highRiskFunctionalProbe6OriginalEnabled = probe.o();
-                    this.highRiskFunctionalProbe6OriginalEffect = NoHurtCam.effect.L();
+                    this.highRiskFunctionalProbe6OriginalEffect = NoHurtCam.effect.k();
                     this.highRiskFunctionalProbe6Saved = true;
-                    NoHurtCam.effect.o((byte)0, 0L, 0.0f);
+                    NoHurtCam.effect.d(0);
                     if (probe.o()) {
                         probe.I(0L, false);
                     }
@@ -3126,7 +3126,7 @@ implements EventSubscriber {
                     ++this.highRiskFunctionalProbe6WaitTicks;
                     if (probe.o() && !probe.l() && !probe.K()) {
                         this.verifyNoHurtCamHookEffect(true, "enabled");
-                        NoHurtCam.effect.o((byte)0, 0L, this.highRiskFunctionalProbe6OriginalEffect);
+                        NoHurtCam.effect.d(this.highRiskFunctionalProbe6OriginalEffect);
                         if (!this.highRiskFunctionalProbe6OriginalEnabled) {
                             probe.I(0L, false);
                         }
@@ -3147,7 +3147,7 @@ implements EventSubscriber {
                             && !probe.l() && !probe.K()) {
                         runtimeMilestone("high-risk-functional-probe6-restore-pass:NoHurtCam:enabled="
                                 + this.highRiskFunctionalProbe6OriginalEnabled
-                                + ":effect=" + NoHurtCam.effect.L());
+                                + ":effect=" + NoHurtCam.effect.k());
                         ++this.highRiskFunctionalProbe6Stage;
                         runtimeMilestone("high-risk-functional-probe6-module-pass:NoHurtCam");
                         runtimeMilestone("high-risk-functional-probe6-pass:1");
