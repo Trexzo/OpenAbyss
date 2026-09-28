@@ -51,6 +51,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.AutoBlock;
 import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
@@ -381,6 +382,10 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe26Stage;
     private int highRiskFunctionalProbe27Stage;
     private int highRiskFunctionalProbe28Stage;
+    private int highRiskFunctionalProbe29Stage;
+    private int highRiskFunctionalProbe29WaitTicks;
+    private boolean highRiskFunctionalProbe29Saved;
+    private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
     private boolean highRiskFunctionalProbe25OriginalEnabled;
     private boolean highRiskFunctionalProbe25Saved;
@@ -6666,6 +6671,261 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe29() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe29")
+                || this.highRiskFunctionalProbe29Stage < 0
+                || this.highRiskFunctionalProbe29Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe28")
+                && this.highRiskFunctionalProbe28Stage < 1) return;
+
+        AutoBlock probe = Modules.J(AutoBlock.class);
+        final int fixtureId = -2147483503;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AutoBlock.class) != probe
+                    || ModuleManager.byName("AutoBlock") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "AutoBlock readiness authority unavailable");
+            }
+
+            if (this.highRiskFunctionalProbe29Stage == 0) {
+                if (probe.l() || probe.K()) {
+                    return;
+                }
+
+                this.highRiskFunctionalProbe29OriginalEnabled = probe.o();
+                this.highRiskFunctionalProbe29Saved = true;
+
+                if (probe.o()) {
+                    probe.I(0L, false);
+                    this.highRiskFunctionalProbe29Stage = 1;
+                    this.highRiskFunctionalProbe29WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe29-request:AutoBlock:disable");
+                    return;
+                }
+                this.highRiskFunctionalProbe29Stage = 1;
+            }
+
+            if (this.highRiskFunctionalProbe29Stage == 1) {
+                if (probe.l() || probe.K() || probe.o() || probe.P()
+                        || w.isOwnerActive(probe)) {
+                    if (++this.highRiskFunctionalProbe29WaitTicks > 160) {
+                        throw new IllegalStateException(
+                                "AutoBlock did not settle disabled");
+                    }
+                    return;
+                }
+
+                int disabled = AutoBlock.t(0L);
+                if (disabled != 0) {
+                    throw new IllegalStateException(
+                            "AutoBlock disabled readiness was " + disabled);
+                }
+                runtimeMilestone(
+                        "high-risk-functional-probe29-effect-pass:AutoBlock:"
+                                + "disabled=0");
+
+                probe.I(0L, true);
+                this.highRiskFunctionalProbe29Stage = 2;
+                this.highRiskFunctionalProbe29WaitTicks = 0;
+                runtimeMilestone(
+                        "high-risk-functional-probe29-request:AutoBlock:enable");
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe29Stage == 2) {
+                if (probe.l() || probe.K() || !probe.o() || !probe.P()
+                        || !w.isOwnerActive(probe)) {
+                    if (++this.highRiskFunctionalProbe29WaitTicks > 160) {
+                        throw new IllegalStateException(
+                                "AutoBlock did not settle enabled");
+                    }
+                    return;
+                }
+
+                Field smartCounter = AutoBlock.class.getDeclaredField("I");
+                smartCounter.setAccessible(true);
+
+                String originalMode = AutoBlock.mode.Y();
+                boolean originalRequireKillAura = AutoBlock.requireKillAura.c();
+                boolean originalRequireRightClick = AutoBlock.requireRightClick.c();
+                boolean originalPlayers = AutoBlock.players.c();
+                boolean originalMobs = AutoBlock.mobs.c();
+                boolean originalAnimals = AutoBlock.animals.c();
+                boolean originalBosses = AutoBlock.bosses.c();
+                boolean originalFriends = AutoBlock.friends.c();
+                boolean originalEnemies = AutoBlock.enemies.c();
+                boolean originalTeammates = AutoBlock.teammates.c();
+                boolean originalBots = AutoBlock.bots.c();
+                boolean originalSilverfishes = AutoBlock.silverfishes.c();
+                boolean originalGolems = AutoBlock.golems.c();
+                float originalTargetRange = AutoBlock.targetRange.L();
+                float originalFov = AutoBlock.fov.L();
+                int originalSmartCounter = smartCounter.getInt(null);
+                int slot = this.c.thePlayer.inventory.currentItem;
+                ItemStack originalStack =
+                        this.c.thePlayer.inventory.getStackInSlot(slot);
+                EntityZombie fixture = null;
+
+                try {
+                    if (this.c.theWorld.getEntityByID(fixtureId) != null) {
+                        throw new IllegalStateException(
+                                "AutoBlock fixture entity id already occupied");
+                    }
+
+                    AutoBlock.mode.i("VANILLA");
+                    AutoBlock.requireKillAura.v(false, 0L);
+                    AutoBlock.requireRightClick.v(false, 0L);
+                    AutoBlock.players.v(false, 0L);
+                    AutoBlock.mobs.v(true, 0L);
+                    AutoBlock.animals.v(false, 0L);
+                    AutoBlock.bosses.v(false, 0L);
+                    AutoBlock.friends.v(false, 0L);
+                    AutoBlock.enemies.v(false, 0L);
+                    AutoBlock.teammates.v(false, 0L);
+                    AutoBlock.bots.v(false, 0L);
+                    AutoBlock.silverfishes.v(false, 0L);
+                    AutoBlock.golems.v(false, 0L);
+                    AutoBlock.targetRange.o((byte)0, 0L, 8.0f);
+                    AutoBlock.fov.o((byte)0, 0L, 360.0f);
+
+                    this.c.thePlayer.inventory.setInventorySlotContents(
+                            slot, new ItemStack(Items.diamond_sword));
+
+                    fixture = new EntityZombie(this.c.theWorld);
+                    fixture.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.c.theWorld.addEntityToWorld(fixtureId, fixture);
+
+                    smartCounter.setInt(null, 0);
+                    int ready = AutoBlock.t(0L);
+                    if (ready != 1) {
+                        throw new IllegalStateException(
+                                "AutoBlock ready state mismatch expected=1 actual="
+                                        + ready);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe29-effect-pass:AutoBlock:"
+                                    + "ready=1");
+
+                    smartCounter.setInt(null, 3);
+                    int smart = AutoBlock.t(0L);
+                    if (smart != 2) {
+                        throw new IllegalStateException(
+                                "AutoBlock smart-unblock state mismatch expected=2 actual="
+                                        + smart);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe29-effect-pass:AutoBlock:"
+                                    + "smartUnblock=2");
+
+                    AutoBlock.mode.i("NONE");
+                    int none = AutoBlock.t(0L);
+                    if (none != 0) {
+                        throw new IllegalStateException(
+                                "AutoBlock NONE mode readiness mismatch expected=0 actual="
+                                        + none);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe29-effect-pass:AutoBlock:"
+                                    + "modeNone=0");
+                }
+                finally {
+                    try {
+                        this.c.theWorld.removeEntityFromWorld(fixtureId);
+                    }
+                    catch (Throwable ignored) {
+                    }
+                    this.c.thePlayer.inventory.setInventorySlotContents(
+                            slot, originalStack);
+                    AutoBlock.mode.i(originalMode);
+                    AutoBlock.requireKillAura.v(originalRequireKillAura, 0L);
+                    AutoBlock.requireRightClick.v(originalRequireRightClick, 0L);
+                    AutoBlock.players.v(originalPlayers, 0L);
+                    AutoBlock.mobs.v(originalMobs, 0L);
+                    AutoBlock.animals.v(originalAnimals, 0L);
+                    AutoBlock.bosses.v(originalBosses, 0L);
+                    AutoBlock.friends.v(originalFriends, 0L);
+                    AutoBlock.enemies.v(originalEnemies, 0L);
+                    AutoBlock.teammates.v(originalTeammates, 0L);
+                    AutoBlock.bots.v(originalBots, 0L);
+                    AutoBlock.silverfishes.v(originalSilverfishes, 0L);
+                    AutoBlock.golems.v(originalGolems, 0L);
+                    AutoBlock.targetRange.o(
+                            (byte)0, 0L, originalTargetRange);
+                    AutoBlock.fov.o((byte)0, 0L, originalFov);
+                    smartCounter.setInt(null, originalSmartCounter);
+                }
+
+                if (!this.highRiskFunctionalProbe29OriginalEnabled) {
+                    probe.I(0L, false);
+                }
+                this.highRiskFunctionalProbe29Stage = 3;
+                this.highRiskFunctionalProbe29WaitTicks = 0;
+                runtimeMilestone(
+                        "high-risk-functional-probe29-request:AutoBlock:restore:"
+                                + this.highRiskFunctionalProbe29OriginalEnabled);
+                return;
+            }
+
+            boolean restored = this.highRiskFunctionalProbe29OriginalEnabled
+                    ? probe.o() && !probe.l() && !probe.K() && probe.P()
+                            && w.isOwnerActive(probe)
+                    : !probe.o() && !probe.l() && !probe.K() && !probe.P()
+                            && !w.isOwnerActive(probe);
+            if (!restored) {
+                if (++this.highRiskFunctionalProbe29WaitTicks > 160) {
+                    throw new IllegalStateException(
+                            "AutoBlock enabled/subscriber state did not restore");
+                }
+                return;
+            }
+
+            this.highRiskFunctionalProbe29Stage = 4;
+            runtimeMilestone(
+                    "high-risk-functional-probe29-restore-pass:AutoBlock:"
+                            + "enabled="
+                            + this.highRiskFunctionalProbe29OriginalEnabled);
+            runtimeMilestone(
+                    "high-risk-functional-probe29-module-pass:AutoBlock");
+            runtimeMilestone("high-risk-functional-probe29-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe29Stage = -1;
+            if (this.highRiskFunctionalProbe29Saved && probe != null) {
+                try {
+                    if (probe.o()
+                            != this.highRiskFunctionalProbe29OriginalEnabled) {
+                        probe.I(
+                                0L,
+                                this.highRiskFunctionalProbe29OriginalEnabled);
+                    }
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe29:AutoBlock",
+                            "restore-enabled-state",
+                            restoreFailure);
+                }
+            }
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe29:AutoBlock",
+                    "readiness-state-machine",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe29-fail:"
+                            + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -7652,6 +7912,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe26();
         this.pumpHighRiskFunctionalProbe27();
         this.pumpHighRiskFunctionalProbe28();
+        this.pumpHighRiskFunctionalProbe29();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
