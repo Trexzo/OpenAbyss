@@ -80,7 +80,22 @@ jobs:
           python -m py_compile tools/production_forge_linux.py
           bash -n tools/run_production_world_smoke.sh
 
-          "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher
+          build_ok=0
+          for attempt in 1 2 3; do
+            echo "PRODUCTION_WORLD_BUILD_ATTEMPT=$attempt"
+            if "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher; then
+              build_ok=1
+              break
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 5))
+            fi
+          done
+          if [ "$build_ok" -ne 1 ]; then
+            echo "PRODUCTION_WORLD_BUILD_RETRIES_EXHAUSTED=1" >&2
+            exit 1
+          fi
+
           PACKAGE="$GITHUB_WORKSPACE/build/distributions/OpenAbyss-Windows-Launcher.zip"
           OUT="$RUNNER_TEMP/openabyss-production-world-package"
           rm -rf "$OUT"
