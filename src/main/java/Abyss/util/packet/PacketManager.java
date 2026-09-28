@@ -43,6 +43,7 @@ import net.minecraft.network.INetHandler;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.network.play.INetHandlerPlayServer;
+import net.minecraft.network.play.client.C01PacketChatMessage;
 
 public class PacketManager
 implements EventSubscriber {
@@ -54,6 +55,22 @@ implements EventSubscriber {
     public static List<Packet<?>> u;
     private static final Set<String> FAILURE_SIGNATURES =
             Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private static final Set<String> RUNTIME_MARKERS =
+            Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private static synchronized void runtimeMarker(String marker) {
+        if (marker == null || !RUNTIME_MARKERS.add(marker)) {
+            return;
+        }
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-network-stage.txt"), true), "UTF-8")) {
+                out.write(System.currentTimeMillis() + "\t" + marker + "\n");
+            }
+        }
+        catch (Throwable ignored) {
+        }
+    }
 
     private static void recordFailure(String operation, Packet<?> packet, Throwable failure) {
         String packetName = packet == null ? "<null>" : packet.getClass().getName();
@@ -119,6 +136,9 @@ implements EventSubscriber {
             if (Z) {
                 OutgoingPacketState.D(0L, var3.B);
                 u.add(var3.B);
+                if (var3.B instanceof C01PacketChatMessage) {
+                    runtimeMarker("chat-buffered:PacketManager");
+                }
                 var3.I(21307, 3074332907L);
 }
         } else {
