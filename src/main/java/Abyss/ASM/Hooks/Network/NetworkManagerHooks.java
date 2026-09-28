@@ -47,6 +47,12 @@ public class NetworkManagerHooks {
     public static void onSendPacket(Packet<?> var0, CallbackInfo var1) {
         if (var0 != null) {
             runtimeMarker("send-hook:" + var0.getClass().getName());
+            if (var0 instanceof C01PacketChatMessage) {
+                String message = ((C01PacketChatMessage)var0).getMessage();
+                if (message != null && message.startsWith("OPENABYSS_MACRO_PROBE_")) {
+                    runtimeMarker("chat-send-probe-payload:true");
+                }
+            }
 }
         if (var0 != null && NetworkManagerHooks.isKnownPacket(PacketAccessor.U, var0)) {
             if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).getMessage().startsWith(".")) {
