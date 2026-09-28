@@ -7271,9 +7271,12 @@ implements EventSubscriber {
         Field fieldSwitching = null;
         Field fieldOriginalSlot = null;
         Field fieldPrimed = null;
+        Field fieldTimer = null;
+        TimerUtil probeTimer = null;
         boolean savedSwitching = false;
         int savedOriginalSlot = -1;
         boolean savedPrimed = false;
+        long savedTimerStart = 0L;
         boolean saved = false;
 
         try {
@@ -7300,6 +7303,13 @@ implements EventSubscriber {
             fieldSwitching.setAccessible(true);
             fieldPrimed = AutoTool.class.getDeclaredField("S");
             fieldPrimed.setAccessible(true);
+            fieldTimer = AutoTool.class.getDeclaredField("t");
+            fieldTimer.setAccessible(true);
+            probeTimer = (TimerUtil)fieldTimer.get(probe);
+            if (probeTimer == null) {
+                throw new IllegalStateException(
+                        "AutoTool timer authority unavailable");
+            }
 
             savedCurrentItem = this.c.thePlayer.inventory.currentItem;
             savedSlot0 = this.c.thePlayer.inventory.mainInventory[0];
@@ -7315,6 +7325,7 @@ implements EventSubscriber {
             savedSwitching = fieldSwitching.getBoolean(probe);
             savedOriginalSlot = fieldOriginalSlot.getInt(probe);
             savedPrimed = fieldPrimed.getBoolean(probe);
+            savedTimerStart = probeTimer.I;
             saved = true;
 
             int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
@@ -7356,6 +7367,7 @@ implements EventSubscriber {
             fieldSwitching.setBoolean(probe, false);
             fieldOriginalSlot.setInt(probe, -1);
             fieldPrimed.setBoolean(probe, false);
+            probeTimer.p(0L);
 
             int best = ItemUtil.e(0L, Blocks.stone);
             if (best != 4) {
@@ -7455,6 +7467,9 @@ implements EventSubscriber {
                     fieldSwitching.setBoolean(probe, savedSwitching);
                     fieldOriginalSlot.setInt(probe, savedOriginalSlot);
                     fieldPrimed.setBoolean(probe, savedPrimed);
+                    if (probeTimer != null) {
+                        probeTimer.p(savedTimerStart);
+                    }
                 }
                 catch (Throwable restoreFailure) {
                     recordFeatureFailure(
