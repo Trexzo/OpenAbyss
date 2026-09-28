@@ -529,6 +529,17 @@ implements EventSubscriber {
         if (Boolean.getBoolean("abyss.networkCommandProbe") && this.networkCommandProbeStage < 4) {
             return;
 }
+        if (!FontManager.isReady()) {
+            if (++this.clickGuiModeProbeWaitTicks > 400) {
+                RuntimeException failure = new RuntimeException("Font textures did not become ready before ClickGUI visual probe");
+                this.clickGuiModeProbeIndex = CLICKGUI_MODE_PROBE_MODES.length;
+                recordFeatureFailure("ClickGuiModeProbe", "font-ready", failure);
+                runtimeMilestone("clickgui-mode-probe-fail:FONT_NOT_READY");
+}
+            return;
+}
+        runtimeMilestone("clickgui-font-ready");
+        this.clickGuiModeProbeWaitTicks = 0;
         String mode = CLICKGUI_MODE_PROBE_MODES[this.clickGuiModeProbeIndex];
         try {
             if (ClickGUI.mode == null) {
