@@ -55,6 +55,7 @@ import Abyss.module.impl.combat.AutoBlock;
 import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
+import Abyss.module.impl.combat.HitSelect;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.KillAura;
 import Abyss.module.impl.combat.Velocity;
@@ -109,6 +110,7 @@ import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Scaffold;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
+import Abyss.util.AttackTracker;
 import Abyss.util.BlockUtil;
 import Abyss.util.ClientUtil;
 import Abyss.util.ItemUtil;
@@ -416,6 +418,15 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe32SavedOriginalSlot;
     private boolean highRiskFunctionalProbe32SavedPrimed;
     private long highRiskFunctionalProbe32SavedTimerStart;
+    private int highRiskFunctionalProbe33Stage;
+    private int highRiskFunctionalProbe33WaitTicks;
+    private boolean highRiskFunctionalProbe33Saved;
+    private boolean highRiskFunctionalProbe33OriginalEnabled;
+    private String highRiskFunctionalProbe33OriginalStrategy;
+    private boolean highRiskFunctionalProbe33OriginalAttackGate;
+    private Object highRiskFunctionalProbe33OriginalTarget;
+    private int highRiskFunctionalProbe33OriginalTargetTicks;
+    private int highRiskFunctionalProbe33OriginalPauseTicks;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -7677,6 +7688,252 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe33() {
+        if (!this.highRiskFunctionalProbe33Saved) {
+            return;
+        }
+
+        HitSelect probe = Modules.J(HitSelect.class);
+        try {
+            if (probe != null) {
+                Field fieldTarget = HitSelect.class.getDeclaredField("D");
+                Field fieldTargetTicks = HitSelect.class.getDeclaredField("m");
+                Field fieldPauseTicks = HitSelect.class.getDeclaredField("L");
+                fieldTarget.setAccessible(true);
+                fieldTargetTicks.setAccessible(true);
+                fieldPauseTicks.setAccessible(true);
+
+                if (this.highRiskFunctionalProbe33OriginalStrategy != null) {
+                    HitSelect.strategy.i(
+                            this.highRiskFunctionalProbe33OriginalStrategy);
+                }
+                fieldTarget.set(
+                        probe,
+                        this.highRiskFunctionalProbe33OriginalTarget);
+                fieldTargetTicks.setInt(
+                        probe,
+                        this.highRiskFunctionalProbe33OriginalTargetTicks);
+                fieldPauseTicks.setInt(
+                        probe,
+                        this.highRiskFunctionalProbe33OriginalPauseTicks);
+                AttackTracker.Z(
+                        this.highRiskFunctionalProbe33OriginalAttackGate);
+
+                if (probe.o()
+                        != this.highRiskFunctionalProbe33OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe33OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe33:HitSelect",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        this.highRiskFunctionalProbe33Saved = false;
+        this.highRiskFunctionalProbe33WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe33() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe33")
+                || this.highRiskFunctionalProbe33Stage < 0
+                || this.highRiskFunctionalProbe33Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe32")
+                && this.highRiskFunctionalProbe32Stage < 4) {
+            return;
+        }
+
+        HitSelect probe = Modules.J(HitSelect.class);
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(HitSelect.class) != probe
+                    || ModuleManager.byName("HitSelect") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || HitSelect.strategy == null) {
+                throw new IllegalStateException(
+                        "HitSelect authority unavailable");
+            }
+
+            Field fieldTarget = HitSelect.class.getDeclaredField("D");
+            Field fieldTargetTicks = HitSelect.class.getDeclaredField("m");
+            Field fieldPauseTicks = HitSelect.class.getDeclaredField("L");
+            fieldTarget.setAccessible(true);
+            fieldTargetTicks.setAccessible(true);
+            fieldPauseTicks.setAccessible(true);
+
+            switch (this.highRiskFunctionalProbe33Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe33OriginalEnabled =
+                            probe.o();
+                    this.highRiskFunctionalProbe33OriginalStrategy =
+                            HitSelect.strategy.Y();
+                    this.highRiskFunctionalProbe33OriginalAttackGate =
+                            AttackTracker.J();
+                    this.highRiskFunctionalProbe33OriginalTarget =
+                            fieldTarget.get(probe);
+                    this.highRiskFunctionalProbe33OriginalTargetTicks =
+                            fieldTargetTicks.getInt(probe);
+                    this.highRiskFunctionalProbe33OriginalPauseTicks =
+                            fieldPauseTicks.getInt(probe);
+                    this.highRiskFunctionalProbe33Saved = true;
+
+                    HitSelect.strategy.i("NORMAL");
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe33Stage = 1;
+                    this.highRiskFunctionalProbe33WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-enable-request:"
+                                    + "HitSelect");
+                    return;
+                }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe33WaitTicks;
+                    boolean active =
+                            probe.o()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!active) {
+                        if (this.highRiskFunctionalProbe33WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "HitSelect did not enter enabled/subscribed state"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    EntityOtherPlayerMP target =
+                            new EntityOtherPlayerMP(
+                                    this.c.theWorld,
+                                    new GameProfile(
+                                            UUID.randomUUID(),
+                                            "OpenAbyssHitSelectProbe"));
+                    target.setPosition(
+                            this.c.thePlayer.posX + 1.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+
+                    probe.onAttackEntity(
+                            0L,
+                            new AttackEntityEvent(
+                                    target,
+                                    (char)0,
+                                    (short)0,
+                                    0));
+
+                    if (fieldTarget.get(probe) != target
+                            || fieldTargetTicks.getInt(probe) != 60) {
+                        throw new IllegalStateException(
+                                "HitSelect attack acquisition mismatch"
+                                        + " target="
+                                        + (fieldTarget.get(probe) == target)
+                                        + " ticks="
+                                        + fieldTargetTicks.getInt(probe));
+                    }
+
+                    fieldPauseTicks.setInt(probe, 3);
+                    AttackTracker.Z(true);
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-acquire-pass:"
+                                    + "HitSelect:targetTicks=60:pause=3");
+                    this.highRiskFunctionalProbe33Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    probe.onPreMouseInput(
+                            0L,
+                            new PreMouseInputEvent());
+
+                    int targetTicks =
+                            fieldTargetTicks.getInt(probe);
+                    int pauseTicks =
+                            fieldPauseTicks.getInt(probe);
+                    if (AttackTracker.J()
+                            || targetTicks != 59
+                            || pauseTicks != 2
+                            || fieldTarget.get(probe) == null) {
+                        throw new IllegalStateException(
+                                "HitSelect NORMAL gate mismatch"
+                                        + " attackAllowed="
+                                        + AttackTracker.J()
+                                        + " targetTicks="
+                                        + targetTicks
+                                        + " pauseTicks="
+                                        + pauseTicks
+                                        + " targetPresent="
+                                        + (fieldTarget.get(probe) != null));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-effect-pass:"
+                                    + "HitSelect:attackAllowed=false:"
+                                    + "targetTicks=59:pause=2");
+                    this.highRiskFunctionalProbe33Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    probe.P(0L);
+                    if (!AttackTracker.J()
+                            || fieldTarget.get(probe) != null
+                            || fieldTargetTicks.getInt(probe) != 0
+                            || fieldPauseTicks.getInt(probe) != 0) {
+                        throw new IllegalStateException(
+                                "HitSelect reset mismatch"
+                                        + " attackAllowed="
+                                        + AttackTracker.J()
+                                        + " target="
+                                        + fieldTarget.get(probe)
+                                        + " targetTicks="
+                                        + fieldTargetTicks.getInt(probe)
+                                        + " pauseTicks="
+                                        + fieldPauseTicks.getInt(probe));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-reset-pass:"
+                                    + "HitSelect");
+                    this.highRiskFunctionalProbe33Stage = 4;
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-module-pass:"
+                                    + "HitSelect");
+                    runtimeMilestone(
+                            "high-risk-functional-probe33-pass:1");
+                    this.restoreHighRiskFunctionalProbe33();
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe33Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe33:HitSelect",
+                    "attack-gate-state-machine",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe33-fail:"
+                            + failure.getClass().getName());
+            this.restoreHighRiskFunctionalProbe33();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -8673,6 +8930,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe30();
         this.pumpHighRiskFunctionalProbe31();
         this.pumpHighRiskFunctionalProbe32();
+        this.pumpHighRiskFunctionalProbe33();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
