@@ -9493,8 +9493,7 @@ implements EventSubscriber {
             SpeedMine.delay.o(
                     (byte)0, 0L,
                     this.highRiskFunctionalProbe39OriginalDelay);
-            SpeedMine.delayChance.o(
-                    0L,
+            SpeedMine.delayChance.d(
                     this.highRiskFunctionalProbe39OriginalDelayChance);
             if (probe != null) {
                 this.speedMineProbeField("b").set(
@@ -9572,7 +9571,7 @@ implements EventSubscriber {
                     this.highRiskFunctionalProbe39WaitTicks = 0;
 
                     SpeedMine.delay.o((byte)0, 0L, 0.0f);
-                    SpeedMine.delayChance.o(0L, 100);
+                    SpeedMine.delayChance.d(100);
                     lastBlockField.set(probe, null);
                     previousDamageField.setFloat(probe, 0.0f);
                     PlayerControllerStateAccessor.w(
