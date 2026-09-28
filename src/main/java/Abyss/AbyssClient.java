@@ -55,6 +55,7 @@ import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
 import Abyss.module.impl.combat.AimAssist;
+import Abyss.module.impl.combat.AntiFireball;
 import Abyss.module.impl.combat.AutoBlock;
 import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
@@ -188,6 +189,7 @@ import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.inventory.InventoryBasic;
 import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.entity.projectile.EntityLargeFireball;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.block.state.IBlockState;
@@ -492,6 +494,16 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe36OriginalMoveStrafe;
     private boolean highRiskFunctionalProbe36OriginalForwardBinding;
     private int highRiskFunctionalProbe36FixtureId;
+    private int highRiskFunctionalProbe37Stage;
+    private boolean highRiskFunctionalProbe37Saved;
+    private boolean highRiskFunctionalProbe37OriginalEnabled;
+    private boolean highRiskFunctionalProbe37OriginalSwing;
+    private float highRiskFunctionalProbe37OriginalRange;
+    private float highRiskFunctionalProbe37OriginalFov;
+    private String highRiskFunctionalProbe37OriginalMoveFix;
+    private boolean highRiskFunctionalProbe37OriginalAllowFlying;
+    private int highRiskFunctionalProbe37CloseFixtureId;
+    private int highRiskFunctionalProbe37FarFixtureId;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -8825,6 +8837,321 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private List<EntityLargeFireball> antiFireballProbeList(
+            AntiFireball probe, String fieldName) throws Exception {
+        Field field = AntiFireball.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (List<EntityLargeFireball>)field.get(probe);
+    }
+
+    private EntityLargeFireball antiFireballProbeTarget(
+            AntiFireball probe) throws Exception {
+        Field field = AntiFireball.class.getDeclaredField("G");
+        field.setAccessible(true);
+        return (EntityLargeFireball)field.get(probe);
+    }
+
+    private void restoreHighRiskFunctionalProbe37() {
+        if (!this.highRiskFunctionalProbe37Saved) {
+            return;
+        }
+        try {
+            AntiFireball probe = Modules.J(AntiFireball.class);
+
+            if (this.c.theWorld != null) {
+                if (this.highRiskFunctionalProbe37CloseFixtureId != 0) {
+                    this.c.theWorld.removeEntityFromWorld(
+                            this.highRiskFunctionalProbe37CloseFixtureId);
+                }
+                if (this.highRiskFunctionalProbe37FarFixtureId != 0) {
+                    this.c.theWorld.removeEntityFromWorld(
+                            this.highRiskFunctionalProbe37FarFixtureId);
+                }
+            }
+
+            AntiFireball.swing.v(
+                    this.highRiskFunctionalProbe37OriginalSwing, 0L);
+            AntiFireball.range.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe37OriginalRange);
+            AntiFireball.fov.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe37OriginalFov);
+            AntiFireball.moveFix.i(
+                    this.highRiskFunctionalProbe37OriginalMoveFix);
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.capabilities.allowFlying =
+                        this.highRiskFunctionalProbe37OriginalAllowFlying;
+            }
+
+            if (probe != null) {
+                if (this.c.theWorld != null && this.c.thePlayer != null) {
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+                }
+                probe.A(0L);
+                if (probe.o() != this.highRiskFunctionalProbe37OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe37OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe37:AntiFireball",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        this.highRiskFunctionalProbe37Saved = false;
+        this.highRiskFunctionalProbe37CloseFixtureId = 0;
+        this.highRiskFunctionalProbe37FarFixtureId = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe37() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe37")
+                || this.highRiskFunctionalProbe37Stage < 0
+                || this.highRiskFunctionalProbe37Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe36")
+                && this.highRiskFunctionalProbe36Stage < 5) {
+            return;
+        }
+
+        AntiFireball probe = Modules.J(AntiFireball.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AntiFireball.class) != probe
+                    || ModuleManager.byName("AntiFireball") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "AntiFireball live-world authority unavailable");
+            }
+
+            List<EntityLargeFireball> tracked =
+                    this.antiFireballProbeList(probe, "K");
+            List<EntityLargeFireball> ignored =
+                    this.antiFireballProbeList(probe, "r");
+
+            switch (this.highRiskFunctionalProbe37Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe37OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe37OriginalSwing =
+                            AntiFireball.swing.c();
+                    this.highRiskFunctionalProbe37OriginalRange =
+                            AntiFireball.range.L();
+                    this.highRiskFunctionalProbe37OriginalFov =
+                            AntiFireball.fov.L();
+                    this.highRiskFunctionalProbe37OriginalMoveFix =
+                            AntiFireball.moveFix.Y();
+                    this.highRiskFunctionalProbe37OriginalAllowFlying =
+                            this.c.thePlayer.capabilities.allowFlying;
+                    this.highRiskFunctionalProbe37Saved = true;
+
+                    AntiFireball.swing.v(true, 0L);
+                    AntiFireball.range.o((byte)0, 0L, 5.0f);
+                    AntiFireball.fov.o((byte)0, 0L, 360.0f);
+                    AntiFireball.moveFix.i("NONE");
+                    this.c.thePlayer.capabilities.allowFlying = false;
+
+                    probe.onWorldLoad(new WorldLoadEvent());
+                    if (!tracked.isEmpty()
+                            || !ignored.isEmpty()
+                            || this.antiFireballProbeTarget(probe) != null) {
+                        throw new IllegalStateException(
+                                "AntiFireball tracker did not start clean");
+                    }
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+
+                    this.highRiskFunctionalProbe37Stage = 1;
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-enable-request:"
+                                    + "AntiFireball");
+                    return;
+                }
+
+                case 1: {
+                    if (!probe.o()
+                            || !probe.P()
+                            || !w.isOwnerActive(probe)) {
+                        return;
+                    }
+
+                    EntityLargeFireball close =
+                            new EntityLargeFireball(this.c.theWorld);
+                    close.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe37CloseFixtureId = -73701;
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe37CloseFixtureId,
+                            close);
+
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+
+                    if (!ignored.contains(close)
+                            || tracked.contains(close)
+                            || this.antiFireballProbeTarget(probe) != null) {
+                        throw new IllegalStateException(
+                                "AntiFireball close-spawn ignore mismatch"
+                                        + " ignored=" + ignored.contains(close)
+                                        + " tracked=" + tracked.contains(close)
+                                        + " target="
+                                        + (this.antiFireballProbeTarget(probe) == close));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-effect-pass:"
+                                    + "AntiFireball:closeSpawnIgnored=true");
+
+                    this.c.theWorld.removeEntityFromWorld(
+                            this.highRiskFunctionalProbe37CloseFixtureId);
+                    this.highRiskFunctionalProbe37CloseFixtureId = 0;
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+
+                    EntityLargeFireball far =
+                            new EntityLargeFireball(this.c.theWorld);
+                    far.setPosition(
+                            this.c.thePlayer.posX + 6.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe37FarFixtureId = -73702;
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe37FarFixtureId,
+                            far);
+
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+
+                    if (!tracked.contains(far)
+                            || ignored.contains(far)
+                            || this.antiFireballProbeTarget(probe) != far) {
+                        throw new IllegalStateException(
+                                "AntiFireball far tracker/selector mismatch"
+                                        + " tracked=" + tracked.contains(far)
+                                        + " ignored=" + ignored.contains(far)
+                                        + " selected="
+                                        + (this.antiFireballProbeTarget(probe) == far));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-effect-pass:"
+                                    + "AntiFireball:farTracked=true:selected=true");
+
+                    this.highRiskFunctionalProbe37Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    EntityLargeFireball far =
+                            (EntityLargeFireball)this.c.theWorld.getEntityByID(
+                                    this.highRiskFunctionalProbe37FarFixtureId);
+                    if (far == null) {
+                        throw new IllegalStateException(
+                                "AntiFireball tracked fixture disappeared");
+                    }
+
+                    far.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+
+                    if (!tracked.contains(far)
+                            || this.antiFireballProbeTarget(probe) != far) {
+                        throw new IllegalStateException(
+                                "AntiFireball tracked projectile lost on approach");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-effect-pass:"
+                                    + "AntiFireball:approachSelected=true:range=2.0");
+
+                    this.c.theWorld.removeEntityFromWorld(
+                            this.highRiskFunctionalProbe37FarFixtureId);
+                    this.highRiskFunctionalProbe37FarFixtureId = 0;
+                    probe.onPreTick(
+                            (char)0,
+                            0,
+                            (short)0,
+                            new PreTickEvent());
+
+                    if (!tracked.isEmpty()
+                            || !ignored.isEmpty()
+                            || this.antiFireballProbeTarget(probe) != null) {
+                        throw new IllegalStateException(
+                                "AntiFireball tracker did not clear after fixture removal"
+                                        + " tracked=" + tracked.size()
+                                        + " ignored=" + ignored.size()
+                                        + " target="
+                                        + String.valueOf(
+                                                this.antiFireballProbeTarget(probe)));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-reset-pass:"
+                                    + "AntiFireball:tracked=0:ignored=0:target=null");
+                    this.highRiskFunctionalProbe37Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-module-pass:"
+                                    + "AntiFireball");
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-pass:1");
+                    this.highRiskFunctionalProbe37Stage = 4;
+                    this.restoreHighRiskFunctionalProbe37();
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe37Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe37:AntiFireball",
+                    "tracked-projectile-selection",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe37-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe37();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -9825,6 +10152,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe34();
         this.pumpHighRiskFunctionalProbe35();
         this.pumpHighRiskFunctionalProbe36();
+        this.pumpHighRiskFunctionalProbe37();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
