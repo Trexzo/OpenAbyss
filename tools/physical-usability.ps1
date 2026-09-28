@@ -29,9 +29,16 @@ Write-Host '=== OpenAbyss physical usability certification ===' -ForegroundColor
 Write-Host 'During this run:' -ForegroundColor Yellow
 Write-Host '  1. Wait for the Minecraft main menu.'
 Write-Host '  2. Enter a singleplayer world or a server.'
-Write-Host '  3. Once in-world, press RSHIFT to open the ClickGUI.'
-Write-Host '  4. Confirm the GUI appears, close it, remain in-world for ~10 seconds.'
-Write-Host '  5. Close Minecraft normally.'
+if ($ExtendedProbes) {
+    Write-Host '  3. Stay in-world for at least ~15 seconds so font warmup and deep lifecycle probes can settle.'
+    Write-Host '  4. Press RSHIFT to open the ClickGUI; confirm its labels/text are visibly rendered, then close it.'
+    Write-Host '  5. Remain in-world for another ~15 seconds so all nine category transitions and command restore can finish.'
+    Write-Host '  6. Close Minecraft normally.'
+} else {
+    Write-Host '  3. Once in-world, press RSHIFT to open the ClickGUI.'
+    Write-Host '  4. Confirm the GUI appears with visible labels/text, close it, remain in-world for ~10 seconds.'
+    Write-Host '  5. Close Minecraft normally.'
+}
 Write-Host ''
 Write-Host 'The verifier will inspect recorded runtime milestones after exit.' -ForegroundColor DarkGray
 Write-Host ''
