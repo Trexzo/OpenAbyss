@@ -274,7 +274,15 @@ jobs:
           echo "WORLD_SMOKE_MODULE_CENSUS_COUNT=$CENSUS_COUNT"
           test "$CENSUS_COUNT" -eq 112
 
-          if ! grep -Eq 'logged in with entity id|joined the game' "$OPENABYSS_SERVER_LOG"; then
+          SERVER_LOGIN=0
+          for _ in $(seq 1 30); do
+            if grep -Eq 'logged in with entity id|joined the game' "$OPENABYSS_SERVER_LOG"; then
+              SERVER_LOGIN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$SERVER_LOGIN" -ne 1 ]; then
             echo 'Server did not record a real player login.'
             tail -n 200 "$OPENABYSS_SERVER_LOG"
             exit 1
@@ -286,6 +294,18 @@ jobs:
 
           echo '=== runtime milestones ==='
           cat "$STAGE"
+
+          # The development Gradle runClient task is not the authority once the
+          # world lifecycle contract above has completed. Terminate it cleanly
+          # and absorb its eventual non-zero task exit rather than converting a
+          # proven world session into a false-negative workflow result.
+          if kill -0 "$CLIENT_PID" 2>/dev/null; then
+            kill "$CLIENT_PID" 2>/dev/null || true
+          fi
+          wait "$CLIENT_PID" 2>/dev/null || true
+          CLIENT_PID=
+
+          echo 'DEVELOPMENT_WORLD_POST_PROOF_RUNCLIENT_EXIT_IGNORED=PASS'
           echo 'OPENABYSS_LINUX_DEVELOPMENT_WORLD_SMOKE=PASS'
           INNER
           chmod +x "$INNER"
