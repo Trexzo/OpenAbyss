@@ -170,6 +170,11 @@ $checks = [ordered]@{
         $runtimeText.Contains('player-functional-probe-restore-state-pass:NoHitDelay') -and
         $runtimeText.Contains('player-functional-probe-pass:NoHitDelay:')
     )
+    ExtendedKeepSprintEffect = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('combat-functional-probe-effect-pass:KeepSprint:motion=1.0,-0.6:sprinting=true') -and
+        $runtimeText.Contains('combat-functional-probe-restore-state-pass:KeepSprint') -and
+        $runtimeText.Contains('combat-functional-probe-pass:KeepSprint:')
+    )
     ExtendedAmbiencePacketCancel = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true') -and
         $runtimeText.Contains('render-functional-probe-effect-pass:Ambience:worldTime=6000') -and
@@ -211,6 +216,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ExtendedFastPlaceEffect -and
         $checks.ExtendedNoJumpDelayEffect -and
         $checks.ExtendedNoHitDelayEffect -and
+        $checks.ExtendedKeepSprintEffect -and
         $checks.ExtendedAmbiencePacketCancel -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
