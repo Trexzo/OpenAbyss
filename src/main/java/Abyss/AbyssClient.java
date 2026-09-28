@@ -9665,10 +9665,42 @@ implements EventSubscriber {
                         return;
                     }
 
+                    SpeedMine.delay.o(
+                            (byte)0, 0L,
+                            this.highRiskFunctionalProbe39OriginalDelay);
+                    SpeedMine.delayChance.d(
+                            this.highRiskFunctionalProbe39OriginalDelayChance);
+                    lastBlockField.set(
+                            probe,
+                            this.highRiskFunctionalProbe39OriginalLastBlock);
+                    previousDamageField.setFloat(
+                            probe,
+                            this.highRiskFunctionalProbe39OriginalPreviousDamage);
+                    PlayerControllerStateAccessor.w(
+                            (byte)0,
+                            7374982,
+                            11824981,
+                            this.c.playerController,
+                            this.highRiskFunctionalProbe39OriginalBlockHitDelay);
+
+                    int restoredDelay = PlayerControllerStateAccessor.W(
+                            this.c.playerController);
+                    if (restoredDelay
+                            != this.highRiskFunctionalProbe39OriginalBlockHitDelay) {
+                        throw new IllegalStateException(
+                                "SpeedMine controller delay restore mismatch"
+                                        + " expected="
+                                        + this.highRiskFunctionalProbe39OriginalBlockHitDelay
+                                        + " actual="
+                                        + restoredDelay);
+                    }
+
                     runtimeMilestone(
                             "high-risk-functional-probe39-restore-pass:"
                                     + "SpeedMine:enabled="
-                                    + this.highRiskFunctionalProbe39OriginalEnabled);
+                                    + this.highRiskFunctionalProbe39OriginalEnabled
+                                    + ":blockHitDelay="
+                                    + restoredDelay);
                     runtimeMilestone(
                             "high-risk-functional-probe39-module-pass:SpeedMine");
                     runtimeMilestone(
