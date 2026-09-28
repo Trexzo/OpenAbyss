@@ -30,6 +30,7 @@ import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.AttackEntityEvent;
 import Abyss.event.events.KnockbackEvent;
 import Abyss.event.events.MoveInputEvent;
+import Abyss.event.events.MoveFlyingEvent;
 import Abyss.event.events.WorldLoadEvent;
 import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
@@ -38,6 +39,7 @@ import Abyss.event.events.PostRenderEvent;
 import Abyss.event.events.PlayerGetNameEvent;
 import Abyss.event.events.PlayerRightClickEvent;
 import Abyss.event.events.MoveInputEvent;
+import Abyss.event.events.MoveFlyingEvent;
 import Abyss.event.events.WorldLoadEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
@@ -83,6 +85,7 @@ import Abyss.module.impl.misc.ContainerKeeper;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.misc.Timer;
 import Abyss.module.impl.movement.FastFall;
+import Abyss.module.impl.movement.Fly;
 import Abyss.module.impl.movement.InvMove;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
@@ -132,6 +135,7 @@ import Abyss.util.ItemUtil;
 import Abyss.util.DeferredRendererReload;
 import Abyss.util.KeyBindUtil;
 import Abyss.util.MathUtil;
+import Abyss.util.MoveUtil;
 import Abyss.util.Pair;
 import Abyss.util.RotationManager;
 import Abyss.util.RotationUtil;
@@ -568,6 +572,13 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe41OriginalFov;
     private boolean highRiskFunctionalProbe41OriginalPacketBuffer;
     private int highRiskFunctionalProbe41FixtureId;
+    private int highRiskFunctionalProbe42Stage;
+    private int highRiskFunctionalProbe42WaitTicks;
+    private boolean highRiskFunctionalProbe42Saved;
+    private boolean highRiskFunctionalProbe42OriginalEnabled;
+    private float highRiskFunctionalProbe42OriginalHorizontalSpeed;
+    private float highRiskFunctionalProbe42OriginalVerticalSpeed;
+    private boolean highRiskFunctionalProbe42OriginalSneakPressed;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -10424,6 +10435,344 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe42() {
+        if (!this.highRiskFunctionalProbe42Saved) {
+            return;
+        }
+        try {
+            Fly probe = Modules.J(Fly.class);
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(probe, false);
+            }
+            Fly.horizontalSpeed.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe42OriginalHorizontalSpeed);
+            Fly.verticalSpeed.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe42OriginalVerticalSpeed);
+            KeyBindUtil.A(
+                    0L,
+                    this.c.gameSettings.keyBindSneak.getKeyCode(),
+                    this.highRiskFunctionalProbe42OriginalSneakPressed);
+            if (probe != null
+                    && probe.o()
+                            != this.highRiskFunctionalProbe42OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe42OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe42:Fly",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe42WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe42() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe42")
+                || this.highRiskFunctionalProbe42Stage < 0
+                || this.highRiskFunctionalProbe42Stage >= 6) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe41")
+                && this.highRiskFunctionalProbe41Stage < 5) {
+            return;
+        }
+
+        Fly probe = Modules.J(Fly.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Fly.class) != probe
+                    || ModuleManager.byName("Fly") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || Fly.horizontalSpeed == null
+                    || Fly.verticalSpeed == null) {
+                throw new IllegalStateException(
+                        "Fly live-world movement authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe42Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe42OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe42OriginalHorizontalSpeed =
+                            Fly.horizontalSpeed.L();
+                    this.highRiskFunctionalProbe42OriginalVerticalSpeed =
+                            Fly.verticalSpeed.L();
+                    this.highRiskFunctionalProbe42OriginalSneakPressed =
+                            this.c.gameSettings.keyBindSneak.isKeyDown();
+                    this.highRiskFunctionalProbe42Saved = true;
+
+                    Fly.horizontalSpeed.o((byte)0, 0L, 1.5f);
+                    Fly.verticalSpeed.o((byte)0, 0L, 2.0f);
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                        this.highRiskFunctionalProbe42Stage = 1;
+                        this.highRiskFunctionalProbe42WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe42-isolate-request:"
+                                        + "Fly");
+                        return;
+                    }
+                    this.highRiskFunctionalProbe42Stage = 2;
+                    this.highRiskFunctionalProbe42WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-ready:"
+                                    + "Fly:key=space");
+                    return;
+                }
+
+                case 1: {
+                    if (probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || probe.P()
+                            || w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe42WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "Fly did not isolate from live lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    this.highRiskFunctionalProbe42Stage = 2;
+                    this.highRiskFunctionalProbe42WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-ready:"
+                                    + "Fly:key=space");
+                    return;
+                }
+
+                case 2: {
+                    ++this.highRiskFunctionalProbe42WaitTicks;
+                    int jumpKey =
+                            this.c.gameSettings.keyBindJump.getKeyCode();
+                    if (!KeyBindUtil.V(jumpKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe42WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "Fly physical Space key-down timeout");
+                        }
+                        return;
+                    }
+
+                    double originalX = this.c.thePlayer.posX;
+                    double originalY = this.c.thePlayer.posY;
+                    double originalZ = this.c.thePlayer.posZ;
+                    double originalMotionX = this.c.thePlayer.motionX;
+                    double originalMotionY = this.c.thePlayer.motionY;
+                    double originalMotionZ = this.c.thePlayer.motionZ;
+                    float originalMoveForward = this.c.thePlayer.moveForward;
+                    float originalMoveStrafing = this.c.thePlayer.moveStrafing;
+
+                    try {
+                        this.setModuleEnabledRawForProbe(probe, true);
+                        EventBus fixtureBus = new EventBus();
+                        fixtureBus.s(probe, 0L);
+                        if (!fixtureBus.isOwnerActive(probe)) {
+                            throw new IllegalStateException(
+                                    "Fly fixture EventBus binding inactive");
+                        }
+
+                        fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+
+                        Field verticalField =
+                                Fly.class.getDeclaredField("K");
+                        verticalField.setAccessible(true);
+                        double vertical =
+                                verticalField.getDouble(probe);
+                        double expectedVertical =
+                                (double)(Fly.verticalSpeed.L() * 0.42f);
+                        if (Math.abs(vertical - expectedVertical) > 0.00001) {
+                            throw new IllegalStateException(
+                                    "Fly vertical accumulator mismatch"
+                                            + " expected=" + expectedVertical
+                                            + " actual=" + vertical);
+                        }
+                        runtimeMilestone(
+                                "high-risk-functional-probe42-effect-pass:"
+                                        + "Fly:verticalAccumulator="
+                                        + vertical
+                                        + ":physicalSpace=true");
+
+                        double fixtureY =
+                                Math.floor(originalY) + 0.25;
+                        this.c.thePlayer.setPosition(
+                                originalX,
+                                fixtureY,
+                                originalZ);
+
+                        MoveFlyingEvent moveEvent =
+                                new MoveFlyingEvent(0.0f, 0.0f, 0.0f);
+                        fixtureBus.e(moveEvent, 0L);
+
+                        double expectedHorizontal =
+                                MoveUtil.A()
+                                        * (double)Fly.horizontalSpeed.L();
+                        if (Math.abs(
+                                        this.c.thePlayer.motionY
+                                                - expectedVertical)
+                                        > 0.00001
+                                || Math.abs(
+                                        (double)moveEvent.p()
+                                                - expectedHorizontal)
+                                        > 0.0001) {
+                            throw new IllegalStateException(
+                                    "Fly MoveFlying effect mismatch"
+                                            + " motionY="
+                                            + this.c.thePlayer.motionY
+                                            + " expectedY="
+                                            + expectedVertical
+                                            + " speed="
+                                            + moveEvent.p()
+                                            + " expectedSpeed="
+                                            + expectedHorizontal);
+                        }
+
+                        runtimeMilestone(
+                                "high-risk-functional-probe42-effect-pass:"
+                                        + "Fly:motionY="
+                                        + this.c.thePlayer.motionY
+                                        + ":speed="
+                                        + moveEvent.p()
+                                        + ":physicalSpace=true");
+                    }
+                    finally {
+                        this.setModuleEnabledRawForProbe(probe, false);
+                        this.c.thePlayer.setPosition(
+                                originalX,
+                                originalY,
+                                originalZ);
+                        this.c.thePlayer.motionX = originalMotionX;
+                        this.c.thePlayer.motionY = originalMotionY;
+                        this.c.thePlayer.motionZ = originalMotionZ;
+                        this.c.thePlayer.moveForward = originalMoveForward;
+                        this.c.thePlayer.moveStrafing = originalMoveStrafing;
+                        KeyBindUtil.A(
+                                0L,
+                                this.c.gameSettings.keyBindSneak.getKeyCode(),
+                                this.highRiskFunctionalProbe42OriginalSneakPressed);
+                    }
+
+                    this.highRiskFunctionalProbe42Stage = 3;
+                    this.highRiskFunctionalProbe42WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-ready-release:"
+                                    + "Fly:key=space");
+                    return;
+                }
+
+                case 3: {
+                    ++this.highRiskFunctionalProbe42WaitTicks;
+                    int jumpKey =
+                            this.c.gameSettings.keyBindJump.getKeyCode();
+                    if (KeyBindUtil.V(jumpKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe42WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "Fly physical Space key-release timeout");
+                        }
+                        return;
+                    }
+
+                    Fly.horizontalSpeed.o(
+                            (byte)0, 0L,
+                            this.highRiskFunctionalProbe42OriginalHorizontalSpeed);
+                    Fly.verticalSpeed.o(
+                            (byte)0, 0L,
+                            this.highRiskFunctionalProbe42OriginalVerticalSpeed);
+                    KeyBindUtil.A(
+                            0L,
+                            this.c.gameSettings.keyBindSneak.getKeyCode(),
+                            this.highRiskFunctionalProbe42OriginalSneakPressed);
+                    if (this.highRiskFunctionalProbe42OriginalEnabled) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe42Stage = 4;
+                    this.highRiskFunctionalProbe42WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-restore-request:"
+                                    + "Fly:enabled="
+                                    + this.highRiskFunctionalProbe42OriginalEnabled);
+                    return;
+                }
+
+                case 4: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe42OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe42WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "Fly did not restore original lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    if (Math.abs(
+                                    Fly.horizontalSpeed.L()
+                                            - this.highRiskFunctionalProbe42OriginalHorizontalSpeed)
+                                    > 0.0001f
+                            || Math.abs(
+                                    Fly.verticalSpeed.L()
+                                            - this.highRiskFunctionalProbe42OriginalVerticalSpeed)
+                                    > 0.0001f) {
+                        throw new IllegalStateException(
+                                "Fly settings did not restore");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-restore-pass:"
+                                    + "Fly:enabled="
+                                    + this.highRiskFunctionalProbe42OriginalEnabled);
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-module-pass:Fly");
+                    runtimeMilestone(
+                            "high-risk-functional-probe42-pass:1");
+                    this.highRiskFunctionalProbe42Saved = false;
+                    this.highRiskFunctionalProbe42Stage = 5;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe42Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe42:Fly",
+                    "physical-space-binder-movement",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe42-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe42();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -11429,6 +11778,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe39();
         this.pumpHighRiskFunctionalProbe40();
         this.pumpHighRiskFunctionalProbe41();
+        this.pumpHighRiskFunctionalProbe42();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
