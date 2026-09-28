@@ -222,7 +222,7 @@ jobs:
 
           test -f "$STAGE"
           test -f "$STDOUT"
-          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=48' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=49' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
@@ -244,7 +244,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe30=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe31=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe32=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=48'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe33=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=49'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -602,6 +603,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL32=PASS modules=AutoTool'
+          grep -Fq 'high-risk-functional-probe33-acquire-pass:HitSelect:targetTicks=60:pause=3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-effect-pass:HitSelect:attackAllowed=false:targetTicks=59:pause=2' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-reset-pass:HitSelect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-module-pass:HitSelect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe33-fail:' "$STAGE"; then
+            echo 'HitSelect attack-gate state-machine probe reported a failure.'
+            grep -F 'high-risk-functional-probe33-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL33=PASS modules=HitSelect'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
