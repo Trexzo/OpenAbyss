@@ -4,6 +4,7 @@ param(
     [switch]$SkipBuild,
     [switch]$KeepOpen,
     [switch]$DevRuntime,
+    [switch]$ExtendedProbes,
     [switch]$ReferenceBootstrap,
     [switch]$ReferenceRegistry,
     [switch]$Registry97,
@@ -128,6 +129,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.eventRuntimeTrace=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -142,6 +144,7 @@ try {
         "keep_open=$KeepOpen"
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
+        "extended_probes=$ExtendedProbes"
         "reference_bootstrap=$UseReferenceBootstrap"
         "skip_chat_menu=$UseSkipChatMenu"
         "skip_cheater_detector=$UseSkipCheaterDetector"
@@ -189,7 +192,11 @@ try {
     $ConfigFailureRun = Join-Path $Root 'run\abyss-config-failure.txt'
     $RendererFailure = Join-Path $Root 'abyss-renderer-failure.txt'
     $RendererFailureRun = Join-Path $Root 'run\abyss-renderer-failure.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$FeatureFailure,$FeatureFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun -Force -ErrorAction SilentlyContinue
+    $EventStage = Join-Path $Root 'abyss-event-stage.txt'
+    $EventStageRun = Join-Path $Root 'run\abyss-event-stage.txt'
+    $NetworkStage = Join-Path $Root 'abyss-network-stage.txt'
+    $NetworkStageRun = Join-Path $Root 'run\abyss-network-stage.txt'
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$FeatureFailure,$FeatureFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun,$EventStage,$EventStageRun,$NetworkStage,$NetworkStageRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -272,6 +279,10 @@ try {
         (Join-Path $Root 'abyss-config-failure.txt'),
         (Join-Path $Root 'run\abyss-renderer-failure.txt'),
         (Join-Path $Root 'abyss-renderer-failure.txt'),
+        (Join-Path $Root 'run\abyss-event-stage.txt'),
+        (Join-Path $Root 'abyss-event-stage.txt'),
+        (Join-Path $Root 'run\abyss-network-stage.txt'),
+        (Join-Path $Root 'abyss-network-stage.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
     )
     foreach ($Source in $Sources) {
@@ -334,6 +345,56 @@ try {
     $Failures = @()
     foreach ($Needle in $Required) {
         if (-not $DiagText.Contains($Needle)) { $Failures += $Needle }
+    }
+
+    if ($ExtendedProbes) {
+        $RuntimeEvidence = @(
+            (Join-Path $Root 'run\abyss-runtime-stage.txt'),
+            (Join-Path $Root 'abyss-runtime-stage.txt')
+        ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+        if (-not $RuntimeEvidence) {
+            $Failures += 'extended-probes:runtime-stage-missing'
+        }
+        else {
+            $RuntimeEvidenceText = [IO.File]::ReadAllText($RuntimeEvidence)
+            foreach ($Needle in @(
+                'world-functional-probe-pass',
+                'category-lifecycle-probe-pass:9',
+                'command-runtime-probe-pass:commands=7:'
+            )) {
+                if (-not $RuntimeEvidenceText.Contains($Needle)) {
+                    $Failures += "extended-probes:missing:$Needle"
+                }
+            }
+            foreach ($ModuleName in @(
+                'HitBox','Notifications','Macro1','NameHider','NoJumpDelay',
+                'NoHitDelay','NoHurtCam','Tracers','AutoTool'
+            )) {
+                $Needle = "category-lifecycle-probe-module-pass:$ModuleName:"
+                if (-not $RuntimeEvidenceText.Contains($Needle)) {
+                    $Failures += "extended-probes:missing:$Needle"
+                }
+            }
+        }
+
+        $EventEvidence = @(
+            (Join-Path $Root 'run\abyss-event-stage.txt'),
+            (Join-Path $Root 'abyss-event-stage.txt')
+        ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+        if (-not $EventEvidence) {
+            $Failures += 'extended-probes:event-stage-missing'
+        }
+        else {
+            $EventEvidenceText = [IO.File]::ReadAllText($EventEvidence)
+            foreach ($EventName in @(
+                'PostTickEvent','PreUpdateEvent','EntityJoinWorldEvent',
+                'SendPacketEvent','ReceivePacketEvent','Render2DEvent'
+            )) {
+                if (-not $EventEvidenceText.Contains("Abyss.event.events.$EventName")) {
+                    $Failures += "extended-probes:event-missing:$EventName"
+                }
+            }
+        }
     }
 
     $Graphics = @()
@@ -441,6 +502,7 @@ try {
         "HEAD=$Head"
         "JAR_SHA256=$JarHash"
         "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
+        "EXTENDED_PROBES=$ExtendedProbes"
         "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
         "SKIP_CHAT_MENU=$UseSkipChatMenu"
         "SKIP_CHEATER_DETECTOR=$UseSkipCheaterDetector"
