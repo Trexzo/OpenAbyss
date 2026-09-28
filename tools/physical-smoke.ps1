@@ -367,6 +367,8 @@ try {
                 'movement-functional-probe-restore-state-pass:NoJumpDelay',
                 'movement-functional-probe-pass:NoJumpDelay:',
                 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true',
+                'render-functional-probe-effect-pass:Ambience:worldTime=6000',
+                'packet-functional-probe-restore-state-pass:Ambience',
                 'packet-functional-probe-pass:Ambience:',
                 'command-runtime-probe-pass:commands=7:'
             )) {
