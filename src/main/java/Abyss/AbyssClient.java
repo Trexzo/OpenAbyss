@@ -398,6 +398,8 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe32Stage;
     private int highRiskFunctionalProbe32WaitTicks;
     private boolean highRiskFunctionalProbe32Saved;
+    private boolean highRiskFunctionalProbe32EnableStateSaved;
+    private boolean highRiskFunctionalProbe32SavedEnabled;
     private BlockPos highRiskFunctionalProbe32Fixture;
     private IBlockState highRiskFunctionalProbe32OriginalState;
     private ItemStack highRiskFunctionalProbe32SavedSlot0;
@@ -7266,13 +7268,14 @@ implements EventSubscriber {
     }
 
     private void restoreHighRiskFunctionalProbe32() {
-        if (!this.highRiskFunctionalProbe32Saved) {
+        if (!this.highRiskFunctionalProbe32Saved
+                && !this.highRiskFunctionalProbe32EnableStateSaved) {
             return;
         }
 
         AutoTool probe = Modules.J(AutoTool.class);
         try {
-            if (probe != null) {
+            if (this.highRiskFunctionalProbe32Saved && probe != null) {
                 Field fieldOriginalSlot =
                         AutoTool.class.getDeclaredField("J");
                 Field fieldSwitching =
@@ -7316,7 +7319,8 @@ implements EventSubscriber {
                 }
             }
 
-            if (this.c.thePlayer != null) {
+            if (this.highRiskFunctionalProbe32Saved
+                    && this.c.thePlayer != null) {
                 this.c.thePlayer.inventory.mainInventory[0] =
                         this.highRiskFunctionalProbe32SavedSlot0;
                 this.c.thePlayer.inventory.mainInventory[4] =
@@ -7324,8 +7328,18 @@ implements EventSubscriber {
                 this.c.thePlayer.inventory.currentItem =
                         this.highRiskFunctionalProbe32SavedCurrentItem;
             }
-            this.c.objectMouseOver =
-                    this.highRiskFunctionalProbe32SavedMouseOver;
+            if (this.highRiskFunctionalProbe32Saved) {
+                this.c.objectMouseOver =
+                        this.highRiskFunctionalProbe32SavedMouseOver;
+            }
+            if (this.highRiskFunctionalProbe32EnableStateSaved
+                    && probe != null
+                    && probe.o()
+                            != this.highRiskFunctionalProbe32SavedEnabled) {
+                probe.I(
+                        0L,
+                        this.highRiskFunctionalProbe32SavedEnabled);
+            }
         }
         catch (Throwable restoreFailure) {
             recordFeatureFailure(
@@ -7352,6 +7366,7 @@ implements EventSubscriber {
         }
 
         this.highRiskFunctionalProbe32Saved = false;
+        this.highRiskFunctionalProbe32EnableStateSaved = false;
         this.highRiskFunctionalProbe32Fixture = null;
         this.highRiskFunctionalProbe32OriginalState = null;
         this.highRiskFunctionalProbe32SavedSlot0 = null;
@@ -7377,7 +7392,7 @@ implements EventSubscriber {
     private void pumpHighRiskFunctionalProbe32() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe32")
                 || this.highRiskFunctionalProbe32Stage < 0
-                || this.highRiskFunctionalProbe32Stage >= 3) {
+                || this.highRiskFunctionalProbe32Stage >= 4) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe31")
@@ -7423,6 +7438,29 @@ implements EventSubscriber {
 
             switch (this.highRiskFunctionalProbe32Stage) {
                 case 0: {
+                    this.highRiskFunctionalProbe32SavedEnabled = probe.o();
+                    this.highRiskFunctionalProbe32EnableStateSaved = true;
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe32Stage = 1;
+                    this.highRiskFunctionalProbe32WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-enable-request:"
+                                    + "AutoTool");
+                    return;
+                }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe32WaitTicks;
+                    if (!probe.o()) {
+                        if (this.highRiskFunctionalProbe32WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "AutoTool did not enter enabled state");
+                        }
+                        return;
+                    }
+
                     BlockPos fixture = null;
                     int baseX =
                             MathHelper.floor_double(this.c.thePlayer.posX);
@@ -7510,7 +7548,7 @@ implements EventSubscriber {
                     }
 
                     this.pointAutoToolProbeAtFixture();
-                    this.highRiskFunctionalProbe32Stage = 1;
+                    this.highRiskFunctionalProbe32Stage = 2;
                     this.highRiskFunctionalProbe32WaitTicks = 0;
                     runtimeMilestone(
                             "high-risk-functional-probe32-ready:"
@@ -7518,7 +7556,7 @@ implements EventSubscriber {
                     return;
                 }
 
-                case 1: {
+                case 3: {
                     ++this.highRiskFunctionalProbe32WaitTicks;
                     int attackKey =
                             this.c.gameSettings.keyBindAttack.getKeyCode();
@@ -7544,7 +7582,7 @@ implements EventSubscriber {
                         runtimeMilestone(
                                 "high-risk-functional-probe32-effect-pass:"
                                         + "AutoTool:switch=0->4");
-                        this.highRiskFunctionalProbe32Stage = 2;
+                        this.highRiskFunctionalProbe32Stage = 3;
                         this.highRiskFunctionalProbe32WaitTicks = 0;
                         runtimeMilestone(
                                 "high-risk-functional-probe32-ready-release:"
@@ -7565,7 +7603,7 @@ implements EventSubscriber {
                     return;
                 }
 
-                case 2: {
+                case 3: {
                     ++this.highRiskFunctionalProbe32WaitTicks;
                     int attackKey =
                             this.c.gameSettings.keyBindAttack.getKeyCode();
@@ -7598,7 +7636,7 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe32-effect-pass:"
                                     + "AutoTool:switchBack=4->0");
-                    this.highRiskFunctionalProbe32Stage = 3;
+                    this.highRiskFunctionalProbe32Stage = 4;
                     runtimeMilestone(
                             "high-risk-functional-probe32-module-pass:"
                                     + "AutoTool");
@@ -8458,6 +8496,12 @@ implements EventSubscriber {
                 runtimeMilestone("world-session-exit:" + exitedWorldSession);
 }
             BedNuker.B = false;
+            if (this.highRiskFunctionalProbe32Saved
+                    || this.highRiskFunctionalProbe32EnableStateSaved) {
+                this.restoreHighRiskFunctionalProbe32();
+                runtimeMilestone(
+                        "high-risk-functional-probe32-menu-restore");
+            }
             PacketManager.M(false);
             PacketManager.u.clear();
             PacketManager.v.clear();
