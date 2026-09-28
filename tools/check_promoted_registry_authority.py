@@ -40,6 +40,26 @@ if sum(1 for _,e,_ in rows if not e)!=11:
     raise SystemExit("PROMOTED_REGISTRY_BINDER_SPLIT=FAIL binderless")
 
 registry=REGISTRY.read_text(encoding="utf-8")
+client=(ROOT / "src" / "main" / "java" / "Abyss" / "AbyssClient.java").read_text(encoding="utf-8")
+
+probe_match=re.search(
+    r'PROMOTED_REGISTRY_PROBE_MODULES\s*=\s*new String\[\]\s*\{(?P<body>.*?)\};',
+    client,
+    re.S,
+)
+if not probe_match:
+    raise SystemExit("PROMOTED_REGISTRY_RUNTIME_PROBE=FAIL missing array")
+probe_names=re.findall(r'"([^"]+)"', probe_match.group("body"))
+authority_names=[name for _,_,name in rows]
+if probe_names != authority_names:
+    raise SystemExit(
+        f"PROMOTED_REGISTRY_RUNTIME_PROBE=FAIL expected={authority_names} actual={probe_names}"
+    )
+if 'Boolean.getBoolean("abyss.promotedRegistryProbe")' not in client:
+    raise SystemExit("PROMOTED_REGISTRY_RUNTIME_PROBE=FAIL property gate missing")
+if 'runtimeMilestone("promoted-registry-probe-pass:" + PROMOTED_REGISTRY_PROBE_MODULES.length)' not in client:
+    raise SystemExit("PROMOTED_REGISTRY_RUNTIME_PROBE=FAIL pass marker missing")
+
 for stage,event_backed,name in rows:
     if f'"{name}"' not in registry:
         raise SystemExit(f"PROMOTED_REGISTRY_REGISTRY_MISSING={name}")
@@ -66,4 +86,5 @@ for threshold,names in ((103,stage112),(97,stage103),(92,stage97)):
     if missing:
         raise SystemExit(f"PROMOTED_REGISTRY_THRESHOLD_BAD={threshold}:missing={missing}")
 
+print("PROMOTED_REGISTRY_RUNTIME_PROBE=PASS modules=20 order=authority")
 print("PROMOTED_REGISTRY_AUTHORITY=PASS total=20 stages=5/6/9 binderless=11 event_backed=9")
