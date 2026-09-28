@@ -202,6 +202,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.inventory.InventoryBasic;
+import net.minecraft.inventory.Slot;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.projectile.EntityLargeFireball;
 import net.minecraft.init.Blocks;
@@ -231,6 +232,7 @@ import net.minecraft.util.Vec3i;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 public class AbyssClient
@@ -11722,6 +11724,54 @@ implements EventSubscriber {
                                             .getCurrentGameType()
                                     + ":originalGameType="
                                     + this.highRiskFunctionalProbe44OriginalGameType);
+
+                    GuiInventory invScreen =
+                            (GuiInventory)this.c.currentScreen;
+                    int rawMouseX = Mouse.getX();
+                    int rawMouseY = Mouse.getY();
+                    int scaledMouseX =
+                            rawMouseX * invScreen.width
+                                    / this.c.displayWidth;
+                    int scaledMouseY =
+                            invScreen.height
+                                    - rawMouseY * invScreen.height
+                                            / this.c.displayHeight
+                                    - 1;
+                    int guiLeft = (invScreen.width - 176) / 2;
+                    int guiTop = (invScreen.height - 166) / 2;
+                    Slot hoveredSlot = null;
+                    for (Object slotObject :
+                            invScreen.inventorySlots.inventorySlots) {
+                        Slot slot = (Slot)slotObject;
+                        int left = guiLeft + slot.xDisplayPosition;
+                        int top = guiTop + slot.yDisplayPosition;
+                        if (scaledMouseX >= left
+                                && scaledMouseX < left + 16
+                                && scaledMouseY >= top
+                                && scaledMouseY < top + 16) {
+                            hoveredSlot = slot;
+                            break;
+                        }
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-pointer:"
+                                    + "raw="
+                                    + rawMouseX
+                                    + ","
+                                    + rawMouseY
+                                    + ":scaled="
+                                    + scaledMouseX
+                                    + ","
+                                    + scaledMouseY
+                                    + ":gui="
+                                    + guiLeft
+                                    + ","
+                                    + guiTop
+                                    + ":slot="
+                                    + (hoveredSlot == null
+                                            ? "<none>"
+                                            : Integer.toString(
+                                                    hoveredSlot.slotNumber)));
 
                     probe.I(0L, true);
                     this.highRiskFunctionalProbe44Stage = 4;
