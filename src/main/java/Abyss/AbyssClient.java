@@ -7620,9 +7620,12 @@ implements EventSubscriber {
                     probe.onPreMouseInput(
                             0L, new PreMouseInputEvent());
 
+                    int releaseOriginalSlot =
+                            fieldOriginalSlot.getInt(probe);
                     if (this.c.thePlayer.inventory.currentItem != 0
                             || fieldSwitching.getBoolean(probe)
-                            || fieldOriginalSlot.getInt(probe) != -1) {
+                            || (releaseOriginalSlot != -1
+                                    && releaseOriginalSlot != 0)) {
                         throw new IllegalStateException(
                                 "AutoTool switch-back mismatch"
                                         + " slot="
@@ -7630,12 +7633,13 @@ implements EventSubscriber {
                                         + " switching="
                                         + fieldSwitching.getBoolean(probe)
                                         + " original="
-                                        + fieldOriginalSlot.getInt(probe));
+                                        + releaseOriginalSlot);
                     }
 
                     runtimeMilestone(
                             "high-risk-functional-probe32-effect-pass:"
-                                    + "AutoTool:switchBack=4->0");
+                                    + "AutoTool:switchBack=4->0:original="
+                                    + releaseOriginalSlot);
                     this.highRiskFunctionalProbe32Stage = 4;
                     runtimeMilestone(
                             "high-risk-functional-probe32-module-pass:"
