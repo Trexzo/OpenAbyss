@@ -1335,6 +1335,12 @@ for _ in $(seq 1 320); do
     INVCLICKER_READY=1
     break
   fi
+  if grep -Fq 'high-risk-functional-probe43-fail:' "$STAGE"; then
+    echo 'InvClicker predecessor InvManager probe failed.'
+    grep -F 'high-risk-functional-probe43-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
   if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
     echo 'InvClicker physical shift-click probe failed before input.'
     grep -F 'high-risk-functional-probe44-' "$STAGE" || true
