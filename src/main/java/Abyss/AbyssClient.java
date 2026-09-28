@@ -7453,13 +7453,23 @@ implements EventSubscriber {
 
                 case 1: {
                     ++this.highRiskFunctionalProbe32WaitTicks;
-                    if (!probe.o()) {
-                        if (this.highRiskFunctionalProbe32WaitTicks > 160) {
+                    boolean active =
+                            probe.o()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!active) {
+                        if (this.highRiskFunctionalProbe32WaitTicks > 240) {
                             throw new IllegalStateException(
-                                    "AutoTool did not enter enabled state");
+                                    "AutoTool did not enter enabled/subscribed state"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive=" + w.isOwnerActive(probe));
                         }
                         return;
                     }
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-enabled-active:"
+                                    + "AutoTool");
 
                     BlockPos fixture = null;
                     int baseX =
