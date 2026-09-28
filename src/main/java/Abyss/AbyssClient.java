@@ -120,6 +120,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
@@ -261,6 +262,7 @@ implements EventSubscriber {
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
     private String invMovePhysicalOriginalInventoryMode;
+    private String invMovePhysicalOriginalContainerMode;
     private boolean invMovePhysicalOriginalForwardPressed;
     private boolean invMovePhysicalSaved;
     private int physicalInputFunctionalProbeStage;
@@ -2842,6 +2844,9 @@ implements EventSubscriber {
             if (this.invMovePhysicalOriginalInventoryMode != null) {
                 InvMove.inventoryMode.i(this.invMovePhysicalOriginalInventoryMode);
             }
+            if (this.invMovePhysicalOriginalContainerMode != null) {
+                InvMove.containerMode.i(this.invMovePhysicalOriginalContainerMode);
+            }
             KeyBindUtil.A(0L, this.c.gameSettings.keyBindForward.getKeyCode(),
                     this.invMovePhysicalOriginalForwardPressed);
             if (probe != null && probe.o() != this.invMovePhysicalOriginalEnabled) {
@@ -2873,10 +2878,12 @@ implements EventSubscriber {
                 case 0:
                     this.invMovePhysicalOriginalEnabled = probe.o();
                     this.invMovePhysicalOriginalInventoryMode = InvMove.inventoryMode.Y();
+                    this.invMovePhysicalOriginalContainerMode = InvMove.containerMode.Y();
                     this.invMovePhysicalOriginalForwardPressed =
                             this.c.gameSettings.keyBindForward.isKeyDown();
                     this.invMovePhysicalSaved = true;
                     InvMove.inventoryMode.i("VANILLA");
+                    InvMove.containerMode.i("VANILLA");
                     KeyBindUtil.A(0L, forwardKey, false);
                     if (!probe.o()) {
                         probe.I(0L, true);
@@ -2906,15 +2913,16 @@ implements EventSubscriber {
                     if (physicalInventory) {
                         runtimeMilestone("invmove-physical-probe-input-seen:inventory=true");
                     }
-                    if (this.c.currentScreen instanceof GuiInventory) {
+                    if (this.c.currentScreen instanceof GuiContainer) {
                         ++this.invMovePhysicalProbeStage;
                         this.invMovePhysicalProbeWaitTicks = 0;
-                        runtimeMilestone("invmove-physical-probe-inventory-open");
+                        runtimeMilestone("invmove-physical-probe-container-open:"
+                                + this.c.currentScreen.getClass().getName());
                         runtimeMilestone("invmove-physical-probe-ready:forward-input");
                         return;
                     }
                     if (this.invMovePhysicalProbeWaitTicks > 600) {
-                        throw new IllegalStateException("InvMove did not observe physical inventory open physicalInventory="
+                        throw new IllegalStateException("InvMove did not observe physical container open physicalInventory="
                                 + physicalInventory + " inventoryKey=" + inventoryKey
                                 + " currentScreen=" + (this.c.currentScreen == null
                                 ? "<null>" : this.c.currentScreen.getClass().getName()));
@@ -2926,7 +2934,8 @@ implements EventSubscriber {
                     boolean physicalForward = KeyBindUtil.V(forwardKey, 64165991731362L);
                     if (physicalForward && this.c.gameSettings.keyBindForward.isKeyDown()) {
                         runtimeMilestone("invmove-physical-probe-input-seen:forward=true");
-                        runtimeMilestone("invmove-physical-probe-effect-pass:forwardBinding=true:screen=GuiInventory");
+                        runtimeMilestone("invmove-physical-probe-effect-pass:forwardBinding=true:screen="
+                                + this.c.currentScreen.getClass().getName());
                         ++this.invMovePhysicalProbeStage;
                         this.invMovePhysicalProbeWaitTicks = 0;
                         runtimeMilestone("invmove-physical-probe-ready:release-close");
@@ -2945,6 +2954,7 @@ implements EventSubscriber {
                     if (!forwardStillDown && this.c.currentScreen == null
                             && !this.c.gameSettings.keyBindForward.isKeyDown()) {
                         InvMove.inventoryMode.i(this.invMovePhysicalOriginalInventoryMode);
+                        InvMove.containerMode.i(this.invMovePhysicalOriginalContainerMode);
                         if (!this.invMovePhysicalOriginalEnabled) {
                             probe.I(0L, false);
                         }
@@ -2969,8 +2979,9 @@ implements EventSubscriber {
                     if (restored) {
                         KeyBindUtil.A(0L, forwardKey, this.invMovePhysicalOriginalForwardPressed);
                         runtimeMilestone("invmove-physical-probe-restore-pass:enabled="
-                                + this.invMovePhysicalOriginalEnabled + ":mode="
-                                + this.invMovePhysicalOriginalInventoryMode);
+                                + this.invMovePhysicalOriginalEnabled + ":inventoryMode="
+                                + this.invMovePhysicalOriginalInventoryMode + ":containerMode="
+                                + this.invMovePhysicalOriginalContainerMode);
                         ++this.invMovePhysicalProbeStage;
                         runtimeMilestone("invmove-physical-probe-pass:1");
                         return;
