@@ -72,6 +72,7 @@ import Abyss.module.impl.player.NoInteract;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
+import Abyss.module.impl.configuration.Teams;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Animations;
@@ -85,6 +86,7 @@ import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.ItemScale;
 import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.module.impl.visual.NoHurtCam;
+import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
@@ -351,6 +353,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe17Stage;
     private int highRiskFunctionalProbe18Stage;
     private int highRiskFunctionalProbe19Stage;
+    private int highRiskFunctionalProbe20Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4968,6 +4971,129 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe20() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe20")
+                || this.highRiskFunctionalProbe20Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe19")
+                && this.highRiskFunctionalProbe19Stage < 1) return;
+
+        TeamInvisible probe = Modules.J(TeamInvisible.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        String originalSortMode = null;
+        String originalPattern = null;
+        float originalRange = 0.0f;
+        int originalOpacity = 0;
+        EntityOtherPlayerMP fixture = null;
+        try {
+            if (probe == null
+                    || ModuleManager.y != probe
+                    || ModuleManager.byClass(TeamInvisible.class) != probe
+                    || ModuleManager.byName("TeamInvisible") != probe
+                    || Teams.sortMode == null
+                    || Teams.customPatternRegex == null
+                    || TeamInvisible.range == null
+                    || TeamInvisible.opacity == null
+                    || this.c.thePlayer == null
+                    || this.c.theWorld == null) {
+                throw new IllegalStateException("TeamInvisible live team-selection authority unavailable");
+            }
+
+            originalEnabled = probe.o();
+            originalSortMode = Teams.sortMode.Y();
+            originalPattern = Teams.customPatternRegex.X();
+            originalRange = TeamInvisible.range.L();
+            originalOpacity = TeamInvisible.opacity.k();
+            saved = true;
+
+            String localName = this.c.thePlayer.getName();
+            char firstLetter = 'A';
+            for (int index = 0; index < localName.length(); ++index) {
+                char candidate = localName.charAt(index);
+                if (Character.isLetter(candidate)) {
+                    firstLetter = candidate;
+                    break;
+                }
+            }
+            String fixtureName = String.valueOf(firstLetter) + "OpenAbyssTeamProbe";
+            fixture = new EntityOtherPlayerMP(this.c.theWorld, new GameProfile(
+                    UUID.fromString("00000000-0000-4000-8000-000000000020"), fixtureName));
+            fixture.setPosition(this.c.thePlayer.posX + 1.0, this.c.thePlayer.posY, this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(-2147483620, fixture);
+
+            Teams.sortMode.i("PATTERN");
+            Teams.customPatternRegex.O("[A-Za-z]");
+            TeamInvisible.range.o((byte)0, 0L, 64.0f);
+            TeamInvisible.opacity.d(20);
+
+            Method selector = TeamInvisible.class.getDeclaredMethod(
+                    "C", Long.TYPE, Character.TYPE, net.minecraft.entity.Entity.class);
+            selector.setAccessible(true);
+            boolean selected = ((Boolean)selector.invoke(
+                    probe, Long.valueOf(0L), Character.valueOf('\ub4eb'), fixture)).booleanValue();
+            if (!selected) {
+                throw new IllegalStateException("TeamInvisible PATTERN teammate fixture was not selected");
+            }
+            runtimeMilestone("high-risk-functional-probe20-effect-pass:TeamInvisible:pattern=true");
+
+            Teams.sortMode.i("NONE");
+            boolean disabledByTeams = ((Boolean)selector.invoke(
+                    probe, Long.valueOf(0L), Character.valueOf('\ub4eb'), fixture)).booleanValue();
+            if (disabledByTeams) {
+                throw new IllegalStateException("TeamInvisible selected fixture while Teams mode was NONE");
+            }
+            runtimeMilestone("high-risk-functional-probe20-effect-pass:TeamInvisible:none=false");
+
+            this.c.theWorld.removeEntityFromWorld(-2147483620);
+            fixture = null;
+            Teams.sortMode.i(originalSortMode);
+            Teams.customPatternRegex.O(originalPattern);
+            TeamInvisible.range.o((byte)0, 0L, originalRange);
+            TeamInvisible.opacity.d(originalOpacity);
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+
+            if (probe.o() != originalEnabled
+                    || !String.valueOf(originalSortMode).equals(String.valueOf(Teams.sortMode.Y()))
+                    || !String.valueOf(originalPattern).equals(String.valueOf(Teams.customPatternRegex.X()))
+                    || Math.abs(TeamInvisible.range.L() - originalRange) > 0.001f
+                    || TeamInvisible.opacity.k() != originalOpacity
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("TeamInvisible probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe20Stage = 1;
+            runtimeMilestone("high-risk-functional-probe20-restore-pass:TeamInvisible:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe20-module-pass:TeamInvisible");
+            runtimeMilestone("high-risk-functional-probe20-pass:1");
+        }
+        catch (Throwable failure) {
+            if (fixture != null && this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(-2147483620);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved) {
+                try {
+                    Teams.sortMode.i(originalSortMode);
+                    Teams.customPatternRegex.O(originalPattern);
+                    TeamInvisible.range.o((byte)0, 0L, originalRange);
+                    TeamInvisible.opacity.d(originalOpacity);
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe20:TeamInvisible", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe20Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe20:TeamInvisible", "team-selection", failure);
+            runtimeMilestone("high-risk-functional-probe20-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5945,6 +6071,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe17();
         this.pumpHighRiskFunctionalProbe18();
         this.pumpHighRiskFunctionalProbe19();
+        this.pumpHighRiskFunctionalProbe20();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
