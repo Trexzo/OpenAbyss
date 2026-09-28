@@ -506,6 +506,8 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe37OriginalAllowFlying;
     private int highRiskFunctionalProbe37CloseFixtureId;
     private int highRiskFunctionalProbe37FarFixtureId;
+    private EntityLargeFireball highRiskFunctionalProbe37FarFixture;
+    private int highRiskFunctionalProbe37WaitTicks;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -8889,6 +8891,11 @@ implements EventSubscriber {
                     this.c.theWorld.removeEntityFromWorld(
                             this.highRiskFunctionalProbe37CloseFixtureId);
                 }
+                if (this.highRiskFunctionalProbe37FarFixture != null) {
+                    this.highRiskFunctionalProbe37FarFixture.setDead();
+                    this.c.theWorld.removeEntity(
+                            this.highRiskFunctionalProbe37FarFixture);
+                }
                 if (this.highRiskFunctionalProbe37FarFixtureId != 0) {
                     this.c.theWorld.removeEntityFromWorld(
                             this.highRiskFunctionalProbe37FarFixtureId);
@@ -8937,12 +8944,14 @@ implements EventSubscriber {
         this.highRiskFunctionalProbe37Saved = false;
         this.highRiskFunctionalProbe37CloseFixtureId = 0;
         this.highRiskFunctionalProbe37FarFixtureId = 0;
+        this.highRiskFunctionalProbe37FarFixture = null;
+        this.highRiskFunctionalProbe37WaitTicks = 0;
     }
 
     private void pumpHighRiskFunctionalProbe37() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe37")
                 || this.highRiskFunctionalProbe37Stage < 0
-                || this.highRiskFunctionalProbe37Stage >= 4) {
+                || this.highRiskFunctionalProbe37Stage >= 5) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe36")
@@ -9119,9 +9128,37 @@ implements EventSubscriber {
                             "high-risk-functional-probe37-effect-pass:"
                                     + "AntiFireball:approachSelected=true:range=2.0");
 
+                    this.highRiskFunctionalProbe37FarFixture = far;
+                    far.setDead();
+                    this.c.theWorld.removeEntity(far);
                     this.c.theWorld.removeEntityFromWorld(
                             this.highRiskFunctionalProbe37FarFixtureId);
                     this.highRiskFunctionalProbe37FarFixtureId = 0;
+                    this.highRiskFunctionalProbe37WaitTicks = 0;
+                    this.highRiskFunctionalProbe37Stage = 3;
+                    runtimeMilestone(
+                            "high-risk-functional-probe37-removal-request:"
+                                    + "AntiFireball:farFixture");
+                    return;
+                }
+
+                case 3: {
+                    ++this.highRiskFunctionalProbe37WaitTicks;
+                    EntityLargeFireball far =
+                            this.highRiskFunctionalProbe37FarFixture;
+                    boolean stillLoaded =
+                            far != null
+                                    && this.c.theWorld.loadedEntityList.contains(far);
+                    if (stillLoaded) {
+                        if (this.highRiskFunctionalProbe37WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "AntiFireball fixture remained in loadedEntityList"
+                                            + " ticks="
+                                            + this.highRiskFunctionalProbe37WaitTicks);
+                        }
+                        return;
+                    }
+
                     probe.onPreTick(
                             (char)0,
                             0,
@@ -9132,7 +9169,7 @@ implements EventSubscriber {
                             || !ignored.isEmpty()
                             || this.antiFireballProbeTarget(probe) != null) {
                         throw new IllegalStateException(
-                                "AntiFireball tracker did not clear after fixture removal"
+                                "AntiFireball tracker did not clear after world removal"
                                         + " tracked=" + tracked.size()
                                         + " ignored=" + ignored.size()
                                         + " target="
@@ -9143,17 +9180,18 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe37-reset-pass:"
                                     + "AntiFireball:tracked=0:ignored=0:target=null");
-                    this.highRiskFunctionalProbe37Stage = 3;
+                    this.highRiskFunctionalProbe37FarFixture = null;
+                    this.highRiskFunctionalProbe37Stage = 4;
                     return;
                 }
 
-                case 3: {
+                case 4: {
                     runtimeMilestone(
                             "high-risk-functional-probe37-module-pass:"
                                     + "AntiFireball");
                     runtimeMilestone(
                             "high-risk-functional-probe37-pass:1");
-                    this.highRiskFunctionalProbe37Stage = 4;
+                    this.highRiskFunctionalProbe37Stage = 5;
                     this.restoreHighRiskFunctionalProbe37();
                     return;
                 }
