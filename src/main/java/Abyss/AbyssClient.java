@@ -79,6 +79,7 @@ import Abyss.module.impl.visual.Chams;
 import Abyss.module.impl.visual.CaveXray;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
+import Abyss.module.impl.visual.ItemScale;
 import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
@@ -335,6 +336,7 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe13OriginalViewClipEnabled;
     private boolean highRiskFunctionalProbe13OriginalReloadRenderer;
     private boolean highRiskFunctionalProbe13Saved;
+    private int highRiskFunctionalProbe14Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4370,6 +4372,125 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe14() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe14")
+                || this.highRiskFunctionalProbe14Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe13")
+                && this.highRiskFunctionalProbe13Stage < 1) return;
+
+        ItemScale probe = Modules.J(ItemScale.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        boolean originalNbtOnly = false;
+        boolean originalMegawalls = false;
+        boolean originalWeapons = false;
+        boolean originalBedwars = false;
+        boolean originalGapples = false;
+        boolean originalAll = false;
+        try {
+            if (probe == null
+                    || ModuleManager.v != probe
+                    || ModuleManager.byClass(ItemScale.class) != probe
+                    || ModuleManager.byName("ItemScale") != probe
+                    || ItemScale.nbtOnly == null
+                    || ItemScale.megawallsItems == null
+                    || ItemScale.renderSwordsAndBows == null
+                    || ItemScale.bedwarsResources == null
+                    || ItemScale.renderGoldenApples == null
+                    || ItemScale.renderALL == null
+                    || ItemScale.scale == null) {
+                throw new IllegalStateException("ItemScale live selection authority unavailable");
+            }
+            if (probe.l() || probe.K()) {
+                return;
+            }
+
+            originalEnabled = probe.o();
+            originalNbtOnly = ItemScale.nbtOnly.c();
+            originalMegawalls = ItemScale.megawallsItems.c();
+            originalWeapons = ItemScale.renderSwordsAndBows.c();
+            originalBedwars = ItemScale.bedwarsResources.c();
+            originalGapples = ItemScale.renderGoldenApples.c();
+            originalAll = ItemScale.renderALL.c();
+            saved = true;
+
+            ItemStack stone = new ItemStack(Items.stone);
+            ItemStack goldenApple = new ItemStack(Items.golden_apple);
+
+            this.setModuleEnabledRawForProbe(probe, false);
+            ItemScale.nbtOnly.v(false, 0L);
+            ItemScale.megawallsItems.v(false, 0L);
+            ItemScale.renderSwordsAndBows.v(false, 0L);
+            ItemScale.bedwarsResources.v(false, 0L);
+            ItemScale.renderGoldenApples.v(false, 0L);
+            ItemScale.renderALL.v(false, 0L);
+            if (ItemScale.c(stone) || ItemScale.c(goldenApple)) {
+                throw new IllegalStateException("ItemScale NONE selector accepted an item");
+            }
+            runtimeMilestone("high-risk-functional-probe14-effect-pass:ItemScale:none=false");
+
+            this.setModuleEnabledRawForProbe(probe, true);
+            ItemScale.renderALL.v(true, 0L);
+            if (!probe.o() || !ItemScale.c(stone) || !ItemScale.c(goldenApple)) {
+                throw new IllegalStateException("ItemScale ALL selector did not accept items");
+            }
+            runtimeMilestone("high-risk-functional-probe14-effect-pass:ItemScale:all=true");
+
+            ItemScale.renderALL.v(false, 0L);
+            ItemScale.renderGoldenApples.v(true, 0L);
+            if (ItemScale.c(stone) || !ItemScale.c(goldenApple)) {
+                throw new IllegalStateException("ItemScale GAPPLES selector mismatch");
+            }
+            runtimeMilestone("high-risk-functional-probe14-effect-pass:ItemScale:gapples=true");
+
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+            ItemScale.nbtOnly.v(originalNbtOnly, 0L);
+            ItemScale.megawallsItems.v(originalMegawalls, 0L);
+            ItemScale.renderSwordsAndBows.v(originalWeapons, 0L);
+            ItemScale.bedwarsResources.v(originalBedwars, 0L);
+            ItemScale.renderGoldenApples.v(originalGapples, 0L);
+            ItemScale.renderALL.v(originalAll, 0L);
+
+            if (probe.o() != originalEnabled
+                    || ItemScale.nbtOnly.c() != originalNbtOnly
+                    || ItemScale.megawallsItems.c() != originalMegawalls
+                    || ItemScale.renderSwordsAndBows.c() != originalWeapons
+                    || ItemScale.bedwarsResources.c() != originalBedwars
+                    || ItemScale.renderGoldenApples.c() != originalGapples
+                    || ItemScale.renderALL.c() != originalAll
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("ItemScale probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe14Stage = 1;
+            runtimeMilestone("high-risk-functional-probe14-restore-pass:ItemScale:enabled="
+                    + originalEnabled + ":all=" + originalAll + ":gapples=" + originalGapples);
+            runtimeMilestone("high-risk-functional-probe14-module-pass:ItemScale");
+            runtimeMilestone("high-risk-functional-probe14-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                    ItemScale.nbtOnly.v(originalNbtOnly, 0L);
+                    ItemScale.megawallsItems.v(originalMegawalls, 0L);
+                    ItemScale.renderSwordsAndBows.v(originalWeapons, 0L);
+                    ItemScale.bedwarsResources.v(originalBedwars, 0L);
+                    ItemScale.renderGoldenApples.v(originalGapples, 0L);
+                    ItemScale.renderALL.v(originalAll, 0L);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe14:ItemScale", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe14Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe14:ItemScale", "selection-policy", failure);
+            runtimeMilestone("high-risk-functional-probe14-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5341,6 +5462,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe11();
         this.pumpHighRiskFunctionalProbe12();
         this.pumpHighRiskFunctionalProbe13();
+        this.pumpHighRiskFunctionalProbe14();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
