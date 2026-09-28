@@ -23,6 +23,7 @@ import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
 import Abyss.event.events.PlayerRightClickEvent;
+import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreTickEvent;
@@ -43,6 +44,7 @@ import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
+import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
@@ -114,6 +116,7 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
@@ -129,6 +132,8 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
+import com.mojang.authlib.GameProfile;
+import java.util.UUID;
 
 public class AbyssClient
 implements EventSubscriber {
@@ -244,6 +249,7 @@ implements EventSubscriber {
     private static final String[] CLICKGUI_MODE_PROBE_MODES = new String[]{"STUDIO", "RAVEN", "VESTIGE"};
     private int highRiskFunctionalProbeStage;
     private int highRiskFunctionalProbe2Stage;
+    private int highRiskFunctionalProbe3Stage;
     private int physicalInputFunctionalProbeStage;
     private int physicalInputFunctionalProbeWaitTicks;
     private boolean physicalInputAutoSaved;
@@ -2631,6 +2637,89 @@ implements EventSubscriber {
         }
     }
 
+    private void probeWTapMovementPauseEffect() throws Throwable {
+        WTap probe = Modules.J(WTap.class);
+        if (probe == null || this.c.theWorld == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("WTap module/player/world unavailable");
+        }
+
+        boolean originalRequireTargetDamage = WTap.requireTargetDamage.c();
+        boolean originalRequireOnGround = WTap.requireOnGround.c();
+        boolean originalUseBlockInstead = WTap.useBlockInstead.c();
+        float originalMinPause = WTap.minPauseTick.L();
+        float originalMaxPause = WTap.maxPauseTick.L();
+        float originalInterval = WTap.interval.L();
+        EntityOtherPlayerMP target = new EntityOtherPlayerMP(
+                this.c.theWorld,
+                new GameProfile(new UUID(0L, 0x57544150L), "OpenAbyssWTapProbe"));
+        try {
+            WTap.requireTargetDamage.v(false, 0L);
+            WTap.requireOnGround.v(false, 0L);
+            WTap.useBlockInstead.v(false, 0L);
+            WTap.minPauseTick.o((byte)0, 0L, 1.0f);
+            WTap.maxPauseTick.o((byte)0, 0L, 1.0f);
+            WTap.interval.o((byte)0, 0L, 0.0f);
+
+            runtimeMilestone("high-risk-functional-probe3-dispatch:WTap:AttackEntityEvent");
+            probe.onAttackEntity(0L, new AttackEntityEvent(target, (char)0, (short)0, 0));
+            probe.onPreMouseInput(0L, new PreMouseInputEvent());
+
+            MoveInputEvent move = new MoveInputEvent(1.0f, 1.0f, false, false, 0.0);
+            probe.onMoveInput(move, 0L);
+            if (Math.abs(move.t()) > 0.0001f || Math.abs(move.R()) > 0.0001f) {
+                throw new IllegalStateException("WTap movement pause mismatch forward="
+                        + move.t() + " strafe=" + move.R());
+            }
+            runtimeMilestone("high-risk-functional-probe3-effect-pass:WTap:forward=0.0:strafe=0.0");
+
+            probe.A(0L);
+            MoveInputEvent restored = new MoveInputEvent(1.0f, 1.0f, false, false, 0.0);
+            probe.onMoveInput(restored, 0L);
+            if (Math.abs(restored.t() - 1.0f) > 0.0001f || Math.abs(restored.R() - 1.0f) > 0.0001f) {
+                throw new IllegalStateException("WTap reset hook did not clear movement pause forward="
+                        + restored.t() + " strafe=" + restored.R());
+            }
+            runtimeMilestone("high-risk-functional-probe3-restore-pass:WTap");
+        }
+        finally {
+            try {
+                probe.A(0L);
+            }
+            catch (Throwable ignored) {
+            }
+            WTap.requireTargetDamage.v(originalRequireTargetDamage, 0L);
+            WTap.requireOnGround.v(originalRequireOnGround, 0L);
+            WTap.useBlockInstead.v(originalUseBlockInstead, 0L);
+            WTap.minPauseTick.o((byte)0, 0L, originalMinPause);
+            WTap.maxPauseTick.o((byte)0, 0L, originalMaxPause);
+            WTap.interval.o((byte)0, 0L, originalInterval);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe3() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe3")
+                || this.highRiskFunctionalProbe3Stage < 0
+                || this.highRiskFunctionalProbe3Stage >= 1) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe2")
+                && this.highRiskFunctionalProbe2Stage < 3) return;
+        if (Boolean.getBoolean("abyss.physicalInputFunctionalProbe")
+                && this.physicalInputFunctionalProbeStage < 7) return;
+
+        try {
+            this.probeWTapMovementPauseEffect();
+            runtimeMilestone("high-risk-functional-probe3-module-pass:WTap");
+            ++this.highRiskFunctionalProbe3Stage;
+            runtimeMilestone("high-risk-functional-probe3-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe3Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe3:WTap", "movement-pause", failure);
+            runtimeMilestone("high-risk-functional-probe3-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe2() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe2")
                 || this.highRiskFunctionalProbe2Stage < 0
@@ -3354,6 +3443,7 @@ implements EventSubscriber {
             this.pumpHighRiskFunctionalProbe();
             this.pumpHighRiskFunctionalProbe2();
             this.pumpPhysicalInputFunctionalProbe();
+            this.pumpHighRiskFunctionalProbe3();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
