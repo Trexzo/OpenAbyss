@@ -7844,11 +7844,11 @@ implements EventSubscriber {
                                         + fieldTargetTicks.getInt(probe));
                     }
 
-                    fieldPauseTicks.setInt(probe, 3);
+                    fieldPauseTicks.setInt(probe, 20);
                     AttackTracker.Z(true);
                     runtimeMilestone(
                             "high-risk-functional-probe33-acquire-pass:"
-                                    + "HitSelect:targetTicks=60:pause=3");
+                                    + "HitSelect:targetTicks=60:pause=20");
                     this.highRiskFunctionalProbe33Stage = 2;
                     return;
                 }
