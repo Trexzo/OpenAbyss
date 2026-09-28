@@ -86,6 +86,7 @@ import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
 import Abyss.module.impl.movement.Speed;
 import Abyss.module.impl.movement.Sprint;
+import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.player.NoInteract;
@@ -534,6 +535,18 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe39OriginalPreviousDamage;
     private int highRiskFunctionalProbe39OriginalBlockHitDelay;
     private boolean highRiskFunctionalProbe39OriginalInGameHasFocus;
+    private int highRiskFunctionalProbe40Stage;
+    private int highRiskFunctionalProbe40WaitTicks;
+    private boolean highRiskFunctionalProbe40Saved;
+    private boolean highRiskFunctionalProbe40OriginalEnabled;
+    private boolean highRiskFunctionalProbe40OriginalAxe;
+    private boolean highRiskFunctionalProbe40OriginalStick;
+    private boolean highRiskFunctionalProbe40OriginalFishingRod;
+    private ItemStack highRiskFunctionalProbe40OriginalSlot0;
+    private ItemStack highRiskFunctionalProbe40OriginalSlot4;
+    private int highRiskFunctionalProbe40OriginalCurrentItem;
+    private MovingObjectPosition highRiskFunctionalProbe40OriginalMouseOver;
+    private MovingObjectPosition highRiskFunctionalProbe40FixtureMouseOver;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -9739,6 +9752,319 @@ implements EventSubscriber {
         }
     }
 
+
+    private void applyHighRiskFunctionalProbe40Fixture() {
+        if (this.c.thePlayer == null
+                || this.highRiskFunctionalProbe40FixtureMouseOver == null) {
+            return;
+        }
+        this.c.thePlayer.inventory.mainInventory[0] =
+                new ItemStack(Items.wooden_sword);
+        this.c.thePlayer.inventory.mainInventory[4] =
+                new ItemStack(Items.diamond_sword);
+        this.c.objectMouseOver =
+                this.highRiskFunctionalProbe40FixtureMouseOver;
+    }
+
+    private void restoreHighRiskFunctionalProbe40() {
+        if (!this.highRiskFunctionalProbe40Saved) {
+            return;
+        }
+        try {
+            AutoWeapon probe = Modules.J(AutoWeapon.class);
+            AutoWeapon.axeIsWeapon.v(
+                    this.highRiskFunctionalProbe40OriginalAxe, 0L);
+            AutoWeapon.stickIsWeapon.v(
+                    this.highRiskFunctionalProbe40OriginalStick, 0L);
+            AutoWeapon.fishingrodIsWeapon.v(
+                    this.highRiskFunctionalProbe40OriginalFishingRod, 0L);
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.inventory.mainInventory[0] =
+                        this.highRiskFunctionalProbe40OriginalSlot0;
+                this.c.thePlayer.inventory.mainInventory[4] =
+                        this.highRiskFunctionalProbe40OriginalSlot4;
+                ItemUtil.P(
+                        this.highRiskFunctionalProbe40OriginalCurrentItem);
+            }
+            this.c.objectMouseOver =
+                    this.highRiskFunctionalProbe40OriginalMouseOver;
+
+            if (probe != null
+                    && probe.o()
+                            != this.highRiskFunctionalProbe40OriginalEnabled) {
+                probe.I(
+                        0L,
+                        this.highRiskFunctionalProbe40OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe40:AutoWeapon",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe40Saved = false;
+        this.highRiskFunctionalProbe40WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe40() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe40")
+                || this.highRiskFunctionalProbe40Stage < 0
+                || this.highRiskFunctionalProbe40Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe39")
+                && this.highRiskFunctionalProbe39Stage < 3) {
+            return;
+        }
+
+        AutoWeapon probe = Modules.J(AutoWeapon.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AutoWeapon.class) != probe
+                    || ModuleManager.byName("AutoWeapon") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.playerController == null
+                    || AutoWeapon.axeIsWeapon == null
+                    || AutoWeapon.stickIsWeapon == null
+                    || AutoWeapon.fishingrodIsWeapon == null) {
+                throw new IllegalStateException(
+                        "AutoWeapon live-world inventory authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe40Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe40OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe40OriginalAxe =
+                            AutoWeapon.axeIsWeapon.c();
+                    this.highRiskFunctionalProbe40OriginalStick =
+                            AutoWeapon.stickIsWeapon.c();
+                    this.highRiskFunctionalProbe40OriginalFishingRod =
+                            AutoWeapon.fishingrodIsWeapon.c();
+                    this.highRiskFunctionalProbe40OriginalSlot0 =
+                            this.c.thePlayer.inventory.mainInventory[0];
+                    this.highRiskFunctionalProbe40OriginalSlot4 =
+                            this.c.thePlayer.inventory.mainInventory[4];
+                    this.highRiskFunctionalProbe40OriginalCurrentItem =
+                            this.c.thePlayer.inventory.currentItem;
+                    this.highRiskFunctionalProbe40OriginalMouseOver =
+                            this.c.objectMouseOver;
+
+                    EntityZombie target =
+                            new EntityZombie(this.c.theWorld);
+                    target.setPosition(
+                            this.c.thePlayer.posX + 1.5,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ + 1.5);
+                    this.highRiskFunctionalProbe40FixtureMouseOver =
+                            new MovingObjectPosition(target);
+                    this.highRiskFunctionalProbe40Saved = true;
+                    this.highRiskFunctionalProbe40WaitTicks = 0;
+
+                    AutoWeapon.axeIsWeapon.v(false, 0L);
+                    AutoWeapon.stickIsWeapon.v(false, 0L);
+                    AutoWeapon.fishingrodIsWeapon.v(false, 0L);
+                    this.applyHighRiskFunctionalProbe40Fixture();
+                    ItemUtil.P(0);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe40Stage = 1;
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-enable-request:"
+                                    + "AutoWeapon");
+                    return;
+                }
+
+                case 1: {
+                    if (!probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || !probe.P()
+                            || !w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe40WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "AutoWeapon did not enable/subscribe");
+                        }
+                        return;
+                    }
+
+                    this.applyHighRiskFunctionalProbe40Fixture();
+                    ItemUtil.P(0);
+                    int best = AutoWeapon.M(93384294372710L);
+                    if (best != 4) {
+                        throw new IllegalStateException(
+                                "AutoWeapon weapon ranking mismatch"
+                                        + " expected=4 actual="
+                                        + best);
+                    }
+
+                    this.highRiskFunctionalProbe40Stage = 2;
+                    this.highRiskFunctionalProbe40WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-ready:"
+                                    + "AutoWeapon:mouse=left:best=4");
+                    return;
+                }
+
+                case 2: {
+                    ++this.highRiskFunctionalProbe40WaitTicks;
+                    int attackKey =
+                            this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (!KeyBindUtil.V(
+                            attackKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe40WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "AutoWeapon physical mouse-down timeout");
+                        }
+                        return;
+                    }
+
+                    this.applyHighRiskFunctionalProbe40Fixture();
+                    ItemUtil.P(0);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "AutoWeapon fixture EventBus binding inactive");
+                    }
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+
+                    int selected =
+                            this.c.thePlayer.inventory.currentItem;
+                    if (selected != 4) {
+                        throw new IllegalStateException(
+                                "AutoWeapon did not switch to best weapon"
+                                        + " expected=4 actual="
+                                        + selected);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-effect-pass:"
+                                    + "AutoWeapon:switch=0->4:physicalLmb=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-ready-release:"
+                                    + "AutoWeapon:mouse=left");
+                    this.highRiskFunctionalProbe40Stage = 3;
+                    this.highRiskFunctionalProbe40WaitTicks = 0;
+                    return;
+                }
+
+                case 3: {
+                    ++this.highRiskFunctionalProbe40WaitTicks;
+                    int attackKey =
+                            this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (KeyBindUtil.V(
+                            attackKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe40WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "AutoWeapon physical mouse-release timeout");
+                        }
+                        return;
+                    }
+
+                    this.restoreHighRiskFunctionalProbe40();
+                    this.highRiskFunctionalProbe40Stage = 4;
+                    this.highRiskFunctionalProbe40WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-restore-request:"
+                                    + "AutoWeapon:enabled="
+                                    + this.highRiskFunctionalProbe40OriginalEnabled);
+                    return;
+                }
+
+                case 4: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe40OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe40WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "AutoWeapon did not restore original lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    AutoWeapon.axeIsWeapon.v(
+                            this.highRiskFunctionalProbe40OriginalAxe, 0L);
+                    AutoWeapon.stickIsWeapon.v(
+                            this.highRiskFunctionalProbe40OriginalStick, 0L);
+                    AutoWeapon.fishingrodIsWeapon.v(
+                            this.highRiskFunctionalProbe40OriginalFishingRod,
+                            0L);
+                    this.c.thePlayer.inventory.mainInventory[0] =
+                            this.highRiskFunctionalProbe40OriginalSlot0;
+                    this.c.thePlayer.inventory.mainInventory[4] =
+                            this.highRiskFunctionalProbe40OriginalSlot4;
+                    ItemUtil.P(
+                            this.highRiskFunctionalProbe40OriginalCurrentItem);
+                    this.c.objectMouseOver =
+                            this.highRiskFunctionalProbe40OriginalMouseOver;
+
+                    if (this.c.thePlayer.inventory.mainInventory[0]
+                                    != this.highRiskFunctionalProbe40OriginalSlot0
+                            || this.c.thePlayer.inventory.mainInventory[4]
+                                    != this.highRiskFunctionalProbe40OriginalSlot4
+                            || this.c.thePlayer.inventory.currentItem
+                                    != this.highRiskFunctionalProbe40OriginalCurrentItem
+                            || this.c.objectMouseOver
+                                    != this.highRiskFunctionalProbe40OriginalMouseOver) {
+                        throw new IllegalStateException(
+                                "AutoWeapon inventory/mouse fixture did not restore");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-restore-pass:"
+                                    + "AutoWeapon:enabled="
+                                    + this.highRiskFunctionalProbe40OriginalEnabled
+                                    + ":slot="
+                                    + this.highRiskFunctionalProbe40OriginalCurrentItem);
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-module-pass:AutoWeapon");
+                    runtimeMilestone(
+                            "high-risk-functional-probe40-pass:1");
+                    this.highRiskFunctionalProbe40Stage = 5;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe40Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe40:AutoWeapon",
+                    "physical-best-weapon-switch",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe40-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe40();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -10742,6 +11068,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe37();
         this.pumpHighRiskFunctionalProbe38();
         this.pumpHighRiskFunctionalProbe39();
+        this.pumpHighRiskFunctionalProbe40();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
