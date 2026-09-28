@@ -155,6 +155,18 @@ $checks = [ordered]@{
     AltStoreSelfTest = $diagText.Contains('[ABYSSDIAG] altstore selftest  = PASS file-roundtrip')
     ExtendedWorldFunctional = (-not $ExtendedProbes) -or $runtimeText.Contains('world-functional-probe-pass')
     ExtendedCategoryLifecycle9 = (-not $ExtendedProbes) -or $runtimeText.Contains('category-lifecycle-probe-pass:9')
+    ExtendedFastPlaceEffect = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('event-functional-probe-effect-pass:FastPlace:rightClickDelay=1') -and
+        $runtimeText.Contains('event-functional-probe-pass:FastPlace:')
+    )
+    ExtendedNoJumpDelayEffect = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1') -and
+        $runtimeText.Contains('movement-functional-probe-pass:NoJumpDelay:')
+    )
+    ExtendedAmbiencePacketCancel = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true') -and
+        $runtimeText.Contains('packet-functional-probe-pass:Ambience:')
+    )
     ExtendedCommandRuntime = (-not $ExtendedProbes) -or $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
     ExtendedEventBusOwnership = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('category-lifecycle-probe-pass:9') -and
@@ -187,6 +199,9 @@ $pass = $checks.BootstrapComplete -and
         $checks.AltStoreSelfTest -and
         $checks.ExtendedWorldFunctional -and
         $checks.ExtendedCategoryLifecycle9 -and
+        $checks.ExtendedFastPlaceEffect -and
+        $checks.ExtendedNoJumpDelayEffect -and
+        $checks.ExtendedAmbiencePacketCancel -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
         ($null -eq $smokeError)
