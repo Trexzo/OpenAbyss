@@ -67,6 +67,7 @@ import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
+import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.BedNuker;
@@ -96,6 +97,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.FloatBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -145,6 +147,8 @@ import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
 import com.mojang.authlib.GameProfile;
 import java.util.UUID;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 
 public class AbyssClient
 implements EventSubscriber {
@@ -266,6 +270,11 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe5WaitTicks;
     private boolean highRiskFunctionalProbe5OriginalEnabled;
     private boolean highRiskFunctionalProbe5Saved;
+    private int highRiskFunctionalProbe6Stage;
+    private int highRiskFunctionalProbe6WaitTicks;
+    private boolean highRiskFunctionalProbe6OriginalEnabled;
+    private float highRiskFunctionalProbe6OriginalEffect;
+    private boolean highRiskFunctionalProbe6Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -2979,6 +2988,188 @@ implements EventSubscriber {
         }
     }
 
+    private float[] captureNoHurtCamMatrix() {
+        int previousMode = GL11.glGetInteger(GL11.GL_MATRIX_MODE);
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+        GL11.glPushMatrix();
+        try {
+            GL11.glLoadIdentity();
+            if (!EntityRendererHooks.hurtCameraEffect(this.c, 0.0f)) {
+                throw new IllegalStateException("NoHurtCam renderer hook declined local living player");
+            }
+            FloatBuffer matrix = BufferUtils.createFloatBuffer(16);
+            GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
+            float[] values = new float[16];
+            matrix.get(values);
+            return values;
+        }
+        finally {
+            GL11.glPopMatrix();
+            GL11.glMatrixMode(previousMode);
+        }
+    }
+
+    private static float matrixIdentityDelta(float[] matrix) {
+        if (matrix == null || matrix.length != 16) {
+            throw new IllegalArgumentException("Expected 4x4 matrix");
+        }
+        float delta = 0.0f;
+        for (int index = 0; index < 16; ++index) {
+            float expected = index % 5 == 0 ? 1.0f : 0.0f;
+            delta += Math.abs(matrix[index] - expected);
+        }
+        return delta;
+    }
+
+    private void verifyNoHurtCamHookEffect(boolean expectSuppressed, String phase) {
+        if (ModuleManager.g != Modules.J(NoHurtCam.class)) {
+            throw new IllegalStateException("NoHurtCam hook singleton differs from registry singleton");
+        }
+        if (this.c.thePlayer == null) {
+            throw new IllegalStateException("NoHurtCam probe has no local player");
+        }
+
+        int originalHurtTime = this.c.thePlayer.hurtTime;
+        int originalMaxHurtTime = this.c.thePlayer.maxHurtTime;
+        float originalAttackedAtYaw = this.c.thePlayer.attackedAtYaw;
+        try {
+            this.c.thePlayer.hurtTime = 5;
+            this.c.thePlayer.maxHurtTime = 10;
+            this.c.thePlayer.attackedAtYaw = 37.0f;
+
+            float[] matrix = this.captureNoHurtCamMatrix();
+            float delta = matrixIdentityDelta(matrix);
+            if (expectSuppressed) {
+                if (delta > 0.0005f) {
+                    throw new IllegalStateException("NoHurtCam expected identity transform phase=" + phase
+                            + " delta=" + delta + " effect=" + NoHurtCam.effect.L());
+                }
+            }
+            else if (delta < 0.01f) {
+                throw new IllegalStateException("NoHurtCam disabled hook did not rotate hurt camera phase="
+                        + phase + " delta=" + delta);
+            }
+            runtimeMilestone("high-risk-functional-probe6-effect-pass:NoHurtCam:" + phase
+                    + ":identityDelta=" + delta + ":effect=" + NoHurtCam.effect.L());
+        }
+        finally {
+            this.c.thePlayer.hurtTime = originalHurtTime;
+            this.c.thePlayer.maxHurtTime = originalMaxHurtTime;
+            this.c.thePlayer.attackedAtYaw = originalAttackedAtYaw;
+        }
+    }
+
+    private void restoreHighRiskFunctionalProbe6() {
+        if (!this.highRiskFunctionalProbe6Saved) {
+            return;
+        }
+        try {
+            NoHurtCam.effect.o((byte)0, 0L, this.highRiskFunctionalProbe6OriginalEffect);
+            NoHurtCam probe = Modules.J(NoHurtCam.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe6OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe6OriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe6:NoHurtCam", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe6() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe6")
+                || this.highRiskFunctionalProbe6Stage < 0
+                || this.highRiskFunctionalProbe6Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe5")
+                && this.highRiskFunctionalProbe5Stage < 4) return;
+
+        try {
+            NoHurtCam probe = Modules.J(NoHurtCam.class);
+            if (probe == null || this.c.thePlayer == null) {
+                throw new IllegalStateException("NoHurtCam module/player unavailable");
+            }
+            if (ModuleManager.g != probe) {
+                throw new IllegalStateException("NoHurtCam ModuleManager singleton mismatch");
+            }
+
+            switch (this.highRiskFunctionalProbe6Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe6OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe6OriginalEffect = NoHurtCam.effect.L();
+                    this.highRiskFunctionalProbe6Saved = true;
+                    NoHurtCam.effect.o((byte)0, 0L, 0.0f);
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe6Stage;
+                    this.highRiskFunctionalProbe6WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe6-state-request:NoHurtCam:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe6WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyNoHurtCamHookEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe6Stage;
+                        this.highRiskFunctionalProbe6WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe6-state-request:NoHurtCam:enabled=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe6WaitTicks > 160) {
+                        throw new IllegalStateException("NoHurtCam did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe6WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyNoHurtCamHookEffect(true, "enabled");
+                        NoHurtCam.effect.o((byte)0, 0L, this.highRiskFunctionalProbe6OriginalEffect);
+                        if (!this.highRiskFunctionalProbe6OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe6Stage;
+                        this.highRiskFunctionalProbe6WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe6-restore-request:NoHurtCam:enabled="
+                                + this.highRiskFunctionalProbe6OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe6WaitTicks > 160) {
+                        throw new IllegalStateException("NoHurtCam did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe6WaitTicks;
+                    if (probe.o() == this.highRiskFunctionalProbe6OriginalEnabled
+                            && !probe.l() && !probe.K()) {
+                        runtimeMilestone("high-risk-functional-probe6-restore-pass:NoHurtCam:enabled="
+                                + this.highRiskFunctionalProbe6OriginalEnabled
+                                + ":effect=" + NoHurtCam.effect.L());
+                        ++this.highRiskFunctionalProbe6Stage;
+                        runtimeMilestone("high-risk-functional-probe6-module-pass:NoHurtCam");
+                        runtimeMilestone("high-risk-functional-probe6-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe6WaitTicks > 160) {
+                        throw new IllegalStateException("NoHurtCam original state did not restore");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe6();
+            this.highRiskFunctionalProbe6Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe6:NoHurtCam", "renderer-hook", failure);
+            runtimeMilestone("high-risk-functional-probe6-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -3922,6 +4113,7 @@ implements EventSubscriber {
             this.pumpHighRiskFunctionalProbe4();
             this.pumpInvMovePhysicalProbe();
             this.pumpHighRiskFunctionalProbe5();
+        this.pumpHighRiskFunctionalProbe6();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
