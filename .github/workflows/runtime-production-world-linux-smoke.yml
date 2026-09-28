@@ -288,6 +288,9 @@ jobs:
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
+          grep -Fq 'category-lifecycle-probe-namehider-effect-pass:opposite:enabled=true:alias=' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-namehider-effect-pass:restored:enabled=false:alias=' "$STAGE"
+          echo 'PRODUCTION_WORLD_NAMEHIDER_TRANSFORM_EFFECT=PASS'
           grep -Fq 'command-runtime-probe-fullbright-original:enabled=false:gamma=' "$STAGE"
           grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
           grep -Fq 'command-runtime-probe-toggle-pass:FullBright:enabled=true' "$STAGE"
