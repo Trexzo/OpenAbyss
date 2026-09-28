@@ -605,6 +605,7 @@ implements EventSubscriber {
     private ItemStack highRiskFunctionalProbe44OriginalCursor;
     private int highRiskFunctionalProbe44OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe44OriginalScreen;
+    private net.minecraft.world.WorldSettings.GameType highRiskFunctionalProbe44OriginalGameType;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -11483,6 +11484,13 @@ implements EventSubscriber {
         }
         try {
             InvClicker probe = Modules.J(InvClicker.class);
+            if (this.highRiskFunctionalProbe44OriginalGameType != null
+                    && this.c.playerController != null
+                    && this.c.playerController.getCurrentGameType()
+                            != this.highRiskFunctionalProbe44OriginalGameType) {
+                this.c.playerController.setGameType(
+                        this.highRiskFunctionalProbe44OriginalGameType);
+            }
             if (probe != null) {
                 if (probe.P()) {
                     w.B(probe);
@@ -11553,9 +11561,16 @@ implements EventSubscriber {
                     || ModuleManager.byName("InvClicker") != probe
                     || this.c.theWorld == null
                     || this.c.thePlayer == null
-                    || !this.c.playerController.isInCreativeMode()) {
+                    || (this.highRiskFunctionalProbe44Stage != 4
+                            && !this.c.playerController.isInCreativeMode())) {
                 throw new IllegalStateException(
-                        "InvClicker creative inventory authority unavailable");
+                        "InvClicker creative inventory authority unavailable"
+                                + " stage=" + this.highRiskFunctionalProbe44Stage
+                                + " gameType="
+                                + (this.c.playerController == null
+                                        ? "<null-controller>"
+                                        : this.c.playerController
+                                                .getCurrentGameType()));
             }
 
             switch (this.highRiskFunctionalProbe44Stage) {
@@ -11582,6 +11597,14 @@ implements EventSubscriber {
                             this.c.thePlayer.inventory.currentItem;
                     this.highRiskFunctionalProbe44OriginalScreen =
                             this.c.currentScreen;
+                    this.highRiskFunctionalProbe44OriginalGameType =
+                            this.c.playerController.getCurrentGameType();
+                    if (this.highRiskFunctionalProbe44OriginalGameType
+                            != net.minecraft.world.WorldSettings.GameType.CREATIVE) {
+                        throw new IllegalStateException(
+                                "InvClicker probe expected creative authority, got "
+                                        + this.highRiskFunctionalProbe44OriginalGameType);
+                    }
                     this.highRiskFunctionalProbe44Saved = true;
 
                     if (probe.o()) {
@@ -11671,17 +11694,10 @@ implements EventSubscriber {
                     // the local controller as survival while vanilla initializes
                     // the real 176x166 inventory GUI, then immediately restore
                     // the original game type before any probe click is handled.
-                    net.minecraft.world.WorldSettings.GameType originalGameType =
-                            this.c.playerController.getCurrentGameType();
-                    try {
-                        this.c.playerController.setGameType(
-                                net.minecraft.world.WorldSettings.GameType.SURVIVAL);
-                        this.c.displayGuiScreen(
-                                new GuiInventory(this.c.thePlayer));
-                    }
-                    finally {
-                        this.c.playerController.setGameType(originalGameType);
-                    }
+                    this.c.playerController.setGameType(
+                            net.minecraft.world.WorldSettings.GameType.SURVIVAL);
+                    this.c.displayGuiScreen(
+                            new GuiInventory(this.c.thePlayer));
                     if (!(this.c.currentScreen instanceof GuiInventory)) {
                         throw new IllegalStateException(
                                 "InvClicker GuiInventory did not open"
@@ -11703,7 +11719,9 @@ implements EventSubscriber {
                                             .getSimpleName()
                                     + ":gameType="
                                     + this.c.playerController
-                                            .getCurrentGameType());
+                                            .getCurrentGameType()
+                                    + ":originalGameType="
+                                    + this.highRiskFunctionalProbe44OriginalGameType);
 
                     probe.I(0L, true);
                     this.highRiskFunctionalProbe44Stage = 4;
@@ -11791,6 +11809,11 @@ implements EventSubscriber {
                                     + "InvClicker:input=shift+lmb");
 
                     probe.I(0L, false);
+                    this.c.playerController.setGameType(
+                            this.highRiskFunctionalProbe44OriginalGameType);
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-game-type-restore-pass:"
+                                    + this.c.playerController.getCurrentGameType());
                     this.c.displayGuiScreen(null);
                     this.syncCreativeProbeSlot(
                             0,
@@ -11862,13 +11885,17 @@ implements EventSubscriber {
                                     this.c.thePlayer.inventory
                                             .getItemStack(),
                                     this.highRiskFunctionalProbe44OriginalCursor);
+                    boolean gameTypeRestored =
+                            this.c.playerController.getCurrentGameType()
+                                    == this.highRiskFunctionalProbe44OriginalGameType;
 
                     if (physicalAttack
                             || physicalShift
                             || !stableOriginal
                             || !slot0Restored
                             || !slot9Restored
-                            || !cursorRestored) {
+                            || !cursorRestored
+                            || !gameTypeRestored) {
                         if (++this.highRiskFunctionalProbe44WaitTicks > 240) {
                             throw new IllegalStateException(
                                     "InvClicker fixture did not restore"
@@ -11877,7 +11904,8 @@ implements EventSubscriber {
                                             + " lifecycle=" + stableOriginal
                                             + " slot0=" + slot0Restored
                                             + " slot9=" + slot9Restored
-                                            + " cursor=" + cursorRestored);
+                                            + " cursor=" + cursorRestored
+                                            + " gameType=" + gameTypeRestored);
                         }
                         return;
                     }
@@ -11887,7 +11915,10 @@ implements EventSubscriber {
                                     + "InvClicker:enabled="
                                     + this.highRiskFunctionalProbe44OriginalEnabled
                                     + ":inventory=true"
-                                    + ":cursor=true");
+                                    + ":cursor=true"
+                                    + ":gameType="
+                                    + this.c.playerController
+                                            .getCurrentGameType());
                     runtimeMilestone(
                             "high-risk-functional-probe44-module-pass:"
                                     + "InvClicker");
