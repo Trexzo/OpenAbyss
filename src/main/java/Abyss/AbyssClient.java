@@ -650,7 +650,7 @@ implements EventSubscriber {
         }
     }
 
-    private void verifyPlayerFunctionalProbeRestored() {
+    private void verifyPlayerFunctionalProbeRestored() throws Exception {
         int actual = readLeftClickCounterForProbe();
         if (actual != this.playerFunctionalProbeOriginalLeftClickCounter) {
             throw new IllegalStateException("leftClickCounter was not restored after NoHitDelay probe: " + actual);
