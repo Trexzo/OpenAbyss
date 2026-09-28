@@ -77,6 +77,7 @@ import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Animations;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.BarrierVisible;
+import Abyss.module.impl.visual.BindGUI;
 import Abyss.module.impl.visual.Chams;
 import Abyss.module.impl.visual.CaveXray;
 import Abyss.module.impl.visual.Freelook;
@@ -345,6 +346,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe15Stage;
     private int highRiskFunctionalProbe16Stage;
     private int highRiskFunctionalProbe17Stage;
+    private int highRiskFunctionalProbe18Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4777,6 +4779,113 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe18() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe18")
+                || this.highRiskFunctionalProbe18Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe17")
+                && this.highRiskFunctionalProbe17Stage < 1) return;
+
+        BindGUI probe = Modules.J(BindGUI.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        List<Module> liveEntries = null;
+        List<Module> originalEntries = null;
+        int originalWidth = 0;
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BindGUI.class) != probe
+                    || ModuleManager.byName("BindGUI") != probe
+                    || BindGUI.scale == null
+                    || BindGUI.offsetX == null
+                    || BindGUI.offsetY == null) {
+                throw new IllegalStateException("BindGUI live bind-list authority unavailable");
+            }
+
+            Field entriesField = BindGUI.class.getDeclaredField("m");
+            Field widthField = BindGUI.class.getDeclaredField("o");
+            entriesField.setAccessible(true);
+            widthField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            List<Module> reflectedEntries = (List<Module>)entriesField.get(probe);
+            liveEntries = reflectedEntries;
+            if (liveEntries == null) {
+                throw new IllegalStateException("BindGUI entry list is null");
+            }
+
+            originalEntries = new java.util.ArrayList<Module>(liveEntries);
+            originalWidth = widthField.getInt(probe);
+            originalEnabled = probe.o();
+            saved = true;
+
+            Method rebuild = BindGUI.class.getDeclaredMethod("O", Long.TYPE);
+            rebuild.setAccessible(true);
+            rebuild.invoke(probe, Long.valueOf(0L));
+
+            ClickGUI clickGui = Modules.J(ClickGUI.class);
+            if (clickGui == null || clickGui.h() == 0) {
+                throw new IllegalStateException("ClickGUI bound fixture unavailable");
+            }
+            if (!liveEntries.contains(clickGui)) {
+                throw new IllegalStateException("BindGUI rebuilt list omitted bound ClickGUI");
+            }
+            for (Module entry : liveEntries) {
+                if (entry == null || entry.h() == 0) {
+                    throw new IllegalStateException("BindGUI rebuilt list contains an unbound module");
+                }
+            }
+            int rebuiltWidth = widthField.getInt(probe);
+            if (rebuiltWidth <= 0) {
+                throw new IllegalStateException("BindGUI rebuilt width was not positive");
+            }
+            runtimeMilestone("high-risk-functional-probe18-effect-pass:BindGUI:entries="
+                    + liveEntries.size() + ":width=" + rebuiltWidth);
+
+            probe.A(0L);
+            if (!liveEntries.isEmpty() || widthField.getInt(probe) != 0) {
+                throw new IllegalStateException("BindGUI disable reset did not clear cached entries");
+            }
+            runtimeMilestone("high-risk-functional-probe18-effect-pass:BindGUI:disableReset=true");
+
+            liveEntries.clear();
+            liveEntries.addAll(originalEntries);
+            widthField.setInt(probe, originalWidth);
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+            if (probe.o() != originalEnabled
+                    || !liveEntries.equals(originalEntries)
+                    || widthField.getInt(probe) != originalWidth
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("BindGUI probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe18Stage = 1;
+            runtimeMilestone("high-risk-functional-probe18-restore-pass:BindGUI:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe18-module-pass:BindGUI");
+            runtimeMilestone("high-risk-functional-probe18-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    if (liveEntries != null && originalEntries != null) {
+                        liveEntries.clear();
+                        liveEntries.addAll(originalEntries);
+                    }
+                    Field widthField = BindGUI.class.getDeclaredField("o");
+                    widthField.setAccessible(true);
+                    widthField.setInt(probe, originalWidth);
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe18:BindGUI", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe18Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe18:BindGUI", "bound-module-cache", failure);
+            runtimeMilestone("high-risk-functional-probe18-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5752,6 +5861,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe15();
         this.pumpHighRiskFunctionalProbe16();
         this.pumpHighRiskFunctionalProbe17();
+        this.pumpHighRiskFunctionalProbe18();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
