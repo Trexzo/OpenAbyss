@@ -4416,7 +4416,7 @@ implements EventSubscriber {
             originalAll = ItemScale.renderALL.c();
             saved = true;
 
-            ItemStack stone = new ItemStack(Items.stone);
+            ItemStack stone = new ItemStack(Blocks.stone);
             ItemStack goldenApple = new ItemStack(Items.golden_apple);
 
             this.setModuleEnabledRawForProbe(probe, false);
