@@ -2312,6 +2312,10 @@ implements EventSubscriber {
                 var35.A(false);
 }
             this.s = false;
+            runtimeMilestone("menu-cleanup-complete:packetBuffer=" + PacketManager.e()
+                    + ":u=" + PacketManager.u.size()
+                    + ":v=" + PacketManager.v.size()
+                    + ":a=" + PacketManager.a.size());
         } else {
             runtimeMilestone("world-module-lifecycle-start");
             List<Module> var26 = ModuleManager.S;
