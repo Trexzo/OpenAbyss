@@ -38,6 +38,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
@@ -46,6 +47,7 @@ import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NameHider;
+import Abyss.module.impl.movement.FastFall;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
 import Abyss.module.impl.movement.Speed;
@@ -242,6 +244,19 @@ implements EventSubscriber {
     private static final String[] CLICKGUI_MODE_PROBE_MODES = new String[]{"STUDIO", "RAVEN", "VESTIGE"};
     private int highRiskFunctionalProbeStage;
     private int highRiskFunctionalProbe2Stage;
+    private int physicalInputFunctionalProbeStage;
+    private int physicalInputFunctionalProbeWaitTicks;
+    private boolean physicalInputAutoSaved;
+    private boolean physicalInputAutoOriginalEnabled;
+    private boolean physicalInputAutoOriginalBreakBlocks;
+    private boolean physicalInputAutoOriginalSag;
+    private boolean physicalInputFastFallSaved;
+    private boolean physicalInputFastFallOriginalEnabled;
+    private boolean physicalInputFastFallOriginalRequireScaffold;
+    private boolean physicalInputFastFallOriginalHorizontalRestriction;
+    private boolean physicalInputPlayerStateSaved;
+    private boolean physicalInputOriginalOnGround;
+    private double physicalInputOriginalMotionY;
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -2420,6 +2435,196 @@ implements EventSubscriber {
         }
     }
 
+    private void restorePhysicalInputFunctionalProbe() {
+        try {
+            AutoClicker autoClicker = Modules.J(AutoClicker.class);
+            if (this.physicalInputAutoSaved) {
+                AutoClicker.breakBlocks.v(this.physicalInputAutoOriginalBreakBlocks, 0L);
+                AutoClicker.sag.v(this.physicalInputAutoOriginalSag, 0L);
+                if (autoClicker != null && autoClicker.o() != this.physicalInputAutoOriginalEnabled) {
+                    autoClicker.I(0L, this.physicalInputAutoOriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("PhysicalInputFunctionalProbe:AutoClicker", "restore", failure);
+        }
+        try {
+            FastFall fastFall = Modules.J(FastFall.class);
+            if (this.physicalInputFastFallSaved) {
+                FastFall.requireScaffold.v(this.physicalInputFastFallOriginalRequireScaffold, 0L);
+                FastFall.horizontalSpeedRestriction.v(this.physicalInputFastFallOriginalHorizontalRestriction, 0L);
+                if (fastFall != null && fastFall.o() != this.physicalInputFastFallOriginalEnabled) {
+                    fastFall.I(0L, this.physicalInputFastFallOriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("PhysicalInputFunctionalProbe:FastFall", "restore", failure);
+        }
+        if (this.physicalInputPlayerStateSaved && this.c.thePlayer != null) {
+            this.c.thePlayer.onGround = this.physicalInputOriginalOnGround;
+            this.c.thePlayer.motionY = this.physicalInputOriginalMotionY;
+        }
+        AutoClicker.I = false;
+    }
+
+    private void pumpPhysicalInputFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.physicalInputFunctionalProbe")
+                || this.physicalInputFunctionalProbeStage < 0
+                || this.physicalInputFunctionalProbeStage >= 7) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe2")
+                && this.highRiskFunctionalProbe2Stage < 3) return;
+
+        try {
+            AutoClicker autoClicker = Modules.J(AutoClicker.class);
+            FastFall fastFall = Modules.J(FastFall.class);
+            switch (this.physicalInputFunctionalProbeStage) {
+                case 0:
+                    if (autoClicker == null) {
+                        throw new IllegalStateException("AutoClicker module unavailable");
+                    }
+                    this.physicalInputAutoOriginalEnabled = autoClicker.o();
+                    this.physicalInputAutoOriginalBreakBlocks = AutoClicker.breakBlocks.c();
+                    this.physicalInputAutoOriginalSag = AutoClicker.sag.c();
+                    this.physicalInputAutoSaved = true;
+                    AutoClicker.breakBlocks.v(false, 0L);
+                    AutoClicker.sag.v(false, 0L);
+                    AutoClicker.I = false;
+                    if (!autoClicker.o()) {
+                        autoClicker.I(0L, true);
+                    }
+                    ++this.physicalInputFunctionalProbeStage;
+                    this.physicalInputFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("physical-input-functional-probe-enable-request:AutoClicker");
+                    return;
+                case 1:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (autoClicker != null && autoClicker.o() && autoClicker.P() && w.isOwnerActive(autoClicker)) {
+                        ++this.physicalInputFunctionalProbeStage;
+                        this.physicalInputFunctionalProbeWaitTicks = 0;
+                        runtimeMilestone("physical-input-functional-probe-ready:AutoClicker");
+                        return;
+                    }
+                    if (this.physicalInputFunctionalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("AutoClicker did not become active/subscribed");
+                    }
+                    return;
+                case 2:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (AutoClicker.I) {
+                        runtimeMilestone("physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true");
+                        AutoClicker.breakBlocks.v(this.physicalInputAutoOriginalBreakBlocks, 0L);
+                        AutoClicker.sag.v(this.physicalInputAutoOriginalSag, 0L);
+                        if (autoClicker != null && !this.physicalInputAutoOriginalEnabled) {
+                            autoClicker.I(0L, false);
+                        }
+                        ++this.physicalInputFunctionalProbeStage;
+                        this.physicalInputFunctionalProbeWaitTicks = 0;
+                        return;
+                    }
+                    if (this.physicalInputFunctionalProbeWaitTicks > 600) {
+                        throw new IllegalStateException("AutoClicker did not observe physical attack input");
+                    }
+                    return;
+                case 3:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (this.physicalInputAutoOriginalEnabled
+                            || autoClicker != null && !autoClicker.o() && !autoClicker.P() && !w.isOwnerActive(autoClicker)) {
+                        runtimeMilestone("physical-input-functional-probe-restore-pass:AutoClicker");
+                        if (fastFall == null) {
+                            throw new IllegalStateException("FastFall module unavailable");
+                        }
+                        this.physicalInputFastFallOriginalEnabled = fastFall.o();
+                        this.physicalInputFastFallOriginalRequireScaffold = FastFall.requireScaffold.c();
+                        this.physicalInputFastFallOriginalHorizontalRestriction = FastFall.horizontalSpeedRestriction.c();
+                        this.physicalInputFastFallSaved = true;
+                        FastFall.requireScaffold.v(false, 0L);
+                        FastFall.horizontalSpeedRestriction.v(false, 0L);
+                        if (!fastFall.o()) {
+                            fastFall.I(0L, true);
+                        }
+                        ++this.physicalInputFunctionalProbeStage;
+                        this.physicalInputFunctionalProbeWaitTicks = 0;
+                        runtimeMilestone("physical-input-functional-probe-enable-request:FastFall");
+                        return;
+                    }
+                    if (this.physicalInputFunctionalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("AutoClicker did not restore disabled state");
+                    }
+                    return;
+                case 4:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (fastFall != null && fastFall.o() && fastFall.P() && w.isOwnerActive(fastFall)) {
+                        if (this.c.thePlayer == null) {
+                            throw new IllegalStateException("Player disappeared before FastFall physical input probe");
+                        }
+                        this.physicalInputOriginalOnGround = this.c.thePlayer.onGround;
+                        this.physicalInputOriginalMotionY = this.c.thePlayer.motionY;
+                        this.physicalInputPlayerStateSaved = true;
+                        this.c.thePlayer.onGround = false;
+                        this.c.thePlayer.motionY = -0.05;
+                        ++this.physicalInputFunctionalProbeStage;
+                        this.physicalInputFunctionalProbeWaitTicks = 0;
+                        runtimeMilestone("physical-input-functional-probe-ready:FastFall");
+                        return;
+                    }
+                    if (this.physicalInputFunctionalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("FastFall did not become active/subscribed");
+                    }
+                    return;
+                case 5:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (this.c.thePlayer == null) {
+                        throw new IllegalStateException("Player disappeared during FastFall physical input probe");
+                    }
+                    if (this.c.thePlayer.motionY <= -0.9) {
+                        runtimeMilestone("physical-input-functional-probe-effect-pass:FastFall:motionY="
+                                + this.c.thePlayer.motionY);
+                        this.c.thePlayer.onGround = this.physicalInputOriginalOnGround;
+                        this.c.thePlayer.motionY = this.physicalInputOriginalMotionY;
+                        FastFall.requireScaffold.v(this.physicalInputFastFallOriginalRequireScaffold, 0L);
+                        FastFall.horizontalSpeedRestriction.v(this.physicalInputFastFallOriginalHorizontalRestriction, 0L);
+                        if (fastFall != null && !this.physicalInputFastFallOriginalEnabled) {
+                            fastFall.I(0L, false);
+                        }
+                        ++this.physicalInputFunctionalProbeStage;
+                        this.physicalInputFunctionalProbeWaitTicks = 0;
+                        return;
+                    }
+                    this.c.thePlayer.onGround = false;
+                    this.c.thePlayer.motionY = -0.05;
+                    if (this.physicalInputFunctionalProbeWaitTicks > 600) {
+                        throw new IllegalStateException("FastFall did not observe physical jump input");
+                    }
+                    return;
+                case 6:
+                    ++this.physicalInputFunctionalProbeWaitTicks;
+                    if (this.physicalInputFastFallOriginalEnabled
+                            || fastFall != null && !fastFall.o() && !fastFall.P() && !w.isOwnerActive(fastFall)) {
+                        runtimeMilestone("physical-input-functional-probe-restore-pass:FastFall");
+                        runtimeMilestone("physical-input-functional-probe-pass:2");
+                        ++this.physicalInputFunctionalProbeStage;
+                        return;
+                    }
+                    if (this.physicalInputFunctionalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("FastFall did not restore disabled state");
+                    }
+                    return;
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restorePhysicalInputFunctionalProbe();
+            this.physicalInputFunctionalProbeStage = -1;
+            recordFeatureFailure("PhysicalInputFunctionalProbe", "stage", failure);
+            runtimeMilestone("physical-input-functional-probe-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe2() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe2")
                 || this.highRiskFunctionalProbe2Stage < 0
@@ -3142,6 +3347,7 @@ implements EventSubscriber {
             this.pumpVisualUtilityFunctionalProbe();
             this.pumpHighRiskFunctionalProbe();
             this.pumpHighRiskFunctionalProbe2();
+            this.pumpPhysicalInputFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
