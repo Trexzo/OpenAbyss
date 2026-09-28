@@ -5922,6 +5922,14 @@ implements EventSubscriber {
         }
     }
 
+    private static long inputFixTakeoverCountForProbe() throws Throwable {
+        Field field =
+                Abyss.ASM.Hooks.Gui.GuiScreenHooks.class.getDeclaredField(
+                        "inputFixTakeoverCount");
+        field.setAccessible(true);
+        return field.getLong(null);
+    }
+
     private void finishHighRiskFunctionalProbe25(InputFix probe) {
         if (!this.highRiskFunctionalProbe25OriginalEnabled) {
             if (probe.o() || probe.l() || probe.K()) {
@@ -5979,7 +5987,7 @@ implements EventSubscriber {
 
             if (this.highRiskFunctionalProbe25Stage == 2) {
                 this.highRiskFunctionalProbe25TakeoverBaseline =
-                        Abyss.ASM.Hooks.Gui.GuiScreenHooks.inputFixTakeoverCount();
+                        AbyssClient.inputFixTakeoverCountForProbe();
                 this.highRiskFunctionalProbe25WaitTicks = 0;
                 this.highRiskFunctionalProbe25Stage = 3;
                 runtimeMilestone("high-risk-functional-probe25-ready:InputFix:"
@@ -5995,7 +6003,7 @@ implements EventSubscriber {
                             (net.minecraft.client.gui.GuiChat)this.c.currentScreen).getText();
                     if ("OPENABYSS_INPUTFIX_7E51".equals(text)) {
                         long takeovers =
-                                Abyss.ASM.Hooks.Gui.GuiScreenHooks.inputFixTakeoverCount()
+                                AbyssClient.inputFixTakeoverCountForProbe()
                                         - this.highRiskFunctionalProbe25TakeoverBaseline;
                         if (takeovers <= 0L) {
                             throw new IllegalStateException(
