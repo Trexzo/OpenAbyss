@@ -93,6 +93,7 @@ import Abyss.module.impl.movement.Speed;
 import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
+import Abyss.module.impl.player.InvManager;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.player.NoInteract;
 import Abyss.module.impl.configuration.ClickGUI;
@@ -206,6 +207,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.client.C10PacketCreativeInventoryAction;
 import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
@@ -579,6 +581,18 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe42OriginalHorizontalSpeed;
     private float highRiskFunctionalProbe42OriginalVerticalSpeed;
     private boolean highRiskFunctionalProbe42OriginalSneakPressed;
+    private int highRiskFunctionalProbe43Stage;
+    private int highRiskFunctionalProbe43WaitTicks;
+    private boolean highRiskFunctionalProbe43Saved;
+    private boolean highRiskFunctionalProbe43OriginalEnabled;
+    private boolean highRiskFunctionalProbe43OriginalPriority;
+    private String highRiskFunctionalProbe43OriginalMode;
+    private boolean[] highRiskFunctionalProbe43OriginalBooleans;
+    private float[] highRiskFunctionalProbe43OriginalNumbers;
+    private ItemStack highRiskFunctionalProbe43OriginalSlot0;
+    private ItemStack highRiskFunctionalProbe43OriginalSlot10;
+    private int highRiskFunctionalProbe43OriginalCurrentItem;
+    private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe43OriginalScreen;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -10773,6 +10787,406 @@ implements EventSubscriber {
         }
     }
 
+    private void syncCreativeProbeSlot(int inventoryIndex, ItemStack stack) {
+        ItemStack local = stack == null ? null : stack.copy();
+        this.c.thePlayer.inventory.setInventorySlotContents(
+                inventoryIndex,
+                local);
+        int containerSlot =
+                inventoryIndex < 9 ? inventoryIndex + 36 : inventoryIndex;
+        this.c.thePlayer.sendQueue.addToSendQueue(
+                new C10PacketCreativeInventoryAction(
+                        containerSlot,
+                        stack == null ? null : stack.copy()));
+    }
+
+    private void restoreHighRiskFunctionalProbe43() {
+        if (!this.highRiskFunctionalProbe43Saved) {
+            return;
+        }
+        try {
+            InvManager probe = Modules.J(InvManager.class);
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(probe, false);
+            }
+
+            if (this.c.thePlayer != null) {
+                this.syncCreativeProbeSlot(
+                        0,
+                        this.highRiskFunctionalProbe43OriginalSlot0);
+                this.syncCreativeProbeSlot(
+                        10,
+                        this.highRiskFunctionalProbe43OriginalSlot10);
+                this.c.thePlayer.inventory.currentItem =
+                        this.highRiskFunctionalProbe43OriginalCurrentItem;
+            }
+
+            if (this.c.currentScreen
+                    != this.highRiskFunctionalProbe43OriginalScreen) {
+                this.c.displayGuiScreen(
+                        this.highRiskFunctionalProbe43OriginalScreen);
+            }
+
+            if (this.highRiskFunctionalProbe43OriginalMode != null) {
+                InvManager.mode.i(
+                        this.highRiskFunctionalProbe43OriginalMode);
+            }
+            if (this.highRiskFunctionalProbe43OriginalBooleans != null) {
+                InvManager.autoArmor.v(
+                        this.highRiskFunctionalProbe43OriginalBooleans[0],
+                        0L);
+                InvManager.throwTrash.v(
+                        this.highRiskFunctionalProbe43OriginalBooleans[1],
+                        0L);
+                InvManager.autoClose.v(
+                        this.highRiskFunctionalProbe43OriginalBooleans[2],
+                        0L);
+                InvManager.onlySortOnce.v(
+                        this.highRiskFunctionalProbe43OriginalBooleans[3],
+                        0L);
+            }
+            if (this.highRiskFunctionalProbe43OriginalNumbers != null) {
+                float[] n = this.highRiskFunctionalProbe43OriginalNumbers;
+                InvManager.startDelay.o((byte)0, 0L, n[0]);
+                InvManager.minDelay.o((byte)0, 0L, n[1]);
+                InvManager.maxDelay.o((byte)0, 0L, n[2]);
+                InvManager.swordSlot.o((byte)0, 0L, n[3]);
+                InvManager.projectilesSlot.o((byte)0, 0L, n[4]);
+                InvManager.blockSlot.o((byte)0, 0L, n[5]);
+                InvManager.bowSlot.o((byte)0, 0L, n[6]);
+                InvManager.pickaxeSlot.o((byte)0, 0L, n[7]);
+                InvManager.axeSlot.o((byte)0, 0L, n[8]);
+                InvManager.shovelSlot.o((byte)0, 0L, n[9]);
+                InvManager.foodSlot.o((byte)0, 0L, n[10]);
+                InvManager.potionSlot.o((byte)0, 0L, n[11]);
+                InvManager.fireballSlot.o((byte)0, 0L, n[12]);
+                InvManager.enderPearlSlot.o((byte)0, 0L, n[13]);
+                InvManager.shearsSlot.o((byte)0, 0L, n[14]);
+            }
+
+            if (probe != null) {
+                probe.T(this.highRiskFunctionalProbe43OriginalPriority);
+                if (probe.o()
+                        != this.highRiskFunctionalProbe43OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe43OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe43:InvManager",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe43WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe43() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe43")
+                || this.highRiskFunctionalProbe43Stage < 0
+                || this.highRiskFunctionalProbe43Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe42")
+                && this.highRiskFunctionalProbe42Stage < 5) {
+            return;
+        }
+
+        InvManager probe = Modules.J(InvManager.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(InvManager.class) != probe
+                    || ModuleManager.byName("InvManager") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || !this.c.playerController.isInCreativeMode()) {
+                throw new IllegalStateException(
+                        "InvManager creative inventory authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe43Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe43OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe43OriginalPriority = probe.Y();
+                    this.highRiskFunctionalProbe43OriginalMode =
+                            InvManager.mode.Y();
+                    this.highRiskFunctionalProbe43OriginalBooleans =
+                            new boolean[] {
+                                InvManager.autoArmor.c(),
+                                InvManager.throwTrash.c(),
+                                InvManager.autoClose.c(),
+                                InvManager.onlySortOnce.c()
+                            };
+                    this.highRiskFunctionalProbe43OriginalNumbers =
+                            new float[] {
+                                InvManager.startDelay.L(),
+                                InvManager.minDelay.L(),
+                                InvManager.maxDelay.L(),
+                                InvManager.swordSlot.L(),
+                                InvManager.projectilesSlot.L(),
+                                InvManager.blockSlot.L(),
+                                InvManager.bowSlot.L(),
+                                InvManager.pickaxeSlot.L(),
+                                InvManager.axeSlot.L(),
+                                InvManager.shovelSlot.L(),
+                                InvManager.foodSlot.L(),
+                                InvManager.potionSlot.L(),
+                                InvManager.fireballSlot.L(),
+                                InvManager.enderPearlSlot.L(),
+                                InvManager.shearsSlot.L()
+                            };
+                    ItemStack slot0 =
+                            this.c.thePlayer.inventory.getStackInSlot(0);
+                    ItemStack slot10 =
+                            this.c.thePlayer.inventory.getStackInSlot(10);
+                    this.highRiskFunctionalProbe43OriginalSlot0 =
+                            slot0 == null ? null : slot0.copy();
+                    this.highRiskFunctionalProbe43OriginalSlot10 =
+                            slot10 == null ? null : slot10.copy();
+                    this.highRiskFunctionalProbe43OriginalCurrentItem =
+                            this.c.thePlayer.inventory.currentItem;
+                    this.highRiskFunctionalProbe43OriginalScreen =
+                            this.c.currentScreen;
+                    this.highRiskFunctionalProbe43Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                        this.highRiskFunctionalProbe43Stage = 1;
+                        this.highRiskFunctionalProbe43WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe43-isolate-request:"
+                                        + "InvManager");
+                        return;
+                    }
+                    this.highRiskFunctionalProbe43Stage = 2;
+                    return;
+                }
+
+                case 1: {
+                    if (probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || probe.P()
+                            || w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe43WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "InvManager did not isolate from live lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    this.highRiskFunctionalProbe43Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    InvManager.mode.i("OPEN_INV");
+                    InvManager.autoArmor.v(false, 0L);
+                    InvManager.throwTrash.v(false, 0L);
+                    InvManager.autoClose.v(false, 0L);
+                    InvManager.onlySortOnce.v(false, 0L);
+                    InvManager.startDelay.o((byte)0, 0L, 0.0f);
+                    InvManager.minDelay.o((byte)0, 0L, 0.0f);
+                    InvManager.maxDelay.o((byte)0, 0L, 0.0f);
+                    InvManager.swordSlot.o((byte)0, 0L, 1.0f);
+                    InvManager.projectilesSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.blockSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.bowSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.pickaxeSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.axeSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.shovelSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.foodSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.potionSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.fireballSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.enderPearlSlot.o((byte)0, 0L, 0.0f);
+                    InvManager.shearsSlot.o((byte)0, 0L, 0.0f);
+
+                    this.syncCreativeProbeSlot(
+                            0,
+                            new ItemStack(Items.wooden_sword));
+                    this.syncCreativeProbeSlot(
+                            10,
+                            new ItemStack(Items.diamond_sword));
+                    this.c.thePlayer.inventory.currentItem = 0;
+                    this.c.displayGuiScreen(
+                            new GuiInventory(this.c.thePlayer));
+
+                    this.setModuleEnabledRawForProbe(probe, true);
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "InvManager fixture EventBus binding inactive");
+                    }
+
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+
+                    ItemStack sortedHotbar =
+                            this.c.thePlayer.inventory.getStackInSlot(0);
+                    ItemStack displacedSword =
+                            this.c.thePlayer.inventory.getStackInSlot(10);
+                    if (sortedHotbar == null
+                            || sortedHotbar.getItem()
+                                    != Items.diamond_sword
+                            || displacedSword == null
+                            || displacedSword.getItem()
+                                    != Items.wooden_sword) {
+                        throw new IllegalStateException(
+                                "InvManager sword-slot swap mismatch");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-effect-pass:"
+                                    + "InvManager:swordSwap=10->0"
+                                    + ":best=diamond_sword");
+
+                    this.c.displayGuiScreen(null);
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    this.setModuleEnabledRawForProbe(probe, false);
+
+                    this.syncCreativeProbeSlot(
+                            0,
+                            this.highRiskFunctionalProbe43OriginalSlot0);
+                    this.syncCreativeProbeSlot(
+                            10,
+                            this.highRiskFunctionalProbe43OriginalSlot10);
+                    this.c.thePlayer.inventory.currentItem =
+                            this.highRiskFunctionalProbe43OriginalCurrentItem;
+                    if (this.highRiskFunctionalProbe43OriginalScreen != null) {
+                        this.c.displayGuiScreen(
+                                this.highRiskFunctionalProbe43OriginalScreen);
+                    }
+
+                    float[] n =
+                            this.highRiskFunctionalProbe43OriginalNumbers;
+                    boolean[] b =
+                            this.highRiskFunctionalProbe43OriginalBooleans;
+                    InvManager.mode.i(
+                            this.highRiskFunctionalProbe43OriginalMode);
+                    InvManager.autoArmor.v(b[0], 0L);
+                    InvManager.throwTrash.v(b[1], 0L);
+                    InvManager.autoClose.v(b[2], 0L);
+                    InvManager.onlySortOnce.v(b[3], 0L);
+                    InvManager.startDelay.o((byte)0, 0L, n[0]);
+                    InvManager.minDelay.o((byte)0, 0L, n[1]);
+                    InvManager.maxDelay.o((byte)0, 0L, n[2]);
+                    InvManager.swordSlot.o((byte)0, 0L, n[3]);
+                    InvManager.projectilesSlot.o((byte)0, 0L, n[4]);
+                    InvManager.blockSlot.o((byte)0, 0L, n[5]);
+                    InvManager.bowSlot.o((byte)0, 0L, n[6]);
+                    InvManager.pickaxeSlot.o((byte)0, 0L, n[7]);
+                    InvManager.axeSlot.o((byte)0, 0L, n[8]);
+                    InvManager.shovelSlot.o((byte)0, 0L, n[9]);
+                    InvManager.foodSlot.o((byte)0, 0L, n[10]);
+                    InvManager.potionSlot.o((byte)0, 0L, n[11]);
+                    InvManager.fireballSlot.o((byte)0, 0L, n[12]);
+                    InvManager.enderPearlSlot.o((byte)0, 0L, n[13]);
+                    InvManager.shearsSlot.o((byte)0, 0L, n[14]);
+                    probe.T(this.highRiskFunctionalProbe43OriginalPriority);
+                    if (this.highRiskFunctionalProbe43OriginalEnabled) {
+                        probe.I(0L, true);
+                    }
+
+                    this.highRiskFunctionalProbe43Stage = 3;
+                    this.highRiskFunctionalProbe43WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-restore-request:"
+                                    + "InvManager:enabled="
+                                    + this.highRiskFunctionalProbe43OriginalEnabled);
+                    return;
+                }
+
+                case 3: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe43OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe43WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "InvManager did not restore original lifecycle");
+                        }
+                        return;
+                    }
+
+                    boolean slot0Restored =
+                            ItemStack.areItemStacksEqual(
+                                    this.c.thePlayer.inventory
+                                            .getStackInSlot(0),
+                                    this.highRiskFunctionalProbe43OriginalSlot0);
+                    boolean slot10Restored =
+                            ItemStack.areItemStacksEqual(
+                                    this.c.thePlayer.inventory
+                                            .getStackInSlot(10),
+                                    this.highRiskFunctionalProbe43OriginalSlot10);
+                    if (!slot0Restored
+                            || !slot10Restored
+                            || probe.Y()
+                                    != this.highRiskFunctionalProbe43OriginalPriority
+                            || !InvManager.mode.Y().equals(
+                                    this.highRiskFunctionalProbe43OriginalMode)
+                            || Math.abs(
+                                    InvManager.swordSlot.L()
+                                            - this.highRiskFunctionalProbe43OriginalNumbers[3])
+                                    > 0.0001f) {
+                        throw new IllegalStateException(
+                                "InvManager fixture state did not restore"
+                                        + " slot0=" + slot0Restored
+                                        + " slot10=" + slot10Restored
+                                        + " priority=" + probe.Y()
+                                        + " mode=" + InvManager.mode.Y());
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-restore-pass:"
+                                    + "InvManager:enabled="
+                                    + this.highRiskFunctionalProbe43OriginalEnabled
+                                    + ":inventory=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-module-pass:"
+                                    + "InvManager");
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-pass:1");
+                    this.highRiskFunctionalProbe43Saved = false;
+                    this.highRiskFunctionalProbe43Stage = 4;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe43Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe43:InvManager",
+                    "best-sword-hotbar-sort",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe43-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe43();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -11779,6 +12193,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe40();
         this.pumpHighRiskFunctionalProbe41();
         this.pumpHighRiskFunctionalProbe42();
+        this.pumpHighRiskFunctionalProbe43();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
