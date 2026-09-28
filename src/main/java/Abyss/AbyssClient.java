@@ -34,6 +34,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.movement.NoJumpDelay;
@@ -163,6 +164,16 @@ implements EventSubscriber {
     private int playerFunctionalProbeWaitTicks;
     private boolean playerFunctionalProbeOriginalEnabled;
     private int playerFunctionalProbeOriginalLeftClickCounter;
+    private int combatFunctionalProbeStage;
+    private int combatFunctionalProbeWaitTicks;
+    private boolean combatFunctionalProbeOriginalEnabled;
+    private String combatFunctionalProbeOriginalMode;
+    private int combatFunctionalProbeOriginalSlowdown;
+    private double combatFunctionalProbeOriginalMotionX;
+    private double combatFunctionalProbeOriginalMotionZ;
+    private boolean combatFunctionalProbeOriginalSprinting;
+    private int combatFunctionalProbeOriginalT;
+    private int combatFunctionalProbeOriginalA;
     private int packetFunctionalProbeStage;
     private int packetFunctionalProbeWaitTicks;
     private boolean packetFunctionalProbeOriginalEnabled;
@@ -729,6 +740,175 @@ implements EventSubscriber {
         }
     }
 
+
+    private void restoreCombatFunctionalProbeState(KeepSprint probe) {
+        try {
+            if (KeepSprint.mode != null && this.combatFunctionalProbeOriginalMode != null) {
+                KeepSprint.mode.i(this.combatFunctionalProbeOriginalMode);
+            }
+            if (KeepSprint.slowdown != null) {
+                KeepSprint.slowdown.d(this.combatFunctionalProbeOriginalSlowdown);
+            }
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.motionX = this.combatFunctionalProbeOriginalMotionX;
+                this.c.thePlayer.motionZ = this.combatFunctionalProbeOriginalMotionZ;
+                this.c.thePlayer.setSprinting(this.combatFunctionalProbeOriginalSprinting);
+            }
+            KeepSprint.t = this.combatFunctionalProbeOriginalT;
+            KeepSprint.a = this.combatFunctionalProbeOriginalA;
+            if (probe != null && probe.o() != this.combatFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.combatFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("CombatFunctionalProbe:KeepSprint", "restore", restoreFailure);
+        }
+    }
+
+    private void verifyCombatFunctionalProbeRestored() {
+        if (KeepSprint.mode == null || KeepSprint.slowdown == null
+                || !KeepSprint.mode.R(this.combatFunctionalProbeOriginalMode)
+                || KeepSprint.slowdown.k() != this.combatFunctionalProbeOriginalSlowdown) {
+            throw new IllegalStateException("KeepSprint settings were not restored");
+        }
+        if (this.c.thePlayer != null) {
+            if (Math.abs(this.c.thePlayer.motionX - this.combatFunctionalProbeOriginalMotionX) > 1.0E-9
+                    || Math.abs(this.c.thePlayer.motionZ - this.combatFunctionalProbeOriginalMotionZ) > 1.0E-9
+                    || this.c.thePlayer.isSprinting() != this.combatFunctionalProbeOriginalSprinting) {
+                throw new IllegalStateException("Player motion/sprint state was not restored after KeepSprint probe");
+            }
+        }
+        if (KeepSprint.t != this.combatFunctionalProbeOriginalT
+                || KeepSprint.a != this.combatFunctionalProbeOriginalA) {
+            throw new IllegalStateException("KeepSprint static state was not restored");
+        }
+        runtimeMilestone("combat-functional-probe-restore-state-pass:KeepSprint");
+    }
+
+    private void pumpCombatFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.combatFunctionalProbe")
+                || this.combatFunctionalProbeStage < 0
+                || this.combatFunctionalProbeStage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
+            return;
+        }
+
+        KeepSprint probe = Modules.J(KeepSprint.class);
+        try {
+            if (probe == null || KeepSprint.mode == null || KeepSprint.slowdown == null) {
+                throw new IllegalStateException("KeepSprint module/settings are missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.combatFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.combatFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial KeepSprint state did not settle");
+                    }
+                    return;
+                }
+                this.combatFunctionalProbeOriginalEnabled = stableEnabled;
+                this.combatFunctionalProbeOriginalMode = KeepSprint.mode.Y();
+                this.combatFunctionalProbeOriginalSlowdown = KeepSprint.slowdown.k();
+                this.combatFunctionalProbeOriginalMotionX = this.c.thePlayer.motionX;
+                this.combatFunctionalProbeOriginalMotionZ = this.c.thePlayer.motionZ;
+                this.combatFunctionalProbeOriginalSprinting = this.c.thePlayer.isSprinting();
+                this.combatFunctionalProbeOriginalT = KeepSprint.t;
+                this.combatFunctionalProbeOriginalA = KeepSprint.a;
+
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.combatFunctionalProbeStage = 1;
+                    this.combatFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("combat-functional-probe-enable-request:KeepSprint");
+                    return;
+                }
+                this.combatFunctionalProbeStage = 1;
+            }
+
+            if (this.combatFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.combatFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("KeepSprint did not enable/subscribe");
+                    }
+                    return;
+                }
+
+                KeepSprint.mode.i("VANILLA");
+                KeepSprint.slowdown.d(50);
+                KeepSprint.t = 0;
+                KeepSprint.a = 0;
+                this.c.thePlayer.motionX = 1.25;
+                this.c.thePlayer.motionZ = -0.75;
+                this.c.thePlayer.setSprinting(true);
+                runtimeMilestone("combat-functional-probe-dispatch:KeepSprint:motion=1.25,-0.75:slowdown=50");
+                KeepSprint.k(0L);
+
+                double actualX = this.c.thePlayer.motionX;
+                double actualZ = this.c.thePlayer.motionZ;
+                if (Math.abs(actualX - 1.0) > 1.0E-9 || Math.abs(actualZ + 0.6) > 1.0E-9
+                        || !this.c.thePlayer.isSprinting()) {
+                    throw new IllegalStateException("KeepSprint hook effect mismatch: motion="
+                            + actualX + "," + actualZ + " sprinting=" + this.c.thePlayer.isSprinting());
+                }
+                runtimeMilestone("combat-functional-probe-effect-pass:KeepSprint:motion=1.0,-0.6:sprinting=true");
+
+                KeepSprint.mode.i(this.combatFunctionalProbeOriginalMode);
+                KeepSprint.slowdown.d(this.combatFunctionalProbeOriginalSlowdown);
+                this.c.thePlayer.motionX = this.combatFunctionalProbeOriginalMotionX;
+                this.c.thePlayer.motionZ = this.combatFunctionalProbeOriginalMotionZ;
+                this.c.thePlayer.setSprinting(this.combatFunctionalProbeOriginalSprinting);
+                KeepSprint.t = this.combatFunctionalProbeOriginalT;
+                KeepSprint.a = this.combatFunctionalProbeOriginalA;
+
+                if (!this.combatFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                    this.combatFunctionalProbeStage = 2;
+                    this.combatFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("combat-functional-probe-restore-request:KeepSprint:enabled=false");
+                    return;
+                }
+
+                verifyCombatFunctionalProbeRestored();
+                this.combatFunctionalProbeStage = 3;
+                runtimeMilestone("combat-functional-probe-pass:KeepSprint:restored=true");
+                return;
+            }
+
+            if (!stableDisabled) {
+                if (++this.combatFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("KeepSprint did not restore disabled state");
+                }
+                return;
+            }
+            verifyCombatFunctionalProbeRestored();
+            this.combatFunctionalProbeStage = 3;
+            runtimeMilestone("combat-functional-probe-pass:KeepSprint:restored=false");
+        }
+        catch (Throwable failure) {
+            this.combatFunctionalProbeStage = -1;
+            restoreCombatFunctionalProbeState(probe);
+            recordFeatureFailure("CombatFunctionalProbe:KeepSprint", "attack-slowdown-hook-effect", failure);
+            runtimeMilestone("combat-functional-probe-fail:KeepSprint:" + failure.getClass().getName());
+        }
+    }
+
     private void restorePacketFunctionalProbeState(Ambience probe) {
         try {
             if (Ambience.time != null) {
@@ -784,6 +964,9 @@ implements EventSubscriber {
             return;
         }
         if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.combatFunctionalProbe") && this.combatFunctionalProbeStage < 3) {
             return;
         }
 
@@ -1839,6 +2022,7 @@ implements EventSubscriber {
             this.pumpEventFunctionalProbe();
             this.pumpMovementFunctionalProbe();
             this.pumpPlayerFunctionalProbe();
+            this.pumpCombatFunctionalProbe();
             this.pumpPacketFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
