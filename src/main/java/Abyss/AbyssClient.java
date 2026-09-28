@@ -61,6 +61,7 @@ import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.HitSelect;
 import Abyss.module.impl.combat.JumpReset;
+import Abyss.module.impl.combat.SprintReset;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.KillAura;
 import Abyss.module.impl.combat.Velocity;
@@ -478,6 +479,19 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe35OriginalRange;
     private boolean highRiskFunctionalProbe35OriginalSprinting;
     private int highRiskFunctionalProbe35FixtureId;
+    private int highRiskFunctionalProbe36Stage;
+    private int highRiskFunctionalProbe36WaitTicks;
+    private boolean highRiskFunctionalProbe36Saved;
+    private boolean highRiskFunctionalProbe36OriginalEnabled;
+    private String highRiskFunctionalProbe36OriginalMode;
+    private float highRiskFunctionalProbe36OriginalInterval;
+    private float highRiskFunctionalProbe36OriginalDuration;
+    private boolean highRiskFunctionalProbe36OriginalRequireTargetDamage;
+    private boolean highRiskFunctionalProbe36OriginalSprinting;
+    private float highRiskFunctionalProbe36OriginalMoveForward;
+    private float highRiskFunctionalProbe36OriginalMoveStrafe;
+    private boolean highRiskFunctionalProbe36OriginalForwardBinding;
+    private int highRiskFunctionalProbe36FixtureId;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -8529,6 +8543,288 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe36() {
+        if (!this.highRiskFunctionalProbe36Saved) {
+            return;
+        }
+        try {
+            SprintReset probe = Modules.J(SprintReset.class);
+
+            if (this.highRiskFunctionalProbe36FixtureId != 0
+                    && this.c.theWorld != null) {
+                this.c.theWorld.removeEntityFromWorld(
+                        this.highRiskFunctionalProbe36FixtureId);
+            }
+
+            SprintReset.mode.i(this.highRiskFunctionalProbe36OriginalMode);
+            SprintReset.interval.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe36OriginalInterval);
+            SprintReset.duration.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe36OriginalDuration);
+            SprintReset.requireTargetDamage.v(
+                    this.highRiskFunctionalProbe36OriginalRequireTargetDamage,
+                    0L);
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.setSprinting(
+                        this.highRiskFunctionalProbe36OriginalSprinting);
+                if (this.c.thePlayer.movementInput != null) {
+                    this.c.thePlayer.movementInput.moveForward =
+                            this.highRiskFunctionalProbe36OriginalMoveForward;
+                    this.c.thePlayer.movementInput.moveStrafe =
+                            this.highRiskFunctionalProbe36OriginalMoveStrafe;
+                }
+            }
+
+            KeyBindUtil.A(
+                    0L,
+                    this.c.gameSettings.keyBindForward.getKeyCode(),
+                    this.highRiskFunctionalProbe36OriginalForwardBinding);
+
+            if (probe != null) {
+                probe.A(0L);
+                KeyBindUtil.A(
+                        0L,
+                        this.c.gameSettings.keyBindForward.getKeyCode(),
+                        this.highRiskFunctionalProbe36OriginalForwardBinding);
+                if (probe.o() != this.highRiskFunctionalProbe36OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe36OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe36:SprintReset",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        this.highRiskFunctionalProbe36Saved = false;
+        this.highRiskFunctionalProbe36WaitTicks = 0;
+        this.highRiskFunctionalProbe36FixtureId = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe36() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe36")
+                || this.highRiskFunctionalProbe36Stage < 0
+                || this.highRiskFunctionalProbe36Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe35")
+                && this.highRiskFunctionalProbe35Stage < 4) {
+            return;
+        }
+
+        SprintReset probe = Modules.J(SprintReset.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(SprintReset.class) != probe
+                    || ModuleManager.byName("SprintReset") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.thePlayer.movementInput == null) {
+                throw new IllegalStateException(
+                        "SprintReset live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe36Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe36OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe36OriginalMode =
+                            SprintReset.mode.Y();
+                    this.highRiskFunctionalProbe36OriginalInterval =
+                            SprintReset.interval.L();
+                    this.highRiskFunctionalProbe36OriginalDuration =
+                            SprintReset.duration.L();
+                    this.highRiskFunctionalProbe36OriginalRequireTargetDamage =
+                            SprintReset.requireTargetDamage.c();
+                    this.highRiskFunctionalProbe36OriginalSprinting =
+                            this.c.thePlayer.isSprinting();
+                    this.highRiskFunctionalProbe36OriginalMoveForward =
+                            this.c.thePlayer.movementInput.moveForward;
+                    this.highRiskFunctionalProbe36OriginalMoveStrafe =
+                            this.c.thePlayer.movementInput.moveStrafe;
+                    this.highRiskFunctionalProbe36OriginalForwardBinding =
+                            this.c.gameSettings.keyBindForward.isKeyDown();
+                    this.highRiskFunctionalProbe36Saved = true;
+
+                    SprintReset.mode.i("LEGIT");
+                    SprintReset.interval.o((byte)0, 0L, 0.0f);
+                    SprintReset.duration.o((byte)0, 0L, 0.0f);
+                    SprintReset.requireTargetDamage.v(false, 0L);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+
+                    this.highRiskFunctionalProbe36Stage = 1;
+                    this.highRiskFunctionalProbe36WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-enable-request:"
+                                    + "SprintReset");
+                    return;
+                }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe36WaitTicks;
+                    boolean active =
+                            probe.o()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!active) {
+                        if (this.highRiskFunctionalProbe36WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "SprintReset did not enter enabled/subscribed state"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-ready:"
+                                    + "SprintReset:key=w");
+                    this.highRiskFunctionalProbe36Stage = 2;
+                    this.highRiskFunctionalProbe36WaitTicks = 0;
+                    return;
+                }
+
+                case 2: {
+                    ++this.highRiskFunctionalProbe36WaitTicks;
+                    int forwardKey =
+                            this.c.gameSettings.keyBindForward.getKeyCode();
+                    if (!KeyBindUtil.V(forwardKey, 0L)) {
+                        if (this.highRiskFunctionalProbe36WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "SprintReset did not observe physical W input");
+                        }
+                        return;
+                    }
+
+                    EntityZombie target =
+                            new EntityZombie(this.c.theWorld);
+                    target.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe36FixtureId = -73636;
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe36FixtureId,
+                            target);
+
+                    this.c.thePlayer.setSprinting(true);
+                    this.c.thePlayer.movementInput.moveForward = 0.8f;
+                    this.c.thePlayer.movementInput.moveStrafe = 0.4f;
+                    KeyBindUtil.A(0L, forwardKey, true);
+
+                    probe.onAttackEntity(
+                            new AttackEntityEvent(
+                                    target,
+                                    (char)0,
+                                    (short)0,
+                                    0));
+
+                    if (Math.abs(
+                                    this.c.thePlayer.movementInput.moveForward)
+                                > 0.0001f
+                            || Math.abs(
+                                    this.c.thePlayer.movementInput.moveStrafe)
+                                > 0.0001f
+                            || this.c.gameSettings.keyBindForward.isKeyDown()) {
+                        throw new IllegalStateException(
+                                "SprintReset LEGIT attack effect mismatch"
+                                        + " forward="
+                                        + this.c.thePlayer.movementInput.moveForward
+                                        + " strafe="
+                                        + this.c.thePlayer.movementInput.moveStrafe
+                                        + " logicalW="
+                                        + this.c.gameSettings.keyBindForward.isKeyDown());
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-effect-pass:"
+                                    + "SprintReset:forward=0.0:strafe=0.0:"
+                                    + "logicalW=false:physicalW=true");
+
+                    probe.onPostTick(new PostTickEvent());
+
+                    if (!this.c.gameSettings.keyBindForward.isKeyDown()) {
+                        throw new IllegalStateException(
+                                "SprintReset duration restore did not resync held W");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-duration-pass:"
+                                    + "SprintReset:logicalW=true:physicalW=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-ready-release:"
+                                    + "SprintReset:key=w");
+                    this.highRiskFunctionalProbe36Stage = 3;
+                    this.highRiskFunctionalProbe36WaitTicks = 0;
+                    return;
+                }
+
+                case 3: {
+                    ++this.highRiskFunctionalProbe36WaitTicks;
+                    int forwardKey =
+                            this.c.gameSettings.keyBindForward.getKeyCode();
+                    if (KeyBindUtil.V(forwardKey, 0L)) {
+                        if (this.highRiskFunctionalProbe36WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "SprintReset physical W release was not observed");
+                        }
+                        return;
+                    }
+
+                    KeyBindUtil.o(0L, forwardKey);
+                    if (this.c.gameSettings.keyBindForward.isKeyDown()) {
+                        throw new IllegalStateException(
+                                "SprintReset logical W remained pressed after physical release");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-release-pass:"
+                                    + "SprintReset:logicalW=false:physicalW=false");
+                    this.highRiskFunctionalProbe36Stage = 4;
+                    return;
+                }
+
+                case 4: {
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-module-pass:"
+                                    + "SprintReset");
+                    runtimeMilestone(
+                            "high-risk-functional-probe36-pass:1");
+                    this.highRiskFunctionalProbe36Stage = 5;
+                    this.restoreHighRiskFunctionalProbe36();
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe36Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe36:SprintReset",
+                    "legit-physical-forward-reset",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe36-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe36();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -9528,6 +9824,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe33();
         this.pumpHighRiskFunctionalProbe34();
         this.pumpHighRiskFunctionalProbe35();
+        this.pumpHighRiskFunctionalProbe36();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
