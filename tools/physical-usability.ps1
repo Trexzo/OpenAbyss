@@ -132,6 +132,7 @@ $diagText = if ($diagFile) { [IO.File]::ReadAllText($diagFile) } else { '' }
 $checks = [ordered]@{
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
     MenuTick = $runtimeText.Contains("menu-no-world-tick")
+    MenuCleanup = $runtimeText.Contains("menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0")
     ClickGuiRequest = $runtimeText.Contains("clickgui-open-request")
     ClickGuiSuccess = $runtimeText.Contains("clickgui-open-success:")
     ClickGuiNullPointer = $runtimeText.Contains("clickgui-open-nullpointer:")
@@ -201,6 +202,7 @@ $checks = [ordered]@{
 
 $pass = $checks.BootstrapComplete -and
         $checks.MenuTick -and
+        $checks.MenuCleanup -and
         $checks.ClickGuiRequest -and
         $checks.ClickGuiSuccess -and
         (-not $checks.ClickGuiNullPointer) -and
