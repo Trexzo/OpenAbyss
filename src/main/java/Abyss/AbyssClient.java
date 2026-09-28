@@ -372,6 +372,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe21Stage;
     private int highRiskFunctionalProbe22Stage;
     private int highRiskFunctionalProbe23Stage;
+    private int highRiskFunctionalProbe24Stage;
     private boolean highRiskFunctionalProbe22Saved;
     private boolean highRiskFunctionalProbe22OriginalRawEnabled;
     private MouseHelper highRiskFunctionalProbe22OriginalMouseHelper;
@@ -5740,6 +5741,178 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe24() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe24")
+                || this.highRiskFunctionalProbe24Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe23")
+                && this.highRiskFunctionalProbe23Stage < 1) return;
+
+        Abyss.module.impl.visual_utility.FallIndicator probe =
+                Modules.J(Abyss.module.impl.visual_utility.FallIndicator.class);
+        boolean saved = false;
+        double originalX = 0.0;
+        double originalY = 0.0;
+        double originalZ = 0.0;
+        float originalYaw = 0.0f;
+        float originalPitch = 0.0f;
+        boolean originalOnGround = false;
+        boolean originalCreative = false;
+        boolean originalAllowFlying = false;
+        int originalThirdPerson = 0;
+        boolean originalDebug = false;
+        int originalMinDamage = 0;
+        boolean originalShowDistance = false;
+        boolean originalOnlySneaking = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Abyss.module.impl.visual_utility.FallIndicator.class) != probe
+                    || ModuleManager.byName("FallIndicator") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || Abyss.module.impl.visual_utility.FallIndicator.minDamagePercentage == null
+                    || Abyss.module.impl.visual_utility.FallIndicator.showFallDistance == null
+                    || Abyss.module.impl.visual_utility.FallIndicator.onlyWhileSneaking == null) {
+                throw new IllegalStateException("FallIndicator live-world authority unavailable");
+            }
+
+            originalX = this.c.thePlayer.posX;
+            originalY = this.c.thePlayer.posY;
+            originalZ = this.c.thePlayer.posZ;
+            originalYaw = this.c.thePlayer.rotationYaw;
+            originalPitch = this.c.thePlayer.rotationPitch;
+            originalOnGround = this.c.thePlayer.onGround;
+            originalCreative = this.c.thePlayer.capabilities.isCreativeMode;
+            originalAllowFlying = this.c.thePlayer.capabilities.allowFlying;
+            originalThirdPerson = this.c.gameSettings.thirdPersonView;
+            originalDebug = this.c.gameSettings.showDebugInfo;
+            originalMinDamage =
+                    Abyss.module.impl.visual_utility.FallIndicator.minDamagePercentage.k();
+            originalShowDistance =
+                    Abyss.module.impl.visual_utility.FallIndicator.showFallDistance.c();
+            originalOnlySneaking =
+                    Abyss.module.impl.visual_utility.FallIndicator.onlyWhileSneaking.c();
+            saved = true;
+
+            int baseX = net.minecraft.util.MathHelper.floor_double(originalX);
+            int baseZ = net.minecraft.util.MathHelper.floor_double(originalZ);
+            int startY = net.minecraft.util.MathHelper.floor_double(originalY);
+            BlockPos floor = null;
+            for (int y = startY; y >= Math.max(0, startY - 32); --y) {
+                BlockPos candidate = new BlockPos(baseX, y, baseZ);
+                if (!this.c.theWorld.isAirBlock(candidate)) {
+                    floor = candidate;
+                    break;
+                }
+            }
+            if (floor == null) {
+                throw new IllegalStateException("FallIndicator probe could not find floor below player");
+            }
+
+            Abyss.module.impl.visual_utility.FallIndicator.minDamagePercentage.d(0);
+            Abyss.module.impl.visual_utility.FallIndicator.showFallDistance.v(true, 0L);
+            Abyss.module.impl.visual_utility.FallIndicator.onlyWhileSneaking.v(false, 0L);
+            this.c.gameSettings.thirdPersonView = 0;
+            this.c.gameSettings.showDebugInfo = false;
+            this.c.thePlayer.capabilities.isCreativeMode = false;
+            this.c.thePlayer.capabilities.allowFlying = false;
+            this.c.thePlayer.rotationPitch = 90.0f;
+            this.c.thePlayer.setPosition(
+                    originalX,
+                    floor.getY() + 12.0,
+                    originalZ);
+            this.c.thePlayer.onGround = true;
+
+            probe.onPostTick(new PostTickEvent(), 0L);
+
+            Field visibleField =
+                    Abyss.module.impl.visual_utility.FallIndicator.class.getDeclaredField("L");
+            Field damageField =
+                    Abyss.module.impl.visual_utility.FallIndicator.class.getDeclaredField("M");
+            Field distanceField =
+                    Abyss.module.impl.visual_utility.FallIndicator.class.getDeclaredField("O");
+            Field colorField =
+                    Abyss.module.impl.visual_utility.FallIndicator.class.getDeclaredField("r");
+            visibleField.setAccessible(true);
+            damageField.setAccessible(true);
+            distanceField.setAccessible(true);
+            colorField.setAccessible(true);
+
+            boolean visible = visibleField.getBoolean(probe);
+            String damage = (String)damageField.get(probe);
+            String distance = (String)distanceField.get(probe);
+            int color = colorField.getInt(probe);
+            if (!visible || damage == null || damage.length() == 0
+                    || distance == null || !distance.endsWith("m")
+                    || color == -1) {
+                throw new IllegalStateException(
+                        "FallIndicator prediction mismatch visible=" + visible
+                                + " damage=" + damage
+                                + " distance=" + distance
+                                + " color=" + color);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe24-effect-pass:FallIndicator:"
+                            + "visible=true:damage=" + damage.replace(':', '_')
+                            + ":distance=" + distance + ":color=" + color);
+
+            probe.A(0L);
+            if (visibleField.getBoolean(probe)
+                    || damageField.get(probe) != null
+                    || distanceField.get(probe) != null
+                    || colorField.getInt(probe) != -1) {
+                throw new IllegalStateException(
+                        "FallIndicator reset path did not clear prediction state");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe24-effect-pass:FallIndicator:reset=true");
+
+            this.highRiskFunctionalProbe24Stage = 1;
+            runtimeMilestone("high-risk-functional-probe24-module-pass:FallIndicator");
+            runtimeMilestone("high-risk-functional-probe24-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe24Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe24:FallIndicator",
+                    "downward-raytrace-damage",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe24-fail:" + failure.getClass().getName());
+        }
+        finally {
+            if (saved) {
+                try {
+                    Abyss.module.impl.visual_utility.FallIndicator.minDamagePercentage.d(
+                            originalMinDamage);
+                    Abyss.module.impl.visual_utility.FallIndicator.showFallDistance.v(
+                            originalShowDistance, 0L);
+                    Abyss.module.impl.visual_utility.FallIndicator.onlyWhileSneaking.v(
+                            originalOnlySneaking, 0L);
+                    this.c.gameSettings.thirdPersonView = originalThirdPerson;
+                    this.c.gameSettings.showDebugInfo = originalDebug;
+                    this.c.thePlayer.capabilities.isCreativeMode = originalCreative;
+                    this.c.thePlayer.capabilities.allowFlying = originalAllowFlying;
+                    this.c.thePlayer.rotationYaw = originalYaw;
+                    this.c.thePlayer.rotationPitch = originalPitch;
+                    this.c.thePlayer.setPosition(originalX, originalY, originalZ);
+                    this.c.thePlayer.onGround = originalOnGround;
+                    if (probe.o()) {
+                        probe.onPostTick(new PostTickEvent(), 0L);
+                    }
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe24:FallIndicator",
+                            "restore",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -6721,6 +6894,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe21();
         this.pumpHighRiskFunctionalProbe22();
         this.pumpHighRiskFunctionalProbe23();
+        this.pumpHighRiskFunctionalProbe24();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
