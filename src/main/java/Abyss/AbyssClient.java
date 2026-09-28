@@ -2565,7 +2565,7 @@ implements EventSubscriber {
                         this.physicalInputOriginalMotionY = this.c.thePlayer.motionY;
                         this.physicalInputPlayerStateSaved = true;
                         this.c.thePlayer.onGround = false;
-                        this.c.thePlayer.motionY = -0.05;
+                        this.c.thePlayer.motionY = 0.0;
                         ++this.physicalInputFunctionalProbeStage;
                         this.physicalInputFunctionalProbeWaitTicks = 0;
                         runtimeMilestone("physical-input-functional-probe-ready:FastFall");
@@ -2579,6 +2579,11 @@ implements EventSubscriber {
                     ++this.physicalInputFunctionalProbeWaitTicks;
                     if (this.c.thePlayer == null) {
                         throw new IllegalStateException("Player disappeared during FastFall physical input probe");
+                    }
+                    boolean physicalJumpDown = KeyBindUtil.V(
+                            this.c.gameSettings.keyBindJump.getKeyCode(), 64165991731362L);
+                    if (physicalJumpDown) {
+                        runtimeMilestone("physical-input-functional-probe-input-seen:FastFall:jump=true");
                     }
                     if (this.c.thePlayer.motionY <= -0.9) {
                         runtimeMilestone("physical-input-functional-probe-effect-pass:FastFall:motionY="
@@ -2595,9 +2600,10 @@ implements EventSubscriber {
                         return;
                     }
                     this.c.thePlayer.onGround = false;
-                    this.c.thePlayer.motionY = -0.05;
+                    this.c.thePlayer.motionY = 0.0;
                     if (this.physicalInputFunctionalProbeWaitTicks > 600) {
-                        throw new IllegalStateException("FastFall did not observe physical jump input");
+                        throw new IllegalStateException("FastFall did not produce effect; physicalJumpDown="
+                                + physicalJumpDown + " motionY=" + this.c.thePlayer.motionY);
                     }
                     return;
                 case 6:
