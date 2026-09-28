@@ -261,6 +261,7 @@ jobs:
           grep -Fq 'high-risk-functional-probe4-module-pass:ChestESP' "$STAGE"
           grep -Fq 'high-risk-functional-probe4-pass:1' "$STAGE"
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL4=PASS modules=ChestESP'
+          grep -Fq 'invmove-physical-probe-input-seen:inventory=true' "$STAGE"
           grep -Fq 'invmove-physical-probe-inventory-open' "$STAGE"
           grep -Fq 'invmove-physical-probe-input-seen:forward=true' "$STAGE"
           grep -Fq 'invmove-physical-probe-effect-pass:forwardBinding=true:screen=GuiInventory' "$STAGE"
