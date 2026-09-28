@@ -28,6 +28,8 @@ cleanup() {
   set +e
   DISPLAY=:99 xdotool mouseup 1 >/dev/null 2>&1 || true
   DISPLAY=:99 xdotool keyup space >/dev/null 2>&1 || true
+  DISPLAY=:99 xdotool keyup w >/dev/null 2>&1 || true
+  DISPLAY=:99 xdotool keyup e >/dev/null 2>&1 || true
   if [ -n "$CLIENT_PID" ]; then
     kill "$CLIENT_PID" 2>/dev/null || true
   fi
@@ -698,6 +700,90 @@ grep -Fq 'physical-input-functional-probe-restore-pass:AutoClicker' "$STAGE"
 grep -Fq 'physical-input-functional-probe-restore-pass:FastFall' "$STAGE"
 echo 'PRODUCTION_WORLD_PHYSICAL_FASTFALL=PASS input=xdotool-keydown-space'
 echo 'PRODUCTION_WORLD_PHYSICAL_INPUT_MODULES=PASS modules=AutoClicker,FastFall'
+
+INVMOVE_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'invmove-physical-probe-ready:open-inventory' "$STAGE"; then
+    INVMOVE_READY=1
+    break
+  fi
+  if grep -Fq 'invmove-physical-probe-fail:' "$STAGE"; then
+    echo 'InvMove physical-input probe failed before inventory open.'
+    cat "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$INVMOVE_READY" -ne 1 ]; then
+  echo 'InvMove physical-input probe did not become ready.'
+  cat "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool key --clearmodifiers e
+
+INVMOVE_GUI_READY=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'invmove-physical-probe-ready:forward-input' "$STAGE"; then
+    INVMOVE_GUI_READY=1
+    break
+  fi
+  if grep -Fq 'invmove-physical-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$INVMOVE_GUI_READY" -ne 1 ]; then
+  echo 'InvMove did not observe a real inventory GUI open.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool keydown w
+INVMOVE_EFFECT=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'invmove-physical-probe-effect-pass:forwardBinding=true:screen=GuiInventory' "$STAGE"; then
+    INVMOVE_EFFECT=1
+    break
+  fi
+  if grep -Fq 'invmove-physical-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool keyup w
+if [ "$INVMOVE_EFFECT" -ne 1 ]; then
+  echo 'InvMove did not mirror the real X11 W key while GuiInventory was open.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE_FORWARD=PASS input=xdotool-keydown-w screen=GuiInventory'
+
+DISPLAY=:99 xdotool key --clearmodifiers Escape
+INVMOVE_RESTORED=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'invmove-physical-probe-pass:1' "$STAGE"; then
+    INVMOVE_RESTORED=1
+    break
+  fi
+  if grep -Fq 'invmove-physical-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$INVMOVE_RESTORED" -ne 1 ]; then
+  echo 'InvMove physical-input probe did not restore cleanly.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+grep -Fq 'invmove-physical-probe-close-effect-pass:forwardBinding=false' "$STAGE"
+grep -Fq 'invmove-physical-probe-restore-pass:' "$STAGE"
+echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE=PASS input=real-E-plus-W'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
