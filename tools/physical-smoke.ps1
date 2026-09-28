@@ -29,6 +29,10 @@ if ($RegistrySwitchCount -gt 1) {
 }
 $RegistryTarget = if ($ReferenceRegistry -or $ReferenceRuntime) { 92 } elseif ($Registry97) { 97 } elseif ($Registry103) { 103 } else { 112 }
 
+if ($ExtendedProbes -and ($RegistryTarget -ne 112 -or $UseReferenceBootstrap)) {
+    throw 'ExtendedProbes requires the full 112-module/default bootstrap runtime; do not combine it with reference compatibility switches.'
+}
+
 $Root = Split-Path -Parent $PSScriptRoot
 $Evidence = Join-Path $Root 'physical-smoke-evidence'
 $GradleCache = Join-Path $env:LOCALAPPDATA 'OpenAbyss-Recovery'
