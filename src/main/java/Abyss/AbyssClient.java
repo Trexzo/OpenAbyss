@@ -41,6 +41,7 @@ import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.WorldLoadEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
+import Abyss.event.events.PreLivingUpdateEvent;
 import Abyss.event.events.PreRenderEvent;
 import Abyss.event.events.PreTickEvent;
 import Abyss.event.events.PreUpdateEvent;
