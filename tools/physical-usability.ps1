@@ -157,10 +157,12 @@ $checks = [ordered]@{
     ExtendedCategoryLifecycle9 = (-not $ExtendedProbes) -or $runtimeText.Contains('category-lifecycle-probe-pass:9')
     ExtendedFastPlaceEffect = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('event-functional-probe-effect-pass:FastPlace:rightClickDelay=1') -and
+        $runtimeText.Contains('event-functional-probe-restore-state-pass:FastPlace') -and
         $runtimeText.Contains('event-functional-probe-pass:FastPlace:')
     )
     ExtendedNoJumpDelayEffect = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1') -and
+        $runtimeText.Contains('movement-functional-probe-restore-state-pass:NoJumpDelay') -and
         $runtimeText.Contains('movement-functional-probe-pass:NoJumpDelay:')
     )
     ExtendedAmbiencePacketCancel = (-not $ExtendedProbes) -or (
