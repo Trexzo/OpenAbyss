@@ -587,6 +587,7 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe43Saved;
     private boolean highRiskFunctionalProbe43OriginalEnabled;
     private boolean highRiskFunctionalProbe43OriginalPriority;
+    private boolean[] highRiskFunctionalProbe43OriginalPriorityEntries;
     private String highRiskFunctionalProbe43OriginalMode;
     private boolean[] highRiskFunctionalProbe43OriginalBooleans;
     private float[] highRiskFunctionalProbe43OriginalNumbers;
@@ -10822,6 +10823,100 @@ implements EventSubscriber {
                         stack == null ? null : stack.copy()));
     }
 
+    private void saveHighRiskFunctionalProbe43PriorityEntries() {
+        if (Abyss.module.ModulePriority.l == null) {
+            throw new IllegalStateException("InvManager priority registry unavailable");
+        }
+        this.highRiskFunctionalProbe43OriginalPriorityEntries =
+                new boolean[Abyss.module.ModulePriority.l.size()];
+        for (int priorityIndex = 0;
+                priorityIndex < Abyss.module.ModulePriority.l.size();
+                ++priorityIndex) {
+            Abyss.module.ModulePriorityEntry entry =
+                    Abyss.module.ModulePriority.l.get(priorityIndex);
+            this.highRiskFunctionalProbe43OriginalPriorityEntries[priorityIndex] =
+                    entry.d();
+        }
+    }
+
+    private int isolateHighRiskFunctionalProbe43PriorityChain() {
+        if (Abyss.module.ModulePriority.l == null) {
+            throw new IllegalStateException("InvManager priority registry unavailable");
+        }
+        int invManagerPriority = -1;
+        for (Abyss.module.ModulePriorityEntry entry
+                : Abyss.module.ModulePriority.l) {
+            if (entry.P == InvManager.class) {
+                invManagerPriority = entry.L;
+                break;
+            }
+        }
+        if (invManagerPriority < 0) {
+            throw new IllegalStateException("InvManager priority entry unavailable");
+        }
+
+        int cleared = 0;
+        for (Abyss.module.ModulePriorityEntry entry
+                : Abyss.module.ModulePriority.l) {
+            if (entry.L > invManagerPriority && entry.d()) {
+                entry.N(false);
+                ++cleared;
+            }
+        }
+        InvManager probe = Modules.J(InvManager.class);
+        if (probe != null) {
+            probe.T(false);
+        }
+        if (probe == null || !probe.Y()) {
+            throw new IllegalStateException(
+                    "InvManager priority isolation failed"
+                            + " cleared=" + cleared
+                            + " available=" + (probe != null && probe.Y()));
+        }
+        return cleared;
+    }
+
+    private void restoreHighRiskFunctionalProbe43PriorityEntries() {
+        if (this.highRiskFunctionalProbe43OriginalPriorityEntries == null
+                || Abyss.module.ModulePriority.l == null) {
+            return;
+        }
+        if (this.highRiskFunctionalProbe43OriginalPriorityEntries.length
+                != Abyss.module.ModulePriority.l.size()) {
+            throw new IllegalStateException(
+                    "InvManager priority registry size changed"
+                            + " expected="
+                            + this.highRiskFunctionalProbe43OriginalPriorityEntries.length
+                            + " actual="
+                            + Abyss.module.ModulePriority.l.size());
+        }
+        for (int priorityIndex = 0;
+                priorityIndex < Abyss.module.ModulePriority.l.size();
+                ++priorityIndex) {
+            Abyss.module.ModulePriority.l
+                    .get(priorityIndex)
+                    .N(this.highRiskFunctionalProbe43OriginalPriorityEntries[priorityIndex]);
+        }
+    }
+
+    private boolean highRiskFunctionalProbe43PriorityEntriesRestored() {
+        if (this.highRiskFunctionalProbe43OriginalPriorityEntries == null
+                || Abyss.module.ModulePriority.l == null
+                || this.highRiskFunctionalProbe43OriginalPriorityEntries.length
+                        != Abyss.module.ModulePriority.l.size()) {
+            return false;
+        }
+        for (int priorityIndex = 0;
+                priorityIndex < Abyss.module.ModulePriority.l.size();
+                ++priorityIndex) {
+            if (Abyss.module.ModulePriority.l.get(priorityIndex).d()
+                    != this.highRiskFunctionalProbe43OriginalPriorityEntries[priorityIndex]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void restoreHighRiskFunctionalProbe43() {
         if (!this.highRiskFunctionalProbe43Saved) {
             return;
@@ -10890,7 +10985,6 @@ implements EventSubscriber {
             }
 
             if (probe != null) {
-                probe.T(this.highRiskFunctionalProbe43OriginalPriority);
                 if (probe.o()
                         != this.highRiskFunctionalProbe43OriginalEnabled) {
                     probe.I(
@@ -10898,6 +10992,7 @@ implements EventSubscriber {
                             this.highRiskFunctionalProbe43OriginalEnabled);
                 }
             }
+            this.restoreHighRiskFunctionalProbe43PriorityEntries();
         }
         catch (Throwable restoreFailure) {
             recordFeatureFailure(
@@ -10935,6 +11030,7 @@ implements EventSubscriber {
                 case 0: {
                     this.highRiskFunctionalProbe43OriginalEnabled = probe.o();
                     this.highRiskFunctionalProbe43OriginalPriority = probe.Y();
+                    this.saveHighRiskFunctionalProbe43PriorityEntries();
                     this.highRiskFunctionalProbe43OriginalMode =
                             InvManager.mode.Y();
                     this.highRiskFunctionalProbe43OriginalBooleans =
@@ -11067,6 +11163,13 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe43-normalize-pass:"
                                     + "InvManager:screen=<null>");
+
+                    int clearedPriorityEntries =
+                            this.isolateHighRiskFunctionalProbe43PriorityChain();
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-priority-isolate-pass:"
+                                    + "cleared=" + clearedPriorityEntries
+                                    + ":available=" + probe.Y());
 
                     this.c.displayGuiScreen(
                             new GuiInventory(this.c.thePlayer));
@@ -11203,10 +11306,10 @@ implements EventSubscriber {
                     InvManager.fireballSlot.o((byte)0, 0L, n[12]);
                     InvManager.enderPearlSlot.o((byte)0, 0L, n[13]);
                     InvManager.shearsSlot.o((byte)0, 0L, n[14]);
-                    probe.T(this.highRiskFunctionalProbe43OriginalPriority);
                     if (this.highRiskFunctionalProbe43OriginalEnabled) {
                         probe.I(0L, true);
                     }
+                    this.restoreHighRiskFunctionalProbe43PriorityEntries();
 
                     this.highRiskFunctionalProbe43Stage = 3;
                     this.highRiskFunctionalProbe43WaitTicks = 0;
@@ -11251,7 +11354,10 @@ implements EventSubscriber {
                             break;
                         }
                     }
+                    boolean priorityEntriesRestored =
+                            this.highRiskFunctionalProbe43PriorityEntriesRestored();
                     if (!inventoryRestored
+                            || !priorityEntriesRestored
                             || probe.Y()
                                     != this.highRiskFunctionalProbe43OriginalPriority
                             || !InvManager.mode.Y().equals(
@@ -11263,7 +11369,10 @@ implements EventSubscriber {
                         throw new IllegalStateException(
                                 "InvManager fixture state did not restore"
                                         + " inventory=" + inventoryRestored
-                                        + " priority=" + probe.Y()
+                                        + " priorityEntries=" + priorityEntriesRestored
+                                        + " priorityAvailable=" + probe.Y()
+                                        + " expectedPriorityAvailable="
+                                        + this.highRiskFunctionalProbe43OriginalPriority
                                         + " mode=" + InvManager.mode.Y());
                     }
 
@@ -11271,7 +11380,8 @@ implements EventSubscriber {
                             "high-risk-functional-probe43-restore-pass:"
                                     + "InvManager:enabled="
                                     + this.highRiskFunctionalProbe43OriginalEnabled
-                                    + ":inventory36=true");
+                                    + ":inventory36=true"
+                                    + ":priorityEntries=true");
                     runtimeMilestone(
                             "high-risk-functional-probe43-module-pass:"
                                     + "InvManager");
