@@ -604,7 +604,7 @@ jobs:
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL32=PASS modules=AutoTool'
           grep -Fq 'high-risk-functional-probe33-acquire-pass:HitSelect:targetTicks=60:pause=3' "$STAGE"
-          grep -Fq 'high-risk-functional-probe33-effect-pass:HitSelect:attackAllowed=false:targetTicks=59:pause=2' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-effect-pass:HitSelect:attackAllowed=false:targetDelta=1:pauseDelta=1:' "$STAGE"
           grep -Fq 'high-risk-functional-probe33-reset-pass:HitSelect' "$STAGE"
           grep -Fq 'high-risk-functional-probe33-module-pass:HitSelect' "$STAGE"
           grep -Fq 'high-risk-functional-probe33-pass:1' "$STAGE"
