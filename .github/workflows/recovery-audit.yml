@@ -9,6 +9,8 @@ on:
       - src/main/java/**
       - tools/recovery_audit.py
       - tools/check_category_probe_coverage.py
+      - tools/check_promoted_registry_authority.py
+      - tools/promoted-registry-authority.txt
       - .github/workflows/recovery-audit.yml
 
 permissions:
@@ -104,6 +106,9 @@ jobs:
 
           print("WORLD_SESSION_INCREMENT_OWNER=PASS owner=onPostTick-state-edge")
           PY
+
+      - name: Verify promoted registry authority
+        run: python tools/check_promoted_registry_authority.py
 
       - name: Verify nine-category lifecycle coverage
         run: python tools/check_category_probe_coverage.py
