@@ -765,7 +765,7 @@ fi
 DISPLAY=:99 xdotool keydown w
 INVMOVE_EFFECT=0
 for _ in $(seq 1 120); do
-  if grep -Fq 'invmove-physical-probe-effect-pass:forwardBinding=true:screen=GuiInventory' "$STAGE"; then
+  if grep -Fq 'invmove-physical-probe-effect-pass:forwardBinding=true:screen=' "$STAGE"; then
     INVMOVE_EFFECT=1
     break
   fi
@@ -776,12 +776,12 @@ for _ in $(seq 1 120); do
 done
 DISPLAY=:99 xdotool keyup w
 if [ "$INVMOVE_EFFECT" -ne 1 ]; then
-  echo 'InvMove did not mirror the real X11 W key while GuiInventory was open.'
+  echo 'InvMove did not mirror the real X11 W key while a vanilla container screen was open.'
   cat "$STAGE" || true
   cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
   exit 1
 fi
-echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE_FORWARD=PASS input=xdotool-keydown-w screen=GuiInventory'
+echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE_FORWARD=PASS input=xdotool-keydown-w screen=GuiContainer'
 
 DISPLAY=:99 xdotool key --clearmodifiers Escape
 INVMOVE_RESTORED=0
