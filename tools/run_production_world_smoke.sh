@@ -599,8 +599,61 @@ grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
 grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
 
 DISPLAY=:99 xdotool key Escape || true
-sleep 5
+sleep 2
 
+# Sustained post-probe world stability. The runtime-self-test heartbeat is emitted
+# every 100 in-world ticks, so a real span proves the game thread continued to
+# tick with player/world/net handler alive after all deep probes completed.
+SOAK_START_MS="$(date +%s%3N)"
+echo "PRODUCTION_WORLD_SOAK_START_MS=$SOAK_START_MS"
+for SOAK_STEP in $(seq 1 12); do
+  sleep 5
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo "Production client exited during post-probe soak at step $SOAK_STEP."
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  for failure in abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt abyss-config-failure.txt abyss-renderer-failure.txt; do
+    failure_path="$GAME_DIR/$failure"
+    if [ -s "$failure_path" ]; then
+      echo "Production failure journal became non-empty during soak: $failure_path"
+      cat "$failure_path"
+      exit 1
+    fi
+  done
+done
+
+mapfile -t SOAK_HEARTBEATS < <(
+  awk -F '\t' -v start="$SOAK_START_MS" '
+    $1 ~ /^[0-9]+$/ && $1 >= start && $2 ~ /^world-heartbeat:[0-9]+$/ { print $1 "\t" $2 }
+  ' "$STAGE"
+)
+SOAK_HEARTBEAT_COUNT="${#SOAK_HEARTBEATS[@]}"
+echo "PRODUCTION_WORLD_SOAK_HEARTBEATS=$SOAK_HEARTBEAT_COUNT"
+if [ "$SOAK_HEARTBEAT_COUNT" -lt 9 ]; then
+  echo 'Too few in-world heartbeats were observed during the 60-second soak.'
+  printf '%s\n' "${SOAK_HEARTBEATS[@]}" || true
+  exit 1
+fi
+
+SOAK_FIRST_MS="$(printf '%s\n' "${SOAK_HEARTBEATS[0]}" | cut -f1)"
+SOAK_LAST_INDEX=$((SOAK_HEARTBEAT_COUNT - 1))
+SOAK_LAST_MS="$(printf '%s\n' "${SOAK_HEARTBEATS[$SOAK_LAST_INDEX]}" | cut -f1)"
+SOAK_SPAN_MS=$((SOAK_LAST_MS - SOAK_FIRST_MS))
+echo "PRODUCTION_WORLD_SOAK_HEARTBEAT_SPAN_MS=$SOAK_SPAN_MS"
+if [ "$SOAK_SPAN_MS" -lt 45000 ]; then
+  echo "World heartbeat span was too short during soak: $SOAK_SPAN_MS ms"
+  exit 1
+fi
+
+if grep -Eq 'CIProdWorld (lost connection|left the game)' "$SERVER_LOG"; then
+  echo 'Production server recorded a disconnect before soak completed.'
+  grep -E 'CIProdWorld (lost connection|left the game)' "$SERVER_LOG" || true
+  exit 1
+fi
+
+echo 'PRODUCTION_WORLD_POST_PROBE_SOAK=PASS seconds=60'
 echo '=== production runtime milestones ==='
 cat "$STAGE"
 echo 'OPENABYSS_LINUX_PRODUCTION_WORLD_SMOKE=PASS'
