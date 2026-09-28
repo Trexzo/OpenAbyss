@@ -533,6 +533,7 @@ implements EventSubscriber {
     private BlockPos highRiskFunctionalProbe39OriginalLastBlock;
     private float highRiskFunctionalProbe39OriginalPreviousDamage;
     private int highRiskFunctionalProbe39OriginalBlockHitDelay;
+    private boolean highRiskFunctionalProbe39OriginalInGameHasFocus;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -9508,6 +9509,8 @@ implements EventSubscriber {
                         11824981,
                         this.c.playerController,
                         this.highRiskFunctionalProbe39OriginalBlockHitDelay);
+                this.c.inGameHasFocus =
+                        this.highRiskFunctionalProbe39OriginalInGameHasFocus;
                 if (probe.o() != this.highRiskFunctionalProbe39OriginalEnabled) {
                     probe.I(
                             0L,
@@ -9567,6 +9570,8 @@ implements EventSubscriber {
                     this.highRiskFunctionalProbe39OriginalBlockHitDelay =
                             PlayerControllerStateAccessor.W(
                                     this.c.playerController);
+                    this.highRiskFunctionalProbe39OriginalInGameHasFocus =
+                            this.c.inGameHasFocus;
                     this.highRiskFunctionalProbe39Saved = true;
                     this.highRiskFunctionalProbe39WaitTicks = 0;
 
@@ -9610,6 +9615,7 @@ implements EventSubscriber {
                             11824981,
                             this.c.playerController,
                             4);
+                    this.c.inGameHasFocus = true;
 
                     EventBus fixtureBus = new EventBus();
                     fixtureBus.s(probe, 0L);
@@ -9630,7 +9636,10 @@ implements EventSubscriber {
 
                     runtimeMilestone(
                             "high-risk-functional-probe39-effect-pass:"
-                                    + "SpeedMine:blockHitDelay=4->0");
+                                    + "SpeedMine:blockHitDelay=4->0"
+                                    + ":fixtureFocus=true"
+                                    + ":originalFocus="
+                                    + this.highRiskFunctionalProbe39OriginalInGameHasFocus);
 
                     this.restoreHighRiskFunctionalProbe39();
                     this.highRiskFunctionalProbe39Stage = 2;
@@ -9682,6 +9691,8 @@ implements EventSubscriber {
                             11824981,
                             this.c.playerController,
                             this.highRiskFunctionalProbe39OriginalBlockHitDelay);
+                    this.c.inGameHasFocus =
+                            this.highRiskFunctionalProbe39OriginalInGameHasFocus;
 
                     int restoredDelay = PlayerControllerStateAccessor.W(
                             this.c.playerController);
