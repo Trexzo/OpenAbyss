@@ -288,10 +288,14 @@ jobs:
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
+          grep -Fq 'command-runtime-probe-fullbright-original:enabled=false:gamma=' "$STAGE"
           grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
-          grep -Fq 'command-runtime-probe-toggle-pass:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-toggle-pass:FullBright:enabled=true' "$STAGE"
+          grep -Fq 'command-runtime-probe-fullbright-effect-pass:enabled=true:gamma=15.0' "$STAGE"
           grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-fullbright-restore-pass:enabled=false:gamma=' "$STAGE"
           grep -Fq 'command-runtime-probe-pass:commands=7:' "$STAGE"
+          echo 'PRODUCTION_WORLD_FULLBRIGHT_GAMMA_EFFECT=PASS'
           grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"
           grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
           grep -Fq 'command-intercept:.help' "$NETWORK_STAGE"
