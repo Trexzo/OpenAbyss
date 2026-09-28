@@ -200,7 +200,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.promotedRegistryProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.highRiskFunctionalProbe=true -Dabyss.highRiskFunctionalProbe2=true -Dabyss.physicalInputFunctionalProbe=true -Dabyss.highRiskFunctionalProbe3=true -Dabyss.highRiskFunctionalProbe4=true -Dabyss.invMovePhysicalProbe=true -Dabyss.highRiskFunctionalProbe5=true -Dabyss.highRiskFunctionalProbe6=true -Dabyss.highRiskFunctionalProbe7=true -Dabyss.highRiskFunctionalProbe8=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.promotedRegistryProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.highRiskFunctionalProbe=true -Dabyss.highRiskFunctionalProbe2=true -Dabyss.physicalInputFunctionalProbe=true -Dabyss.highRiskFunctionalProbe3=true -Dabyss.highRiskFunctionalProbe4=true -Dabyss.invMovePhysicalProbe=true -Dabyss.highRiskFunctionalProbe5=true -Dabyss.highRiskFunctionalProbe6=true -Dabyss.highRiskFunctionalProbe7=true -Dabyss.highRiskFunctionalProbe8=true -Dabyss.highRiskFunctionalProbe9=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -308,6 +308,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL8=PASS modules=ViewClip'
+          grep -Fq 'high-risk-functional-probe9-effect-pass:Animations:disabled:cancelled=false:noRotations=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-effect-pass:Animations:enabled:cancelled=true:noRotations=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-restore-pass:Animations:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-module-pass:Animations' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe9-fail:' "$STAGE"; then
+            echo 'Animations item-renderer hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe9-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL9=PASS modules=Animations'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
