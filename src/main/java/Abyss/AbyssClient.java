@@ -16,6 +16,8 @@ package Abyss;
 
 import Abyss.command.AbyssCommands;
 import Abyss.ASM.Hooks.Entity.EntityRendererHooks;
+import Abyss.ASM.Hooks.Block.BlockBarrierHooks;
+import Abyss.ASM.Hooks.CallbackInfoReturnable;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
@@ -65,6 +67,7 @@ import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.AntiDebuff;
+import Abyss.module.impl.visual.BarrierVisible;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.NoHurtCam;
@@ -275,6 +278,10 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe6OriginalEnabled;
     private int highRiskFunctionalProbe6OriginalEffect;
     private boolean highRiskFunctionalProbe6Saved;
+    private int highRiskFunctionalProbe7Stage;
+    private int highRiskFunctionalProbe7WaitTicks;
+    private boolean highRiskFunctionalProbe7OriginalEnabled;
+    private boolean highRiskFunctionalProbe7Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3170,6 +3177,148 @@ implements EventSubscriber {
         }
     }
 
+    private void verifyBarrierVisibleHookEffect(boolean expectOverride, String phase) {
+        BarrierVisible probe = Modules.J(BarrierVisible.class);
+        if (probe == null || ModuleManager.W != probe) {
+            throw new IllegalStateException("BarrierVisible hook singleton differs from registry singleton");
+        }
+
+        final int sentinel = 71;
+        CallbackInfoReturnable<Integer> callback = new CallbackInfoReturnable<Integer>(sentinel);
+        BlockBarrierHooks.getRenderType(callback);
+
+        if (expectOverride) {
+            if (!callback.isCancelled()) {
+                throw new IllegalStateException("BarrierVisible hook did not cancel phase=" + phase);
+            }
+            if (callback.getReturnValue() == null || callback.getReturnValue().intValue() != 3) {
+                throw new IllegalStateException("BarrierVisible hook return mismatch phase=" + phase
+                        + " value=" + callback.getReturnValue());
+            }
+        }
+        else {
+            if (callback.isCancelled()) {
+                throw new IllegalStateException("BarrierVisible disabled hook unexpectedly cancelled phase=" + phase);
+            }
+            if (callback.getReturnValue() == null || callback.getReturnValue().intValue() != sentinel) {
+                throw new IllegalStateException("BarrierVisible disabled hook changed return phase=" + phase
+                        + " value=" + callback.getReturnValue());
+            }
+        }
+
+        runtimeMilestone("high-risk-functional-probe7-effect-pass:BarrierVisible:" + phase
+                + ":cancelled=" + callback.isCancelled()
+                + ":returnValue=" + callback.getReturnValue());
+    }
+
+    private void restoreHighRiskFunctionalProbe7() {
+        if (!this.highRiskFunctionalProbe7Saved) {
+            return;
+        }
+        try {
+            BarrierVisible probe = Modules.J(BarrierVisible.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe7OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe7OriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe7:BarrierVisible", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe7() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe7")
+                || this.highRiskFunctionalProbe7Stage < 0
+                || this.highRiskFunctionalProbe7Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe6")
+                && this.highRiskFunctionalProbe6Stage < 4) return;
+
+        try {
+            BarrierVisible probe = Modules.J(BarrierVisible.class);
+            if (probe == null) {
+                throw new IllegalStateException("BarrierVisible module unavailable");
+            }
+            if (ModuleManager.W != probe) {
+                throw new IllegalStateException("BarrierVisible ModuleManager singleton mismatch");
+            }
+
+            switch (this.highRiskFunctionalProbe7Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe7OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe7Saved = true;
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe7Stage;
+                    this.highRiskFunctionalProbe7WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe7-state-request:BarrierVisible:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe7WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyBarrierVisibleHookEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe7Stage;
+                        this.highRiskFunctionalProbe7WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe7-state-request:BarrierVisible:enabled=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe7WaitTicks > 160) {
+                        throw new IllegalStateException("BarrierVisible did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe7WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyBarrierVisibleHookEffect(true, "enabled");
+                        if (!this.highRiskFunctionalProbe7OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe7Stage;
+                        this.highRiskFunctionalProbe7WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe7-restore-request:BarrierVisible:enabled="
+                                + this.highRiskFunctionalProbe7OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe7WaitTicks > 160) {
+                        throw new IllegalStateException("BarrierVisible did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe7WaitTicks;
+                    if (probe.o() == this.highRiskFunctionalProbe7OriginalEnabled
+                            && !probe.l() && !probe.K()) {
+                        this.verifyBarrierVisibleHookEffect(
+                                this.highRiskFunctionalProbe7OriginalEnabled, "restored");
+                        runtimeMilestone("high-risk-functional-probe7-restore-pass:BarrierVisible:enabled="
+                                + this.highRiskFunctionalProbe7OriginalEnabled);
+                        ++this.highRiskFunctionalProbe7Stage;
+                        runtimeMilestone("high-risk-functional-probe7-module-pass:BarrierVisible");
+                        runtimeMilestone("high-risk-functional-probe7-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe7WaitTicks > 160) {
+                        throw new IllegalStateException("BarrierVisible original state did not restore");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe7();
+            this.highRiskFunctionalProbe7Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe7:BarrierVisible", "render-type-hook", failure);
+            runtimeMilestone("high-risk-functional-probe7-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4114,6 +4263,7 @@ implements EventSubscriber {
             this.pumpInvMovePhysicalProbe();
             this.pumpHighRiskFunctionalProbe5();
         this.pumpHighRiskFunctionalProbe6();
+        this.pumpHighRiskFunctionalProbe7();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
