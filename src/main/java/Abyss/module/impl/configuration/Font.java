@@ -59,10 +59,10 @@ extends Module {
         var1 = a ^ var1;
 }
     public static CustomFont Q(long var0) {
-        return S;
+        return Font.Q(arraylistFont.Y());
 }
     public static CustomFont F(long var0) {
-        return S;
+        return Font.Q(hudFont.Y());
 }
     private static CustomFont Q(String var2) {
         if (var2 == null) {
@@ -86,7 +86,7 @@ extends Module {
         return S;
 }
     public static CustomFont m(long var0) {
-        return S;
+        return Font.Q(clickguiFont.Y());
 }
     private static String b(byte[] var0) {
         int var1 = 0;
