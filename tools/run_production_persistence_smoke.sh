@@ -106,8 +106,8 @@ CONFIG="$GAME_DIR/Abyss/current.json"
 
 launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeSeed=true' CISeed "$SEED_STDOUT" "$SEED_STDERR"
 wait_for_stage "$STAGE" 'world-ready-tick' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_WORLD_READY'
-wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
-wait_for_stage "$STAGE" 'persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_MATRIX_SEED_SAVE'
+wait_for_stage "$STAGE" 'persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true,AntiNick=true' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_SEED_SAVE'
+wait_for_stage "$STAGE" 'persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51' "$SEED_STDOUT" "$SEED_STDERR" 'PERSISTENCE_MATRIX_SEED_SAVE'
 
 test -s "$CONFIG"
 python - "$CONFIG" <<'PY'
@@ -149,7 +149,15 @@ if not isinstance(full, dict):
 if full.get('status') is not True:
     raise SystemExit(f"PERSISTENCE_CONFIG_FULLBRIGHT_STATUS_BAD={full.get('status')!r}")
 
-print('PERSISTENCE_CONFIG_DISK_MATRIX=PASS boolean=false percentage=67 number=1.75 mode=RAVEN color=A1B2C3 text=LSHIFT module=true')
+anti=root.get('AntiNick')
+if not isinstance(anti, dict):
+    raise SystemExit('PERSISTENCE_CONFIG_ANTINICK_BLOCK_MISSING')
+if anti.get('status') is not True:
+    raise SystemExit(f"PERSISTENCE_CONFIG_ANTINICK_STATUS_BAD={anti.get('status')!r}")
+if anti.get('Suffix') != 'OPENABYSS_PROMOTED_PERSIST_7E51':
+    raise SystemExit(f"PERSISTENCE_CONFIG_ANTINICK_SUFFIX_BAD={anti.get('Suffix')!r}")
+
+print('PERSISTENCE_CONFIG_DISK_MATRIX=PASS boolean=false percentage=67 number=1.75 mode=RAVEN color=A1B2C3 text=LSHIFT module=true promotedModule=AntiNick promotedText=OPENABYSS_PROMOTED_PERSIST_7E51')
 PY
 CONFIG_HASH_BEFORE="$(sha256sum "$CONFIG" | awk '{print toupper($1)}')"
 echo "PERSISTENCE_CONFIG_SHA256_BEFORE=$CONFIG_HASH_BEFORE"
@@ -172,7 +180,8 @@ done
 
 launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true -Dabyss.networkCommandProbe=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
-wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
+wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
+echo 'PERSISTENCE_PROMOTED_ANTINICK_RESTART=PASS status=true suffix=OPENABYSS_PROMOTED_PERSIST_7E51'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
 wait_for_stage "$STAGE" 'network-command-probe-ready:CommandLine:original=' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_COMMAND_READY'
 touch "$GAME_DIR/abyss-network-command-probe-done"
