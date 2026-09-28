@@ -7125,7 +7125,7 @@ implements EventSubscriber {
 
         BlockPos fixture = null;
         IBlockState originalState = null;
-        List<BlockPos> savedBeds = new ArrayList<BlockPos>(BedNuker.D);
+        List<BlockPos> savedBeds = null;
         boolean savedActive = this.bedScanActive;
         int savedCursor = this.bedScanCursor;
         int savedMinX = this.bedScanMinX;
@@ -7143,6 +7143,7 @@ implements EventSubscriber {
                 throw new IllegalStateException(
                         "BedNuker scan authority unavailable");
             }
+            savedBeds = new ArrayList<BlockPos>(BedNuker.D);
 
             int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
             int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
@@ -7226,8 +7227,10 @@ implements EventSubscriber {
                         restoreFailure);
             }
 
-            BedNuker.D.clear();
-            BedNuker.D.addAll(savedBeds);
+            if (BedNuker.D != null && savedBeds != null) {
+                BedNuker.D.clear();
+                BedNuker.D.addAll(savedBeds);
+            }
             this.bedScanActive = savedActive;
             this.bedScanCursor = savedCursor;
             this.bedScanMinX = savedMinX;
