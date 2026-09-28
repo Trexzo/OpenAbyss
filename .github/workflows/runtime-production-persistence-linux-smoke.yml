@@ -80,7 +80,25 @@ jobs:
           python -m py_compile tools/production_forge_linux.py
           bash -n tools/run_production_persistence_smoke.sh
 
-          "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher
+          BUILD_OK=0
+          for ATTEMPT in 1 2 3; do
+            echo "PERSISTENCE_PACKAGE_BUILD_ATTEMPT=$ATTEMPT"
+            if "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher; then
+              BUILD_OK=1
+              break
+            fi
+            if [ "$ATTEMPT" -lt 3 ]; then
+              echo "::warning::ForgeGradle package preparation failed on attempt $ATTEMPT; retrying after transient-dependency cooldown."
+              "$OPENABYSS_GRADLE" --stop >/dev/null 2>&1 || true
+              sleep $((ATTEMPT * 5))
+            fi
+          done
+          if [ "$BUILD_OK" -ne 1 ]; then
+            echo 'PERSISTENCE_PACKAGE_BUILD_RETRIES_EXHAUSTED=1'
+            exit 1
+          fi
+          echo 'PERSISTENCE_PACKAGE_BUILD=PASS'
+
           PACKAGE="$GITHUB_WORKSPACE/build/distributions/OpenAbyss-Windows-Launcher.zip"
           OUT="$RUNNER_TEMP/openabyss-production-persistence-package"
           rm -rf "$OUT"
