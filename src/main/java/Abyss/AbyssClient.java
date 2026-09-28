@@ -75,6 +75,7 @@ import Abyss.module.impl.visual.Animations;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.BarrierVisible;
 import Abyss.module.impl.visual.Chams;
+import Abyss.module.impl.visual.CaveXray;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.NoHurtCam;
@@ -326,6 +327,16 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe12OriginalSavedYaw;
     private float highRiskFunctionalProbe12OriginalSavedPitch;
     private boolean highRiskFunctionalProbe12Saved;
+    private int highRiskFunctionalProbe13Stage;
+    private int highRiskFunctionalProbe13WaitTicks;
+    private boolean highRiskFunctionalProbe13OriginalEnabled;
+    private boolean highRiskFunctionalProbe13OriginalReloadRenderer;
+    private boolean highRiskFunctionalProbe13OriginalPending;
+    private long highRiskFunctionalProbe13OriginalLastReloadMs;
+    private int highRiskFunctionalProbe13OriginalRetryCount;
+    private String highRiskFunctionalProbe13OriginalLastFailure;
+    private long highRiskFunctionalProbe13BeforeEffectReloadMs;
+    private boolean highRiskFunctionalProbe13Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4225,6 +4236,242 @@ implements EventSubscriber {
         }
     }
 
+    private Field deferredRendererProbeField(String name) throws Exception {
+        Field field = DeferredRendererReload.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private boolean deferredRendererPendingForProbe() throws Exception {
+        return this.deferredRendererProbeField("pending").getBoolean(null);
+    }
+
+    private long deferredRendererLastReloadForProbe() throws Exception {
+        return this.deferredRendererProbeField("lastReloadMs").getLong(null);
+    }
+
+    private int deferredRendererRetryCountForProbe() throws Exception {
+        return this.deferredRendererProbeField("retryCount").getInt(null);
+    }
+
+    private String deferredRendererLastFailureForProbe() throws Exception {
+        return (String)this.deferredRendererProbeField("lastFailure").get(null);
+    }
+
+    private void restoreDeferredRendererProbeState() throws Exception {
+        this.deferredRendererProbeField("pending").setBoolean(
+                null, this.highRiskFunctionalProbe13OriginalPending);
+        this.deferredRendererProbeField("lastReloadMs").setLong(
+                null, this.highRiskFunctionalProbe13OriginalLastReloadMs);
+        this.deferredRendererProbeField("retryCount").setInt(
+                null, this.highRiskFunctionalProbe13OriginalRetryCount);
+        this.deferredRendererProbeField("lastFailure").set(
+                null, this.highRiskFunctionalProbe13OriginalLastFailure);
+    }
+
+    private void restoreHighRiskFunctionalProbe13Exact(CaveXray probe) {
+        if (!this.highRiskFunctionalProbe13Saved) {
+            return;
+        }
+        try {
+            CaveXray.reloadRenderer.v(false, 0L);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe13OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe13OriginalEnabled);
+            }
+            CaveXray.reloadRenderer.v(
+                    this.highRiskFunctionalProbe13OriginalReloadRenderer, 0L);
+            this.restoreDeferredRendererProbeState();
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe13:CaveXray", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe13() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe13")
+                || this.highRiskFunctionalProbe13Stage < 0
+                || this.highRiskFunctionalProbe13Stage >= 6) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe12")
+                && this.highRiskFunctionalProbe12Stage < 5) return;
+
+        try {
+            CaveXray probe = Modules.J(CaveXray.class);
+            if (probe == null
+                    || ModuleManager.byClass(CaveXray.class) != probe
+                    || ModuleManager.byName("CaveXray") != probe
+                    || this.c.renderGlobal == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException("CaveXray live registry/renderer/player unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe13Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe13OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe13OriginalReloadRenderer =
+                            CaveXray.reloadRenderer.c();
+                    this.highRiskFunctionalProbe13OriginalPending =
+                            this.deferredRendererPendingForProbe();
+                    this.highRiskFunctionalProbe13OriginalLastReloadMs =
+                            this.deferredRendererLastReloadForProbe();
+                    this.highRiskFunctionalProbe13OriginalRetryCount =
+                            this.deferredRendererRetryCountForProbe();
+                    this.highRiskFunctionalProbe13OriginalLastFailure =
+                            this.deferredRendererLastFailureForProbe();
+                    this.highRiskFunctionalProbe13Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe13Stage;
+                    this.highRiskFunctionalProbe13WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe13-state-request:CaveXray:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe13WaitTicks;
+                    boolean cooldownReady = System.currentTimeMillis()
+                            - this.deferredRendererLastReloadForProbe() >= 3100L;
+                    if (!probe.o() && !probe.l() && !probe.K()
+                            && !this.deferredRendererPendingForProbe()
+                            && cooldownReady) {
+                        CaveXray.reloadRenderer.v(true, 0L);
+                        this.highRiskFunctionalProbe13BeforeEffectReloadMs =
+                                this.deferredRendererLastReloadForProbe();
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe13Stage;
+                        this.highRiskFunctionalProbe13WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe13-state-request:CaveXray:enabled=true"
+                                + ":reloadRenderer=true:baselineReloadMs="
+                                + this.highRiskFunctionalProbe13BeforeEffectReloadMs);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe13WaitTicks > 240) {
+                        throw new IllegalStateException("CaveXray disabled baseline/cooldown did not settle"
+                                + " pending=" + this.deferredRendererPendingForProbe()
+                                + " lastReloadMs=" + this.deferredRendererLastReloadForProbe());
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe13WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        if (!this.deferredRendererPendingForProbe()) {
+                            throw new IllegalStateException(
+                                    "CaveXray enable did not queue DeferredRendererReload");
+                        }
+                        runtimeMilestone("high-risk-functional-probe13-request-pass:CaveXray"
+                                + ":pending=true");
+                        ++this.highRiskFunctionalProbe13Stage;
+                        this.highRiskFunctionalProbe13WaitTicks = 0;
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
+                        throw new IllegalStateException("CaveXray did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe13WaitTicks;
+                    long actualReloadMs = this.deferredRendererLastReloadForProbe();
+                    if (!this.deferredRendererPendingForProbe()
+                            && actualReloadMs > this.highRiskFunctionalProbe13BeforeEffectReloadMs) {
+                        runtimeMilestone("high-risk-functional-probe13-effect-pass:CaveXray"
+                                + ":pending=false:lastReloadAdvanced=true");
+
+                        // Disable without causing a second full renderer reload.
+                        CaveXray.reloadRenderer.v(false, 0L);
+                        probe.I(0L, false);
+                        ++this.highRiskFunctionalProbe13Stage;
+                        this.highRiskFunctionalProbe13WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe13-state-request:CaveXray:enabled=false"
+                                + ":reloadRenderer=false");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
+                        throw new IllegalStateException("CaveXray deferred renderer reload was not consumed"
+                                + " pending=" + this.deferredRendererPendingForProbe()
+                                + " baseline=" + this.highRiskFunctionalProbe13BeforeEffectReloadMs
+                                + " actual=" + actualReloadMs);
+                    }
+                    return;
+
+                case 4:
+                    ++this.highRiskFunctionalProbe13WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        if (this.highRiskFunctionalProbe13OriginalEnabled) {
+                            // Re-enable through the real lifecycle with reload disabled, then restore
+                            // the original setting and deferred-queue internals exactly.
+                            probe.I(0L, true);
+                        }
+                        ++this.highRiskFunctionalProbe13Stage;
+                        this.highRiskFunctionalProbe13WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe13-restore-request:CaveXray:enabled="
+                                + this.highRiskFunctionalProbe13OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
+                        throw new IllegalStateException("CaveXray did not settle disabled after effect");
+                    }
+                    return;
+
+                case 5:
+                    ++this.highRiskFunctionalProbe13WaitTicks;
+                    boolean stableOriginal = this.highRiskFunctionalProbe13OriginalEnabled
+                            ? probe.o() && !probe.l() && !probe.K()
+                            : !probe.o() && !probe.l() && !probe.K();
+                    if (stableOriginal) {
+                        CaveXray.reloadRenderer.v(
+                                this.highRiskFunctionalProbe13OriginalReloadRenderer, 0L);
+                        this.restoreDeferredRendererProbeState();
+
+                        if (probe.o() != this.highRiskFunctionalProbe13OriginalEnabled
+                                || CaveXray.reloadRenderer.c()
+                                        != this.highRiskFunctionalProbe13OriginalReloadRenderer
+                                || this.deferredRendererPendingForProbe()
+                                        != this.highRiskFunctionalProbe13OriginalPending
+                                || this.deferredRendererLastReloadForProbe()
+                                        != this.highRiskFunctionalProbe13OriginalLastReloadMs
+                                || this.deferredRendererRetryCountForProbe()
+                                        != this.highRiskFunctionalProbe13OriginalRetryCount
+                                || !java.util.Objects.equals(
+                                        this.deferredRendererLastFailureForProbe(),
+                                        this.highRiskFunctionalProbe13OriginalLastFailure)) {
+                            throw new IllegalStateException(
+                                    "CaveXray/deferred renderer exact original state did not restore");
+                        }
+
+                        ++this.highRiskFunctionalProbe13Stage;
+                        runtimeMilestone("high-risk-functional-probe13-restore-pass:CaveXray:enabled="
+                                + this.highRiskFunctionalProbe13OriginalEnabled
+                                + ":reloadRenderer="
+                                + this.highRiskFunctionalProbe13OriginalReloadRenderer);
+                        runtimeMilestone("high-risk-functional-probe13-module-pass:CaveXray");
+                        runtimeMilestone("high-risk-functional-probe13-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
+                        throw new IllegalStateException(
+                                "CaveXray original enabled state did not settle");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            CaveXray probe = Modules.J(CaveXray.class);
+            this.restoreHighRiskFunctionalProbe13Exact(probe);
+            this.highRiskFunctionalProbe13Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe13:CaveXray", "deferred-renderer-reload", failure);
+            runtimeMilestone("high-risk-functional-probe13-fail:"
+                    + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5175,6 +5422,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe10();
         this.pumpHighRiskFunctionalProbe11();
         this.pumpHighRiskFunctionalProbe12();
+        this.pumpHighRiskFunctionalProbe13();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
