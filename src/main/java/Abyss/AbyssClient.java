@@ -50,6 +50,7 @@ import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.movement.FastFall;
+import Abyss.module.impl.movement.InvMove;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
 import Abyss.module.impl.movement.Speed;
@@ -119,6 +120,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -255,6 +257,12 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe2Stage;
     private int highRiskFunctionalProbe3Stage;
     private int highRiskFunctionalProbe4Stage;
+    private int invMovePhysicalProbeStage;
+    private int invMovePhysicalProbeWaitTicks;
+    private boolean invMovePhysicalOriginalEnabled;
+    private String invMovePhysicalOriginalInventoryMode;
+    private boolean invMovePhysicalOriginalForwardPressed;
+    private boolean invMovePhysicalSaved;
     private int physicalInputFunctionalProbeStage;
     private int physicalInputFunctionalProbeWaitTicks;
     private boolean physicalInputAutoSaved;
@@ -2825,6 +2833,159 @@ implements EventSubscriber {
         runtimeMilestone("high-risk-functional-probe4-restore-pass:ChestESP");
     }
 
+    private void restoreInvMovePhysicalProbe() {
+        if (!this.invMovePhysicalSaved) {
+            return;
+        }
+        try {
+            InvMove probe = Modules.J(InvMove.class);
+            if (this.invMovePhysicalOriginalInventoryMode != null) {
+                InvMove.inventoryMode.i(this.invMovePhysicalOriginalInventoryMode);
+            }
+            KeyBindUtil.A(0L, this.c.gameSettings.keyBindForward.getKeyCode(),
+                    this.invMovePhysicalOriginalForwardPressed);
+            if (probe != null && probe.o() != this.invMovePhysicalOriginalEnabled) {
+                probe.I(0L, this.invMovePhysicalOriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("InvMovePhysicalProbe", "restore", failure);
+        }
+    }
+
+    private void pumpInvMovePhysicalProbe() {
+        if (!Boolean.getBoolean("abyss.invMovePhysicalProbe")
+                || this.invMovePhysicalProbeStage < 0
+                || this.invMovePhysicalProbeStage >= 6) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe4")
+                && this.highRiskFunctionalProbe4Stage < 1) return;
+
+        try {
+            InvMove probe = Modules.J(InvMove.class);
+            if (probe == null || this.c.thePlayer == null) {
+                throw new IllegalStateException("InvMove module/player unavailable");
+            }
+            int forwardKey = this.c.gameSettings.keyBindForward.getKeyCode();
+
+            switch (this.invMovePhysicalProbeStage) {
+                case 0:
+                    this.invMovePhysicalOriginalEnabled = probe.o();
+                    this.invMovePhysicalOriginalInventoryMode = InvMove.inventoryMode.Y();
+                    this.invMovePhysicalOriginalForwardPressed =
+                            this.c.gameSettings.keyBindForward.isKeyDown();
+                    this.invMovePhysicalSaved = true;
+                    InvMove.inventoryMode.i("VANILLA");
+                    KeyBindUtil.A(0L, forwardKey, false);
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    ++this.invMovePhysicalProbeStage;
+                    this.invMovePhysicalProbeWaitTicks = 0;
+                    runtimeMilestone("invmove-physical-probe-enable-request");
+                    return;
+
+                case 1:
+                    ++this.invMovePhysicalProbeWaitTicks;
+                    if (probe.o() && probe.P() && w.isOwnerActive(probe)) {
+                        ++this.invMovePhysicalProbeStage;
+                        this.invMovePhysicalProbeWaitTicks = 0;
+                        runtimeMilestone("invmove-physical-probe-ready:open-inventory");
+                        return;
+                    }
+                    if (this.invMovePhysicalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("InvMove did not become active/subscribed");
+                    }
+                    return;
+
+                case 2:
+                    ++this.invMovePhysicalProbeWaitTicks;
+                    if (this.c.currentScreen instanceof GuiInventory) {
+                        ++this.invMovePhysicalProbeStage;
+                        this.invMovePhysicalProbeWaitTicks = 0;
+                        runtimeMilestone("invmove-physical-probe-inventory-open");
+                        runtimeMilestone("invmove-physical-probe-ready:forward-input");
+                        return;
+                    }
+                    if (this.invMovePhysicalProbeWaitTicks > 600) {
+                        throw new IllegalStateException("InvMove did not observe physical inventory open");
+                    }
+                    return;
+
+                case 3:
+                    ++this.invMovePhysicalProbeWaitTicks;
+                    boolean physicalForward = KeyBindUtil.V(forwardKey, 64165991731362L);
+                    if (physicalForward && this.c.gameSettings.keyBindForward.isKeyDown()) {
+                        runtimeMilestone("invmove-physical-probe-input-seen:forward=true");
+                        runtimeMilestone("invmove-physical-probe-effect-pass:forwardBinding=true:screen=GuiInventory");
+                        ++this.invMovePhysicalProbeStage;
+                        this.invMovePhysicalProbeWaitTicks = 0;
+                        runtimeMilestone("invmove-physical-probe-ready:release-close");
+                        return;
+                    }
+                    if (this.invMovePhysicalProbeWaitTicks > 600) {
+                        throw new IllegalStateException("InvMove did not mirror physical forward input physical="
+                                + physicalForward + " binding="
+                                + this.c.gameSettings.keyBindForward.isKeyDown());
+                    }
+                    return;
+
+                case 4:
+                    ++this.invMovePhysicalProbeWaitTicks;
+                    boolean forwardStillDown = KeyBindUtil.V(forwardKey, 64165991731362L);
+                    if (!forwardStillDown && this.c.currentScreen == null
+                            && !this.c.gameSettings.keyBindForward.isKeyDown()) {
+                        InvMove.inventoryMode.i(this.invMovePhysicalOriginalInventoryMode);
+                        if (!this.invMovePhysicalOriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.invMovePhysicalProbeStage;
+                        this.invMovePhysicalProbeWaitTicks = 0;
+                        runtimeMilestone("invmove-physical-probe-close-effect-pass:forwardBinding=false");
+                        return;
+                    }
+                    if (this.invMovePhysicalProbeWaitTicks > 600) {
+                        throw new IllegalStateException("InvMove close/reset did not settle physical="
+                                + forwardStillDown + " screen="
+                                + (this.c.currentScreen == null ? "<null>" : this.c.currentScreen.getClass().getName())
+                                + " binding=" + this.c.gameSettings.keyBindForward.isKeyDown());
+                    }
+                    return;
+
+                case 5:
+                    ++this.invMovePhysicalProbeWaitTicks;
+                    boolean restored = this.invMovePhysicalOriginalEnabled
+                            ? probe.o() && probe.P() && w.isOwnerActive(probe)
+                            : !probe.o() && !probe.P() && !w.isOwnerActive(probe);
+                    if (restored) {
+                        KeyBindUtil.A(0L, forwardKey, this.invMovePhysicalOriginalForwardPressed);
+                        runtimeMilestone("invmove-physical-probe-restore-pass:enabled="
+                                + this.invMovePhysicalOriginalEnabled + ":mode="
+                                + this.invMovePhysicalOriginalInventoryMode);
+                        ++this.invMovePhysicalProbeStage;
+                        runtimeMilestone("invmove-physical-probe-pass:1");
+                        return;
+                    }
+                    if (this.invMovePhysicalProbeWaitTicks > 160) {
+                        throw new IllegalStateException("InvMove module state did not restore enabled="
+                                + probe.o() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreInvMovePhysicalProbe();
+            this.invMovePhysicalProbeStage = -1;
+            recordFeatureFailure("InvMovePhysicalProbe", "inventory-forward", failure);
+            runtimeMilestone("invmove-physical-probe-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe4() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe4")
                 || this.highRiskFunctionalProbe4Stage < 0
@@ -3596,6 +3757,7 @@ implements EventSubscriber {
             this.pumpPhysicalInputFunctionalProbe();
             this.pumpHighRiskFunctionalProbe3();
             this.pumpHighRiskFunctionalProbe4();
+            this.pumpInvMovePhysicalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
