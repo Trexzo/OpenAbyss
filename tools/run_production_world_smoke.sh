@@ -660,31 +660,6 @@ if [ "$HIGH_RISK2_READY" -ne 1 ]; then
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_INPUT_PREREQUISITES=PASS high-risk-batches=2'
 
-PROMOTED_FUNCTIONAL_READY=0
-for _ in $(seq 1 960); do
-  if grep -Fq 'high-risk-functional-probe20-pass:1' "$STAGE"; then
-    PROMOTED_FUNCTIONAL_READY=1
-    break
-  fi
-  if grep -Eq 'high-risk-functional-probe(15|16|17|18|19|20)-fail:' "$STAGE"; then
-    echo 'Promoted functional probe failed before the physical-input phase.'
-    grep -E 'high-risk-functional-probe(15|16|17|18|19|20)-' "$STAGE" || true
-    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
-    exit 1
-  fi
-  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
-    echo 'Production client exited before promoted functional probes completed.'
-    exit 1
-  fi
-  sleep 0.25
-done
-if [ "$PROMOTED_FUNCTIONAL_READY" -ne 1 ]; then
-  echo 'Promoted functional probes 15-20 did not finish before physical-input phase.'
-  grep -E 'high-risk-functional-probe(15|16|17|18|19|20)-' "$STAGE" || true
-  exit 1
-fi
-echo 'PRODUCTION_WORLD_PROMOTED_FUNCTIONAL_PREREQUISITES=PASS probes=15-20'
-
 PHYSICAL_AUTO_READY=0
 for _ in $(seq 1 240); do
   if grep -Fq 'physical-input-functional-probe-ready:AutoClicker' "$STAGE"; then
@@ -896,6 +871,31 @@ fi
 grep -Fq 'invmove-physical-probe-close-effect-pass:forwardBinding=false' "$STAGE"
 grep -Fq 'invmove-physical-probe-restore-pass:' "$STAGE"
 echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE=PASS input=real-E-plus-W'
+
+PROMOTED_FUNCTIONAL_READY=0
+for _ in $(seq 1 960); do
+  if grep -Fq 'high-risk-functional-probe20-pass:1' "$STAGE"; then
+    PROMOTED_FUNCTIONAL_READY=1
+    break
+  fi
+  if grep -Eq 'high-risk-functional-probe(15|16|17|18|19|20)-fail:' "$STAGE"; then
+    echo 'Promoted functional probe failed after physical-input prerequisites.'
+    grep -E 'high-risk-functional-probe(15|16|17|18|19|20)-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before promoted functional probes completed.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$PROMOTED_FUNCTIONAL_READY" -ne 1 ]; then
+  echo 'Promoted functional probes 15-20 did not finish after physical-input prerequisites.'
+  grep -E 'high-risk-functional-probe(15|16|17|18|19|20)-' "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PROMOTED_FUNCTIONAL_PREREQUISITES=PASS probes=15-20'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
