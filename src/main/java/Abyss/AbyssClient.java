@@ -8625,7 +8625,7 @@ implements EventSubscriber {
     private void pumpHighRiskFunctionalProbe36() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe36")
                 || this.highRiskFunctionalProbe36Stage < 0
-                || this.highRiskFunctionalProbe36Stage >= 5) {
+                || this.highRiskFunctionalProbe36Stage >= 6) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe35")
@@ -8766,11 +8766,34 @@ implements EventSubscriber {
                                     + "SprintReset:forward=0.0:strafe=0.0:"
                                     + "logicalW=false:physicalW=true");
 
-                    probe.onPostTick(new PostTickEvent());
+                    /*
+                     * Do not invoke SprintReset.onPostTick() manually here.
+                     * Return to the real EventBus so its subscribed PostTick
+                     * handler performs the duration restore on a later tick.
+                     * This proves the production event ordering and avoids
+                     * sampling X11 keyboard state twice in the attack tick.
+                     */
+                    this.highRiskFunctionalProbe36Stage = 3;
+                    this.highRiskFunctionalProbe36WaitTicks = 0;
+                    return;
+                }
 
-                    if (!this.c.gameSettings.keyBindForward.isKeyDown()) {
-                        throw new IllegalStateException(
-                                "SprintReset duration restore did not resync held W");
+                case 3: {
+                    ++this.highRiskFunctionalProbe36WaitTicks;
+                    int forwardKey =
+                            this.c.gameSettings.keyBindForward.getKeyCode();
+                    boolean physicalHeld = KeyBindUtil.V(forwardKey, 0L);
+                    boolean logicalHeld =
+                            this.c.gameSettings.keyBindForward.isKeyDown();
+
+                    if (!physicalHeld || !logicalHeld) {
+                        if (this.highRiskFunctionalProbe36WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "SprintReset subscribed duration restore did not settle"
+                                            + " physicalW=" + physicalHeld
+                                            + " logicalW=" + logicalHeld);
+                        }
+                        return;
                     }
 
                     runtimeMilestone(
@@ -8779,12 +8802,12 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe36-ready-release:"
                                     + "SprintReset:key=w");
-                    this.highRiskFunctionalProbe36Stage = 3;
+                    this.highRiskFunctionalProbe36Stage = 4;
                     this.highRiskFunctionalProbe36WaitTicks = 0;
                     return;
                 }
 
-                case 3: {
+                case 4: {
                     ++this.highRiskFunctionalProbe36WaitTicks;
                     int forwardKey =
                             this.c.gameSettings.keyBindForward.getKeyCode();
@@ -8805,17 +8828,17 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe36-release-pass:"
                                     + "SprintReset:logicalW=false:physicalW=false");
-                    this.highRiskFunctionalProbe36Stage = 4;
+                    this.highRiskFunctionalProbe36Stage = 5;
                     return;
                 }
 
-                case 4: {
+                case 5: {
                     runtimeMilestone(
                             "high-risk-functional-probe36-module-pass:"
                                     + "SprintReset");
                     runtimeMilestone(
                             "high-risk-functional-probe36-pass:1");
-                    this.highRiskFunctionalProbe36Stage = 5;
+                    this.highRiskFunctionalProbe36Stage = 6;
                     this.restoreHighRiskFunctionalProbe36();
                     return;
                 }
@@ -8923,7 +8946,7 @@ implements EventSubscriber {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe36")
-                && this.highRiskFunctionalProbe36Stage < 5) {
+                && this.highRiskFunctionalProbe36Stage < 6) {
             return;
         }
 
