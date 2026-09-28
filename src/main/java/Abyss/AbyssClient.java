@@ -4533,14 +4533,14 @@ implements EventSubscriber {
             originalSuffix = AntiNick.suffix.X();
             saved = true;
 
-            final String sentinel = " [OPENABYSS_ANTINICK_PROBE]";
+            final String sentinel = "[OPENABYSS_ANTINICK_PROBE]";
             AntiNick.suffix.O(sentinel);
 
             NetworkPlayerInfo nicked = new NetworkPlayerInfo(new GameProfile(
                     UUID.fromString("00000000-0000-1000-8000-000000000001"), "NickProbe"));
             PlayerGetNameEvent nickedEvent = new PlayerGetNameEvent(nicked, "NickProbe");
             probe.onPlayerGetName(nickedEvent);
-            if (!("NickProbe" + sentinel).equals(nickedEvent.d())) {
+            if (!("NickProbe " + sentinel).equals(nickedEvent.d())) {
                 throw new IllegalStateException("AntiNick version-1 profile decoration mismatch: " + nickedEvent.d());
             }
             runtimeMilestone("high-risk-functional-probe15-effect-pass:AntiNick:version1=true");
