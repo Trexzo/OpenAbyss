@@ -3857,8 +3857,10 @@ implements EventSubscriber {
 
         try {
             Chams probe = Modules.J(Chams.class);
-            if (probe == null || ModuleManager.a != probe) {
-                throw new IllegalStateException("Chams module/singleton unavailable");
+            if (probe == null
+                    || ModuleManager.byClass(Chams.class) != probe
+                    || ModuleManager.byName("Chams") != probe) {
+                throw new IllegalStateException("Chams live registry authority unavailable");
             }
 
             switch (this.highRiskFunctionalProbe11Stage) {
