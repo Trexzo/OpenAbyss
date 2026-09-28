@@ -26,6 +26,8 @@ SERVER_PID=""
 
 cleanup() {
   set +e
+  DISPLAY=:99 xdotool mouseup 1 >/dev/null 2>&1 || true
+  DISPLAY=:99 xdotool keyup space >/dev/null 2>&1 || true
   if [ -n "$CLIENT_PID" ]; then
     kill "$CLIENT_PID" 2>/dev/null || true
   fi
@@ -315,6 +317,114 @@ for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHur
   grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
 done
 echo 'PRODUCTION_WORLD_CATEGORY_LIFECYCLE=PASS modules=9 all-categories plus-FullBright-command-path'
+
+PHYSICAL_AUTO_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'physical-input-functional-probe-ready:AutoClicker' "$STAGE"; then
+    PHYSICAL_AUTO_READY=1
+    break
+  fi
+  if grep -Fq 'physical-input-functional-probe-fail:' "$STAGE"; then
+    echo 'Physical-input functional probe failed before AutoClicker input.'
+    cat "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before AutoClicker physical-input probe became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$PHYSICAL_AUTO_READY" -ne 1 ]; then
+  echo 'AutoClicker physical-input probe did not become ready.'
+  cat "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousedown 1
+PHYSICAL_AUTO_EFFECT=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true' "$STAGE"; then
+    PHYSICAL_AUTO_EFFECT=1
+    break
+  fi
+  if grep -Fq 'physical-input-functional-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool mouseup 1
+if [ "$PHYSICAL_AUTO_EFFECT" -ne 1 ]; then
+  echo 'AutoClicker did not react to the real X11 mouse-down input.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AUTOCLICKER=PASS input=xdotool-mousedown-1'
+
+PHYSICAL_FASTFALL_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'physical-input-functional-probe-ready:FastFall' "$STAGE"; then
+    PHYSICAL_FASTFALL_READY=1
+    break
+  fi
+  if grep -Fq 'physical-input-functional-probe-fail:' "$STAGE"; then
+    echo 'Physical-input functional probe failed before FastFall input.'
+    cat "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$PHYSICAL_FASTFALL_READY" -ne 1 ]; then
+  echo 'FastFall physical-input probe did not become ready.'
+  cat "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool keydown space
+PHYSICAL_FASTFALL_EFFECT=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'physical-input-functional-probe-effect-pass:FastFall:motionY=' "$STAGE"; then
+    PHYSICAL_FASTFALL_EFFECT=1
+    break
+  fi
+  if grep -Fq 'physical-input-functional-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool keyup space
+if [ "$PHYSICAL_FASTFALL_EFFECT" -ne 1 ]; then
+  echo 'FastFall did not react to the real X11 Space key-down input.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+
+PHYSICAL_INPUT_RESTORED=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'physical-input-functional-probe-pass:2' "$STAGE"; then
+    PHYSICAL_INPUT_RESTORED=1
+    break
+  fi
+  if grep -Fq 'physical-input-functional-probe-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$PHYSICAL_INPUT_RESTORED" -ne 1 ]; then
+  echo 'Physical-input functional probe did not restore both modules cleanly.'
+  cat "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+grep -Fq 'physical-input-functional-probe-restore-pass:AutoClicker' "$STAGE"
+grep -Fq 'physical-input-functional-probe-restore-pass:FastFall' "$STAGE"
+echo 'PRODUCTION_WORLD_PHYSICAL_FASTFALL=PASS input=xdotool-keydown-space'
+echo 'PRODUCTION_WORLD_PHYSICAL_INPUT_MODULES=PASS modules=AutoClicker,FastFall'
 
 COMMAND_READY=0
 for _ in $(seq 1 240); do
