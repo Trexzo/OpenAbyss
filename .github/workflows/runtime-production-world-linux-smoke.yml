@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -251,6 +251,10 @@ jobs:
           grep -Fq 'OPENABYSS_MACRO_PROBE_7E51' "$RUNNER_TEMP/openabyss-production-world-server.log"
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_CLIENT=PASS'
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_SERVER_RECEIPT=PASS'
+          grep -Fq 'visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3' "$STAGE"
+          grep -Fq 'visual-utility-functional-probe-restore-state-pass:InventoryHUD' "$STAGE"
+          grep -Fq 'visual-utility-functional-probe-pass:InventoryHUD:' "$STAGE"
+          echo 'PRODUCTION_WORLD_INVENTORYHUD_NATURAL_TICK_EFFECT=PASS'
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
