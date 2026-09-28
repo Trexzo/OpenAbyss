@@ -165,6 +165,11 @@ $checks = [ordered]@{
         $runtimeText.Contains('movement-functional-probe-restore-state-pass:NoJumpDelay') -and
         $runtimeText.Contains('movement-functional-probe-pass:NoJumpDelay:')
     )
+    ExtendedNoHitDelayEffect = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('player-functional-probe-effect-pass:NoHitDelay:leftClickCounter=0') -and
+        $runtimeText.Contains('player-functional-probe-restore-state-pass:NoHitDelay') -and
+        $runtimeText.Contains('player-functional-probe-pass:NoHitDelay:')
+    )
     ExtendedAmbiencePacketCancel = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true') -and
         $runtimeText.Contains('render-functional-probe-effect-pass:Ambience:worldTime=6000') -and
@@ -205,6 +210,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ExtendedCategoryLifecycle9 -and
         $checks.ExtendedFastPlaceEffect -and
         $checks.ExtendedNoJumpDelayEffect -and
+        $checks.ExtendedNoHitDelayEffect -and
         $checks.ExtendedAmbiencePacketCancel -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
