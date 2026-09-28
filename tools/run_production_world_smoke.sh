@@ -261,7 +261,8 @@ grep -Fq 'receive-hook:' "$NETWORK_STAGE"
 echo 'PRODUCTION_WORLD_NETWORK_HOOKS=PASS'
 
 FUNCTIONAL_READY=0
-for _ in $(seq 1 120); do
+FUNCTIONAL_STALL_DUMPED=0
+for FUNCTIONAL_WAIT in $(seq 1 120); do
   if grep -Fq 'world-functional-probe-pass' "$STAGE"; then
     FUNCTIONAL_READY=1
     break
@@ -271,6 +272,17 @@ for _ in $(seq 1 120); do
     cat "$STAGE"
     cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
     exit 1
+  fi
+  if [ "$FUNCTIONAL_STALL_DUMPED" -eq 0 ] && [ "$FUNCTIONAL_WAIT" -ge 20 ] &&
+     kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo "Capturing post-world functional-stall thread dumps at wait=$FUNCTIONAL_WAIT pid=$CLIENT_PID"
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP" 2>&1 || true
+    sleep 1
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_2" 2>&1 || true
+    sleep 1
+    "$JAVA_HOME/bin/jstack" -l "$CLIENT_PID" >"$THREAD_DUMP_3" 2>&1 || true
+    DISPLAY=:99 scrot "$STALL_SCREENSHOT" || true
+    FUNCTIONAL_STALL_DUMPED=1
   fi
   if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
     echo 'Production client exited before live-world functional probe completed.'
@@ -282,6 +294,12 @@ for _ in $(seq 1 120); do
 done
 if [ "$FUNCTIONAL_READY" -ne 1 ]; then
   echo 'Production live-world functional probe did not complete.'
+  echo '=== post-world functional stall jstack #1 ==='
+  sed -n '1,260p' "$THREAD_DUMP" 2>/dev/null || true
+  echo '=== post-world functional stall jstack #2 ==='
+  sed -n '1,260p' "$THREAD_DUMP_2" 2>/dev/null || true
+  echo '=== post-world functional stall jstack #3 ==='
+  sed -n '1,260p' "$THREAD_DUMP_3" 2>/dev/null || true
   cat "$STAGE" || true
   exit 1
 fi
