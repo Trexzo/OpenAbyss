@@ -62,8 +62,14 @@ public class NetworkManagerHooks {
                 SendPacketEvent var13 = new SendPacketEvent(var0);
                 AbyssClient.w.e(var13, 18670087776179L);
                 if (var13.a()) {
+                    if (var0 instanceof C01PacketChatMessage) {
+                        runtimeMarker("chat-send-decision:cancelled");
+                    }
                     var1.cancel();
                 } else {
+                    if (var0 instanceof C01PacketChatMessage) {
+                        runtimeMarker("chat-send-decision:accepted");
+                    }
                     OutgoingPacketState.D(0L, var0);
 }
 }
