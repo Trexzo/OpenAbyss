@@ -654,6 +654,117 @@ if grep -Eq 'CIProdWorld (lost connection|left the game)' "$SERVER_LOG"; then
 fi
 
 echo 'PRODUCTION_WORLD_POST_PROBE_SOAK=PASS seconds=60'
+
+# Prove live-world teardown and reconnect in the same JVM. This catches stale
+# PacketManager buffers, stale EventBus owners, and one-shot world lifecycle bugs
+# that a process-restart smoke cannot expose.
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool key --clearmodifiers Escape
+sleep 0.50
+
+DISCONNECT_X=$((WIDTH / 2))
+DISCONNECT_Y=$((HEIGHT / 4 + 104))
+echo "PRODUCTION_WORLD_DISCONNECT_CLICK=$DISCONNECT_X,$DISCONNECT_Y"
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DISCONNECT_X" "$DISCONNECT_Y" click 1
+
+SESSION_EXIT_READY=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'world-session-exit:1' "$STAGE" &&      grep -Fq 'world-session-menu-cleanup:1:packetBuffer=false:u=0:v=0:a=0' "$STAGE"; then
+    SESSION_EXIT_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited while disconnecting first world session.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$SESSION_EXIT_READY" -ne 1 ]; then
+  echo 'First world session did not exit through clean menu teardown.'
+  DISPLAY=:99 scrot "$RUNNER_TEMP/openabyss-production-world-reconnect-exit-fail.png" || true
+  cat "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_SESSION1_EXIT_CLEANUP=PASS'
+
+# Disconnect returns the client to the normal main menu. Re-enter Multiplayer
+# and Direct Connect through the same real UI path used for the first session.
+sleep 0.75
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$MULTIPLAYER_X" "$MULTIPLAYER_Y" click 1
+sleep 0.75
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DIRECT_X" "$DIRECT_Y" click 1
+sleep 0.50
+DISPLAY=:99 xdotool key --clearmodifiers ctrl+a
+DISPLAY=:99 xdotool type --clearmodifiers --delay 25 -- '127.0.0.1:25565'
+sleep 0.20
+DISPLAY=:99 xdotool key --clearmodifiers Return
+echo 'PRODUCTION_WORLD_UI_RECONNECT_REQUEST=PASS'
+
+SECOND_JOIN_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'world-session-join:2' "$STAGE" &&      grep -Fq 'world-session-lifecycle-complete:2' "$STAGE"; then
+    SECOND_JOIN_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before second world session became live.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    tail -n 300 "$SERVER_LOG" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$SECOND_JOIN_READY" -ne 1 ]; then
+  echo 'Second production world session did not reach lifecycle completion.'
+  DISPLAY=:99 scrot "$RUNNER_TEMP/openabyss-production-world-reconnect-join-fail.png" || true
+  cat "$STAGE" || true
+  tail -n 300 "$SERVER_LOG" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_SESSION2_JOIN_LIFECYCLE=PASS'
+
+SECOND_HEARTBEAT_READY=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'world-session-heartbeat:2:300' "$STAGE"; then
+    SECOND_HEARTBEAT_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited during second-session heartbeat soak.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  for failure in abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt abyss-config-failure.txt abyss-renderer-failure.txt; do
+    failure_path="$GAME_DIR/$failure"
+    if [ -s "$failure_path" ]; then
+      echo "Production failure journal became non-empty after reconnect: $failure_path"
+      cat "$failure_path"
+      exit 1
+    fi
+  done
+  sleep 0.25
+done
+if [ "$SECOND_HEARTBEAT_READY" -ne 1 ]; then
+  echo 'Second world session did not sustain 300 ticks.'
+  cat "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_SESSION2_HEARTBEAT=PASS ticks=300'
+
+LOGIN_COUNT="$(grep -Ec 'CIProdWorld.*logged in with entity id' "$SERVER_LOG" || true)"
+echo "PRODUCTION_WORLD_SERVER_LOGIN_COUNT=$LOGIN_COUNT"
+if [ "$LOGIN_COUNT" -lt 2 ]; then
+  echo 'Production server did not record two real logins for same-process reconnect.'
+  tail -n 300 "$SERVER_LOG" || true
+  exit 1
+fi
+
+echo 'PRODUCTION_WORLD_SAME_PROCESS_RECONNECT=PASS sessions=2'
 echo '=== production runtime milestones ==='
 cat "$STAGE"
 echo 'OPENABYSS_LINUX_PRODUCTION_WORLD_SMOKE=PASS'
