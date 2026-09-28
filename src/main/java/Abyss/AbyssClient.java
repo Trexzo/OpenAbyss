@@ -21,11 +21,13 @@ import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
+import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreTickEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
 import Abyss.event.events.Render2DEvent;
+import Abyss.event.events.RedirectIsUsingItemEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
 import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
@@ -42,6 +44,9 @@ import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.movement.NoJumpDelay;
+import Abyss.module.impl.movement.NoSlow;
+import Abyss.module.impl.movement.Speed;
+import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
@@ -103,10 +108,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
+import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3i;
@@ -223,6 +230,7 @@ implements EventSubscriber {
     private int clickGuiModeProbeWaitTicks;
     private String clickGuiModeProbeOriginalMode;
     private static final String[] CLICKGUI_MODE_PROBE_MODES = new String[]{"STUDIO", "RAVEN", "VESTIGE"};
+    private int highRiskFunctionalProbeStage;
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -2132,6 +2140,206 @@ implements EventSubscriber {
 }
 }
 
+    private void probeVelocityPacketEffect() throws Throwable {
+        Velocity probe = Modules.J(Velocity.class);
+        if (probe == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("Velocity module/player unavailable");
+        }
+        boolean originalModify = Velocity.modifyVelocity.c();
+        boolean originalDelay = Velocity.delayVelocity.c();
+        int originalHorizontal = Velocity.horizontal.k();
+        int originalVertical = Velocity.vertical.k();
+        try {
+            Velocity.modifyVelocity.v(true, 0L);
+            Velocity.delayVelocity.v(false, 0L);
+            Velocity.horizontal.d(0);
+            Velocity.vertical.d(0);
+
+            ReceivePacketEvent event = new ReceivePacketEvent(
+                    new S12PacketEntityVelocity(this.c.thePlayer.getEntityId(), 0.8, 0.4, -0.6));
+            runtimeMilestone("high-risk-functional-probe-dispatch:Velocity:S12PacketEntityVelocity");
+            probe.onReceivePacket(0, (char)0, 0, event);
+            if (!event.a()) {
+                throw new IllegalStateException("Velocity did not cancel local S12PacketEntityVelocity");
+            }
+            runtimeMilestone("high-risk-functional-probe-effect-pass:Velocity:cancelled=true");
+        }
+        finally {
+            Velocity.modifyVelocity.v(originalModify, 0L);
+            Velocity.delayVelocity.v(originalDelay, 0L);
+            Velocity.horizontal.d(originalHorizontal);
+            Velocity.vertical.d(originalVertical);
+        }
+    }
+
+    private void probeNoSlowSwordEffect() throws Throwable {
+        NoSlow probe = Modules.J(NoSlow.class);
+        if (probe == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("NoSlow module/player unavailable");
+        }
+        String originalMode = NoSlow.mode.Y();
+        String originalSwordMode = NoSlow.swordMode.Y();
+        int originalSlowDown = NoSlow.slowDown.k();
+        boolean originalOnlyAutoblock = NoSlow.onlyEnableWhenAutoblock.c();
+        boolean originalSword = NoSlow.sword.c();
+        int slot = this.c.thePlayer.inventory.currentItem;
+        ItemStack originalStack = this.c.thePlayer.inventory.getStackInSlot(slot);
+        try {
+            NoSlow.mode.i("VANILLA");
+            NoSlow.swordMode.i("VANILLA");
+            NoSlow.slowDown.d(0);
+            NoSlow.onlyEnableWhenAutoblock.v(false, 0L);
+            NoSlow.sword.v(true, 0L);
+            this.c.thePlayer.inventory.setInventorySlotContents(slot, new ItemStack(Items.diamond_sword));
+
+            RedirectIsUsingItemEvent event = new RedirectIsUsingItemEvent(0.2f);
+            runtimeMilestone("high-risk-functional-probe-dispatch:NoSlow:RedirectIsUsingItemEvent");
+            probe.onRedirectIsUsingItem((byte)0, 0, 0, event);
+            if (Math.abs(event.q() - 1.0f) > 0.0001f || event.v()) {
+                throw new IllegalStateException("NoSlow slowdown mismatch multiplier=" + event.q()
+                        + " cancelled=" + event.v());
+            }
+            runtimeMilestone("high-risk-functional-probe-effect-pass:NoSlow:multiplier=1.0");
+        }
+        finally {
+            this.c.thePlayer.inventory.setInventorySlotContents(slot, originalStack);
+            NoSlow.mode.i(originalMode);
+            NoSlow.swordMode.i(originalSwordMode);
+            NoSlow.slowDown.d(originalSlowDown);
+            NoSlow.onlyEnableWhenAutoblock.v(originalOnlyAutoblock, 0L);
+            NoSlow.sword.v(originalSword, 0L);
+        }
+    }
+
+    private void probeBlinkBufferEffect() throws Throwable {
+        Blink probe = Modules.J(Blink.class);
+        if (probe == null) {
+            throw new IllegalStateException("Blink module unavailable");
+        }
+        if (PacketManager.e() || !PacketManager.u.isEmpty()) {
+            throw new IllegalStateException("Blink probe requires clean packet buffer state buffering="
+                    + PacketManager.e() + " queued=" + PacketManager.u.size());
+        }
+        String originalMode = Blink.mode.Y();
+        boolean originalAutoDisable = Blink.autoDisable.c();
+        try {
+            Blink.mode.i("NORMAL");
+            Blink.autoDisable.v(false, 0L);
+            runtimeMilestone("high-risk-functional-probe-dispatch:Blink:PostUpdateWalkingPlayerEvent");
+            probe.onPostUpdateWalkingPlayer(new PostUpdateWalkingPlayerEvent(0), 0L);
+            if (!PacketManager.e()) {
+                throw new IllegalStateException("Blink NORMAL handler did not enable packet buffering");
+            }
+            runtimeMilestone("high-risk-functional-probe-effect-pass:Blink:buffering=true");
+            probe.A(0L);
+            if (PacketManager.e() || !PacketManager.u.isEmpty()) {
+                throw new IllegalStateException("Blink disable did not restore clean packet state buffering="
+                        + PacketManager.e() + " queued=" + PacketManager.u.size());
+            }
+            runtimeMilestone("high-risk-functional-probe-restore-pass:Blink:buffering=false");
+        }
+        finally {
+            if (PacketManager.e()) {
+                PacketManager.j();
+                PacketManager.M(false);
+            }
+            Blink.mode.i(originalMode);
+            Blink.autoDisable.v(originalAutoDisable, 0L);
+        }
+    }
+
+    private void probeSpeedAutoJumpEffect() throws Throwable {
+        Speed probe = Modules.J(Speed.class);
+        if (probe == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("Speed module/player unavailable");
+        }
+        String originalMode = Speed.mode.Y();
+        float originalSpeed = Speed.speed.L();
+        boolean originalForward = this.c.gameSettings.keyBindForward.isKeyDown();
+        boolean originalOnGround = this.c.thePlayer.onGround;
+        double originalMotionX = this.c.thePlayer.motionX;
+        double originalMotionY = this.c.thePlayer.motionY;
+        double originalMotionZ = this.c.thePlayer.motionZ;
+        try {
+            Speed.mode.i("AUTO_JUMP");
+            Speed.speed.o((byte)0, 0L, 1.0f);
+            this.c.thePlayer.onGround = true;
+            this.c.thePlayer.motionY = 0.0;
+            KeyBindUtil.A(0L, this.c.gameSettings.keyBindForward.getKeyCode(), true);
+
+            runtimeMilestone("high-risk-functional-probe-dispatch:Speed:AUTO_JUMP");
+            probe.onPreUpdate(0L, new PreUpdateEvent(0, 0, 0));
+            if (this.c.thePlayer.motionY < 0.39) {
+                throw new IllegalStateException("Speed AUTO_JUMP did not jump motionY=" + this.c.thePlayer.motionY);
+            }
+            runtimeMilestone("high-risk-functional-probe-effect-pass:Speed:motionY="
+                    + this.c.thePlayer.motionY);
+        }
+        finally {
+            KeyBindUtil.A(0L, this.c.gameSettings.keyBindForward.getKeyCode(), originalForward);
+            this.c.thePlayer.onGround = originalOnGround;
+            this.c.thePlayer.motionX = originalMotionX;
+            this.c.thePlayer.motionY = originalMotionY;
+            this.c.thePlayer.motionZ = originalMotionZ;
+            Speed.mode.i(originalMode);
+            Speed.speed.o((byte)0, 0L, originalSpeed);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe")
+                || this.highRiskFunctionalProbeStage < 0
+                || this.highRiskFunctionalProbeStage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) return;
+        if (Boolean.getBoolean("abyss.promotedRegistryProbe")
+                && this.promotedRegistryProbeIndex < PROMOTED_REGISTRY_PROBE_MODULES.length) return;
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.combatFunctionalProbe") && this.combatFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) return;
+        if (Boolean.getBoolean("abyss.macroFunctionalProbe") && this.macroFunctionalProbeStage < 4) return;
+        if (Boolean.getBoolean("abyss.visualUtilityFunctionalProbe")
+                && this.visualUtilityFunctionalProbeStage < 4) return;
+
+        try {
+            switch (this.highRiskFunctionalProbeStage) {
+                case 0:
+                    this.probeVelocityPacketEffect();
+                    runtimeMilestone("high-risk-functional-probe-module-pass:Velocity");
+                    ++this.highRiskFunctionalProbeStage;
+                    return;
+                case 1:
+                    this.probeNoSlowSwordEffect();
+                    runtimeMilestone("high-risk-functional-probe-module-pass:NoSlow");
+                    ++this.highRiskFunctionalProbeStage;
+                    return;
+                case 2:
+                    this.probeBlinkBufferEffect();
+                    runtimeMilestone("high-risk-functional-probe-module-pass:Blink");
+                    ++this.highRiskFunctionalProbeStage;
+                    return;
+                case 3:
+                    this.probeSpeedAutoJumpEffect();
+                    runtimeMilestone("high-risk-functional-probe-module-pass:Speed");
+                    ++this.highRiskFunctionalProbeStage;
+                    runtimeMilestone("high-risk-functional-probe-pass:4");
+                    return;
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbeStage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe", "stage", failure);
+            runtimeMilestone("high-risk-functional-probe-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpWorldFunctionalProbe() {
         if (!Boolean.getBoolean("abyss.worldFunctionalProbe") || this.worldFunctionalProbeStage < 0
                 || this.worldFunctionalProbeStage >= 3) {
@@ -2760,6 +2968,7 @@ implements EventSubscriber {
             this.pumpPacketFunctionalProbe();
             this.pumpMacroFunctionalProbe();
             this.pumpVisualUtilityFunctionalProbe();
+            this.pumpHighRiskFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
