@@ -359,6 +359,9 @@ def launch(args: argparse.Namespace) -> int:
         f"-Djava.library.path={natives_dir}",
         "-Dminecraft.launcher.brand=OpenAbyssProductionSmoke",
         "-Dminecraft.launcher.version=1",
+    ]
+    cmd += list(args.jvm_arg or [])
+    cmd += [
         "-cp",
         cp,
         main_class,
@@ -388,6 +391,10 @@ def launch(args: argparse.Namespace) -> int:
         if args.port:
             cmd += ["--port", str(args.port)]
 
+    print(f"OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT={len(args.jvm_arg or [])}", flush=True)
+    for jvm_arg in args.jvm_arg or []:
+        if jvm_arg.startswith("-Dabyss."):
+            print("OPENABYSS_PRODUCTION_LINUX_JVM_ARG=" + jvm_arg, flush=True)
     print(f"OPENABYSS_PRODUCTION_LINUX_CLASSPATH_COUNT={len(classpath)}", flush=True)
     print(f"OPENABYSS_PRODUCTION_LINUX_NATIVE_ARCHIVES={native_archives}", flush=True)
     print(f"OPENABYSS_PRODUCTION_LINUX_JAR_SHA256={hashlib.sha256(abyss.read_bytes()).hexdigest().upper()}", flush=True)
@@ -415,6 +422,7 @@ def main() -> int:
     p.add_argument("--abyss-jar", required=True)
     p.add_argument("--java", required=True)
     p.add_argument("--username", default="CIProdWorld")
+    p.add_argument("--jvm-arg", action="append", default=[])
     p.add_argument("--server")
     p.add_argument("--port", type=int)
     p.set_defaults(func=launch)
