@@ -133,7 +133,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -360,6 +360,12 @@ try {
             foreach ($Needle in @(
                 'world-functional-probe-pass',
                 'category-lifecycle-probe-pass:9',
+                'event-functional-probe-effect-pass:FastPlace:rightClickDelay=1',
+                'event-functional-probe-pass:FastPlace:',
+                'movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1',
+                'movement-functional-probe-pass:NoJumpDelay:',
+                'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true',
+                'packet-functional-probe-pass:Ambience:',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
