@@ -10977,8 +10977,15 @@ implements EventSubscriber {
 
             if (this.c.currentScreen
                     != this.highRiskFunctionalProbe43OriginalScreen) {
-                this.c.displayGuiScreen(
-                        this.highRiskFunctionalProbe43OriginalScreen);
+                // Probe43 may hold an intentionally uninitialized GuiInventory
+                // directly in currentScreen. Do not route that synthetic screen
+                // through displayGuiScreen(), because onGuiClosed expects its
+                // Minecraft reference to have been initialized.
+                this.c.currentScreen = null;
+                if (this.highRiskFunctionalProbe43OriginalScreen != null) {
+                    this.c.displayGuiScreen(
+                            this.highRiskFunctionalProbe43OriginalScreen);
+                }
             }
 
             if (this.highRiskFunctionalProbe43OriginalMode != null) {
@@ -11319,7 +11326,9 @@ implements EventSubscriber {
                                     + "InvManager:swordSwap=10->0"
                                     + ":best=diamond_sword");
 
-                    this.c.displayGuiScreen(null);
+                    // Detach the synthetic uninitialized GuiInventory directly
+                    // before any normal Minecraft screen lifecycle is invoked.
+                    this.c.currentScreen = null;
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
                     this.setModuleEnabledRawForProbe(probe, false);
 
