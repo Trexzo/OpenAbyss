@@ -15,6 +15,7 @@
 package Abyss;
 
 import Abyss.command.AbyssCommands;
+import Abyss.ASM.Hooks.Entity.EntityRendererHooks;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
@@ -63,6 +64,7 @@ import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Ambience;
+import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual_utility.InventoryHUD;
@@ -131,6 +133,8 @@ import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
@@ -258,6 +262,10 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe2Stage;
     private int highRiskFunctionalProbe3Stage;
     private int highRiskFunctionalProbe4Stage;
+    private int highRiskFunctionalProbe5Stage;
+    private int highRiskFunctionalProbe5WaitTicks;
+    private boolean highRiskFunctionalProbe5OriginalEnabled;
+    private boolean highRiskFunctionalProbe5Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -2835,6 +2843,142 @@ implements EventSubscriber {
         runtimeMilestone("high-risk-functional-probe4-restore-pass:ChestESP");
     }
 
+    private void verifyAntiDebuffHookEffect(boolean expectBypass, String phase) {
+        if (ModuleManager.O != Modules.J(AntiDebuff.class)) {
+            throw new IllegalStateException("AntiDebuff hook singleton differs from registry singleton");
+        }
+        EntityZombie target = new EntityZombie(this.c.theWorld);
+        target.addPotionEffect(new PotionEffect(Potion.blindness.id, 200, 0));
+        target.addPotionEffect(new PotionEffect(Potion.confusion.id, 200, 0));
+
+        boolean blindnessVisible = EntityRendererHooks.bypassBlindnessIfNeeded(Potion.blindness, target);
+        boolean confusionVisible = EntityRendererHooks.bypassConfusionIfNeeded(Potion.confusion, target);
+        boolean expectedVisible = !expectBypass;
+        if (blindnessVisible != expectedVisible || confusionVisible != expectedVisible) {
+            throw new IllegalStateException("AntiDebuff hook mismatch phase=" + phase
+                    + " moduleEnabled=" + ModuleManager.O.o()
+                    + " blindnessVisible=" + blindnessVisible
+                    + " confusionVisible=" + confusionVisible
+                    + " expectedVisible=" + expectedVisible);
+        }
+        runtimeMilestone("high-risk-functional-probe5-effect-pass:AntiDebuff:" + phase
+                + ":blindnessVisible=" + blindnessVisible
+                + ":confusionVisible=" + confusionVisible);
+    }
+
+    private void restoreHighRiskFunctionalProbe5() {
+        if (!this.highRiskFunctionalProbe5Saved) {
+            return;
+        }
+        try {
+            AntiDebuff probe = Modules.J(AntiDebuff.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe5OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe5OriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe5:AntiDebuff", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe5() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe5")
+                || this.highRiskFunctionalProbe5Stage < 0
+                || this.highRiskFunctionalProbe5Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.invMovePhysicalProbe")
+                && this.invMovePhysicalProbeStage < 6) return;
+
+        try {
+            AntiDebuff probe = Modules.J(AntiDebuff.class);
+            if (probe == null || this.c.theWorld == null) {
+                throw new IllegalStateException("AntiDebuff module/world unavailable");
+            }
+            if (ModuleManager.O != probe) {
+                throw new IllegalStateException("AntiDebuff ModuleManager singleton mismatch");
+            }
+
+            switch (this.highRiskFunctionalProbe5Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe5OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe5Saved = true;
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe5Stage;
+                    this.highRiskFunctionalProbe5WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe5-state-request:AntiDebuff:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe5WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyAntiDebuffHookEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe5Stage;
+                        this.highRiskFunctionalProbe5WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe5-state-request:AntiDebuff:enabled=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe5WaitTicks > 160) {
+                        throw new IllegalStateException("AntiDebuff did not settle disabled enabled="
+                                + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K());
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe5WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyAntiDebuffHookEffect(true, "enabled");
+                        if (!this.highRiskFunctionalProbe5OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe5Stage;
+                        this.highRiskFunctionalProbe5WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe5-restore-request:AntiDebuff:enabled="
+                                + this.highRiskFunctionalProbe5OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe5WaitTicks > 160) {
+                        throw new IllegalStateException("AntiDebuff did not settle enabled enabled="
+                                + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K());
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe5WaitTicks;
+                    if (probe.o() == this.highRiskFunctionalProbe5OriginalEnabled
+                            && !probe.l() && !probe.K()) {
+                        this.verifyAntiDebuffHookEffect(
+                                this.highRiskFunctionalProbe5OriginalEnabled, "restored");
+                        runtimeMilestone("high-risk-functional-probe5-restore-pass:AntiDebuff:enabled="
+                                + this.highRiskFunctionalProbe5OriginalEnabled);
+                        ++this.highRiskFunctionalProbe5Stage;
+                        runtimeMilestone("high-risk-functional-probe5-module-pass:AntiDebuff");
+                        runtimeMilestone("high-risk-functional-probe5-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe5WaitTicks > 160) {
+                        throw new IllegalStateException("AntiDebuff original state did not restore enabled="
+                                + probe.o() + " expected=" + this.highRiskFunctionalProbe5OriginalEnabled);
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe5();
+            this.highRiskFunctionalProbe5Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe5:AntiDebuff", "asm-hook", failure);
+            runtimeMilestone("high-risk-functional-probe5-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -3777,6 +3921,7 @@ implements EventSubscriber {
             this.pumpHighRiskFunctionalProbe3();
             this.pumpHighRiskFunctionalProbe4();
             this.pumpInvMovePhysicalProbe();
+            this.pumpHighRiskFunctionalProbe5();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
