@@ -133,7 +133,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.promotedRegistryProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.highRiskFunctionalProbe=true -Dabyss.highRiskFunctionalProbe2=true -Dabyss.highRiskFunctionalProbe3=true -Dabyss.highRiskFunctionalProbe4=true -Dabyss.highRiskFunctionalProbe5=true -Dabyss.highRiskFunctionalProbe6=true -Dabyss.highRiskFunctionalProbe7=true -Dabyss.highRiskFunctionalProbe8=true -Dabyss.highRiskFunctionalProbe9=true -Dabyss.highRiskFunctionalProbe10=true -Dabyss.highRiskFunctionalProbe11=true -Dabyss.highRiskFunctionalProbe12=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -383,6 +383,57 @@ try {
                 'visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3',
                 'visual-utility-functional-probe-restore-state-pass:InventoryHUD',
                 'visual-utility-functional-probe-pass:InventoryHUD:',
+                'promoted-registry-probe-pass:20',
+                'high-risk-functional-probe-module-pass:Velocity',
+                'high-risk-functional-probe-module-pass:NoSlow',
+                'high-risk-functional-probe-module-pass:Blink',
+                'high-risk-functional-probe-module-pass:Speed',
+                'high-risk-functional-probe-pass:4',
+                'high-risk-functional-probe2-module-pass:Sprint',
+                'high-risk-functional-probe2-module-pass:BackTrack',
+                'high-risk-functional-probe2-module-pass:NoInteract',
+                'high-risk-functional-probe2-pass:3',
+                'high-risk-functional-probe3-effect-pass:WTap:forward=0.0:strafe=0.0',
+                'high-risk-functional-probe3-restore-pass:WTap',
+                'high-risk-functional-probe3-pass:1',
+                'high-risk-functional-probe4-effect-pass:ChestESP:visible=true',
+                'high-risk-functional-probe4-effect-pass:ChestESP:ignoreOpened=true:hidden=true',
+                'high-risk-functional-probe4-restore-pass:ChestESP',
+                'high-risk-functional-probe4-pass:1',
+                'high-risk-functional-probe5-effect-pass:AntiDebuff:disabled:blindnessVisible=true:confusionVisible=true',
+                'high-risk-functional-probe5-effect-pass:AntiDebuff:enabled:blindnessVisible=false:confusionVisible=false',
+                'high-risk-functional-probe5-restore-pass:AntiDebuff:',
+                'high-risk-functional-probe5-pass:1',
+                'high-risk-functional-probe6-effect-pass:NoHurtCam:disabled:identityDelta=',
+                'high-risk-functional-probe6-effect-pass:NoHurtCam:enabled:identityDelta=0.0:effect=0',
+                'high-risk-functional-probe6-restore-pass:NoHurtCam:',
+                'high-risk-functional-probe6-pass:1',
+                'high-risk-functional-probe7-effect-pass:BarrierVisible:disabled:cancelled=false:returnValue=71',
+                'high-risk-functional-probe7-effect-pass:BarrierVisible:enabled:cancelled=true:returnValue=3',
+                'high-risk-functional-probe7-restore-pass:BarrierVisible:',
+                'high-risk-functional-probe7-pass:1',
+                'high-risk-functional-probe8-effect-pass:ViewClip:disabled:takeover=false:result=null',
+                'high-risk-functional-probe8-effect-pass:ViewClip:enabled:takeover=true:result=',
+                'high-risk-functional-probe8-restore-pass:ViewClip:',
+                'high-risk-functional-probe8-pass:1',
+                'high-risk-functional-probe9-effect-pass:Animations:disabled:cancelled=false:noRotations=true',
+                'high-risk-functional-probe9-effect-pass:Animations:enabled:cancelled=true:noRotations=true',
+                'high-risk-functional-probe9-restore-pass:Animations:',
+                'high-risk-functional-probe9-pass:1',
+                'high-risk-functional-probe10-baseline-pass:Timer:timerSpeed=',
+                'high-risk-functional-probe10-effect-pass:Timer:enabled:timerSpeed=1.37',
+                'high-risk-functional-probe10-effect-pass:Timer:disabled:timerSpeed=',
+                'high-risk-functional-probe10-restore-pass:Timer:',
+                'high-risk-functional-probe10-pass:1',
+                'high-risk-functional-probe11-effect-pass:Chams:disabled:pre=false:post=false',
+                'high-risk-functional-probe11-effect-pass:Chams:enabled:pre=true:post=false',
+                'high-risk-functional-probe11-effect-pass:Chams:restored:',
+                'high-risk-functional-probe11-restore-pass:Chams:',
+                'high-risk-functional-probe11-pass:1',
+                'high-risk-functional-probe12-effect-pass:Freelook:enabled:view=1:active=true:yaw=37.25:pitch=-18.5',
+                'high-risk-functional-probe12-effect-pass:Freelook:disabled:view=0:active=false:yaw=37.25:pitch=-18.5',
+                'high-risk-functional-probe12-restore-pass:Freelook:',
+                'high-risk-functional-probe12-pass:1',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
@@ -396,6 +447,29 @@ try {
                 $Needle = "category-lifecycle-probe-module-pass:${ModuleName}:"
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
                     $Failures += "extended-probes:missing:$Needle"
+                }
+            }
+            $PromotedPasses = ([regex]::Matches($RuntimeEvidenceText, 'promoted-registry-probe-module-pass:')).Count
+            if ($PromotedPasses -ne 20) {
+                $Failures += "extended-probes:promoted-module-pass-count:$PromotedPasses/20"
+            }
+            foreach ($FailurePrefix in @(
+                'high-risk-functional-probe-fail:',
+                'high-risk-functional-probe2-fail:',
+                'high-risk-functional-probe3-fail:',
+                'high-risk-functional-probe4-fail:',
+                'high-risk-functional-probe5-fail:',
+                'high-risk-functional-probe6-fail:',
+                'high-risk-functional-probe7-fail:',
+                'high-risk-functional-probe8-fail:',
+                'high-risk-functional-probe9-fail:',
+                'high-risk-functional-probe10-fail:',
+                'high-risk-functional-probe11-fail:',
+                'high-risk-functional-probe12-fail:',
+                'promoted-registry-probe-fail:'
+            )) {
+                if ($RuntimeEvidenceText.Contains($FailurePrefix)) {
+                    $Failures += "extended-probes:failure-marker:$FailurePrefix"
                 }
             }
         }
