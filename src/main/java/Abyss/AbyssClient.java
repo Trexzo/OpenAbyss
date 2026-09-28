@@ -7556,7 +7556,7 @@ implements EventSubscriber {
                     return;
                 }
 
-                case 3: {
+                case 2: {
                     ++this.highRiskFunctionalProbe32WaitTicks;
                     int attackKey =
                             this.c.gameSettings.keyBindAttack.getKeyCode();
