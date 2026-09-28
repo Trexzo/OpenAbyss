@@ -18,9 +18,11 @@ import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
+import Abyss.event.events.AttackEntityEvent;
 import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
+import Abyss.event.events.PlayerRightClickEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreTickEvent;
@@ -36,6 +38,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
@@ -46,8 +49,10 @@ import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
 import Abyss.module.impl.movement.Speed;
+import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.NoHitDelay;
+import Abyss.module.impl.player.NoInteract;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
@@ -68,6 +73,7 @@ import Abyss.util.PlayerInfoCache;
 import Abyss.util.Sneaky;
 import Abyss.util.TimerUtil;
 import Abyss.util.debug.StallWatchdog;
+import Abyss.util.packet.IncomingPacketHold;
 import Abyss.util.packet.PacketManager;
 import Abyss.util.render.abyss.FontManager;
 import java.io.File;
@@ -106,16 +112,20 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
 
 public class AbyssClient
@@ -231,6 +241,7 @@ implements EventSubscriber {
     private String clickGuiModeProbeOriginalMode;
     private static final String[] CLICKGUI_MODE_PROBE_MODES = new String[]{"STUDIO", "RAVEN", "VESTIGE"};
     private int highRiskFunctionalProbeStage;
+    private int highRiskFunctionalProbe2Stage;
     private static long[] i;
     public static String I;
     private static final byte[] KEY_OFFSETS;
@@ -2286,6 +2297,167 @@ implements EventSubscriber {
         }
     }
 
+    private void probeSprintKeyEffect() throws Throwable {
+        Sprint probe = Modules.J(Sprint.class);
+        if (probe == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("Sprint module/player unavailable");
+        }
+        int sprintKey = this.c.gameSettings.keyBindSprint.getKeyCode();
+        boolean originalKey = this.c.gameSettings.keyBindSprint.isKeyDown();
+        try {
+            KeyBindUtil.A(0L, sprintKey, false);
+            if (this.c.gameSettings.keyBindSprint.isKeyDown()) {
+                throw new IllegalStateException("Sprint probe could not clear sprint key precondition");
+            }
+            runtimeMilestone("high-risk-functional-probe2-dispatch:Sprint:PreUpdateEvent");
+            probe.onPreUpdate((short)0, new PreUpdateEvent(0, 0, 0), (char)0, 0);
+            if (!this.c.gameSettings.keyBindSprint.isKeyDown()) {
+                throw new IllegalStateException("Sprint pre-update did not set sprint key");
+            }
+            runtimeMilestone("high-risk-functional-probe2-effect-pass:Sprint:key=true");
+        }
+        finally {
+            KeyBindUtil.A(0L, sprintKey, originalKey);
+        }
+    }
+
+    private void probeBackTrackSelectionAndCleanup() throws Throwable {
+        BackTrack probe = Modules.J(BackTrack.class);
+        if (probe == null || this.c.thePlayer == null || this.c.theWorld == null) {
+            throw new IllegalStateException("BackTrack module/player/world unavailable");
+        }
+        boolean originalPlayers = BackTrack.players.c();
+        boolean originalMobs = BackTrack.mobs.c();
+        boolean originalAnimals = BackTrack.animals.c();
+        boolean originalBosses = BackTrack.bosses.c();
+        float originalMinRange = BackTrack.minRange.L();
+        float originalMaxRange = BackTrack.maxRange.L();
+        float originalMinDelay = BackTrack.minDelay.L();
+        float originalMaxDelay = BackTrack.maxDelay.L();
+        boolean originalHold = IncomingPacketHold.r();
+        EntityZombie target = new EntityZombie(this.c.theWorld);
+        try {
+            BackTrack.N = null;
+            IncomingPacketHold.s();
+            IncomingPacketHold.X(false);
+            BackTrack.players.v(false, 0L);
+            BackTrack.mobs.v(true, 0L);
+            BackTrack.animals.v(false, 0L);
+            BackTrack.bosses.v(false, 0L);
+            BackTrack.minRange.o((byte)0, 0L, 1.0f);
+            BackTrack.maxRange.o((byte)0, 0L, 5.0f);
+            BackTrack.minDelay.o((byte)0, 0L, 100.0f);
+            BackTrack.maxDelay.o((byte)0, 0L, 100.0f);
+            target.setPosition(this.c.thePlayer.posX + 3.0, this.c.thePlayer.posY, this.c.thePlayer.posZ);
+
+            runtimeMilestone("high-risk-functional-probe2-dispatch:BackTrack:AttackEntityEvent");
+            probe.onAttackEntity(new AttackEntityEvent(target, (char)0, (short)0, 0), 0L);
+            if (BackTrack.N != target) {
+                throw new IllegalStateException("BackTrack did not select controlled target");
+            }
+            runtimeMilestone("high-risk-functional-probe2-effect-pass:BackTrack:selected=true");
+
+            probe.onRender2D((char)0, 0,
+                    new Render2DEvent(0, (short)0, 0.0f, (short)0, new ScaledResolution(this.c)),
+                    (char)0);
+            if (!IncomingPacketHold.r()) {
+                throw new IllegalStateException("BackTrack render path did not engage incoming packet hold");
+            }
+            runtimeMilestone("high-risk-functional-probe2-effect-pass:BackTrack:hold=true");
+
+            target.setPosition(this.c.thePlayer.posX + 0.25, this.c.thePlayer.posY, this.c.thePlayer.posZ);
+            probe.onPreUpdate((char)0, 0, new PreUpdateEvent(0, 0, 0), (short)0);
+            if (BackTrack.N != null || IncomingPacketHold.r()) {
+                throw new IllegalStateException("BackTrack cleanup failed target=" + BackTrack.N
+                        + " hold=" + IncomingPacketHold.r());
+            }
+            runtimeMilestone("high-risk-functional-probe2-restore-pass:BackTrack:target=null:hold=false");
+        }
+        finally {
+            BackTrack.N = null;
+            IncomingPacketHold.s();
+            IncomingPacketHold.X(originalHold);
+            BackTrack.players.v(originalPlayers, 0L);
+            BackTrack.mobs.v(originalMobs, 0L);
+            BackTrack.animals.v(originalAnimals, 0L);
+            BackTrack.bosses.v(originalBosses, 0L);
+            BackTrack.minRange.o((byte)0, 0L, originalMinRange);
+            BackTrack.maxRange.o((byte)0, 0L, originalMaxRange);
+            BackTrack.minDelay.o((byte)0, 0L, originalMinDelay);
+            BackTrack.maxDelay.o((byte)0, 0L, originalMaxDelay);
+        }
+    }
+
+    private void probeNoInteractContainerEffect() throws Throwable {
+        NoInteract probe = Modules.J(NoInteract.class);
+        if (probe == null || this.c.thePlayer == null || this.c.theWorld == null) {
+            throw new IllegalStateException("NoInteract module/player/world unavailable");
+        }
+        BlockPos pos = new BlockPos(
+                MathHelper.floor_double(this.c.thePlayer.posX) + 2,
+                MathHelper.floor_double(this.c.thePlayer.posY),
+                MathHelper.floor_double(this.c.thePlayer.posZ));
+        IBlockState original = this.c.theWorld.getBlockState(pos);
+        try {
+            if (!this.c.theWorld.setBlockState(pos, Blocks.chest.getDefaultState(), 3)) {
+                throw new IllegalStateException("NoInteract probe could not place temporary chest");
+            }
+            PlayerRightClickEvent event = new PlayerRightClickEvent(
+                    this.c.theWorld,
+                    this.c.thePlayer.getHeldItem(),
+                    pos,
+                    EnumFacing.UP,
+                    new Vec3(pos).addVector(0.5, 1.0, 0.5));
+            runtimeMilestone("high-risk-functional-probe2-dispatch:NoInteract:PlayerRightClickEvent");
+            probe.onPlayerRightClick(event);
+            if (!event.a()) {
+                throw new IllegalStateException("NoInteract did not cancel temporary chest interaction");
+            }
+            runtimeMilestone("high-risk-functional-probe2-effect-pass:NoInteract:cancelled=true");
+        }
+        finally {
+            this.c.theWorld.setBlockState(pos, original, 3);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe2() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe2")
+                || this.highRiskFunctionalProbe2Stage < 0
+                || this.highRiskFunctionalProbe2Stage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe")
+                && this.highRiskFunctionalProbeStage < 4) return;
+
+        try {
+            switch (this.highRiskFunctionalProbe2Stage) {
+                case 0:
+                    this.probeSprintKeyEffect();
+                    runtimeMilestone("high-risk-functional-probe2-module-pass:Sprint");
+                    ++this.highRiskFunctionalProbe2Stage;
+                    return;
+                case 1:
+                    this.probeBackTrackSelectionAndCleanup();
+                    runtimeMilestone("high-risk-functional-probe2-module-pass:BackTrack");
+                    ++this.highRiskFunctionalProbe2Stage;
+                    return;
+                case 2:
+                    this.probeNoInteractContainerEffect();
+                    runtimeMilestone("high-risk-functional-probe2-module-pass:NoInteract");
+                    ++this.highRiskFunctionalProbe2Stage;
+                    runtimeMilestone("high-risk-functional-probe2-pass:3");
+                    return;
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe2Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe2", "stage", failure);
+            runtimeMilestone("high-risk-functional-probe2-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe")
                 || this.highRiskFunctionalProbeStage < 0
@@ -2969,6 +3141,7 @@ implements EventSubscriber {
             this.pumpMacroFunctionalProbe();
             this.pumpVisualUtilityFunctionalProbe();
             this.pumpHighRiskFunctionalProbe();
+            this.pumpHighRiskFunctionalProbe2();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
