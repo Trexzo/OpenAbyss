@@ -28,10 +28,6 @@ import org.lwjgl.input.Keyboard;
 
 public class GuiScreenHooks {
     private static volatile long inputFixTakeoverCount;
-
-    public static long inputFixTakeoverCount() {
-        return inputFixTakeoverCount;
-    }
     private static long b;
         private static Minecraft c;
 
