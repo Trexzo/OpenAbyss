@@ -105,12 +105,15 @@ import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
+import Abyss.module.impl.world.Scaffold;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
+import Abyss.util.BlockUtil;
 import Abyss.util.ClientUtil;
 import Abyss.util.DeferredRendererReload;
 import Abyss.util.KeyBindUtil;
 import Abyss.util.MinecraftRef;
+import Abyss.util.PlacementTarget;
 import Abyss.util.PlayerInfoCache;
 import Abyss.util.Sneaky;
 import Abyss.util.SmoothMouseHelper;
@@ -384,6 +387,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe28Stage;
     private int highRiskFunctionalProbe29Stage;
     private int highRiskFunctionalProbe29WaitTicks;
+    private int highRiskFunctionalProbe30Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -6926,6 +6930,188 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe30() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe30")
+                || this.highRiskFunctionalProbe30Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe29")
+                && this.highRiskFunctionalProbe29Stage < 4) return;
+
+        Scaffold probe = Modules.J(Scaffold.class);
+        BlockPos target = null;
+        BlockPos support = null;
+        IBlockState targetOriginal = null;
+        IBlockState supportOriginal = null;
+        String savedMode = null;
+        String savedRotation = null;
+        boolean savedStrictAim = false;
+        float savedOffset = 0.0f;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Scaffold.class) != probe
+                    || ModuleManager.byName("Scaffold") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || Scaffold.mode == null
+                    || Scaffold.normalModeRotation == null
+                    || Scaffold.strictAimCheck == null
+                    || Scaffold.offsetRotationOffset == null) {
+                throw new IllegalStateException(
+                        "Scaffold placement authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+
+            outer:
+            for (int dy = 4; dy <= 7; ++dy) {
+                for (int dx = 3; dx <= 7; ++dx) {
+                    for (int dz = -3; dz <= 3; ++dz) {
+                        BlockPos candidate =
+                                new BlockPos(baseX + dx, baseY + dy, baseZ + dz);
+                        boolean clear = true;
+                        for (int ox = -2; ox <= 2 && clear; ++ox) {
+                            for (int oz = -2; oz <= 2; ++oz) {
+                                if (!this.c.theWorld.isAirBlock(
+                                        candidate.add(ox, 0, oz))) {
+                                    clear = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!clear) continue;
+                        target = candidate;
+                        support = candidate.east();
+                        break outer;
+                    }
+                }
+            }
+            if (target == null || support == null) {
+                throw new IllegalStateException(
+                        "Scaffold probe found no clear placement fixture");
+            }
+
+            targetOriginal = this.c.theWorld.getBlockState(target);
+            supportOriginal = this.c.theWorld.getBlockState(support);
+            savedMode = Scaffold.mode.Y();
+            savedRotation = Scaffold.normalModeRotation.Y();
+            savedStrictAim = Scaffold.strictAimCheck.c();
+            savedOffset = Scaffold.offsetRotationOffset.L();
+            saved = true;
+
+            Scaffold.mode.i("NORMAL");
+            Scaffold.normalModeRotation.i("OFFSET");
+            Scaffold.strictAimCheck.v(false, 0L);
+            Scaffold.offsetRotationOffset.o((byte)0, 0L, 0.15f);
+
+            if (!this.c.theWorld.setBlockState(
+                    support, Blocks.stone.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "Scaffold probe could not place support block");
+            }
+
+            PlacementTarget placement =
+                    BlockUtil.x((double)target.getY(), null, false);
+            if (placement == null) {
+                throw new IllegalStateException(
+                        "Scaffold BlockUtil.x returned null");
+            }
+            if (!BlockUtil.p(placement.q, support)
+                    || placement.Z != EnumFacing.WEST
+                    || placement.o) {
+                throw new IllegalStateException(
+                        "Scaffold placement target mismatch q="
+                                + placement.q
+                                + " expected=" + support
+                                + " face=" + placement.Z
+                                + " expanded=" + placement.o);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe30-effect-pass:Scaffold:"
+                            + "candidate=support-west");
+
+            Method rotationMethod = Scaffold.class.getDeclaredMethod(
+                    "J", BlockPos.class, Long.TYPE, EnumFacing.class);
+            rotationMethod.setAccessible(true);
+            float[] actual = (float[])rotationMethod.invoke(
+                    probe, placement.q, 0L, placement.Z);
+            Vec3 hit = RotationUtil.h(
+                    placement.q, placement.Z, Scaffold.offsetRotationOffset.L());
+            float[] expected = RotationUtil.L(hit);
+
+            if (actual == null || actual.length < 2
+                    || Float.isNaN(actual[0]) || Float.isInfinite(actual[0])
+                    || Float.isNaN(actual[1]) || Float.isInfinite(actual[1])) {
+                throw new IllegalStateException(
+                        "Scaffold rotation result was invalid");
+            }
+            float yawDelta = Math.abs(MathUtil.M(actual[0], expected[0]));
+            float pitchDelta = Math.abs(actual[1] - expected[1]);
+            if (yawDelta > 0.01f || pitchDelta > 0.01f) {
+                throw new IllegalStateException(
+                        "Scaffold OFFSET rotation mismatch yawDelta="
+                                + yawDelta + " pitchDelta=" + pitchDelta);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe30-effect-pass:Scaffold:"
+                            + "rotation=offset");
+
+            this.highRiskFunctionalProbe30Stage = 1;
+            runtimeMilestone(
+                    "high-risk-functional-probe30-module-pass:Scaffold");
+            runtimeMilestone("high-risk-functional-probe30-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe30Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe30:Scaffold",
+                    "placement-candidate-rotation",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe30-fail:"
+                            + failure.getClass().getName());
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    if (support != null && supportOriginal != null) {
+                        this.c.theWorld.setBlockState(
+                                support, supportOriginal, 3);
+                    }
+                    if (target != null && targetOriginal != null) {
+                        this.c.theWorld.setBlockState(
+                                target, targetOriginal, 3);
+                    }
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe30:Scaffold",
+                            "restore-world",
+                            restoreFailure);
+                }
+            }
+            if (saved) {
+                try {
+                    Scaffold.mode.i(savedMode);
+                    Scaffold.normalModeRotation.i(savedRotation);
+                    Scaffold.strictAimCheck.v(savedStrictAim, 0L);
+                    Scaffold.offsetRotationOffset.o(
+                            (byte)0, 0L, savedOffset);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe30:Scaffold",
+                            "restore-settings",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -7913,6 +8099,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe27();
         this.pumpHighRiskFunctionalProbe28();
         this.pumpHighRiskFunctionalProbe29();
+        this.pumpHighRiskFunctionalProbe30();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
