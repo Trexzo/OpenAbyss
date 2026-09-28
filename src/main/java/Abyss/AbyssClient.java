@@ -51,6 +51,7 @@ import Abyss.event.events.SetKeyBindStateEvent;
 import Abyss.event.events.SetAnglesEvent;
 import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
+import Abyss.internal.accessor.PlayerControllerStateAccessor;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
@@ -118,6 +119,7 @@ import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Scaffold;
+import Abyss.module.impl.world.SpeedMine;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
 import Abyss.util.AttackTracker;
@@ -522,6 +524,15 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe38OriginalX;
     private int highRiskFunctionalProbe38OriginalY;
     private int highRiskFunctionalProbe38OriginalSmallY;
+    private int highRiskFunctionalProbe39Stage;
+    private int highRiskFunctionalProbe39WaitTicks;
+    private boolean highRiskFunctionalProbe39Saved;
+    private boolean highRiskFunctionalProbe39OriginalEnabled;
+    private float highRiskFunctionalProbe39OriginalDelay;
+    private int highRiskFunctionalProbe39OriginalDelayChance;
+    private BlockPos highRiskFunctionalProbe39OriginalLastBlock;
+    private float highRiskFunctionalProbe39OriginalPreviousDamage;
+    private int highRiskFunctionalProbe39OriginalBlockHitDelay;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -9466,6 +9477,226 @@ implements EventSubscriber {
         }
     }
 
+
+    private Field speedMineProbeField(String name) throws Exception {
+        Field field = SpeedMine.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void restoreHighRiskFunctionalProbe39() {
+        if (!this.highRiskFunctionalProbe39Saved) {
+            return;
+        }
+        try {
+            SpeedMine probe = Modules.J(SpeedMine.class);
+            SpeedMine.delay.o(
+                    (byte)0, 0L,
+                    this.highRiskFunctionalProbe39OriginalDelay);
+            SpeedMine.delayChance.o(
+                    0L,
+                    this.highRiskFunctionalProbe39OriginalDelayChance);
+            if (probe != null) {
+                this.speedMineProbeField("b").set(
+                        probe,
+                        this.highRiskFunctionalProbe39OriginalLastBlock);
+                this.speedMineProbeField("J").setFloat(
+                        probe,
+                        this.highRiskFunctionalProbe39OriginalPreviousDamage);
+                PlayerControllerStateAccessor.w(
+                        (byte)0,
+                        7374982,
+                        11824981,
+                        this.c.playerController,
+                        this.highRiskFunctionalProbe39OriginalBlockHitDelay);
+                if (probe.o() != this.highRiskFunctionalProbe39OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe39OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe39:SpeedMine",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe39Saved = false;
+        this.highRiskFunctionalProbe39WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe39() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe39")
+                || this.highRiskFunctionalProbe39Stage < 0
+                || this.highRiskFunctionalProbe39Stage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe38")
+                && this.highRiskFunctionalProbe38Stage < 3) {
+            return;
+        }
+
+        SpeedMine probe = Modules.J(SpeedMine.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(SpeedMine.class) != probe
+                    || ModuleManager.byName("SpeedMine") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.playerController == null
+                    || SpeedMine.delay == null
+                    || SpeedMine.delayChance == null) {
+                throw new IllegalStateException(
+                        "SpeedMine live-world controller authority unavailable");
+            }
+
+            Field lastBlockField = this.speedMineProbeField("b");
+            Field previousDamageField = this.speedMineProbeField("J");
+
+            switch (this.highRiskFunctionalProbe39Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe39OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe39OriginalDelay =
+                            SpeedMine.delay.L();
+                    this.highRiskFunctionalProbe39OriginalDelayChance =
+                            SpeedMine.delayChance.k();
+                    this.highRiskFunctionalProbe39OriginalLastBlock =
+                            (BlockPos)lastBlockField.get(probe);
+                    this.highRiskFunctionalProbe39OriginalPreviousDamage =
+                            previousDamageField.getFloat(probe);
+                    this.highRiskFunctionalProbe39OriginalBlockHitDelay =
+                            PlayerControllerStateAccessor.W(
+                                    this.c.playerController);
+                    this.highRiskFunctionalProbe39Saved = true;
+                    this.highRiskFunctionalProbe39WaitTicks = 0;
+
+                    SpeedMine.delay.o((byte)0, 0L, 0.0f);
+                    SpeedMine.delayChance.o(0L, 100);
+                    lastBlockField.set(probe, null);
+                    previousDamageField.setFloat(probe, 0.0f);
+                    PlayerControllerStateAccessor.w(
+                            (byte)0,
+                            7374982,
+                            11824981,
+                            this.c.playerController,
+                            4);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe39Stage = 1;
+                    runtimeMilestone(
+                            "high-risk-functional-probe39-enable-request:"
+                                    + "SpeedMine:blockHitDelay=4");
+                    return;
+                }
+
+                case 1: {
+                    if (!probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || !probe.P()
+                            || !w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe39WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "SpeedMine did not enable/subscribe");
+                        }
+                        return;
+                    }
+
+                    PlayerControllerStateAccessor.w(
+                            (byte)0,
+                            7374982,
+                            11824981,
+                            this.c.playerController,
+                            4);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "SpeedMine fixture EventBus binding inactive");
+                    }
+                    fixtureBus.e(new PostTickEvent(), 0L);
+
+                    int effectDelay = PlayerControllerStateAccessor.W(
+                            this.c.playerController);
+                    if (effectDelay != 0) {
+                        throw new IllegalStateException(
+                                "SpeedMine did not clear blockHitDelay"
+                                        + " expected=0 actual="
+                                        + effectDelay);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe39-effect-pass:"
+                                    + "SpeedMine:blockHitDelay=4->0");
+
+                    this.restoreHighRiskFunctionalProbe39();
+                    this.highRiskFunctionalProbe39Stage = 2;
+                    this.highRiskFunctionalProbe39WaitTicks = 0;
+                    return;
+                }
+
+                case 2: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe39OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe39WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "SpeedMine did not restore original lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe39-restore-pass:"
+                                    + "SpeedMine:enabled="
+                                    + this.highRiskFunctionalProbe39OriginalEnabled);
+                    runtimeMilestone(
+                            "high-risk-functional-probe39-module-pass:SpeedMine");
+                    runtimeMilestone(
+                            "high-risk-functional-probe39-pass:1");
+                    this.highRiskFunctionalProbe39Stage = 3;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe39Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe39:SpeedMine",
+                    "posttick-block-hit-delay",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe39-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe39();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -10468,6 +10699,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe36();
         this.pumpHighRiskFunctionalProbe37();
         this.pumpHighRiskFunctionalProbe38();
+        this.pumpHighRiskFunctionalProbe39();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
