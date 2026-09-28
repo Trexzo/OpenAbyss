@@ -36,6 +36,7 @@ import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
+import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.player.NoHitDelay;
@@ -180,6 +181,12 @@ implements EventSubscriber {
     private float packetFunctionalProbeOriginalTimeSetting;
     private float packetFunctionalProbeOriginalSpeedSetting;
     private long packetFunctionalProbeOriginalWorldTime;
+    private int macroFunctionalProbeStage;
+    private int macroFunctionalProbeWaitTicks;
+    private boolean macroFunctionalProbeOriginalEnabled;
+    private String macroFunctionalProbeOriginalMode;
+    private String macroFunctionalProbeOriginalMessage;
+    private static final String MACRO_FUNCTIONAL_PROBE_SENTINEL = "OPENABYSS_MACRO_PROBE_7E51";
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -1067,6 +1074,151 @@ implements EventSubscriber {
         }
     }
 
+
+    private void restoreMacroFunctionalProbeState(Macro1 probe) {
+        try {
+            if (Macro1.mode != null && this.macroFunctionalProbeOriginalMode != null) {
+                Macro1.mode.i(this.macroFunctionalProbeOriginalMode);
+            }
+            if (Macro1.chatMessage != null && this.macroFunctionalProbeOriginalMessage != null) {
+                Macro1.chatMessage.O(this.macroFunctionalProbeOriginalMessage);
+            }
+            if (probe != null && probe.o() != this.macroFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.macroFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("MacroFunctionalProbe:Macro1", "restore", restoreFailure);
+        }
+    }
+
+    private void verifyMacroFunctionalProbeSettingsRestored() {
+        if (Macro1.mode == null || Macro1.chatMessage == null
+                || !Macro1.mode.R(this.macroFunctionalProbeOriginalMode)
+                || !String.valueOf(this.macroFunctionalProbeOriginalMessage).equals(Macro1.chatMessage.X())) {
+            throw new IllegalStateException("Macro1 settings were not restored");
+        }
+        runtimeMilestone("macro-functional-probe-restore-state-pass:Macro1");
+    }
+
+    private void pumpMacroFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.macroFunctionalProbe")
+                || this.macroFunctionalProbeStage < 0
+                || this.macroFunctionalProbeStage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.combatFunctionalProbe") && this.combatFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) {
+            return;
+        }
+
+        Macro1 probe = Modules.J(Macro1.class);
+        try {
+            if (probe == null || Macro1.mode == null || Macro1.chatMessage == null) {
+                throw new IllegalStateException("Macro1 module/settings are missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.macroFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.macroFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial Macro1 state did not settle");
+                    }
+                    return;
+                }
+                this.macroFunctionalProbeOriginalEnabled = stableEnabled;
+                this.macroFunctionalProbeOriginalMode = Macro1.mode.Y();
+                this.macroFunctionalProbeOriginalMessage = Macro1.chatMessage.X();
+
+                Macro1.mode.i("CHAT");
+                Macro1.chatMessage.O(MACRO_FUNCTIONAL_PROBE_SENTINEL);
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.macroFunctionalProbeStage = 1;
+                    this.macroFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("macro-functional-probe-enable-request:Macro1");
+                    return;
+                }
+                this.macroFunctionalProbeStage = 1;
+            }
+
+            if (this.macroFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.macroFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Macro1 did not enable/subscribe");
+                    }
+                    return;
+                }
+                runtimeMilestone("macro-functional-probe-dispatch:Macro1:CHAT:" + MACRO_FUNCTIONAL_PROBE_SENTINEL);
+                w.e(new PreTickEvent(), 0L);
+                if (probe.o()) {
+                    throw new IllegalStateException("Macro1 CHAT PreTick did not request self-disable");
+                }
+                runtimeMilestone("macro-functional-probe-client-send-pass:Macro1:" + MACRO_FUNCTIONAL_PROBE_SENTINEL);
+                this.macroFunctionalProbeStage = 2;
+                this.macroFunctionalProbeWaitTicks = 0;
+                return;
+            }
+
+            if (this.macroFunctionalProbeStage == 2) {
+                if (!stableDisabled) {
+                    if (++this.macroFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Macro1 did not settle disabled after CHAT send");
+                    }
+                    return;
+                }
+                Macro1.mode.i(this.macroFunctionalProbeOriginalMode);
+                Macro1.chatMessage.O(this.macroFunctionalProbeOriginalMessage);
+                if (this.macroFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, true);
+                    this.macroFunctionalProbeStage = 3;
+                    this.macroFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("macro-functional-probe-restore-request:Macro1:enabled=true");
+                    return;
+                }
+                verifyMacroFunctionalProbeSettingsRestored();
+                this.macroFunctionalProbeStage = 4;
+                runtimeMilestone("macro-functional-probe-pass:Macro1:restored=false");
+                return;
+            }
+
+            if (!stableEnabled) {
+                if (++this.macroFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("Macro1 did not restore enabled state");
+                }
+                return;
+            }
+            verifyMacroFunctionalProbeSettingsRestored();
+            this.macroFunctionalProbeStage = 4;
+            runtimeMilestone("macro-functional-probe-pass:Macro1:restored=true");
+        }
+        catch (Throwable failure) {
+            this.macroFunctionalProbeStage = -1;
+            restoreMacroFunctionalProbeState(probe);
+            recordFeatureFailure("MacroFunctionalProbe:Macro1", "chat-send", failure);
+            runtimeMilestone("macro-functional-probe-fail:Macro1:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpCommandRuntimeProbe() {
         if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
                 || this.commandRuntimeProbeStage < 0
@@ -1087,6 +1239,9 @@ implements EventSubscriber {
             return;
 }
         if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.macroFunctionalProbe") && this.macroFunctionalProbeStage < 4) {
             return;
 }
         try {
@@ -2024,6 +2179,7 @@ implements EventSubscriber {
             this.pumpPlayerFunctionalProbe();
             this.pumpCombatFunctionalProbe();
             this.pumpPacketFunctionalProbe();
+            this.pumpMacroFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
