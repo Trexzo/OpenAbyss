@@ -425,12 +425,17 @@ for MODE in STUDIO RAVEN VESTIGE; do
   fi
 done
 
-if ! grep -Fq 'clickgui-font-ready' "$STAGE"
-grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"; then
+if ! grep -Fq 'clickgui-font-ready' "$STAGE"; then
+  echo 'Production ClickGUI mode cycle began before custom font textures were ready.'
+  cat "$STAGE"
+  exit 1
+fi
+if ! grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"; then
   echo 'Production ClickGUI mode cycle did not restore the original mode.'
   cat "$STAGE"
   exit 1
 fi
+echo 'PRODUCTION_WORLD_CLICKGUI_FONT_READY=PASS'
 echo 'PRODUCTION_WORLD_CLICKGUI_MODE_CYCLE=PASS modes=STUDIO,RAVEN,VESTIGE'
 
 DISPLAY=:99 xdotool keydown Shift_R
