@@ -598,7 +598,6 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe44WaitTicks;
     private boolean highRiskFunctionalProbe44Saved;
     private boolean highRiskFunctionalProbe44OriginalEnabled;
-    private boolean highRiskFunctionalProbe44OriginalPriority;
     private boolean highRiskFunctionalProbe44OriginalAlwaysClick;
     private float highRiskFunctionalProbe44OriginalCps;
     private ItemStack highRiskFunctionalProbe44OriginalSlot0;
@@ -11244,7 +11243,6 @@ implements EventSubscriber {
                     this.highRiskFunctionalProbe44OriginalCps);
 
             if (probe != null) {
-                probe.T(this.highRiskFunctionalProbe44OriginalPriority);
                 if (this.highRiskFunctionalProbe44OriginalEnabled) {
                     probe.I(0L, true);
                 }
@@ -11285,7 +11283,6 @@ implements EventSubscriber {
             switch (this.highRiskFunctionalProbe44Stage) {
                 case 0: {
                     this.highRiskFunctionalProbe44OriginalEnabled = probe.o();
-                    this.highRiskFunctionalProbe44OriginalPriority = probe.Y();
                     this.highRiskFunctionalProbe44OriginalAlwaysClick =
                             InvClicker.alwaysClick.c();
                     this.highRiskFunctionalProbe44OriginalCps =
@@ -11505,8 +11502,7 @@ implements EventSubscriber {
                             (byte)0,
                             0L,
                             this.highRiskFunctionalProbe44OriginalCps);
-                    probe.T(this.highRiskFunctionalProbe44OriginalPriority);
-                    if (this.highRiskFunctionalProbe44OriginalEnabled) {
+                        if (this.highRiskFunctionalProbe44OriginalEnabled) {
                         probe.I(0L, true);
                     }
 
