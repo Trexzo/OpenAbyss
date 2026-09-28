@@ -132,7 +132,8 @@ implements EventSubscriber {
     private int categoryLifecycleProbeWaitTicks;
     private boolean categoryLifecycleProbeOriginalEnabled;
     private static final String[] CATEGORY_LIFECYCLE_PROBE_MODULES = new String[]{
-            "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay", "NoHitDelay", "AutoTool", "Tracers"
+            "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay",
+            "NoHitDelay", "NoHurtCam", "Tracers", "AutoTool"
     };
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
