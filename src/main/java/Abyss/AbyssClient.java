@@ -590,8 +590,7 @@ implements EventSubscriber {
     private String highRiskFunctionalProbe43OriginalMode;
     private boolean[] highRiskFunctionalProbe43OriginalBooleans;
     private float[] highRiskFunctionalProbe43OriginalNumbers;
-    private ItemStack highRiskFunctionalProbe43OriginalSlot0;
-    private ItemStack highRiskFunctionalProbe43OriginalSlot10;
+    private ItemStack[] highRiskFunctionalProbe43OriginalMainInventory;
     private int highRiskFunctionalProbe43OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe43OriginalScreen;
     private int highRiskFunctionalProbe44Stage;
@@ -10822,13 +10821,16 @@ implements EventSubscriber {
                 this.setModuleEnabledRawForProbe(probe, false);
             }
 
-            if (this.c.thePlayer != null) {
-                this.syncCreativeProbeSlot(
-                        0,
-                        this.highRiskFunctionalProbe43OriginalSlot0);
-                this.syncCreativeProbeSlot(
-                        10,
-                        this.highRiskFunctionalProbe43OriginalSlot10);
+            if (this.c.thePlayer != null
+                    && this.highRiskFunctionalProbe43OriginalMainInventory != null) {
+                for (int inventoryIndex = 0;
+                        inventoryIndex
+                                < this.highRiskFunctionalProbe43OriginalMainInventory.length;
+                        ++inventoryIndex) {
+                    this.syncCreativeProbeSlot(
+                            inventoryIndex,
+                            this.highRiskFunctionalProbe43OriginalMainInventory[inventoryIndex]);
+                }
                 this.c.thePlayer.inventory.currentItem =
                         this.highRiskFunctionalProbe43OriginalCurrentItem;
             }
@@ -10949,14 +10951,18 @@ implements EventSubscriber {
                                 InvManager.enderPearlSlot.L(),
                                 InvManager.shearsSlot.L()
                             };
-                    ItemStack slot0 =
-                            this.c.thePlayer.inventory.getStackInSlot(0);
-                    ItemStack slot10 =
-                            this.c.thePlayer.inventory.getStackInSlot(10);
-                    this.highRiskFunctionalProbe43OriginalSlot0 =
-                            slot0 == null ? null : slot0.copy();
-                    this.highRiskFunctionalProbe43OriginalSlot10 =
-                            slot10 == null ? null : slot10.copy();
+                    this.highRiskFunctionalProbe43OriginalMainInventory =
+                            new ItemStack[36];
+                    for (int inventoryIndex = 0;
+                            inventoryIndex
+                                    < this.highRiskFunctionalProbe43OriginalMainInventory.length;
+                            ++inventoryIndex) {
+                        ItemStack original =
+                                this.c.thePlayer.inventory.getStackInSlot(
+                                        inventoryIndex);
+                        this.highRiskFunctionalProbe43OriginalMainInventory[inventoryIndex] =
+                                original == null ? null : original.copy();
+                    }
                     this.highRiskFunctionalProbe43OriginalCurrentItem =
                             this.c.thePlayer.inventory.currentItem;
                     this.highRiskFunctionalProbe43OriginalScreen =
@@ -11020,6 +11026,11 @@ implements EventSubscriber {
                     InvManager.enderPearlSlot.o((byte)0, 0L, 0.0f);
                     InvManager.shearsSlot.o((byte)0, 0L, 0.0f);
 
+                    for (int inventoryIndex = 0;
+                            inventoryIndex < 36;
+                            ++inventoryIndex) {
+                        this.syncCreativeProbeSlot(inventoryIndex, null);
+                    }
                     this.syncCreativeProbeSlot(
                             0,
                             new ItemStack(Items.wooden_sword));
@@ -11064,12 +11075,14 @@ implements EventSubscriber {
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
                     this.setModuleEnabledRawForProbe(probe, false);
 
-                    this.syncCreativeProbeSlot(
-                            0,
-                            this.highRiskFunctionalProbe43OriginalSlot0);
-                    this.syncCreativeProbeSlot(
-                            10,
-                            this.highRiskFunctionalProbe43OriginalSlot10);
+                    for (int inventoryIndex = 0;
+                            inventoryIndex
+                                    < this.highRiskFunctionalProbe43OriginalMainInventory.length;
+                            ++inventoryIndex) {
+                        this.syncCreativeProbeSlot(
+                                inventoryIndex,
+                                this.highRiskFunctionalProbe43OriginalMainInventory[inventoryIndex]);
+                    }
                     this.c.thePlayer.inventory.currentItem =
                             this.highRiskFunctionalProbe43OriginalCurrentItem;
                     if (this.highRiskFunctionalProbe43OriginalScreen != null) {
@@ -11137,18 +11150,20 @@ implements EventSubscriber {
                         return;
                     }
 
-                    boolean slot0Restored =
-                            ItemStack.areItemStacksEqual(
-                                    this.c.thePlayer.inventory
-                                            .getStackInSlot(0),
-                                    this.highRiskFunctionalProbe43OriginalSlot0);
-                    boolean slot10Restored =
-                            ItemStack.areItemStacksEqual(
-                                    this.c.thePlayer.inventory
-                                            .getStackInSlot(10),
-                                    this.highRiskFunctionalProbe43OriginalSlot10);
-                    if (!slot0Restored
-                            || !slot10Restored
+                    boolean inventoryRestored = true;
+                    for (int inventoryIndex = 0;
+                            inventoryIndex
+                                    < this.highRiskFunctionalProbe43OriginalMainInventory.length;
+                            ++inventoryIndex) {
+                        if (!ItemStack.areItemStacksEqual(
+                                this.c.thePlayer.inventory
+                                        .getStackInSlot(inventoryIndex),
+                                this.highRiskFunctionalProbe43OriginalMainInventory[inventoryIndex])) {
+                            inventoryRestored = false;
+                            break;
+                        }
+                    }
+                    if (!inventoryRestored
                             || probe.Y()
                                     != this.highRiskFunctionalProbe43OriginalPriority
                             || !InvManager.mode.Y().equals(
@@ -11159,8 +11174,7 @@ implements EventSubscriber {
                                     > 0.0001f) {
                         throw new IllegalStateException(
                                 "InvManager fixture state did not restore"
-                                        + " slot0=" + slot0Restored
-                                        + " slot10=" + slot10Restored
+                                        + " inventory=" + inventoryRestored
                                         + " priority=" + probe.Y()
                                         + " mode=" + InvManager.mode.Y());
                     }
@@ -11169,7 +11183,7 @@ implements EventSubscriber {
                             "high-risk-functional-probe43-restore-pass:"
                                     + "InvManager:enabled="
                                     + this.highRiskFunctionalProbe43OriginalEnabled
-                                    + ":inventory=true");
+                                    + ":inventory36=true");
                     runtimeMilestone(
                             "high-risk-functional-probe43-module-pass:"
                                     + "InvManager");
