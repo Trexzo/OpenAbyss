@@ -213,6 +213,18 @@ jobs:
           grep -Fq 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$BOOT"
           grep -Fq 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$BOOT"
           grep -Fq 'world-ready-tick' "$STAGE"
+          grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
+
+          NETWORK_STAGE="$GAME/abyss-network-stage.txt"
+          EVENT_STAGE="$GAME/abyss-event-stage.txt"
+          test -s "$NETWORK_STAGE"
+          grep -Fq 'send-hook:' "$NETWORK_STAGE"
+          grep -Fq 'receive-hook:' "$NETWORK_STAGE"
+          test -s "$EVENT_STAGE"
+          for event in PostTickEvent PreUpdateEvent EntityJoinWorldEvent SendPacketEvent ReceivePacketEvent Render2DEvent; do
+            grep -Fq "Abyss.event.events.$event" "$EVENT_STAGE"
+          done
+
           grep -Fq '[ABYSSDIAG] setting restore selftest= PASS strict-setting-writes percentage-range=0..100 number-range mode-options color-hex readback' "$DIAG"
           grep -Eq 'Abyss\.settings by-name applied [1-9][0-9]* config value\(s\)' "$DIAG"
           for failure in abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt abyss-config-failure.txt abyss-renderer-failure.txt; do
