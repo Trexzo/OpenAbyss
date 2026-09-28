@@ -371,6 +371,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe20Stage;
     private int highRiskFunctionalProbe21Stage;
     private int highRiskFunctionalProbe22Stage;
+    private int highRiskFunctionalProbe23Stage;
     private boolean highRiskFunctionalProbe22Saved;
     private boolean highRiskFunctionalProbe22OriginalRawEnabled;
     private MouseHelper highRiskFunctionalProbe22OriginalMouseHelper;
@@ -5607,6 +5608,138 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe23() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe23")
+                || this.highRiskFunctionalProbe23Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe22")
+                && this.highRiskFunctionalProbe22Stage < 5) return;
+
+        Abyss.module.impl.visual_utility.ClosestPlayerHUD probe =
+                Modules.J(Abyss.module.impl.visual_utility.ClosestPlayerHUD.class);
+        EntityOtherPlayerMP fixture = null;
+        net.minecraft.scoreboard.ScorePlayerTeam team = null;
+        final int fixtureId = -2147483607;
+        final String fixtureName = "AbyssHUDProbe";
+        final String teamName = "abyssHudProbe";
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Abyss.module.impl.visual_utility.ClosestPlayerHUD.class) != probe
+                    || ModuleManager.byName("ClosestPlayerHUD") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException("ClosestPlayerHUD live-world authority unavailable");
+            }
+
+            net.minecraft.scoreboard.Scoreboard scoreboard = this.c.theWorld.getScoreboard();
+            net.minecraft.scoreboard.ScorePlayerTeam stale = scoreboard.getTeam(teamName);
+            if (stale != null) {
+                scoreboard.removeTeam(stale);
+            }
+            team = scoreboard.createTeam(teamName);
+            team.setNamePrefix("[R]");
+            scoreboard.addPlayerToTeam(fixtureName, teamName);
+
+            fixture = new EntityOtherPlayerMP(
+                    this.c.theWorld,
+                    new GameProfile(
+                            UUID.fromString("9e8a1d0a-7e51-4a23-9b11-2e6f9c210023"),
+                            fixtureName));
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(fixtureId, fixture);
+
+            probe.onPostTick((byte)0, 0L, new PostTickEvent());
+
+            Field listField =
+                    Abyss.module.impl.visual_utility.ClosestPlayerHUD.class.getDeclaredField("I");
+            listField.setAccessible(true);
+            List selected = (List)listField.get(probe);
+            if (selected == null || selected.size() != 1) {
+                throw new IllegalStateException(
+                        "ClosestPlayerHUD selected list size was "
+                                + (selected == null ? "<null>" : selected.size()));
+            }
+            Object selectedObject = selected.get(0);
+            if (!(selectedObject instanceof Abyss.module.impl.visual_utility.ClosestPlayerEntry)) {
+                throw new IllegalStateException(
+                        "ClosestPlayerHUD selected unexpected entry "
+                                + String.valueOf(selectedObject));
+            }
+            Abyss.module.impl.visual_utility.ClosestPlayerEntry entry =
+                    (Abyss.module.impl.visual_utility.ClosestPlayerEntry)selectedObject;
+            if (entry.a != fixture
+                    || !"§c".equals(entry.F)
+                    || entry.l != 1
+                    || Math.abs(entry.D - 3.0) > 0.05) {
+                throw new IllegalStateException(
+                        "ClosestPlayerHUD entry mismatch entity=" + (entry.a == fixture)
+                                + " prefix=" + entry.F
+                                + " teamSize=" + entry.l
+                                + " distance=" + entry.D);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe23-effect-pass:ClosestPlayerHUD:"
+                            + "prefix=red:distance=" + entry.D + ":teamSize=" + entry.l);
+
+            probe.A(0L);
+            if (!((List)listField.get(probe)).isEmpty()) {
+                throw new IllegalStateException(
+                        "ClosestPlayerHUD disable/reset path did not clear selected entries");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe23-effect-pass:ClosestPlayerHUD:reset=true");
+
+            this.highRiskFunctionalProbe23Stage = 1;
+            runtimeMilestone("high-risk-functional-probe23-module-pass:ClosestPlayerHUD");
+            runtimeMilestone("high-risk-functional-probe23-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe23Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe23:ClosestPlayerHUD",
+                    "nearest-team-selection",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe23-fail:" + failure.getClass().getName());
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(fixtureId);
+                }
+                catch (Throwable ignored) {
+                }
+                try {
+                    net.minecraft.scoreboard.Scoreboard scoreboard =
+                            this.c.theWorld.getScoreboard();
+                    net.minecraft.scoreboard.ScorePlayerTeam cleanup =
+                            scoreboard.getTeam(teamName);
+                    if (cleanup != null) {
+                        scoreboard.removeTeam(cleanup);
+                    }
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (probe != null && probe.o() && this.c.theWorld != null) {
+                try {
+                    probe.onPostTick((byte)0, 0L, new PostTickEvent());
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe23:ClosestPlayerHUD",
+                            "restore-live-cache",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -6587,6 +6720,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe20();
         this.pumpHighRiskFunctionalProbe21();
         this.pumpHighRiskFunctionalProbe22();
+        this.pumpHighRiskFunctionalProbe23();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
