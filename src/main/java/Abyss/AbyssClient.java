@@ -53,6 +53,7 @@ import Abyss.event.events.RedirectIsUsingItemEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
 import Abyss.event.events.SetAnglesEvent;
 import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
+import Abyss.internal.accessor.GuiScreenAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
 import Abyss.internal.accessor.PlayerControllerStateAccessor;
 import Abyss.internal.restore.AbyssConfig;
@@ -11753,6 +11754,10 @@ implements EventSubscriber {
                             break;
                         }
                     }
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-accessor:"
+                                    + "mouseClickResolved="
+                                    + GuiScreenAccessor.mouseClickResolved());
                     runtimeMilestone(
                             "high-risk-functional-probe44-pointer:"
                                     + "raw="
