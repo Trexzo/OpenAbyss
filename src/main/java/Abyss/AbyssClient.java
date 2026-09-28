@@ -150,6 +150,8 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.gui.inventory.GuiChest;
+import net.minecraft.inventory.InventoryBasic;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -4718,7 +4720,9 @@ implements EventSubscriber {
             Method toggle = ContainerKeeper.class.getDeclaredMethod("W", Boolean.TYPE, Long.TYPE);
             toggle.setAccessible(true);
 
-            GuiInventory fixture = new GuiInventory(this.c.thePlayer);
+            GuiChest fixture = new GuiChest(
+                    this.c.thePlayer.inventory,
+                    new InventoryBasic("OpenAbyss ContainerKeeper Probe", false, 9));
             this.c.displayGuiScreen(fixture);
             armedField.setBoolean(probe, true);
             debounceField.setBoolean(probe, false);
