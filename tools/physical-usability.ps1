@@ -1,5 +1,6 @@
 param(
     [string]$Jdk8,
+    [switch]$ExtendedProbes,
     [switch]$ReferenceBootstrap,
     [switch]$ReferenceRegistry,
     [switch]$Registry97,
@@ -38,6 +39,7 @@ Write-Host ''
 $invoke = @{ KeepOpen = $true }
 if ($Jdk8) { $invoke.Jdk8 = $Jdk8 }
 if ($SkipBuild) { $invoke.SkipBuild = $true }
+if ($ExtendedProbes) { $invoke.ExtendedProbes = $true }
 foreach ($name in @(
     'ReferenceBootstrap','ReferenceRegistry','Registry97','Registry103',
     'ReferenceRuntime','SkipChatMenu','SkipCheaterDetector','SkipAltManager'
@@ -120,6 +122,26 @@ $diagCandidates = @(
 $diagFile = $diagCandidates | Select-Object -First 1
 $diagText = if ($diagFile) { [IO.File]::ReadAllText($diagFile) } else { '' }
 
+$eventStageCandidates = @(
+    (Join-Path $Root 'run\abyss-event-stage.txt'),
+    (Join-Path $Root 'abyss-event-stage.txt'),
+    (Join-Path $Evidence 'abyss-event-stage.txt')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+$eventStageFile = $eventStageCandidates | Select-Object -First 1
+$eventStageText = if ($eventStageFile) { [IO.File]::ReadAllText($eventStageFile) } else { '' }
+
+$extendedEventCallbacks = $true
+if ($ExtendedProbes) {
+    foreach ($eventName in @(
+        'PostTickEvent','PreUpdateEvent','EntityJoinWorldEvent',
+        'SendPacketEvent','ReceivePacketEvent','Render2DEvent'
+    )) {
+        if (-not $eventStageText.Contains("Abyss.event.events.$eventName")) {
+            $extendedEventCallbacks = $false
+        }
+    }
+}
+
 $checks = [ordered]@{
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
     MenuTick = $runtimeText.Contains("menu-no-world-tick")
@@ -144,6 +166,10 @@ $checks = [ordered]@{
     AccessTokenSelfTest = $diagText.Contains('[ABYSSDIAG] accesstoken selftest= PASS daemon-workers synchronized-results')
     RefreshTokenSelfTest = $diagText.Contains('[ABYSSDIAG] refreshtoken selftest= PASS daemon-workers synchronized-results')
     AltStoreSelfTest = $diagText.Contains('[ABYSSDIAG] altstore selftest  = PASS file-roundtrip')
+    ExtendedWorldFunctional = (-not $ExtendedProbes) -or $runtimeText.Contains('world-functional-probe-pass')
+    ExtendedCategoryLifecycle9 = (-not $ExtendedProbes) -or $runtimeText.Contains('category-lifecycle-probe-pass:9')
+    ExtendedCommandRuntime = (-not $ExtendedProbes) -or $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
+    ExtendedEventCallbacks = $extendedEventCallbacks
 }
 
 $pass = $checks.BootstrapComplete -and
@@ -169,10 +195,15 @@ $pass = $checks.BootstrapComplete -and
         $checks.AccessTokenSelfTest -and
         $checks.RefreshTokenSelfTest -and
         $checks.AltStoreSelfTest -and
+        $checks.ExtendedWorldFunctional -and
+        $checks.ExtendedCategoryLifecycle9 -and
+        $checks.ExtendedCommandRuntime -and
+        $checks.ExtendedEventCallbacks -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add("OPENABYSS_PHYSICAL_USABILITY=" + $(if ($pass) { 'PASS' } else { 'FAIL' }))
+$lines.Add("EXTENDED_PROBES=$ExtendedProbes")
 foreach ($entry in $checks.GetEnumerator()) {
     $lines.Add(($entry.Key.ToUpperInvariant()) + "=" + $entry.Value)
 }
@@ -183,6 +214,7 @@ $lines.Add("EVENT_FAILURE_FILE=" + $(if ($eventFailureFile) { $eventFailureFile 
 $lines.Add("CONFIG_FAILURE_FILE=" + $(if ($configFailureFile) { $configFailureFile } else { '<none>' }))
 $lines.Add("RENDERER_FAILURE_FILE=" + $(if ($rendererFailureFile) { $rendererFailureFile } else { '<none>' }))
 $lines.Add("DIAGNOSTICS_FILE=" + $(if ($diagFile) { $diagFile } else { '<none>' }))
+$lines.Add("EVENT_STAGE_FILE=" + $(if ($eventStageFile) { $eventStageFile } else { '<none>' }))
 if ($smokeError) {
     $lines.Add("SMOKE_ERROR=" + $smokeError.Exception.Message)
 }
