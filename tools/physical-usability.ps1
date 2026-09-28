@@ -186,6 +186,11 @@ $checks = [ordered]@{
         $runtimeText.Contains('macro-functional-probe-restore-state-pass:Macro1') -and
         $runtimeText.Contains('macro-functional-probe-pass:Macro1:')
     )
+    ExtendedInventoryHudEffect = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3') -and
+        $runtimeText.Contains('visual-utility-functional-probe-restore-state-pass:InventoryHUD') -and
+        $runtimeText.Contains('visual-utility-functional-probe-pass:InventoryHUD:')
+    )
     ExtendedCommandRuntime = (-not $ExtendedProbes) -or $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
     ExtendedEventBusOwnership = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('category-lifecycle-probe-pass:9') -and
@@ -224,6 +229,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ExtendedKeepSprintEffect -and
         $checks.ExtendedAmbiencePacketCancel -and
         $checks.ExtendedMacro1Action -and
+        $checks.ExtendedInventoryHudEffect -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
         ($null -eq $smokeError)
