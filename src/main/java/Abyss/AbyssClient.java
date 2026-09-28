@@ -93,6 +93,7 @@ import Abyss.module.impl.movement.Speed;
 import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
+import Abyss.module.impl.player.InvClicker;
 import Abyss.module.impl.player.InvManager;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.player.NoInteract;
@@ -593,6 +594,18 @@ implements EventSubscriber {
     private ItemStack highRiskFunctionalProbe43OriginalSlot10;
     private int highRiskFunctionalProbe43OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe43OriginalScreen;
+    private int highRiskFunctionalProbe44Stage;
+    private int highRiskFunctionalProbe44WaitTicks;
+    private boolean highRiskFunctionalProbe44Saved;
+    private boolean highRiskFunctionalProbe44OriginalEnabled;
+    private boolean highRiskFunctionalProbe44OriginalPriority;
+    private boolean highRiskFunctionalProbe44OriginalAlwaysClick;
+    private float highRiskFunctionalProbe44OriginalCps;
+    private ItemStack highRiskFunctionalProbe44OriginalSlot0;
+    private ItemStack highRiskFunctionalProbe44OriginalSlot9;
+    private ItemStack highRiskFunctionalProbe44OriginalCursor;
+    private int highRiskFunctionalProbe44OriginalCurrentItem;
+    private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe44OriginalScreen;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -11187,6 +11200,413 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe44() {
+        if (!this.highRiskFunctionalProbe44Saved) {
+            return;
+        }
+        try {
+            InvClicker probe = Modules.J(InvClicker.class);
+            if (probe != null) {
+                if (probe.P()) {
+                    w.B(probe);
+                    probe.A(false);
+                }
+                this.setModuleEnabledRawForProbe(probe, false);
+            }
+
+            if (this.c.thePlayer != null) {
+                this.syncCreativeProbeSlot(
+                        0,
+                        this.highRiskFunctionalProbe44OriginalSlot0);
+                this.syncCreativeProbeSlot(
+                        9,
+                        this.highRiskFunctionalProbe44OriginalSlot9);
+                this.c.thePlayer.inventory.setItemStack(
+                        this.highRiskFunctionalProbe44OriginalCursor == null
+                                ? null
+                                : this.highRiskFunctionalProbe44OriginalCursor.copy());
+                this.c.thePlayer.inventory.currentItem =
+                        this.highRiskFunctionalProbe44OriginalCurrentItem;
+            }
+
+            if (this.c.currentScreen
+                    != this.highRiskFunctionalProbe44OriginalScreen) {
+                this.c.displayGuiScreen(
+                        this.highRiskFunctionalProbe44OriginalScreen);
+            }
+
+            InvClicker.alwaysClick.v(
+                    this.highRiskFunctionalProbe44OriginalAlwaysClick,
+                    0L);
+            InvClicker.cps.o(
+                    (byte)0,
+                    0L,
+                    this.highRiskFunctionalProbe44OriginalCps);
+
+            if (probe != null) {
+                probe.T(this.highRiskFunctionalProbe44OriginalPriority);
+                if (this.highRiskFunctionalProbe44OriginalEnabled) {
+                    probe.I(0L, true);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe44:InvClicker",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe44WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe44() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe44")
+                || this.highRiskFunctionalProbe44Stage < 0
+                || this.highRiskFunctionalProbe44Stage >= 6) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe43")
+                && this.highRiskFunctionalProbe43Stage < 4) {
+            return;
+        }
+
+        InvClicker probe = Modules.J(InvClicker.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(InvClicker.class) != probe
+                    || ModuleManager.byName("InvClicker") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || !this.c.playerController.isInCreativeMode()) {
+                throw new IllegalStateException(
+                        "InvClicker creative inventory authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe44Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe44OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe44OriginalPriority = probe.Y();
+                    this.highRiskFunctionalProbe44OriginalAlwaysClick =
+                            InvClicker.alwaysClick.c();
+                    this.highRiskFunctionalProbe44OriginalCps =
+                            InvClicker.cps.L();
+
+                    ItemStack slot0 =
+                            this.c.thePlayer.inventory.getStackInSlot(0);
+                    ItemStack slot9 =
+                            this.c.thePlayer.inventory.getStackInSlot(9);
+                    ItemStack cursor =
+                            this.c.thePlayer.inventory.getItemStack();
+                    this.highRiskFunctionalProbe44OriginalSlot0 =
+                            slot0 == null ? null : slot0.copy();
+                    this.highRiskFunctionalProbe44OriginalSlot9 =
+                            slot9 == null ? null : slot9.copy();
+                    this.highRiskFunctionalProbe44OriginalCursor =
+                            cursor == null ? null : cursor.copy();
+                    this.highRiskFunctionalProbe44OriginalCurrentItem =
+                            this.c.thePlayer.inventory.currentItem;
+                    this.highRiskFunctionalProbe44OriginalScreen =
+                            this.c.currentScreen;
+                    this.highRiskFunctionalProbe44Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                        this.highRiskFunctionalProbe44Stage = 1;
+                        this.highRiskFunctionalProbe44WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe44-isolate-request:"
+                                        + "InvClicker");
+                        return;
+                    }
+                    this.highRiskFunctionalProbe44Stage = 2;
+                    return;
+                }
+
+                case 1: {
+                    if (probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || probe.P()
+                            || w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe44WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "InvClicker did not isolate from live lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    this.highRiskFunctionalProbe44Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    InvClicker.alwaysClick.v(true, 0L);
+                    InvClicker.cps.o((byte)0, 0L, 20.0f);
+                    this.c.thePlayer.inventory.setItemStack(null);
+                    this.syncCreativeProbeSlot(0, null);
+                    this.syncCreativeProbeSlot(
+                            9,
+                            new ItemStack(Items.apple, 3));
+                    this.c.thePlayer.inventory.currentItem = 1;
+                    this.highRiskFunctionalProbe44Stage = 3;
+                    this.highRiskFunctionalProbe44WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-ready:"
+                                    + "InvClicker:input=shift+lmb:slot=9");
+                    return;
+                }
+
+                case 3: {
+                    int attackKey =
+                            this.c.gameSettings.keyBindAttack.getKeyCode();
+                    boolean physicalAttack =
+                            KeyBindUtil.V(
+                                    attackKey,
+                                    64165991731362L);
+                    boolean physicalShift =
+                            KeyBindUtil.V(
+                                    42,
+                                    64165991731362L);
+                    if (!physicalAttack || !physicalShift) {
+                        if (++this.highRiskFunctionalProbe44WaitTicks > 600) {
+                            throw new IllegalStateException(
+                                    "InvClicker physical input not observed"
+                                            + " attack=" + physicalAttack
+                                            + " shift=" + physicalShift
+                                            + " attackKey=" + attackKey);
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-input-pass:"
+                                    + "InvClicker:physicalLmb=true"
+                                    + ":physicalShift=true");
+                    this.c.displayGuiScreen(
+                            new GuiInventory(this.c.thePlayer));
+                    if (!(this.c.currentScreen instanceof GuiInventory)) {
+                        throw new IllegalStateException(
+                                "InvClicker GuiInventory did not open");
+                    }
+
+                    probe.I(0L, true);
+                    this.highRiskFunctionalProbe44Stage = 4;
+                    this.highRiskFunctionalProbe44WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-gui-pass:"
+                                    + "InvClicker:"
+                                    + this.c.currentScreen
+                                            .getClass()
+                                            .getName());
+                    return;
+                }
+
+                case 4: {
+                    boolean active =
+                            probe.o()
+                                    && !probe.l()
+                                    && !probe.K()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    ItemStack hotbar =
+                            this.c.thePlayer.inventory.getStackInSlot(0);
+                    ItemStack source =
+                            this.c.thePlayer.inventory.getStackInSlot(9);
+                    boolean moved =
+                            hotbar != null
+                                    && hotbar.getItem() == Items.apple
+                                    && hotbar.stackSize == 3
+                                    && source == null;
+                    if (!moved) {
+                        if (++this.highRiskFunctionalProbe44WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "InvClicker synthetic shift-click did not move fixture"
+                                            + " active=" + active
+                                            + " screen="
+                                            + (this.c.currentScreen == null
+                                                    ? "<null>"
+                                                    : this.c.currentScreen
+                                                            .getClass()
+                                                            .getName())
+                                            + " slot0="
+                                            + (hotbar == null
+                                                    ? "<null>"
+                                                    : hotbar.getDisplayName()
+                                                            + "*"
+                                                            + hotbar.stackSize)
+                                            + " slot9="
+                                            + (source == null
+                                                    ? "<null>"
+                                                    : source.getDisplayName()
+                                                            + "*"
+                                                            + source.stackSize));
+                        }
+                        return;
+                    }
+                    if (!active) {
+                        throw new IllegalStateException(
+                                "InvClicker fixture moved before module became active");
+                    }
+
+                    boolean physicalAttack =
+                            KeyBindUtil.V(
+                                    this.c.gameSettings.keyBindAttack
+                                            .getKeyCode(),
+                                    64165991731362L);
+                    boolean physicalShift =
+                            KeyBindUtil.V(
+                                    42,
+                                    64165991731362L);
+                    if (!physicalAttack || !physicalShift) {
+                        throw new IllegalStateException(
+                                "InvClicker fixture moved after physical input release"
+                                        + " attack=" + physicalAttack
+                                        + " shift=" + physicalShift);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-effect-pass:"
+                                    + "InvClicker:shiftClick=9->0"
+                                    + ":item=apple*3"
+                                    + ":physicalLmb=true"
+                                    + ":physicalShift=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-ready-release:"
+                                    + "InvClicker:input=shift+lmb");
+
+                    probe.I(0L, false);
+                    this.c.displayGuiScreen(null);
+                    this.syncCreativeProbeSlot(
+                            0,
+                            this.highRiskFunctionalProbe44OriginalSlot0);
+                    this.syncCreativeProbeSlot(
+                            9,
+                            this.highRiskFunctionalProbe44OriginalSlot9);
+                    this.c.thePlayer.inventory.setItemStack(
+                            this.highRiskFunctionalProbe44OriginalCursor == null
+                                    ? null
+                                    : this.highRiskFunctionalProbe44OriginalCursor.copy());
+                    this.c.thePlayer.inventory.currentItem =
+                            this.highRiskFunctionalProbe44OriginalCurrentItem;
+                    if (this.highRiskFunctionalProbe44OriginalScreen != null) {
+                        this.c.displayGuiScreen(
+                                this.highRiskFunctionalProbe44OriginalScreen);
+                    }
+
+                    InvClicker.alwaysClick.v(
+                            this.highRiskFunctionalProbe44OriginalAlwaysClick,
+                            0L);
+                    InvClicker.cps.o(
+                            (byte)0,
+                            0L,
+                            this.highRiskFunctionalProbe44OriginalCps);
+                    probe.T(this.highRiskFunctionalProbe44OriginalPriority);
+                    if (this.highRiskFunctionalProbe44OriginalEnabled) {
+                        probe.I(0L, true);
+                    }
+
+                    this.highRiskFunctionalProbe44Stage = 5;
+                    this.highRiskFunctionalProbe44WaitTicks = 0;
+                    return;
+                }
+
+                case 5: {
+                    boolean physicalAttack =
+                            KeyBindUtil.V(
+                                    this.c.gameSettings.keyBindAttack
+                                            .getKeyCode(),
+                                    64165991731362L);
+                    boolean physicalShift =
+                            KeyBindUtil.V(
+                                    42,
+                                    64165991731362L);
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe44OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    boolean slot0Restored =
+                            ItemStack.areItemStacksEqual(
+                                    this.c.thePlayer.inventory
+                                            .getStackInSlot(0),
+                                    this.highRiskFunctionalProbe44OriginalSlot0);
+                    boolean slot9Restored =
+                            ItemStack.areItemStacksEqual(
+                                    this.c.thePlayer.inventory
+                                            .getStackInSlot(9),
+                                    this.highRiskFunctionalProbe44OriginalSlot9);
+                    boolean cursorRestored =
+                            ItemStack.areItemStacksEqual(
+                                    this.c.thePlayer.inventory
+                                            .getItemStack(),
+                                    this.highRiskFunctionalProbe44OriginalCursor);
+
+                    if (physicalAttack
+                            || physicalShift
+                            || !stableOriginal
+                            || !slot0Restored
+                            || !slot9Restored
+                            || !cursorRestored) {
+                        if (++this.highRiskFunctionalProbe44WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "InvClicker fixture did not restore"
+                                            + " attack=" + physicalAttack
+                                            + " shift=" + physicalShift
+                                            + " lifecycle=" + stableOriginal
+                                            + " slot0=" + slot0Restored
+                                            + " slot9=" + slot9Restored
+                                            + " cursor=" + cursorRestored);
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-restore-pass:"
+                                    + "InvClicker:enabled="
+                                    + this.highRiskFunctionalProbe44OriginalEnabled
+                                    + ":inventory=true"
+                                    + ":cursor=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-module-pass:"
+                                    + "InvClicker");
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-pass:1");
+                    this.highRiskFunctionalProbe44Saved = false;
+                    this.highRiskFunctionalProbe44Stage = 6;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe44Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe44:InvClicker",
+                    "physical-shift-click",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe44-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe44();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -12194,6 +12614,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe41();
         this.pumpHighRiskFunctionalProbe42();
         this.pumpHighRiskFunctionalProbe43();
+        this.pumpHighRiskFunctionalProbe44();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
