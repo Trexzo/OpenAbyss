@@ -11107,8 +11107,16 @@ implements EventSubscriber {
                                     + ":container36=" + this.describeProbeStack(containerHotbarBefore)
                                     + ":container10=" + this.describeProbeStack(containerSourceBefore));
 
+                    // InvManager's recovered machine deliberately yields once
+                    // between the armor phase and slot-sorting phase. The first
+                    // event starts the machine, the second advances through the
+                    // disabled armor phase, and the third executes stepSlots().
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-machine-advance-pass:"
+                                    + "events=3");
 
                     ItemStack sortedHotbar =
                             this.c.thePlayer.inventory.getStackInSlot(0);
