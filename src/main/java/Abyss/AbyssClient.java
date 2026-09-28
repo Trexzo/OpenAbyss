@@ -11662,12 +11662,48 @@ implements EventSubscriber {
                             "high-risk-functional-probe44-input-pass:"
                                     + "InvClicker:physicalLmb=true"
                                     + ":physicalShift=true");
-                    this.c.displayGuiScreen(
-                            new GuiInventory(this.c.thePlayer));
+
+                    // Vanilla redirects GuiInventory to GuiContainerCreative
+                    // when the local controller reports creative mode. This
+                    // probe needs creative authority only for deterministic
+                    // inventory seeding; InvClicker itself is meant to exercise
+                    // the normal GuiInventory mouse path. Temporarily present
+                    // the local controller as survival while vanilla initializes
+                    // the real 176x166 inventory GUI, then immediately restore
+                    // the original game type before any probe click is handled.
+                    net.minecraft.world.WorldSettings.GameType originalGameType =
+                            this.c.playerController.getCurrentGameType();
+                    try {
+                        this.c.playerController.setGameType(
+                                net.minecraft.world.WorldSettings.GameType.SURVIVAL);
+                        this.c.displayGuiScreen(
+                                new GuiInventory(this.c.thePlayer));
+                    }
+                    finally {
+                        this.c.playerController.setGameType(originalGameType);
+                    }
                     if (!(this.c.currentScreen instanceof GuiInventory)) {
                         throw new IllegalStateException(
-                                "InvClicker GuiInventory did not open");
+                                "InvClicker GuiInventory did not open"
+                                        + " actual="
+                                        + (this.c.currentScreen == null
+                                                ? "<null>"
+                                                : this.c.currentScreen
+                                                        .getClass()
+                                                        .getName())
+                                        + " restoredGameType="
+                                        + this.c.playerController
+                                                .getCurrentGameType());
                     }
+                    runtimeMilestone(
+                            "high-risk-functional-probe44-gui-fixture-pass:"
+                                    + "screen="
+                                    + this.c.currentScreen
+                                            .getClass()
+                                            .getSimpleName()
+                                    + ":gameType="
+                                    + this.c.playerController
+                                            .getCurrentGameType());
 
                     probe.I(0L, true);
                     this.highRiskFunctionalProbe44Stage = 4;
