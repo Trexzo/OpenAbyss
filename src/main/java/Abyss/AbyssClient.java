@@ -65,6 +65,7 @@ import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
@@ -127,6 +128,9 @@ import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
@@ -250,6 +254,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbeStage;
     private int highRiskFunctionalProbe2Stage;
     private int highRiskFunctionalProbe3Stage;
+    private int highRiskFunctionalProbe4Stage;
     private int physicalInputFunctionalProbeStage;
     private int physicalInputFunctionalProbeWaitTicks;
     private boolean physicalInputAutoSaved;
@@ -2696,6 +2701,152 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void probeChestEspOpenedFilterEffect() throws Throwable {
+        ChestESP probe = Modules.J(ChestESP.class);
+        if (probe == null || this.c.theWorld == null || this.c.thePlayer == null) {
+            throw new IllegalStateException("ChestESP module/player/world unavailable");
+        }
+
+        Field boxesField = null;
+        Field openedField = null;
+        for (Field field : ChestESP.class.getDeclaredFields()) {
+            if (List.class.isAssignableFrom(field.getType())) {
+                boxesField = field;
+            } else if (Set.class.isAssignableFrom(field.getType())) {
+                openedField = field;
+            }
+        }
+        if (boxesField == null || openedField == null) {
+            throw new IllegalStateException("ChestESP cache fields were not found");
+        }
+        boxesField.setAccessible(true);
+        openedField.setAccessible(true);
+        List<AxisAlignedBB> boxes = (List<AxisAlignedBB>)boxesField.get(probe);
+        Set<BlockPos> opened = (Set<BlockPos>)openedField.get(probe);
+        if (boxes == null || opened == null) {
+            throw new IllegalStateException("ChestESP cache fields are null");
+        }
+
+        BlockPos pos = null;
+        int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+        int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+        int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+        outer:
+        for (int dy = 0; dy <= 2; ++dy) {
+            for (int dx = 3; dx <= 6; ++dx) {
+                BlockPos candidate = new BlockPos(baseX + dx, baseY + dy, baseZ);
+                if (this.c.theWorld.isAirBlock(candidate)) {
+                    pos = candidate;
+                    break outer;
+                }
+            }
+        }
+        if (pos == null) {
+            throw new IllegalStateException("ChestESP probe found no temporary air position");
+        }
+
+        IBlockState originalState = this.c.theWorld.getBlockState(pos);
+        TileEntity originalTile = this.c.theWorld.getTileEntity(pos);
+        boolean originalIgnoreOpened = ChestESP.ignoreOpened.c();
+        try {
+            probe.A(0L);
+            ChestESP.ignoreOpened.v(false, 0L);
+            if (!this.c.theWorld.setBlockState(pos, Blocks.chest.getDefaultState(), 3)) {
+                throw new IllegalStateException("ChestESP probe could not place temporary chest");
+            }
+            TileEntity tile = this.c.theWorld.getTileEntity(pos);
+            if (!(tile instanceof TileEntityChest)) {
+                TileEntityChest replacement = new TileEntityChest();
+                this.c.theWorld.setTileEntity(pos, replacement);
+                tile = replacement;
+            }
+            ((TileEntityChest)tile).numPlayersUsing = 0;
+
+            runtimeMilestone("high-risk-functional-probe4-dispatch:ChestESP:PostTickEvent");
+            probe.onPostTick(new PostTickEvent());
+            boolean visible = false;
+            for (AxisAlignedBB box : boxes) {
+                if (box.minX < pos.getX() + 0.5 && box.maxX > pos.getX() + 0.5
+                        && box.minY <= pos.getY() + 0.5 && box.maxY >= pos.getY() + 0.5
+                        && box.minZ < pos.getZ() + 0.5 && box.maxZ > pos.getZ() + 0.5) {
+                    visible = true;
+                    break;
+                }
+            }
+            if (!visible) {
+                throw new IllegalStateException("ChestESP did not cache temporary chest boxes=" + boxes.size());
+            }
+            runtimeMilestone("high-risk-functional-probe4-effect-pass:ChestESP:visible=true");
+
+            ChestESP.ignoreOpened.v(true, 0L);
+            PlayerRightClickEvent click = new PlayerRightClickEvent(
+                    this.c.theWorld,
+                    this.c.thePlayer.getHeldItem(),
+                    pos,
+                    EnumFacing.UP,
+                    new Vec3(pos).addVector(0.5, 1.0, 0.5));
+            probe.onPlayerRightClick(click);
+
+            boolean stillVisible = false;
+            for (AxisAlignedBB box : boxes) {
+                if (box.minX < pos.getX() + 0.5 && box.maxX > pos.getX() + 0.5
+                        && box.minY <= pos.getY() + 0.5 && box.maxY >= pos.getY() + 0.5
+                        && box.minZ < pos.getZ() + 0.5 && box.maxZ > pos.getZ() + 0.5) {
+                    stillVisible = true;
+                    break;
+                }
+            }
+            if (stillVisible || !opened.contains(pos)) {
+                throw new IllegalStateException("ChestESP ignore-opened mismatch visible="
+                        + stillVisible + " opened=" + opened.contains(pos));
+            }
+            runtimeMilestone("high-risk-functional-probe4-effect-pass:ChestESP:ignoreOpened=true:hidden=true");
+        }
+        finally {
+            try {
+                probe.A(0L);
+            }
+            catch (Throwable ignored) {
+            }
+            ChestESP.ignoreOpened.v(originalIgnoreOpened, 0L);
+            this.c.theWorld.setBlockState(pos, originalState, 3);
+            if (originalTile != null) {
+                this.c.theWorld.setTileEntity(pos, originalTile);
+            } else {
+                this.c.theWorld.removeTileEntity(pos);
+            }
+        }
+
+        if (!boxes.isEmpty() || !opened.isEmpty()) {
+            throw new IllegalStateException("ChestESP reset hook did not clear caches boxes="
+                    + boxes.size() + " opened=" + opened.size());
+        }
+        runtimeMilestone("high-risk-functional-probe4-restore-pass:ChestESP");
+    }
+
+    private void pumpHighRiskFunctionalProbe4() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe4")
+                || this.highRiskFunctionalProbe4Stage < 0
+                || this.highRiskFunctionalProbe4Stage >= 1) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe3")
+                && this.highRiskFunctionalProbe3Stage < 1) return;
+
+        try {
+            this.probeChestEspOpenedFilterEffect();
+            runtimeMilestone("high-risk-functional-probe4-module-pass:ChestESP");
+            ++this.highRiskFunctionalProbe4Stage;
+            runtimeMilestone("high-risk-functional-probe4-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe4Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe4:ChestESP", "opened-filter", failure);
+            runtimeMilestone("high-risk-functional-probe4-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe3() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe3")
                 || this.highRiskFunctionalProbe3Stage < 0
@@ -3444,6 +3595,7 @@ implements EventSubscriber {
             this.pumpHighRiskFunctionalProbe2();
             this.pumpPhysicalInputFunctionalProbe();
             this.pumpHighRiskFunctionalProbe3();
+            this.pumpHighRiskFunctionalProbe4();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
