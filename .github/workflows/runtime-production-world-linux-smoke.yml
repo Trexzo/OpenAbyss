@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.eventRuntimeTrace=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -225,6 +225,11 @@ jobs:
           grep -Fq 'command-runtime-probe-pass:commands=7:' "$STAGE"
           grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"
           grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
+          EVENT_STAGE="$GAME/abyss-event-stage.txt"
+          test -f "$EVENT_STAGE"
+          for event in PostTickEvent PreUpdateEvent EntityJoinWorldEvent SendPacketEvent ReceivePacketEvent Render2DEvent; do
+            grep -Fq "Abyss.event.events.$event" "$EVENT_STAGE"
+          done
           grep -Fq 'command-intercept:.help' "$NETWORK_STAGE"
           grep -Fq 'command-intercept-dispatch:true:.help' "$NETWORK_STAGE"
           if grep -Fq '.help' "$RUNNER_TEMP/openabyss-production-world-server.log"; then
