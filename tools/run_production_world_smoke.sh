@@ -521,6 +521,44 @@ fi
 echo 'PRODUCTION_WORLD_CLICKGUI_FONT_READY=PASS'
 echo 'PRODUCTION_WORLD_CLICKGUI_MODE_CYCLE=PASS modes=STUDIO,RAVEN,VESTIGE'
 
+PROMOTED_READY=0
+for _ in $(seq 1 1600); do
+  if grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"; then
+    PROMOTED_READY=1
+    break
+  fi
+  if grep -Fq 'promoted-registry-probe-fail:' "$STAGE"; then
+    echo 'Promoted-registry lifecycle sweep reported a failure.'
+    grep -F 'promoted-registry-probe-' "$STAGE" || true
+    for failure in abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt; do
+      failure_path="$GAME_DIR/$failure"
+      if [ -s "$failure_path" ]; then
+        cat "$failure_path"
+      fi
+    done
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited during promoted-registry lifecycle sweep.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$PROMOTED_READY" -ne 1 ]; then
+  echo 'Promoted-registry lifecycle sweep did not finish.'
+  grep -F 'promoted-registry-probe-' "$STAGE" || true
+  exit 1
+fi
+PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
+if [ "$PROMOTED_MODULE_PASSES" -ne 20 ]; then
+  echo "Promoted-registry lifecycle sweep pass count mismatch: $PROMOTED_MODULE_PASSES"
+  grep -F 'promoted-registry-probe-' "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PROMOTED_REGISTRY_LIFECYCLE=PASS modules=20'
+
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
 DISPLAY=:99 xdotool keyup Shift_R
