@@ -103,6 +103,7 @@ import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
+import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Scaffold;
@@ -110,6 +111,7 @@ import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
 import Abyss.util.BlockUtil;
 import Abyss.util.ClientUtil;
+import Abyss.util.ItemUtil;
 import Abyss.util.DeferredRendererReload;
 import Abyss.util.KeyBindUtil;
 import Abyss.util.MathUtil;
@@ -194,6 +196,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MouseHelper;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
 import com.mojang.authlib.GameProfile;
@@ -391,6 +394,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe29WaitTicks;
     private int highRiskFunctionalProbe30Stage;
     private int highRiskFunctionalProbe31Stage;
+    private int highRiskFunctionalProbe32Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -7242,6 +7246,241 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe32() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe32")
+                || this.highRiskFunctionalProbe32Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe31")
+                && this.highRiskFunctionalProbe31Stage < 1) return;
+
+        AutoTool probe = Modules.J(AutoTool.class);
+        BlockPos fixture = null;
+        IBlockState originalState = null;
+        ItemStack savedSlot0 = null;
+        ItemStack savedSlot4 = null;
+        int savedCurrentItem = -1;
+        MovingObjectPosition savedMouseOver = null;
+        boolean savedAttackDown = false;
+        boolean savedPriority = false;
+        boolean savedDisableSword = false;
+        boolean savedSwitchBackToSword = false;
+        boolean savedSwitchBack = false;
+        boolean savedRequireSneak = false;
+        float savedDelay = 0.0f;
+        Field fieldSwitching = null;
+        Field fieldOriginalSlot = null;
+        Field fieldPrimed = null;
+        boolean savedSwitching = false;
+        int savedOriginalSlot = -1;
+        boolean savedPrimed = false;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AutoTool.class) != probe
+                    || ModuleManager.byName("AutoTool") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || AutoTool.disableWhenHoldingSword == null
+                    || AutoTool.switchBackToSword == null
+                    || AutoTool.switchBack == null
+                    || AutoTool.requireSneak == null
+                    || AutoTool.delay == null) {
+                throw new IllegalStateException(
+                        "AutoTool mining authority unavailable");
+            }
+            if (this.c.currentScreen != null) {
+                return;
+            }
+
+            fieldOriginalSlot = AutoTool.class.getDeclaredField("J");
+            fieldOriginalSlot.setAccessible(true);
+            fieldSwitching = AutoTool.class.getDeclaredField("I");
+            fieldSwitching.setAccessible(true);
+            fieldPrimed = AutoTool.class.getDeclaredField("S");
+            fieldPrimed.setAccessible(true);
+
+            savedCurrentItem = this.c.thePlayer.inventory.currentItem;
+            savedSlot0 = this.c.thePlayer.inventory.mainInventory[0];
+            savedSlot4 = this.c.thePlayer.inventory.mainInventory[4];
+            savedMouseOver = this.c.objectMouseOver;
+            savedAttackDown = this.c.gameSettings.keyBindAttack.isKeyDown();
+            savedPriority = probe.Y();
+            savedDisableSword = AutoTool.disableWhenHoldingSword.c();
+            savedSwitchBackToSword = AutoTool.switchBackToSword.c();
+            savedSwitchBack = AutoTool.switchBack.c();
+            savedRequireSneak = AutoTool.requireSneak.c();
+            savedDelay = AutoTool.delay.L();
+            savedSwitching = fieldSwitching.getBoolean(probe);
+            savedOriginalSlot = fieldOriginalSlot.getInt(probe);
+            savedPrimed = fieldPrimed.getBoolean(probe);
+            saved = true;
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            for (int dy = 3; dy <= 6 && fixture == null; ++dy) {
+                for (int dx = 2; dx <= 6; ++dx) {
+                    BlockPos candidate =
+                            new BlockPos(baseX + dx, baseY + dy, baseZ + 1);
+                    if (this.c.theWorld.isAirBlock(candidate)) {
+                        fixture = candidate;
+                        break;
+                    }
+                }
+            }
+            if (fixture == null) {
+                throw new IllegalStateException(
+                        "AutoTool probe found no temporary air position");
+            }
+            originalState = this.c.theWorld.getBlockState(fixture);
+            if (!this.c.theWorld.setBlockState(
+                    fixture, Blocks.stone.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "AutoTool probe could not place temporary stone");
+            }
+
+            this.c.thePlayer.inventory.mainInventory[0] =
+                    new ItemStack(Items.stick);
+            this.c.thePlayer.inventory.mainInventory[4] =
+                    new ItemStack(Items.iron_pickaxe);
+            this.c.thePlayer.inventory.currentItem = 0;
+
+            AutoTool.disableWhenHoldingSword.v(false, 0L);
+            AutoTool.switchBackToSword.v(false, 0L);
+            AutoTool.switchBack.v(true, 0L);
+            AutoTool.requireSneak.v(false, 0L);
+            AutoTool.delay.o((byte)0, 0L, 0.0f);
+            probe.T(true);
+            fieldSwitching.setBoolean(probe, false);
+            fieldOriginalSlot.setInt(probe, -1);
+            fieldPrimed.setBoolean(probe, false);
+
+            int best = ItemUtil.e(0L, Blocks.stone);
+            if (best != 4) {
+                throw new IllegalStateException(
+                        "AutoTool ItemUtil ranking mismatch expected=4 actual="
+                                + best);
+            }
+
+            this.c.objectMouseOver = new MovingObjectPosition(
+                    new Vec3(
+                            (double)fixture.getX() + 0.5,
+                            (double)fixture.getY() + 0.5,
+                            (double)fixture.getZ() + 0.5),
+                    EnumFacing.UP,
+                    fixture);
+            KeyBinding.setKeyBindState(
+                    this.c.gameSettings.keyBindAttack.getKeyCode(), true);
+
+            probe.onPreMouseInput(0L, new PreMouseInputEvent());
+
+            if (this.c.thePlayer.inventory.currentItem != 4
+                    || !fieldSwitching.getBoolean(probe)
+                    || fieldOriginalSlot.getInt(probe) != 0) {
+                throw new IllegalStateException(
+                        "AutoTool did not switch to ranked pickaxe"
+                                + " slot="
+                                + this.c.thePlayer.inventory.currentItem
+                                + " switching="
+                                + fieldSwitching.getBoolean(probe)
+                                + " original="
+                                + fieldOriginalSlot.getInt(probe));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe32-effect-pass:AutoTool:"
+                            + "switch=0->4");
+
+            KeyBinding.setKeyBindState(
+                    this.c.gameSettings.keyBindAttack.getKeyCode(), false);
+            probe.onPreMouseInput(0L, new PreMouseInputEvent());
+
+            if (this.c.thePlayer.inventory.currentItem != 0
+                    || fieldSwitching.getBoolean(probe)
+                    || fieldOriginalSlot.getInt(probe) != -1) {
+                throw new IllegalStateException(
+                        "AutoTool switch-back mismatch"
+                                + " slot="
+                                + this.c.thePlayer.inventory.currentItem
+                                + " switching="
+                                + fieldSwitching.getBoolean(probe)
+                                + " original="
+                                + fieldOriginalSlot.getInt(probe));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe32-effect-pass:AutoTool:"
+                            + "switchBack=4->0");
+
+            this.highRiskFunctionalProbe32Stage = 1;
+            runtimeMilestone(
+                    "high-risk-functional-probe32-module-pass:AutoTool");
+            runtimeMilestone("high-risk-functional-probe32-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe32Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe32:AutoTool",
+                    "tool-selection-switchback",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe32-fail:"
+                            + failure.getClass().getName());
+        }
+        finally {
+            try {
+                KeyBinding.setKeyBindState(
+                        this.c.gameSettings.keyBindAttack.getKeyCode(),
+                        savedAttackDown);
+            }
+            catch (Throwable ignored) {
+            }
+
+            if (saved && probe != null && this.c.thePlayer != null) {
+                try {
+                    this.c.thePlayer.inventory.mainInventory[0] = savedSlot0;
+                    this.c.thePlayer.inventory.mainInventory[4] = savedSlot4;
+                    this.c.thePlayer.inventory.currentItem = savedCurrentItem;
+                    this.c.objectMouseOver = savedMouseOver;
+
+                    AutoTool.disableWhenHoldingSword.v(
+                            savedDisableSword, 0L);
+                    AutoTool.switchBackToSword.v(
+                            savedSwitchBackToSword, 0L);
+                    AutoTool.switchBack.v(savedSwitchBack, 0L);
+                    AutoTool.requireSneak.v(savedRequireSneak, 0L);
+                    AutoTool.delay.o((byte)0, 0L, savedDelay);
+                    probe.T(savedPriority);
+
+                    fieldSwitching.setBoolean(probe, savedSwitching);
+                    fieldOriginalSlot.setInt(probe, savedOriginalSlot);
+                    fieldPrimed.setBoolean(probe, savedPrimed);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe32:AutoTool",
+                            "restore-state",
+                            restoreFailure);
+                }
+            }
+
+            if (this.c.theWorld != null
+                    && fixture != null
+                    && originalState != null) {
+                try {
+                    this.c.theWorld.setBlockState(
+                            fixture, originalState, 3);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe32:AutoTool",
+                            "restore-world",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -8231,6 +8470,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe29();
         this.pumpHighRiskFunctionalProbe30();
         this.pumpHighRiskFunctionalProbe31();
+        this.pumpHighRiskFunctionalProbe32();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
