@@ -33,6 +33,7 @@ import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
 import Abyss.module.impl.combat.Velocity;
+import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.CustomCape;
 import Abyss.module.impl.configuration.Notifications;
@@ -233,33 +234,41 @@ public final class AbyssBootstrap {
         Boolean textShadow = Notifications.textShadow == null ? null : Boolean.valueOf(Notifications.textShadow.c());
         Integer horizontal = Velocity.horizontal == null ? null : Integer.valueOf(Velocity.horizontal.k());
         String color = Theme.customColor1 == null ? null : Theme.customColor1.Q();
+        Module antiNick = ModuleManager.byName("AntiNick");
+        boolean antiNickEnabled = antiNick != null && antiNick.o();
+        String antiNickSuffix = AntiNick.suffix == null ? null : AntiNick.suffix.X();
 
         boolean matrixOk = !matrix
                 || ("RAVEN".equals(mode)
                 && "LSHIFT".equals(keybind)
                 && Boolean.FALSE.equals(textShadow)
                 && Integer.valueOf(67).equals(horizontal)
-                && "A1B2C3".equals(color));
+                && "A1B2C3".equals(color)
+                && antiNickEnabled
+                && "OPENABYSS_PROMOTED_PERSIST_7E51".equals(antiNickSuffix));
 
         if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f || !fullBrightEnabled || !matrixOk) {
             stage("persistence-probe-verify-fail:scale=" + actual + ",fullbright=" + fullBrightEnabled
                     + ",mode=" + mode + ",keybind=" + keybind + ",textShadow=" + textShadow
-                    + ",horizontal=" + horizontal + ",color=" + color);
+                    + ",horizontal=" + horizontal + ",color=" + color
+                    + ",antiNick=" + antiNickEnabled + ",antiNickSuffix=" + antiNickSuffix);
             throw new IllegalStateException("Persisted state expected scale=" + expected
                     + " FullBright=true"
-                    + (matrix ? " mode=RAVEN keybind=LSHIFT textShadow=false horizontal=67 color=A1B2C3" : "")
+                    + (matrix ? " mode=RAVEN keybind=LSHIFT textShadow=false horizontal=67 color=A1B2C3 AntiNick=true AntiNick.Suffix=OPENABYSS_PROMOTED_PERSIST_7E51" : "")
                     + " but was scale=" + actual
                     + " FullBright=" + fullBrightEnabled
                     + " mode=" + mode
                     + " keybind=" + keybind
                     + " textShadow=" + textShadow
                     + " horizontal=" + horizontal
-                    + " color=" + color);
+                    + " color=" + color
+                    + " AntiNick=" + antiNickEnabled
+                    + " AntiNick.Suffix=" + antiNickSuffix);
 }
         stage("persistence-probe-verify-pass:scale=" + actual + ",fullbright=true");
         if (matrix) {
             stage("persistence-matrix-verify-pass:boolean=false,percentage=67,number=" + actual
-                    + ",mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true");
+                    + ",mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51");
 }
 }
 
