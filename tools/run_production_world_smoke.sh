@@ -205,7 +205,7 @@ echo 'PRODUCTION_WORLD_FUNCTIONAL_MODULE_LIFECYCLE=PASS'
 
 CATEGORY_READY=0
 for _ in $(seq 1 240); do
-  if grep -Fq 'category-lifecycle-probe-pass:7' "$STAGE"; then
+  if grep -Fq 'category-lifecycle-probe-pass:8' "$STAGE"; then
     CATEGORY_READY=1
     break
   fi
@@ -228,10 +228,10 @@ if [ "$CATEGORY_READY" -ne 1 ]; then
   cat "$STAGE" || true
   exit 1
 fi
-for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool; do
+for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay AutoTool Tracers; do
   grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
 done
-echo 'PRODUCTION_WORLD_CATEGORY_LIFECYCLE=PASS modules=7 plus-FullBright=8-categories'
+echo 'PRODUCTION_WORLD_CATEGORY_LIFECYCLE=PASS modules=8 plus-FullBright=all-9-categories'
 
 COMMAND_READY=0
 for _ in $(seq 1 240); do
