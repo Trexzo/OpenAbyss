@@ -27,6 +27,11 @@ import net.minecraft.client.gui.ScaledResolution;
 import org.lwjgl.input.Keyboard;
 
 public class GuiScreenHooks {
+    private static volatile long inputFixTakeoverCount;
+
+    public static long inputFixTakeoverCount() {
+        return inputFixTakeoverCount;
+    }
     private static long b;
         private static Minecraft c;
 
@@ -49,6 +54,7 @@ public class GuiScreenHooks {
 }
     public static void onHandleKeyboardInput(GuiScreen var0, CallbackInfo var1) throws IOException {
         if (Modules.J(InputFix.class).o()) {
+            ++inputFixTakeoverCount;
             char var4 = Keyboard.getEventCharacter();
             int var5 = Keyboard.getEventKey();
             if (Keyboard.getEventKeyState() || var4 >= (int)b && var5 == 0) {
