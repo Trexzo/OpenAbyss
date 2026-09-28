@@ -27,6 +27,7 @@ SERVER_PID=""
 cleanup() {
   set +e
   DISPLAY=:99 xdotool mouseup 1 >/dev/null 2>&1 || true
+  DISPLAY=:99 xdotool keyup Shift_L >/dev/null 2>&1 || true
   DISPLAY=:99 xdotool keyup space >/dev/null 2>&1 || true
   DISPLAY=:99 xdotool keyup w >/dev/null 2>&1 || true
   DISPLAY=:99 xdotool keyup e >/dev/null 2>&1 || true
@@ -158,6 +159,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe41=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe42=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe43=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe44=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1326,6 +1328,87 @@ if [ "$FLY_RESTORED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_FLY=PASS input=real-Space binder=FlyBinder'
+
+INVCLICKER_READY=0
+for _ in $(seq 1 320); do
+  if grep -Fq 'high-risk-functional-probe44-ready:InvClicker:input=shift+lmb:slot=9' "$STAGE"; then
+    INVCLICKER_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
+    echo 'InvClicker physical shift-click probe failed before input.'
+    grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before InvClicker became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$INVCLICKER_READY" -ne 1 ]; then
+  echo 'InvClicker physical shift-click probe did not become ready.'
+  grep -F 'high-risk-functional-probe43-' "$STAGE" || true
+  grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+  exit 1
+fi
+
+# GuiInventory is 176x166 at guiScale=1. Main-inventory slot 9 is the
+# leftmost slot of the first inventory row: guiLeft+8..25, guiTop+84..101.
+# Park the pointer at its center before pressing anything. The client fixture
+# does not open GuiInventory until it has already observed the held physical
+# Shift+LMB state, so vanilla cannot consume the original mouse-down as a GUI
+# click and create a false positive.
+INVCLICKER_X=$((WIDTH / 2 - 72))
+INVCLICKER_Y=$((HEIGHT / 2 + 9))
+echo "PRODUCTION_WORLD_INVCLICKER_TARGET=$INVCLICKER_X,$INVCLICKER_Y"
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$INVCLICKER_X" "$INVCLICKER_Y"
+DISPLAY=:99 xdotool keydown Shift_L
+DISPLAY=:99 xdotool mousedown 1
+
+INVCLICKER_EFFECT=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe44-effect-pass:InvClicker:shiftClick=9->0:item=apple*3:physicalLmb=true:physicalShift=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe44-ready-release:InvClicker:input=shift+lmb' "$STAGE"; then
+    INVCLICKER_EFFECT=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool mouseup 1
+DISPLAY=:99 xdotool keyup Shift_L
+
+if [ "$INVCLICKER_EFFECT" -ne 1 ]; then
+  echo 'InvClicker did not synthesize the inventory shift-click from held physical Shift+LMB.'
+  grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_INVCLICKER_EFFECT=PASS input=held-before-GUI-shift+lmb slot=9->0'
+
+INVCLICKER_RESTORED=0
+for _ in $(seq 1 320); do
+  if grep -Fq 'high-risk-functional-probe44-pass:1' "$STAGE"; then
+    INVCLICKER_RESTORED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$INVCLICKER_RESTORED" -ne 1 ]; then
+  echo 'InvClicker physical shift-click probe did not restore cleanly after input release.'
+  grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_INVCLICKER=PASS input=real-Shift+LMB binder=InvClickerBinder'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
