@@ -462,6 +462,41 @@ implements EventSubscriber {
                 && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
             return;
 }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.combatFunctionalProbe") && this.combatFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.macroFunctionalProbe") && this.macroFunctionalProbeStage < 4) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.visualUtilityFunctionalProbe")
+                && this.visualUtilityFunctionalProbeStage < 4) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.commandRuntimeProbe") && this.commandRuntimeProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.networkCommandProbe") && this.networkCommandProbeStage < 4) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.clickGuiModeProbe")
+                && this.clickGuiModeProbeIndex < CLICKGUI_MODE_PROBE_MODES.length) {
+            return;
+}
         String name = PROMOTED_REGISTRY_PROBE_MODULES[this.promotedRegistryProbeIndex];
         Module probe = null;
         try {
