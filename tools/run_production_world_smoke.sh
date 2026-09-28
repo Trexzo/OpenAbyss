@@ -425,7 +425,8 @@ for MODE in STUDIO RAVEN VESTIGE; do
   fi
 done
 
-if ! grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"; then
+if ! grep -Fq 'clickgui-font-ready' "$STAGE"
+grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"; then
   echo 'Production ClickGUI mode cycle did not restore the original mode.'
   cat "$STAGE"
   exit 1
