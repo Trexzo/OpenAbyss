@@ -136,6 +136,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe19=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe20=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe21=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe22=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -875,13 +876,13 @@ echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE=PASS input=real-E-plus-W'
 
 PROMOTED_FUNCTIONAL_READY=0
 for _ in $(seq 1 960); do
-  if grep -Fq 'high-risk-functional-probe21-pass:5' "$STAGE"; then
+  if grep -Fq 'high-risk-functional-probe22-pass:3' "$STAGE"; then
     PROMOTED_FUNCTIONAL_READY=1
     break
   fi
-  if grep -Eq 'high-risk-functional-probe(15|16|17|18|19|20|21)-fail:' "$STAGE"; then
+  if grep -Eq 'high-risk-functional-probe(15|16|17|18|19|20|21|22)-fail:' "$STAGE"; then
     echo 'Promoted functional probe failed after physical-input prerequisites.'
-    grep -E 'high-risk-functional-probe(15|16|17|18|19|20|21)-' "$STAGE" || true
+    grep -E 'high-risk-functional-probe(15|16|17|18|19|20|21|22)-' "$STAGE" || true
     cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
     exit 1
   fi
@@ -892,11 +893,11 @@ for _ in $(seq 1 960); do
   sleep 0.25
 done
 if [ "$PROMOTED_FUNCTIONAL_READY" -ne 1 ]; then
-  echo 'Promoted functional probes 15-21 did not finish after physical-input prerequisites.'
-  grep -E 'high-risk-functional-probe(15|16|17|18|19|20|21)-' "$STAGE" || true
+  echo 'Promoted functional probes 15-22 did not finish after physical-input prerequisites.'
+  grep -E 'high-risk-functional-probe(15|16|17|18|19|20|21|22)-' "$STAGE" || true
   exit 1
 fi
-echo 'PRODUCTION_WORLD_PROMOTED_FUNCTIONAL_PREREQUISITES=PASS probes=15-21'
+echo 'PRODUCTION_WORLD_PROMOTED_FUNCTIONAL_PREREQUISITES=PASS probes=15-22'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
