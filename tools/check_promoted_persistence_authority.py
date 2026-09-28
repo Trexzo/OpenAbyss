@@ -16,12 +16,16 @@ required_client=[
     'Modules.J(AntiNick.class)',
     'AntiNick did not enter enabled state before save',
     'promotedModule=true,promotedText=' + sentinel,
+    'persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=' + sentinel,
+    'restart-live-subscription',
 ]
 required_boot=[
     'ModuleManager.byName("AntiNick")',
     'AntiNick.suffix == null ? null : AntiNick.suffix.X()',
     '"' + sentinel + '".equals(antiNickSuffix)',
     'promotedModule=true,promotedText=' + sentinel,
+    'persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=' + sentinel,
+    'restart-live-subscription',
 ]
 required_harness=[
     "PERSISTENCE_CONFIG_ANTINICK_BLOCK_MISSING",
@@ -29,6 +33,9 @@ required_harness=[
     "PERSISTENCE_CONFIG_ANTINICK_SUFFIX_BAD",
     sentinel,
     "PERSISTENCE_PROMOTED_ANTINICK_RESTART=PASS",
+    "PERSISTENCE_PROMOTED_ANTINICK_LIVE",
+    "PERSISTENCE_PROMOTED_ANTINICK_LIVE_SUBSCRIPTION=PASS",
+    "persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=" + sentinel,
 ]
 
 for label,text,tokens in (
