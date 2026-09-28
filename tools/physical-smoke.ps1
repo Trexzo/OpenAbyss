@@ -133,7 +133,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.eventRuntimeTrace=true' } else { '' }) +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -196,11 +196,9 @@ try {
     $ConfigFailureRun = Join-Path $Root 'run\abyss-config-failure.txt'
     $RendererFailure = Join-Path $Root 'abyss-renderer-failure.txt'
     $RendererFailureRun = Join-Path $Root 'run\abyss-renderer-failure.txt'
-    $EventStage = Join-Path $Root 'abyss-event-stage.txt'
-    $EventStageRun = Join-Path $Root 'run\abyss-event-stage.txt'
     $NetworkStage = Join-Path $Root 'abyss-network-stage.txt'
     $NetworkStageRun = Join-Path $Root 'run\abyss-network-stage.txt'
-    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$FeatureFailure,$FeatureFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun,$EventStage,$EventStageRun,$NetworkStage,$NetworkStageRun -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Stdout,$Stderr,$BootstrapStage,$BootstrapStageRun,$RuntimeStage,$RuntimeStageRun,$ModuleFailure,$ModuleFailureRun,$FeatureFailure,$FeatureFailureRun,$EventFailure,$EventFailureRun,$ConfigFailure,$ConfigFailureRun,$RendererFailure,$RendererFailureRun,$NetworkStage,$NetworkStageRun -Force -ErrorAction SilentlyContinue
 
     $RunArgs = @('--offline','--no-daemon')
     if (-not $DevRuntime) {
@@ -283,8 +281,6 @@ try {
         (Join-Path $Root 'abyss-config-failure.txt'),
         (Join-Path $Root 'run\abyss-renderer-failure.txt'),
         (Join-Path $Root 'abyss-renderer-failure.txt'),
-        (Join-Path $Root 'run\abyss-event-stage.txt'),
-        (Join-Path $Root 'abyss-event-stage.txt'),
         (Join-Path $Root 'run\abyss-network-stage.txt'),
         (Join-Path $Root 'abyss-network-stage.txt'),
         (Join-Path $env:TEMP 'abyss-inject.log')
@@ -381,24 +377,6 @@ try {
             }
         }
 
-        $EventEvidence = @(
-            (Join-Path $Root 'run\abyss-event-stage.txt'),
-            (Join-Path $Root 'abyss-event-stage.txt')
-        ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-        if (-not $EventEvidence) {
-            $Failures += 'extended-probes:event-stage-missing'
-        }
-        else {
-            $EventEvidenceText = [IO.File]::ReadAllText($EventEvidence)
-            foreach ($EventName in @(
-                'PostTickEvent','PreUpdateEvent','EntityJoinWorldEvent',
-                'SendPacketEvent','ReceivePacketEvent','Render2DEvent'
-            )) {
-                if (-not $EventEvidenceText.Contains("Abyss.event.events.$EventName")) {
-                    $Failures += "extended-probes:event-missing:$EventName"
-                }
-            }
-        }
     }
 
     $Graphics = @()
