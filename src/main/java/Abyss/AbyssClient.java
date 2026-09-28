@@ -629,6 +629,15 @@ implements EventSubscriber {
 
 
 
+    private int readLeftClickCounterForProbe() throws Exception {
+        Field storeField = MinecraftAccessor.class.getDeclaredField("B");
+        storeField.setAccessible(true);
+        Object store = storeField.get(null);
+        Method getter = store.getClass().getDeclaredMethod("m", Object.class);
+        getter.setAccessible(true);
+        return ((Integer)getter.invoke(store, this.c)).intValue();
+    }
+
     private void restorePlayerFunctionalProbeState(NoHitDelay probe) {
         try {
             MinecraftAccessor.c(this.c, this.playerFunctionalProbeOriginalLeftClickCounter, 0L);
@@ -642,7 +651,7 @@ implements EventSubscriber {
     }
 
     private void verifyPlayerFunctionalProbeRestored() {
-        int actual = MinecraftAccessor.leftClickCounter(this.c);
+        int actual = readLeftClickCounterForProbe();
         if (actual != this.playerFunctionalProbeOriginalLeftClickCounter) {
             throw new IllegalStateException("leftClickCounter was not restored after NoHitDelay probe: " + actual);
         }
@@ -686,7 +695,7 @@ implements EventSubscriber {
                 }
                 this.playerFunctionalProbeOriginalEnabled = stableEnabled;
                 this.playerFunctionalProbeOriginalLeftClickCounter =
-                        MinecraftAccessor.leftClickCounter(this.c);
+                        readLeftClickCounterForProbe();
                 if (!stableEnabled) {
                     probe.I(0L, true);
                     this.playerFunctionalProbeStage = 1;
@@ -708,7 +717,7 @@ implements EventSubscriber {
                 MinecraftAccessor.c(this.c, 7, 0L);
                 runtimeMilestone("player-functional-probe-dispatch:NoHitDelay:leftClickCounter=7");
                 w.e(new ClickMouseEvent(), 0L);
-                int actual = MinecraftAccessor.leftClickCounter(this.c);
+                int actual = readLeftClickCounterForProbe();
                 if (actual != 0) {
                     throw new IllegalStateException("NoHitDelay ClickMouse did not clear leftClickCounter: " + actual);
                 }
