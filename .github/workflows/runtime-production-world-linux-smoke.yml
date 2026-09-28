@@ -240,6 +240,7 @@ jobs:
           grep -Fq 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true' "$STAGE"
           grep -Fq 'render-functional-probe-dispatch:Ambience:worldTime=1234' "$STAGE"
           grep -Fq 'render-functional-probe-effect-pass:Ambience:worldTime=6000' "$STAGE"
+          grep -Fq 'render-functional-probe-worldtime-restore-pass:Ambience' "$STAGE"
           grep -Fq 'packet-functional-probe-restore-state-pass:Ambience' "$STAGE"
           grep -Fq 'packet-functional-probe-pass:Ambience:' "$STAGE"
           echo 'PRODUCTION_WORLD_AMBIENCE_PACKET_CANCEL=PASS'
