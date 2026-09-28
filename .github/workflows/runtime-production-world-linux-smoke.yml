@@ -228,8 +228,12 @@ jobs:
           echo 'PRODUCTION_WORLD_NOJUMPDELAY_EVENT_EFFECT=PASS'
           grep -Fq 'packet-functional-probe-dispatch:Ambience:S03PacketTimeUpdate' "$STAGE"
           grep -Fq 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true' "$STAGE"
+          grep -Fq 'render-functional-probe-dispatch:Ambience:worldTime=1234' "$STAGE"
+          grep -Fq 'render-functional-probe-effect-pass:Ambience:worldTime=6000' "$STAGE"
+          grep -Fq 'packet-functional-probe-restore-state-pass:Ambience' "$STAGE"
           grep -Fq 'packet-functional-probe-pass:Ambience:' "$STAGE"
           echo 'PRODUCTION_WORLD_AMBIENCE_PACKET_CANCEL=PASS'
+          echo 'PRODUCTION_WORLD_AMBIENCE_RENDER_EFFECT=PASS'
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
