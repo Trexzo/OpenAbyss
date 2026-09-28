@@ -58,6 +58,53 @@ jobs:
           print("RECOVERY_AUDIT_HIGH_CONFIDENCE_GATE=PASS")
           PY
 
+      - name: Verify world-session transition ownership
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/main/java/Abyss/AbyssClient.java")
+          text = path.read_text(encoding="utf-8")
+
+          increment = "++this.runtimeWorldSessionCount;"
+          if text.count(increment) != 1:
+              raise SystemExit(
+                  f"WORLD_SESSION_INCREMENT_OWNER=FAIL count={text.count(increment)}"
+              )
+
+          post = text.find("public void onPostTick")
+          join = text.find("public void onEntityJoinWorld")
+          increment_at = text.find(increment)
+          if post < 0 or join < 0 or increment_at < 0:
+              raise SystemExit("WORLD_SESSION_INCREMENT_OWNER=FAIL missing anchors")
+
+          # The entity-join callback must remain observation/cleanup only.
+          join_end = text.find("public void onReceivePacket", join)
+          if join_end < 0:
+              raise SystemExit("WORLD_SESSION_INCREMENT_OWNER=FAIL join end missing")
+          join_body = text[join:join_end]
+          if "runtimeWorldSessionCount" in join_body or "runtimeWorldSessionActive" in join_body:
+              raise SystemExit("WORLD_SESSION_INCREMENT_OWNER=FAIL entity join owns session state")
+
+          # The sole increment must live inside onPostTick's authoritative in-world branch.
+          post_end = text.find("private void pumpBedScan", post)
+          if post_end < 0 or not (post < increment_at < post_end):
+              raise SystemExit("WORLD_SESSION_INCREMENT_OWNER=FAIL increment outside onPostTick")
+
+          required = (
+              'if (!this.runtimeWorldSessionActive)',
+              'this.runtimeWorldSessionActive = true;',
+              'runtimeMilestone("world-session-join:" + this.runtimeWorldSessionCount)',
+          )
+          window = text[max(post, increment_at - 500): increment_at + 800]
+          for token in required:
+              if token not in window:
+                  raise SystemExit(f"WORLD_SESSION_INCREMENT_OWNER=FAIL missing {token}")
+
+          print("WORLD_SESSION_INCREMENT_OWNER=PASS owner=onPostTick-state-edge")
+          PY
+
       - name: Verify nine-category lifecycle coverage
         run: python tools/check_category_probe_coverage.py
 
