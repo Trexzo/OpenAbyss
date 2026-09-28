@@ -54,6 +54,7 @@ import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NameHider;
+import Abyss.module.impl.misc.Timer;
 import Abyss.module.impl.movement.FastFall;
 import Abyss.module.impl.movement.InvMove;
 import Abyss.module.impl.movement.NoJumpDelay;
@@ -295,6 +296,13 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe9OriginalEnabled;
     private boolean highRiskFunctionalProbe9OriginalNoRotations;
     private boolean highRiskFunctionalProbe9Saved;
+    private int highRiskFunctionalProbe10Stage;
+    private int highRiskFunctionalProbe10WaitTicks;
+    private boolean highRiskFunctionalProbe10OriginalEnabled;
+    private float highRiskFunctionalProbe10OriginalSetting;
+    private float highRiskFunctionalProbe10OriginalTimerSpeed;
+    private float highRiskFunctionalProbe10DisabledBaseline;
+    private boolean highRiskFunctionalProbe10Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3624,6 +3632,161 @@ implements EventSubscriber {
         }
     }
 
+    private static boolean floatNear(float actual, float expected, float tolerance) {
+        return Math.abs(actual - expected) <= tolerance;
+    }
+
+    private void setTimerProbeEnabled(Timer probe, boolean enabled) {
+        probe.I(0L, enabled);
+        // Timer is deliberately always subscribed and excluded from generic lifecycle processing.
+        // Its transition flags are not semantically used, so diagnostics normalize them explicitly.
+        probe.n(false);
+        probe.E(false);
+    }
+
+    private void restoreHighRiskFunctionalProbe10() {
+        if (!this.highRiskFunctionalProbe10Saved) {
+            return;
+        }
+        try {
+            Timer.speed.o((byte)0, 0L, this.highRiskFunctionalProbe10OriginalSetting);
+            Timer probe = Modules.J(Timer.class);
+            if (probe != null) {
+                this.setTimerProbeEnabled(probe, this.highRiskFunctionalProbe10OriginalEnabled);
+            }
+            MinecraftAccessor.o(this.c).timerSpeed = this.highRiskFunctionalProbe10OriginalTimerSpeed;
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe10:Timer", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe10() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe10")
+                || this.highRiskFunctionalProbe10Stage < 0
+                || this.highRiskFunctionalProbe10Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe9")
+                && this.highRiskFunctionalProbe9Stage < 4) return;
+
+        try {
+            Timer probe = Modules.J(Timer.class);
+            if (probe == null || Timer.speed == null) {
+                throw new IllegalStateException("Timer module/Speed setting unavailable");
+            }
+
+            float liveTimerSpeed = MinecraftAccessor.o(this.c).timerSpeed;
+            switch (this.highRiskFunctionalProbe10Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe10OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe10OriginalSetting = Timer.speed.L();
+                    this.highRiskFunctionalProbe10OriginalTimerSpeed = liveTimerSpeed;
+                    this.highRiskFunctionalProbe10Saved = true;
+
+                    this.setTimerProbeEnabled(probe, false);
+                    ++this.highRiskFunctionalProbe10Stage;
+                    this.highRiskFunctionalProbe10WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe10-state-request:Timer:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe10WaitTicks;
+                    if (!probe.o() && this.highRiskFunctionalProbe10WaitTicks >= 4) {
+                        this.highRiskFunctionalProbe10DisabledBaseline =
+                                MinecraftAccessor.o(this.c).timerSpeed;
+                        Timer.speed.o((byte)0, 0L, 1.37f);
+                        this.setTimerProbeEnabled(probe, true);
+                        ++this.highRiskFunctionalProbe10Stage;
+                        this.highRiskFunctionalProbe10WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe10-baseline-pass:Timer:timerSpeed="
+                                + this.highRiskFunctionalProbe10DisabledBaseline);
+                        runtimeMilestone("high-risk-functional-probe10-state-request:Timer:enabled=true:speed=1.37");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe10WaitTicks > 120) {
+                        throw new IllegalStateException("Timer did not settle disabled for baseline");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe10WaitTicks;
+                    liveTimerSpeed = MinecraftAccessor.o(this.c).timerSpeed;
+                    if (probe.o() && floatNear(liveTimerSpeed, 1.37f, 0.001f)) {
+                        runtimeMilestone("high-risk-functional-probe10-effect-pass:Timer:enabled:timerSpeed="
+                                + liveTimerSpeed);
+                        this.setTimerProbeEnabled(probe, false);
+                        ++this.highRiskFunctionalProbe10Stage;
+                        this.highRiskFunctionalProbe10WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe10-state-request:Timer:enabled=false:restore-baseline");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe10WaitTicks > 160) {
+                        throw new IllegalStateException("Timer Render2D did not apply speed; actual="
+                                + liveTimerSpeed);
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe10WaitTicks;
+                    liveTimerSpeed = MinecraftAccessor.o(this.c).timerSpeed;
+                    if (!probe.o()
+                            && floatNear(liveTimerSpeed,
+                                    this.highRiskFunctionalProbe10DisabledBaseline, 0.001f)) {
+                        runtimeMilestone("high-risk-functional-probe10-effect-pass:Timer:disabled:timerSpeed="
+                                + liveTimerSpeed);
+                        Timer.speed.o((byte)0, 0L, this.highRiskFunctionalProbe10OriginalSetting);
+                        this.setTimerProbeEnabled(probe, this.highRiskFunctionalProbe10OriginalEnabled);
+                        ++this.highRiskFunctionalProbe10Stage;
+                        this.highRiskFunctionalProbe10WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe10-restore-request:Timer:enabled="
+                                + this.highRiskFunctionalProbe10OriginalEnabled
+                                + ":speed=" + this.highRiskFunctionalProbe10OriginalSetting);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe10WaitTicks > 160) {
+                        throw new IllegalStateException("Timer Render2D did not restore disabled baseline; actual="
+                                + liveTimerSpeed + " expected="
+                                + this.highRiskFunctionalProbe10DisabledBaseline);
+                    }
+                    return;
+
+                case 4:
+                    ++this.highRiskFunctionalProbe10WaitTicks;
+                    liveTimerSpeed = MinecraftAccessor.o(this.c).timerSpeed;
+                    if (probe.o() == this.highRiskFunctionalProbe10OriginalEnabled
+                            && floatNear(Timer.speed.L(),
+                                    this.highRiskFunctionalProbe10OriginalSetting, 0.001f)
+                            && floatNear(liveTimerSpeed,
+                                    this.highRiskFunctionalProbe10OriginalTimerSpeed, 0.001f)) {
+                        runtimeMilestone("high-risk-functional-probe10-restore-pass:Timer:enabled="
+                                + this.highRiskFunctionalProbe10OriginalEnabled
+                                + ":setting=" + Timer.speed.L()
+                                + ":timerSpeed=" + liveTimerSpeed);
+                        ++this.highRiskFunctionalProbe10Stage;
+                        runtimeMilestone("high-risk-functional-probe10-module-pass:Timer");
+                        runtimeMilestone("high-risk-functional-probe10-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe10WaitTicks > 160) {
+                        throw new IllegalStateException("Timer original state did not restore; enabled="
+                                + probe.o() + " setting=" + Timer.speed.L()
+                                + " timerSpeed=" + liveTimerSpeed);
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe10();
+            this.highRiskFunctionalProbe10Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe10:Timer", "render2d-timer-speed", failure);
+            runtimeMilestone("high-risk-functional-probe10-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4571,6 +4734,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe7();
         this.pumpHighRiskFunctionalProbe8();
         this.pumpHighRiskFunctionalProbe9();
+        this.pumpHighRiskFunctionalProbe10();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
