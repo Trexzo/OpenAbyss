@@ -4679,12 +4679,20 @@ implements EventSubscriber {
     }
 
     private void pumpWorldFunctionalProbe() {
+        runtimeMilestone("world-functional-pump-enter:enabled="
+                + Boolean.getBoolean("abyss.worldFunctionalProbe")
+                + ":stage=" + this.worldFunctionalProbeStage);
         if (!Boolean.getBoolean("abyss.worldFunctionalProbe") || this.worldFunctionalProbeStage < 0
                 || this.worldFunctionalProbeStage >= 3) {
+            runtimeMilestone("world-functional-pump-skip:enabled="
+                    + Boolean.getBoolean("abyss.worldFunctionalProbe")
+                    + ":stage=" + this.worldFunctionalProbeStage);
             return;
 }
         try {
+            runtimeMilestone("world-functional-probe-lookup-start");
             FullBright probe = Modules.J(FullBright.class);
+            runtimeMilestone("world-functional-probe-lookup-complete:" + (probe == null ? "null" : probe.b()));
             if (probe == null) {
                 throw new IllegalStateException("FullBright module is missing");
 }
@@ -4693,7 +4701,9 @@ implements EventSubscriber {
                     throw new IllegalStateException("FullBright did not start disabled/idle");
 }
                 this.worldFunctionalProbeOriginalGamma = this.c.gameSettings.gammaSetting;
+                runtimeMilestone("world-functional-probe-toggle-enable-start");
                 probe.I(0L, true);
+                runtimeMilestone("world-functional-probe-toggle-enable-complete");
                 ++this.worldFunctionalProbeStage;
                 this.worldFunctionalProbeWaitTicks = 0;
                 runtimeMilestone("world-functional-probe-enable-request");
@@ -5294,8 +5304,18 @@ implements EventSubscriber {
                 }
             }
             if (batching) {
-                w.endBatch();
+                runtimeMilestone("world-eventbus-endbatch-start");
+                try {
+                    w.endBatch();
+                    runtimeMilestone("world-eventbus-endbatch-complete");
+                }
+                catch (Throwable failure) {
+                    recordFeatureFailure("AbyssClient", "eventbus-end-batch", failure);
+                    runtimeMilestone("world-eventbus-endbatch-fail:" + failure.getClass().getName());
+                    throw failure;
+                }
 }
+            runtimeMilestone("world-functional-pump-call");
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
             this.pumpPromotedRegistryProbe();
