@@ -178,6 +178,7 @@ $checks = [ordered]@{
     ExtendedAmbiencePacketCancel = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true') -and
         $runtimeText.Contains('render-functional-probe-effect-pass:Ambience:worldTime=6000') -and
+        $runtimeText.Contains('render-functional-probe-worldtime-restore-pass:Ambience') -and
         $runtimeText.Contains('packet-functional-probe-restore-state-pass:Ambience') -and
         $runtimeText.Contains('packet-functional-probe-pass:Ambience:')
     )
