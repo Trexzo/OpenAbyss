@@ -66,6 +66,7 @@ import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.HitSelect;
 import Abyss.module.impl.combat.JumpReset;
+import Abyss.module.impl.combat.LagRange;
 import Abyss.module.impl.combat.SprintReset;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.KillAura;
@@ -547,6 +548,25 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe40OriginalCurrentItem;
     private MovingObjectPosition highRiskFunctionalProbe40OriginalMouseOver;
     private MovingObjectPosition highRiskFunctionalProbe40FixtureMouseOver;
+    private int highRiskFunctionalProbe41Stage;
+    private int highRiskFunctionalProbe41WaitTicks;
+    private boolean highRiskFunctionalProbe41Saved;
+    private boolean highRiskFunctionalProbe41OriginalEnabled;
+    private boolean highRiskFunctionalProbe41OriginalPlayers;
+    private boolean highRiskFunctionalProbe41OriginalMobs;
+    private boolean highRiskFunctionalProbe41OriginalAnimals;
+    private boolean highRiskFunctionalProbe41OriginalBosses;
+    private boolean highRiskFunctionalProbe41OriginalFriends;
+    private boolean highRiskFunctionalProbe41OriginalEnemies;
+    private boolean highRiskFunctionalProbe41OriginalTeammates;
+    private boolean highRiskFunctionalProbe41OriginalBots;
+    private boolean highRiskFunctionalProbe41OriginalSwordOnly;
+    private float highRiskFunctionalProbe41OriginalDelay;
+    private float highRiskFunctionalProbe41OriginalTargetRange;
+    private float highRiskFunctionalProbe41OriginalDisableRange;
+    private float highRiskFunctionalProbe41OriginalFov;
+    private boolean highRiskFunctionalProbe41OriginalPacketBuffer;
+    private int highRiskFunctionalProbe41FixtureId;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -10065,6 +10085,325 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe41() {
+        if (!this.highRiskFunctionalProbe41Saved) {
+            return;
+        }
+        try {
+            LagRange probe = Modules.J(LagRange.class);
+            if (this.highRiskFunctionalProbe41FixtureId != 0
+                    && this.c.theWorld != null) {
+                this.c.theWorld.removeEntityFromWorld(
+                        this.highRiskFunctionalProbe41FixtureId);
+            }
+            this.highRiskFunctionalProbe41FixtureId = 0;
+
+            PacketManager.j();
+            PacketManager.M(this.highRiskFunctionalProbe41OriginalPacketBuffer);
+
+            LagRange.players.v(this.highRiskFunctionalProbe41OriginalPlayers, 0L);
+            LagRange.mobs.v(this.highRiskFunctionalProbe41OriginalMobs, 0L);
+            LagRange.animals.v(this.highRiskFunctionalProbe41OriginalAnimals, 0L);
+            LagRange.bosses.v(this.highRiskFunctionalProbe41OriginalBosses, 0L);
+            LagRange.friends.v(this.highRiskFunctionalProbe41OriginalFriends, 0L);
+            LagRange.enemies.v(this.highRiskFunctionalProbe41OriginalEnemies, 0L);
+            LagRange.teammates.v(this.highRiskFunctionalProbe41OriginalTeammates, 0L);
+            LagRange.bots.v(this.highRiskFunctionalProbe41OriginalBots, 0L);
+            LagRange.s.v(this.highRiskFunctionalProbe41OriginalSwordOnly, 0L);
+            LagRange.delay.o((byte)0, 0L, this.highRiskFunctionalProbe41OriginalDelay);
+            LagRange.targetRange.o((byte)0, 0L, this.highRiskFunctionalProbe41OriginalTargetRange);
+            LagRange.disableRange.o((byte)0, 0L, this.highRiskFunctionalProbe41OriginalDisableRange);
+            LagRange.fov.o((byte)0, 0L, this.highRiskFunctionalProbe41OriginalFov);
+
+            if (probe != null
+                    && probe.o() != this.highRiskFunctionalProbe41OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe41OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe41:LagRange",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe41Saved = false;
+        this.highRiskFunctionalProbe41WaitTicks = 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void pumpHighRiskFunctionalProbe41() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe41")
+                || this.highRiskFunctionalProbe41Stage < 0
+                || this.highRiskFunctionalProbe41Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe40")
+                && this.highRiskFunctionalProbe40Stage < 5) {
+            return;
+        }
+
+        LagRange probe = Modules.J(LagRange.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(LagRange.class) != probe
+                    || ModuleManager.byName("LagRange") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "LagRange live-world buffering authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe41Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe41OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe41OriginalPlayers = LagRange.players.c();
+                    this.highRiskFunctionalProbe41OriginalMobs = LagRange.mobs.c();
+                    this.highRiskFunctionalProbe41OriginalAnimals = LagRange.animals.c();
+                    this.highRiskFunctionalProbe41OriginalBosses = LagRange.bosses.c();
+                    this.highRiskFunctionalProbe41OriginalFriends = LagRange.friends.c();
+                    this.highRiskFunctionalProbe41OriginalEnemies = LagRange.enemies.c();
+                    this.highRiskFunctionalProbe41OriginalTeammates = LagRange.teammates.c();
+                    this.highRiskFunctionalProbe41OriginalBots = LagRange.bots.c();
+                    this.highRiskFunctionalProbe41OriginalSwordOnly = LagRange.s.c();
+                    this.highRiskFunctionalProbe41OriginalDelay = LagRange.delay.L();
+                    this.highRiskFunctionalProbe41OriginalTargetRange = LagRange.targetRange.L();
+                    this.highRiskFunctionalProbe41OriginalDisableRange = LagRange.disableRange.L();
+                    this.highRiskFunctionalProbe41OriginalFov = LagRange.fov.L();
+                    this.highRiskFunctionalProbe41OriginalPacketBuffer = PacketManager.e();
+                    this.highRiskFunctionalProbe41Saved = true;
+
+                    PacketManager.j();
+                    PacketManager.M(false);
+
+                    LagRange.players.v(false, 0L);
+                    LagRange.mobs.v(true, 0L);
+                    LagRange.animals.v(false, 0L);
+                    LagRange.bosses.v(false, 0L);
+                    LagRange.friends.v(false, 0L);
+                    LagRange.enemies.v(true, 0L);
+                    LagRange.teammates.v(false, 0L);
+                    LagRange.bots.v(false, 0L);
+                    LagRange.s.v(false, 0L);
+                    LagRange.delay.o((byte)0, 0L, 1000.0f);
+                    LagRange.targetRange.o((byte)0, 0L, 8.0f);
+                    LagRange.disableRange.o((byte)0, 0L, 3.0f);
+                    LagRange.fov.o((byte)0, 0L, 360.0f);
+
+                    EntityZombie fixture = new EntityZombie(this.c.theWorld);
+                    fixture.setPosition(
+                            this.c.thePlayer.posX + 5.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe41FixtureId = -74141;
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe41FixtureId,
+                            fixture);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe41WaitTicks = 0;
+                    this.highRiskFunctionalProbe41Stage = 1;
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-enable-request:LagRange");
+                    return;
+                }
+
+                case 1: {
+                    if (!probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || !probe.P()
+                            || !w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe41WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "LagRange did not enable/subscribe");
+                        }
+                        return;
+                    }
+
+                    net.minecraft.entity.Entity fixture =
+                            this.c.theWorld.getEntityByID(
+                                    this.highRiskFunctionalProbe41FixtureId);
+                    if (!(fixture instanceof EntityZombie)) {
+                        throw new IllegalStateException(
+                                "LagRange target fixture disappeared");
+                    }
+
+                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(), 0L);
+
+                    Field targetsField = null;
+                    for (Field field : LagRange.class.getDeclaredFields()) {
+                        if (Set.class.isAssignableFrom(field.getType())) {
+                            targetsField = field;
+                            break;
+                        }
+                    }
+                    if (targetsField == null) {
+                        throw new IllegalStateException(
+                                "LagRange target-set field not found");
+                    }
+                    targetsField.setAccessible(true);
+                    Set<net.minecraft.entity.EntityLivingBase> targets =
+                            (Set<net.minecraft.entity.EntityLivingBase>)
+                                    targetsField.get(probe);
+                    if (targets == null || !targets.contains(fixture)) {
+                        throw new IllegalStateException(
+                                "LagRange did not select fixture in lag band"
+                                        + " size="
+                                        + (targets == null ? -1 : targets.size()));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-target-pass:"
+                                    + "LagRange:distance=5.0");
+                    this.highRiskFunctionalProbe41Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    probe.onRender2D(
+                            (short)0,
+                            new Render2DEvent(
+                                    0,
+                                    (short)0,
+                                    0.0f,
+                                    (short)0,
+                                    new ScaledResolution(this.c)),
+                            0L);
+
+                    if (!PacketManager.e()) {
+                        throw new IllegalStateException(
+                                "LagRange did not enable outgoing packet buffer");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-effect-pass:"
+                                    + "LagRange:packetBuffer=true");
+
+                    net.minecraft.entity.Entity fixture =
+                            this.c.theWorld.getEntityByID(
+                                    this.highRiskFunctionalProbe41FixtureId);
+                    if (!(fixture instanceof EntityZombie)) {
+                        throw new IllegalStateException(
+                                "LagRange target fixture disappeared before clear");
+                    }
+                    fixture.setPosition(
+                            this.c.thePlayer.posX + 1.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ);
+                    this.highRiskFunctionalProbe41Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(), 0L);
+                    probe.onRender2D(
+                            (short)0,
+                            new Render2DEvent(
+                                    0,
+                                    (short)0,
+                                    0.0f,
+                                    (short)0,
+                                    new ScaledResolution(this.c)),
+                            0L);
+
+                    if (PacketManager.e()) {
+                        throw new IllegalStateException(
+                                "LagRange did not disable/flush packet buffer"
+                                        + " after target entered disable range");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-effect-pass:"
+                                    + "LagRange:packetBuffer=false:distance=1.0");
+
+                    this.restoreHighRiskFunctionalProbe41();
+                    this.highRiskFunctionalProbe41Stage = 4;
+                    this.highRiskFunctionalProbe41WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-restore-request:"
+                                    + "LagRange:enabled="
+                                    + this.highRiskFunctionalProbe41OriginalEnabled);
+                    return;
+                }
+
+                case 4: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe41OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe41WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "LagRange did not restore original lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    if (PacketManager.e()
+                            != this.highRiskFunctionalProbe41OriginalPacketBuffer
+                            || LagRange.players.c()
+                                    != this.highRiskFunctionalProbe41OriginalPlayers
+                            || LagRange.mobs.c()
+                                    != this.highRiskFunctionalProbe41OriginalMobs
+                            || Math.abs(
+                                    LagRange.targetRange.L()
+                                            - this.highRiskFunctionalProbe41OriginalTargetRange)
+                                    > 0.0001f
+                            || Math.abs(
+                                    LagRange.disableRange.L()
+                                            - this.highRiskFunctionalProbe41OriginalDisableRange)
+                                    > 0.0001f) {
+                        throw new IllegalStateException(
+                                "LagRange settings/buffer state did not restore");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-restore-pass:"
+                                    + "LagRange:enabled="
+                                    + this.highRiskFunctionalProbe41OriginalEnabled
+                                    + ":packetBuffer="
+                                    + this.highRiskFunctionalProbe41OriginalPacketBuffer);
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-module-pass:LagRange");
+                    runtimeMilestone(
+                            "high-risk-functional-probe41-pass:1");
+                    this.highRiskFunctionalProbe41Stage = 5;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe41Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe41:LagRange",
+                    "target-band-packet-buffer-state-machine",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe41-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe41();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -11069,6 +11408,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe38();
         this.pumpHighRiskFunctionalProbe39();
         this.pumpHighRiskFunctionalProbe40();
+        this.pumpHighRiskFunctionalProbe41();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
