@@ -374,7 +374,7 @@ try {
                 'HitBox','Notifications','Macro1','NameHider','NoJumpDelay',
                 'NoHitDelay','NoHurtCam','Tracers','AutoTool'
             )) {
-                $Needle = "category-lifecycle-probe-module-pass:$ModuleName:"
+                $Needle = "category-lifecycle-probe-module-pass:${ModuleName}:"
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
                     $Failures += "extended-probes:missing:$Needle"
                 }
