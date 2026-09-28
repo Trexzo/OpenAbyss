@@ -217,6 +217,7 @@ implements EventSubscriber {
     private int networkCommandProbeStage;
     private int networkCommandProbeWaitTicks;
     private boolean networkCommandProbeOriginalEnabled;
+    private boolean reconnectCommandLineSubscriptionVerified;
     private int clickGuiModeProbeIndex;
     private int clickGuiModeProbePhase;
     private int clickGuiModeProbeWaitTicks;
@@ -1899,6 +1900,50 @@ implements EventSubscriber {
 }
 }
 
+    private void pumpReconnectSubscriptionHealth() {
+        if (this.reconnectCommandLineSubscriptionVerified
+                || !Boolean.getBoolean("abyss.runtimeSelfTest")
+                || !Boolean.getBoolean("abyss.networkCommandProbe")
+                || this.runtimeWorldSessionCount < 2
+                || this.runtimeWorldHeartbeatTicks < 100L
+                || this.networkCommandProbeStage < 4) {
+            return;
+}
+        this.reconnectCommandLineSubscriptionVerified = true;
+        try {
+            CommandLine probe = Modules.J(CommandLine.class);
+            if (probe == null) {
+                throw new IllegalStateException("CommandLine module is missing after reconnect");
+}
+            boolean ownerActive = w != null && w.isOwnerActive(probe);
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && ownerActive;
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !ownerActive;
+            boolean healthy = this.networkCommandProbeOriginalEnabled ? stableEnabled : stableDisabled;
+            if (!healthy) {
+                throw new IllegalStateException("CommandLine reconnect subscription state mismatch"
+                        + " expectedEnabled=" + this.networkCommandProbeOriginalEnabled
+                        + " enabled=" + probe.o()
+                        + " pendingEnable=" + probe.l()
+                        + " pendingDisable=" + probe.K()
+                        + " subscribed=" + probe.P()
+                        + " ownerActive=" + ownerActive
+                        + " session=" + this.runtimeWorldSessionCount
+                        + " heartbeat=" + this.runtimeWorldHeartbeatTicks);
+}
+            runtimeMilestone("world-session-commandline-subscription-pass:"
+                    + this.runtimeWorldSessionCount
+                    + ":expectedEnabled=" + this.networkCommandProbeOriginalEnabled
+                    + ":enabled=" + probe.o()
+                    + ":subscribed=" + probe.P()
+                    + ":ownerActive=" + ownerActive);
+}
+        catch (Throwable failure) {
+            recordFeatureFailure("ReconnectSubscriptionProbe:CommandLine", "session2-eventbus", failure);
+            runtimeMilestone("world-session-commandline-subscription-fail:"
+                    + this.runtimeWorldSessionCount + ":" + failure.getClass().getName());
+}
+}
+
     private void pumpClickGuiModeProbe() {
         if (!Boolean.getBoolean("abyss.clickGuiModeProbe")
                 || this.clickGuiModeProbeIndex >= CLICKGUI_MODE_PROBE_MODES.length
@@ -2717,6 +2762,7 @@ implements EventSubscriber {
             this.pumpVisualUtilityFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
+            this.pumpReconnectSubscriptionHealth();
             this.pumpClickGuiModeProbe();
             this.pumpPersistenceSeedProbe();
             this.pumpPromotedPersistenceLiveVerify();
