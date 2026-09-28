@@ -145,6 +145,7 @@ implements EventSubscriber {
     private int worldFunctionalProbeWaitTicks;
     private float worldFunctionalProbeOriginalGamma;
     private boolean persistenceProbeSeeded;
+    private boolean persistencePromotedLiveVerified;
     private int categoryLifecycleProbeIndex;
     private int categoryLifecycleProbePhase;
     private int categoryLifecycleProbeWaitTicks;
@@ -1988,6 +1989,40 @@ implements EventSubscriber {
 }
 }
 
+    private void pumpPromotedPersistenceLiveVerify() {
+        if (this.persistencePromotedLiveVerified
+                || !Boolean.getBoolean("abyss.persistenceProbeMatrix")
+                || System.getProperty("abyss.persistenceProbeExpectedClickGuiScale") == null
+                || this.runtimeWorldHeartbeatTicks < 100L) {
+            return;
+}
+        this.persistencePromotedLiveVerified = true;
+        try {
+            AntiNick antiNick = Modules.J(AntiNick.class);
+            if (antiNick == null) {
+                throw new IllegalStateException("Persisted AntiNick module is missing");
+}
+            boolean ownerActive = w != null && w.isOwnerActive(antiNick);
+            if (!antiNick.o() || antiNick.l() || antiNick.K() || !antiNick.P() || !ownerActive) {
+                throw new IllegalStateException("Persisted AntiNick did not settle active after restart"
+                        + " enabled=" + antiNick.o()
+                        + " pendingEnable=" + antiNick.l()
+                        + " pendingDisable=" + antiNick.K()
+                        + " subscribed=" + antiNick.P()
+                        + " ownerActive=" + ownerActive);
+}
+            String suffix = AntiNick.suffix == null ? null : AntiNick.suffix.X();
+            if (!"OPENABYSS_PROMOTED_PERSIST_7E51".equals(suffix)) {
+                throw new IllegalStateException("Persisted AntiNick suffix changed after restart: " + suffix);
+}
+            runtimeMilestone("persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=OPENABYSS_PROMOTED_PERSIST_7E51");
+}
+        catch (Throwable failure) {
+            recordFeatureFailure("PersistenceProbe:AntiNick", "restart-live-subscription", failure);
+            runtimeMilestone("persistence-promoted-live-fail:AntiNick:" + failure.getClass().getName());
+}
+}
+
     private void pumpPersistenceSeedProbe() {
         if (this.persistenceProbeSeeded || !Boolean.getBoolean("abyss.persistenceProbeSeed")) {
             return;
@@ -2684,6 +2719,7 @@ implements EventSubscriber {
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
             this.pumpPersistenceSeedProbe();
+            this.pumpPromotedPersistenceLiveVerify();
             if (this.c.currentScreen == null) {
                 if (ClickGUI.x(17550, (short)6998, (char)var16)) {
                     runtimeMilestone("clickgui-open-request");
