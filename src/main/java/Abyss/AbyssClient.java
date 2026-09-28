@@ -60,6 +60,7 @@ import Abyss.module.impl.combat.AimAssist;
 import Abyss.module.impl.combat.AntiFireball;
 import Abyss.module.impl.combat.AutoBlock;
 import Abyss.module.impl.combat.AutoClicker;
+import Abyss.module.impl.combat.BlockHit;
 import Abyss.module.impl.combat.BackTrack;
 import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.HitSelect;
@@ -200,6 +201,7 @@ import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
+import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.tileentity.TileEntity;
@@ -508,6 +510,18 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe37FarFixtureId;
     private EntityLargeFireball highRiskFunctionalProbe37FarFixture;
     private int highRiskFunctionalProbe37WaitTicks;
+    private int highRiskFunctionalProbe38Stage;
+    private int highRiskFunctionalProbe38WaitTicks;
+    private boolean highRiskFunctionalProbe38Saved;
+    private boolean highRiskFunctionalProbe38OriginalEnabled;
+    private String highRiskFunctionalProbe38OriginalMode;
+    private float highRiskFunctionalProbe38OriginalHurtTicks;
+    private float highRiskFunctionalProbe38OriginalEarlyTicks;
+    private float highRiskFunctionalProbe38OriginalRandomTicks;
+    private boolean highRiskFunctionalProbe38OriginalE;
+    private boolean highRiskFunctionalProbe38OriginalX;
+    private int highRiskFunctionalProbe38OriginalY;
+    private int highRiskFunctionalProbe38OriginalSmallY;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -9215,6 +9229,243 @@ implements EventSubscriber {
         }
     }
 
+
+    private Field blockHitProbeField(String name) throws Exception {
+        Field field = BlockHit.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void restoreHighRiskFunctionalProbe38() {
+        if (!this.highRiskFunctionalProbe38Saved) {
+            return;
+        }
+        try {
+            BlockHit probe = Modules.J(BlockHit.class);
+            if (probe != null) {
+                BlockHit.mode.i(this.highRiskFunctionalProbe38OriginalMode);
+                BlockHit.predictHurtResistTicks.o(
+                        (byte)0, 0L,
+                        this.highRiskFunctionalProbe38OriginalHurtTicks);
+                BlockHit.predictEarlyTicks.o(
+                        (byte)0, 0L,
+                        this.highRiskFunctionalProbe38OriginalEarlyTicks);
+                BlockHit.predictRandomEarlyTicks.o(
+                        (byte)0, 0L,
+                        this.highRiskFunctionalProbe38OriginalRandomTicks);
+
+                this.blockHitProbeField("E").setBoolean(
+                        probe, this.highRiskFunctionalProbe38OriginalE);
+                this.blockHitProbeField("x").setBoolean(
+                        probe, this.highRiskFunctionalProbe38OriginalX);
+                this.blockHitProbeField("Y").setInt(
+                        probe, this.highRiskFunctionalProbe38OriginalY);
+                this.blockHitProbeField("y").setInt(
+                        probe, this.highRiskFunctionalProbe38OriginalSmallY);
+
+                if (probe.o() != this.highRiskFunctionalProbe38OriginalEnabled) {
+                    probe.I(
+                            0L,
+                            this.highRiskFunctionalProbe38OriginalEnabled);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe38:BlockHit",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe38Saved = false;
+        this.highRiskFunctionalProbe38WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe38() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe38")
+                || this.highRiskFunctionalProbe38Stage < 0
+                || this.highRiskFunctionalProbe38Stage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe37")
+                && this.highRiskFunctionalProbe37Stage < 5) {
+            return;
+        }
+
+        BlockHit probe = Modules.J(BlockHit.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BlockHit.class) != probe
+                    || ModuleManager.byName("BlockHit") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || BlockHit.mode == null
+                    || BlockHit.predictHurtResistTicks == null
+                    || BlockHit.predictEarlyTicks == null
+                    || BlockHit.predictRandomEarlyTicks == null) {
+                throw new IllegalStateException(
+                        "BlockHit live-world prediction authority unavailable");
+            }
+
+            Field fieldE = this.blockHitProbeField("E");
+            Field fieldX = this.blockHitProbeField("x");
+            Field fieldY = this.blockHitProbeField("Y");
+            Field fieldSmallY = this.blockHitProbeField("y");
+
+            switch (this.highRiskFunctionalProbe38Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe38OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe38OriginalMode =
+                            BlockHit.mode.Y();
+                    this.highRiskFunctionalProbe38OriginalHurtTicks =
+                            BlockHit.predictHurtResistTicks.L();
+                    this.highRiskFunctionalProbe38OriginalEarlyTicks =
+                            BlockHit.predictEarlyTicks.L();
+                    this.highRiskFunctionalProbe38OriginalRandomTicks =
+                            BlockHit.predictRandomEarlyTicks.L();
+                    this.highRiskFunctionalProbe38OriginalE =
+                            fieldE.getBoolean(probe);
+                    this.highRiskFunctionalProbe38OriginalX =
+                            fieldX.getBoolean(probe);
+                    this.highRiskFunctionalProbe38OriginalY =
+                            fieldY.getInt(probe);
+                    this.highRiskFunctionalProbe38OriginalSmallY =
+                            fieldSmallY.getInt(probe);
+                    this.highRiskFunctionalProbe38Saved = true;
+                    this.highRiskFunctionalProbe38WaitTicks = 0;
+
+                    BlockHit.mode.i("PREDICT");
+                    BlockHit.predictHurtResistTicks.o(
+                            (byte)0, 0L, 10.0f);
+                    BlockHit.predictEarlyTicks.o(
+                            (byte)0, 0L, 3.0f);
+                    BlockHit.predictRandomEarlyTicks.o(
+                            (byte)0, 0L, 0.0f);
+
+                    fieldE.setBoolean(probe, false);
+                    fieldX.setBoolean(probe, true);
+                    fieldY.setInt(probe, 99);
+                    fieldSmallY.setInt(probe, 99);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe38Stage = 1;
+                    runtimeMilestone(
+                            "high-risk-functional-probe38-enable-request:"
+                                    + "BlockHit");
+                    return;
+                }
+
+                case 1: {
+                    if (!probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || !probe.P()
+                            || !w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe38WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "BlockHit did not enable/subscribe");
+                        }
+                        return;
+                    }
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "BlockHit fixture EventBus binding inactive");
+                    }
+
+                    ReceivePacketEvent event = new ReceivePacketEvent(
+                            new S19PacketEntityStatus(
+                                    this.c.thePlayer,
+                                    (byte)2));
+                    fixtureBus.e(event, 0L);
+
+                    boolean effectE = fieldE.getBoolean(probe);
+                    boolean effectX = fieldX.getBoolean(probe);
+                    int effectY = fieldY.getInt(probe);
+                    int effectSmallY = fieldSmallY.getInt(probe);
+                    if (!effectE
+                            || effectX
+                            || effectY != 0
+                            || effectSmallY != 7) {
+                        throw new IllegalStateException(
+                                "BlockHit prediction state mismatch"
+                                        + " E=" + effectE
+                                        + " x=" + effectX
+                                        + " Y=" + effectY
+                                        + " y=" + effectSmallY);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe38-effect-pass:"
+                                    + "BlockHit:E=true:x=false:Y=0:y=7");
+
+                    this.restoreHighRiskFunctionalProbe38();
+                    this.highRiskFunctionalProbe38Stage = 2;
+                    this.highRiskFunctionalProbe38WaitTicks = 0;
+                    return;
+                }
+
+                case 2: {
+                    boolean stableOriginal =
+                            this.highRiskFunctionalProbe38OriginalEnabled
+                                    ? probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && probe.P()
+                                            && w.isOwnerActive(probe)
+                                    : !probe.o()
+                                            && !probe.l()
+                                            && !probe.K()
+                                            && !probe.P()
+                                            && !w.isOwnerActive(probe);
+                    if (!stableOriginal) {
+                        if (++this.highRiskFunctionalProbe38WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "BlockHit did not restore original lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe38-restore-pass:"
+                                    + "BlockHit:enabled="
+                                    + this.highRiskFunctionalProbe38OriginalEnabled);
+                    runtimeMilestone(
+                            "high-risk-functional-probe38-module-pass:BlockHit");
+                    runtimeMilestone(
+                            "high-risk-functional-probe38-pass:1");
+                    this.highRiskFunctionalProbe38Stage = 3;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe38Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe38:BlockHit",
+                    "predict-status-packet",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe38-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe38();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -10216,6 +10467,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe35();
         this.pumpHighRiskFunctionalProbe36();
         this.pumpHighRiskFunctionalProbe37();
+        this.pumpHighRiskFunctionalProbe38();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
