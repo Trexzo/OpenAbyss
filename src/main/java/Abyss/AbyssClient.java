@@ -7854,6 +7854,23 @@ implements EventSubscriber {
                 }
 
                 case 2: {
+                    int beforeTargetTicks =
+                            fieldTargetTicks.getInt(probe);
+                    int beforePauseTicks =
+                            fieldPauseTicks.getInt(probe);
+                    if (beforeTargetTicks <= 1
+                            || beforePauseTicks <= 0
+                            || fieldTarget.get(probe) == null) {
+                        throw new IllegalStateException(
+                                "HitSelect organic pre-dispatch consumed fixture"
+                                        + " targetTicks="
+                                        + beforeTargetTicks
+                                        + " pauseTicks="
+                                        + beforePauseTicks
+                                        + " targetPresent="
+                                        + (fieldTarget.get(probe) != null));
+                    }
+
                     probe.onPreMouseInput(
                             0L,
                             new PreMouseInputEvent());
@@ -7863,16 +7880,20 @@ implements EventSubscriber {
                     int pauseTicks =
                             fieldPauseTicks.getInt(probe);
                     if (AttackTracker.J()
-                            || targetTicks != 59
-                            || pauseTicks != 2
+                            || targetTicks != beforeTargetTicks - 1
+                            || pauseTicks != beforePauseTicks - 1
                             || fieldTarget.get(probe) == null) {
                         throw new IllegalStateException(
                                 "HitSelect NORMAL gate mismatch"
                                         + " attackAllowed="
                                         + AttackTracker.J()
                                         + " targetTicks="
+                                        + beforeTargetTicks
+                                        + "->"
                                         + targetTicks
                                         + " pauseTicks="
+                                        + beforePauseTicks
+                                        + "->"
                                         + pauseTicks
                                         + " targetPresent="
                                         + (fieldTarget.get(probe) != null));
@@ -7881,7 +7902,15 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe33-effect-pass:"
                                     + "HitSelect:attackAllowed=false:"
-                                    + "targetTicks=59:pause=2");
+                                    + "targetDelta=1:pauseDelta=1:"
+                                    + "before="
+                                    + beforeTargetTicks
+                                    + ","
+                                    + beforePauseTicks
+                                    + ":after="
+                                    + targetTicks
+                                    + ","
+                                    + pauseTicks);
                     this.highRiskFunctionalProbe33Stage = 3;
                     return;
                 }
