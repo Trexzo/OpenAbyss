@@ -313,6 +313,19 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe11OriginalPolygonOffsetFactor;
     private float highRiskFunctionalProbe11OriginalPolygonOffsetUnits;
     private boolean highRiskFunctionalProbe11Saved;
+    private int highRiskFunctionalProbe12Stage;
+    private int highRiskFunctionalProbe12WaitTicks;
+    private boolean highRiskFunctionalProbe12OriginalEnabled;
+    private float highRiskFunctionalProbe12OriginalYaw;
+    private float highRiskFunctionalProbe12OriginalPitch;
+    private int highRiskFunctionalProbe12OriginalThirdPersonView;
+    private boolean highRiskFunctionalProbe12OriginalActive;
+    private float highRiskFunctionalProbe12OriginalCameraYaw;
+    private float highRiskFunctionalProbe12OriginalCameraPitch;
+    private int highRiskFunctionalProbe12OriginalSavedView;
+    private float highRiskFunctionalProbe12OriginalSavedYaw;
+    private float highRiskFunctionalProbe12OriginalSavedPitch;
+    private boolean highRiskFunctionalProbe12Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3958,6 +3971,260 @@ implements EventSubscriber {
         }
     }
 
+    private Field freelookProbeField(String name) throws Exception {
+        Field field = Freelook.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private int readFreelookSavedView(Freelook probe) throws Exception {
+        return this.freelookProbeField("T").getInt(probe);
+    }
+
+    private float readFreelookSavedYaw(Freelook probe) throws Exception {
+        return this.freelookProbeField("p").getFloat(probe);
+    }
+
+    private float readFreelookSavedPitch(Freelook probe) throws Exception {
+        return this.freelookProbeField("s").getFloat(probe);
+    }
+
+    private void writeFreelookPrivateSnapshot(Freelook probe, int view, float yaw, float pitch)
+            throws Exception {
+        this.freelookProbeField("T").setInt(probe, view);
+        this.freelookProbeField("p").setFloat(probe, yaw);
+        this.freelookProbeField("s").setFloat(probe, pitch);
+    }
+
+    private void restoreHighRiskFunctionalProbe12Exact(Freelook probe) {
+        if (!this.highRiskFunctionalProbe12Saved) {
+            return;
+        }
+        try {
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe12OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe12OriginalEnabled);
+            }
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.rotationYaw = this.highRiskFunctionalProbe12OriginalYaw;
+                this.c.thePlayer.rotationPitch = this.highRiskFunctionalProbe12OriginalPitch;
+            }
+            this.c.gameSettings.thirdPersonView = this.highRiskFunctionalProbe12OriginalThirdPersonView;
+            Freelook.L(this.highRiskFunctionalProbe12OriginalActive);
+            Freelook.B(this.highRiskFunctionalProbe12OriginalCameraYaw);
+            Freelook.v(this.highRiskFunctionalProbe12OriginalCameraPitch);
+            if (probe != null) {
+                this.writeFreelookPrivateSnapshot(
+                        probe,
+                        this.highRiskFunctionalProbe12OriginalSavedView,
+                        this.highRiskFunctionalProbe12OriginalSavedYaw,
+                        this.highRiskFunctionalProbe12OriginalSavedPitch);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe12:Freelook", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe12() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe12")
+                || this.highRiskFunctionalProbe12Stage < 0
+                || this.highRiskFunctionalProbe12Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe11")
+                && this.highRiskFunctionalProbe11Stage < 4) return;
+
+        final float controlledYaw = 37.25f;
+        final float controlledPitch = -18.5f;
+        try {
+            Freelook probe = Modules.J(Freelook.class);
+            if (probe == null
+                    || ModuleManager.byClass(Freelook.class) != probe
+                    || ModuleManager.byName("Freelook") != probe
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException("Freelook live registry/player unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe12Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe12OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe12OriginalYaw = this.c.thePlayer.rotationYaw;
+                    this.highRiskFunctionalProbe12OriginalPitch = this.c.thePlayer.rotationPitch;
+                    this.highRiskFunctionalProbe12OriginalThirdPersonView =
+                            this.c.gameSettings.thirdPersonView;
+                    this.highRiskFunctionalProbe12OriginalActive = Freelook.c();
+                    this.highRiskFunctionalProbe12OriginalCameraYaw = Freelook.v();
+                    this.highRiskFunctionalProbe12OriginalCameraPitch = Freelook.M();
+                    this.highRiskFunctionalProbe12OriginalSavedView =
+                            this.readFreelookSavedView(probe);
+                    this.highRiskFunctionalProbe12OriginalSavedYaw =
+                            this.readFreelookSavedYaw(probe);
+                    this.highRiskFunctionalProbe12OriginalSavedPitch =
+                            this.readFreelookSavedPitch(probe);
+                    this.highRiskFunctionalProbe12Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe12Stage;
+                    this.highRiskFunctionalProbe12WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe12-state-request:Freelook:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe12WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.c.thePlayer.rotationYaw = controlledYaw;
+                        this.c.thePlayer.rotationPitch = controlledPitch;
+                        this.c.gameSettings.thirdPersonView = 0;
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe12Stage;
+                        this.highRiskFunctionalProbe12WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe12-state-request:Freelook:enabled=true"
+                                + ":yaw=" + controlledYaw + ":pitch=" + controlledPitch + ":view=0");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe12WaitTicks > 160) {
+                        throw new IllegalStateException("Freelook did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe12WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        if (this.c.gameSettings.thirdPersonView != 1
+                                || !Freelook.c()
+                                || !floatNear(Freelook.v(), controlledYaw, 0.001f)
+                                || !floatNear(Freelook.M(), controlledPitch, 0.001f)
+                                || !floatNear(this.readFreelookSavedYaw(probe), controlledYaw, 0.001f)
+                                || !floatNear(this.readFreelookSavedPitch(probe), controlledPitch, 0.001f)
+                                || this.readFreelookSavedView(probe) != 0) {
+                            throw new IllegalStateException("Freelook enable effect mismatch"
+                                    + " view=" + this.c.gameSettings.thirdPersonView
+                                    + " active=" + Freelook.c()
+                                    + " cameraYaw=" + Freelook.v()
+                                    + " cameraPitch=" + Freelook.M()
+                                    + " savedView=" + this.readFreelookSavedView(probe)
+                                    + " savedYaw=" + this.readFreelookSavedYaw(probe)
+                                    + " savedPitch=" + this.readFreelookSavedPitch(probe));
+                        }
+                        runtimeMilestone("high-risk-functional-probe12-effect-pass:Freelook:enabled"
+                                + ":view=1:active=true:yaw=" + Freelook.v()
+                                + ":pitch=" + Freelook.M());
+
+                        // Prove disable restores the values captured by Freelook.i(...), not merely
+                        // whatever values happen to be live when the module is switched off.
+                        this.c.thePlayer.rotationYaw = 91.0f;
+                        this.c.thePlayer.rotationPitch = 22.0f;
+                        this.c.gameSettings.thirdPersonView = 2;
+                        probe.I(0L, false);
+                        ++this.highRiskFunctionalProbe12Stage;
+                        this.highRiskFunctionalProbe12WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe12-state-request:Freelook:enabled=false"
+                                + ":mutated-before-disable=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe12WaitTicks > 160) {
+                        throw new IllegalStateException("Freelook did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe12WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        if (Freelook.c()
+                                || this.c.gameSettings.thirdPersonView != 0
+                                || !floatNear(this.c.thePlayer.rotationYaw, controlledYaw, 0.001f)
+                                || !floatNear(this.c.thePlayer.rotationPitch, controlledPitch, 0.001f)) {
+                            throw new IllegalStateException("Freelook disable restore mismatch"
+                                    + " active=" + Freelook.c()
+                                    + " view=" + this.c.gameSettings.thirdPersonView
+                                    + " yaw=" + this.c.thePlayer.rotationYaw
+                                    + " pitch=" + this.c.thePlayer.rotationPitch);
+                        }
+                        runtimeMilestone("high-risk-functional-probe12-effect-pass:Freelook:disabled"
+                                + ":view=0:active=false:yaw=" + this.c.thePlayer.rotationYaw
+                                + ":pitch=" + this.c.thePlayer.rotationPitch);
+
+                        if (this.highRiskFunctionalProbe12OriginalEnabled) {
+                            probe.I(0L, true);
+                        }
+                        ++this.highRiskFunctionalProbe12Stage;
+                        this.highRiskFunctionalProbe12WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe12-restore-request:Freelook:enabled="
+                                + this.highRiskFunctionalProbe12OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe12WaitTicks > 160) {
+                        throw new IllegalStateException("Freelook did not settle disabled after effect");
+                    }
+                    return;
+
+                case 4:
+                    ++this.highRiskFunctionalProbe12WaitTicks;
+                    boolean stableOriginal = this.highRiskFunctionalProbe12OriginalEnabled
+                            ? probe.o() && !probe.l() && !probe.K()
+                            : !probe.o() && !probe.l() && !probe.K();
+                    if (stableOriginal) {
+                        this.c.thePlayer.rotationYaw = this.highRiskFunctionalProbe12OriginalYaw;
+                        this.c.thePlayer.rotationPitch = this.highRiskFunctionalProbe12OriginalPitch;
+                        this.c.gameSettings.thirdPersonView =
+                                this.highRiskFunctionalProbe12OriginalThirdPersonView;
+                        Freelook.L(this.highRiskFunctionalProbe12OriginalActive);
+                        Freelook.B(this.highRiskFunctionalProbe12OriginalCameraYaw);
+                        Freelook.v(this.highRiskFunctionalProbe12OriginalCameraPitch);
+                        this.writeFreelookPrivateSnapshot(
+                                probe,
+                                this.highRiskFunctionalProbe12OriginalSavedView,
+                                this.highRiskFunctionalProbe12OriginalSavedYaw,
+                                this.highRiskFunctionalProbe12OriginalSavedPitch);
+
+                        if (probe.o() != this.highRiskFunctionalProbe12OriginalEnabled
+                                || this.c.gameSettings.thirdPersonView
+                                        != this.highRiskFunctionalProbe12OriginalThirdPersonView
+                                || !floatNear(this.c.thePlayer.rotationYaw,
+                                        this.highRiskFunctionalProbe12OriginalYaw, 0.001f)
+                                || !floatNear(this.c.thePlayer.rotationPitch,
+                                        this.highRiskFunctionalProbe12OriginalPitch, 0.001f)
+                                || Freelook.c() != this.highRiskFunctionalProbe12OriginalActive
+                                || !floatNear(Freelook.v(),
+                                        this.highRiskFunctionalProbe12OriginalCameraYaw, 0.001f)
+                                || !floatNear(Freelook.M(),
+                                        this.highRiskFunctionalProbe12OriginalCameraPitch, 0.001f)
+                                || this.readFreelookSavedView(probe)
+                                        != this.highRiskFunctionalProbe12OriginalSavedView
+                                || !floatNear(this.readFreelookSavedYaw(probe),
+                                        this.highRiskFunctionalProbe12OriginalSavedYaw, 0.001f)
+                                || !floatNear(this.readFreelookSavedPitch(probe),
+                                        this.highRiskFunctionalProbe12OriginalSavedPitch, 0.001f)) {
+                            throw new IllegalStateException("Freelook exact original state did not restore");
+                        }
+
+                        ++this.highRiskFunctionalProbe12Stage;
+                        runtimeMilestone("high-risk-functional-probe12-restore-pass:Freelook:enabled="
+                                + this.highRiskFunctionalProbe12OriginalEnabled);
+                        runtimeMilestone("high-risk-functional-probe12-module-pass:Freelook");
+                        runtimeMilestone("high-risk-functional-probe12-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe12WaitTicks > 160) {
+                        throw new IllegalStateException("Freelook original enabled state did not settle");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            Freelook probe = Modules.J(Freelook.class);
+            this.restoreHighRiskFunctionalProbe12Exact(probe);
+            this.highRiskFunctionalProbe12Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe12:Freelook", "camera-lifecycle", failure);
+            runtimeMilestone("high-risk-functional-probe12-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4907,6 +5174,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe9();
         this.pumpHighRiskFunctionalProbe10();
         this.pumpHighRiskFunctionalProbe11();
+        this.pumpHighRiskFunctionalProbe12();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
