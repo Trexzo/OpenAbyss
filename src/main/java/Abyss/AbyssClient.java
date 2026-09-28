@@ -10823,6 +10823,40 @@ implements EventSubscriber {
                         stack == null ? null : stack.copy()));
     }
 
+    private String highRiskFunctionalProbe43MachineState(InvManager probe) {
+        try {
+            Field fieldJ = InvManager.class.getDeclaredField("J");
+            Field fieldL = InvManager.class.getDeclaredField("L");
+            Field fieldRunning = InvManager.class.getDeclaredField("machineRunning");
+            Field fieldPhase = InvManager.class.getDeclaredField("machinePhase");
+            Field fieldNext = InvManager.class.getDeclaredField("machineNextActionAt");
+            fieldJ.setAccessible(true);
+            fieldL.setAccessible(true);
+            fieldRunning.setAccessible(true);
+            fieldPhase.setAccessible(true);
+            fieldNext.setAccessible(true);
+            return "enabled=" + probe.o()
+                    + ":priorityAvailable=" + probe.Y()
+                    + ":J=" + fieldJ.getBoolean(probe)
+                    + ":L=" + fieldL.getBoolean(probe)
+                    + ":running=" + fieldRunning.getBoolean(probe)
+                    + ":phase=" + fieldPhase.getInt(probe)
+                    + ":nextDelta="
+                    + (fieldNext.getLong(probe) - System.currentTimeMillis())
+                    + ":screen="
+                    + (this.c.currentScreen == null
+                            ? "<null>"
+                            : this.c.currentScreen.getClass().getSimpleName())
+                    + ":escape=" + KeyBindUtil.V(1, 64165991731362L);
+        }
+        catch (Throwable failure) {
+            return "state-read-failed="
+                    + failure.getClass().getName()
+                    + ":"
+                    + String.valueOf(failure.getMessage());
+        }
+    }
+
     private void saveHighRiskFunctionalProbe43PriorityEntries() {
         if (Abyss.module.ModulePriority.l == null) {
             throw new IllegalStateException("InvManager priority registry unavailable");
@@ -11163,6 +11197,9 @@ implements EventSubscriber {
                     runtimeMilestone(
                             "high-risk-functional-probe43-normalize-pass:"
                                     + "InvManager:screen=<null>");
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-machine-state:normalize:"
+                                    + this.highRiskFunctionalProbe43MachineState(probe));
 
                     int clearedPriorityEntries =
                             this.isolateHighRiskFunctionalProbe43PriorityChain();
@@ -11215,8 +11252,17 @@ implements EventSubscriber {
                     // event starts the machine, the second advances through the
                     // disabled armor phase, and the third executes stepSlots().
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-machine-state:event1:"
+                                    + this.highRiskFunctionalProbe43MachineState(probe));
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-machine-state:event2:"
+                                    + this.highRiskFunctionalProbe43MachineState(probe));
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-machine-state:event3:"
+                                    + this.highRiskFunctionalProbe43MachineState(probe));
                     runtimeMilestone(
                             "high-risk-functional-probe43-machine-advance-pass:"
                                     + "events=3");
