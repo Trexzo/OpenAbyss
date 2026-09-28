@@ -163,10 +163,11 @@ do
   rm -f "$GAME_DIR/$evidence"
 done
 
-launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
+launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true -Dabyss.eventRuntimeTrace=true -Dabyss.networkCommandProbe=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
 wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
+wait_for_stage "$STAGE" 'network-command-probe-pass:CommandLine:restored=' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_COMMAND_WIRING'
 
 DIAG="$GAME_DIR/abyss-bootstrap-diagnostics.txt"
 test -s "$DIAG"
@@ -181,6 +182,20 @@ if [ "$CONFIG_HASH_BEFORE" != "$CONFIG_HASH_AFTER" ]; then
   exit 1
 fi
 echo 'PERSISTENCE_CONFIG_STABLE_ACROSS_RESTART=PASS'
+
+NETWORK_STAGE="$GAME_DIR/abyss-network-stage.txt"
+EVENT_STAGE="$GAME_DIR/abyss-event-stage.txt"
+
+test -s "$NETWORK_STAGE"
+grep -Fq 'send-hook:' "$NETWORK_STAGE"
+grep -Fq 'receive-hook:' "$NETWORK_STAGE"
+echo 'PERSISTENCE_RESTART_NETWORK_HOOKS=PASS'
+
+test -s "$EVENT_STAGE"
+for event in PostTickEvent PreUpdateEvent EntityJoinWorldEvent SendPacketEvent ReceivePacketEvent Render2DEvent; do
+  grep -Fq "Abyss.event.events.$event" "$EVENT_STAGE"
+done
+echo 'PERSISTENCE_RESTART_EVENT_CALLBACKS=PASS'
 
 for failure in   abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt   abyss-config-failure.txt abyss-renderer-failure.txt
 do
