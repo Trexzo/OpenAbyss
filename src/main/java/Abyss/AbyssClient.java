@@ -11048,7 +11048,7 @@ implements EventSubscriber {
     private void pumpHighRiskFunctionalProbe43() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe43")
                 || this.highRiskFunctionalProbe43Stage < 0
-                || this.highRiskFunctionalProbe43Stage >= 5) {
+                || this.highRiskFunctionalProbe43Stage >= 4) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe42")
