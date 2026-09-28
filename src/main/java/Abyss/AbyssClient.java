@@ -34,6 +34,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.macro.Macro1;
@@ -99,6 +100,7 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S02PacketChat;
@@ -146,6 +148,8 @@ implements EventSubscriber {
     private int categoryLifecycleProbePhase;
     private int categoryLifecycleProbeWaitTicks;
     private boolean categoryLifecycleProbeOriginalEnabled;
+    private float categoryLifecycleProbeHitBoxOppositeBorder;
+    private boolean categoryLifecycleProbeHitBoxMeasured;
     private static final String[] CATEGORY_LIFECYCLE_PROBE_MODULES = new String[]{
             "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay",
             "NoHitDelay", "NoHurtCam", "Tracers", "AutoTool"
@@ -275,6 +279,30 @@ implements EventSubscriber {
         System.err.println("[ABYSSDIAG] feature failure " + line);
 }
 
+    private float measureHitBoxProbeBorder(String phase) throws Throwable {
+        if (this.c.theWorld == null) {
+            throw new IllegalStateException("HitBox probe has no client world");
+}
+        if (HitBox.mobs == null || HitBox.expand == null) {
+            throw new IllegalStateException("HitBox settings are unavailable");
+}
+        boolean originalMobs = HitBox.mobs.c();
+        float originalExpand = HitBox.expand.L();
+        try {
+            HitBox.mobs.v(true, 0L);
+            HitBox.expand.o((byte)0, 0L, 0.35f);
+            EntityZombie target = new EntityZombie(this.c.theWorld);
+            float border = target.getCollisionBorderSize();
+            runtimeMilestone("category-lifecycle-probe-hitbox-border:" + phase
+                    + ":enabled=" + ModuleManager.r.o() + ":border=" + border + ":expand=" + HitBox.expand.L());
+            return border;
+}
+        finally {
+            HitBox.mobs.v(originalMobs, 0L);
+            HitBox.expand.o((byte)0, 0L, originalExpand);
+}
+}
+
     private void verifyNameHiderProbeEffect(boolean expectedEnabled, String phase) {
         if (this.c.thePlayer == null) {
             throw new IllegalStateException("NameHider probe has no local player");
@@ -351,6 +379,10 @@ implements EventSubscriber {
                 if ("NameHider".equals(name)) {
                     this.verifyNameHiderProbeEffect(probe.o(), "opposite");
 }
+                if ("HitBox".equals(name)) {
+                    this.categoryLifecycleProbeHitBoxOppositeBorder = this.measureHitBoxProbeBorder("opposite");
+                    this.categoryLifecycleProbeHitBoxMeasured = true;
+}
                 this.categoryLifecycleProbeWaitTicks = 0;
                 probe.I(0L, this.categoryLifecycleProbeOriginalEnabled);
                 this.categoryLifecycleProbePhase = 2;
@@ -370,6 +402,24 @@ implements EventSubscriber {
 }
             if ("NameHider".equals(name)) {
                 this.verifyNameHiderProbeEffect(this.categoryLifecycleProbeOriginalEnabled, "restored");
+}
+            if ("HitBox".equals(name)) {
+                if (!this.categoryLifecycleProbeHitBoxMeasured) {
+                    throw new IllegalStateException("HitBox opposite border was not measured");
+}
+                float restoredBorder = this.measureHitBoxProbeBorder("restored");
+                float enabledBorder = this.categoryLifecycleProbeOriginalEnabled
+                        ? restoredBorder : this.categoryLifecycleProbeHitBoxOppositeBorder;
+                float disabledBorder = this.categoryLifecycleProbeOriginalEnabled
+                        ? this.categoryLifecycleProbeHitBoxOppositeBorder : restoredBorder;
+                float delta = enabledBorder - disabledBorder;
+                if (Math.abs(delta - 0.35f) > 0.001f) {
+                    throw new IllegalStateException("HitBox collision border delta mismatch"
+                            + " enabled=" + enabledBorder + " disabled=" + disabledBorder
+                            + " delta=" + delta + " expected=0.35");
+}
+                runtimeMilestone("category-lifecycle-probe-hitbox-effect-pass:delta=" + delta);
+                this.categoryLifecycleProbeHitBoxMeasured = false;
 }
             runtimeMilestone("category-lifecycle-probe-module-pass:" + name
                     + ":restored=" + this.categoryLifecycleProbeOriginalEnabled);
