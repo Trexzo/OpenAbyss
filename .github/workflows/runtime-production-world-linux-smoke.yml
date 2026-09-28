@@ -372,6 +372,7 @@ jobs:
             ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
             ${{ runner.temp }}/openabyss-production-world-stall.png
             ${{ runner.temp }}/openabyss-production-world-reconnect-exit-fail.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-menu.png
             ${{ runner.temp }}/openabyss-production-world-reconnect-join-fail.png
             ${{ runner.temp }}/openabyss-production-world-before-clickgui.png
             ${{ runner.temp }}/openabyss-production-world-clickgui-mode-*.png
