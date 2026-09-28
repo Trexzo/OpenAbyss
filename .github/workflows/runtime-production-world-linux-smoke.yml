@@ -223,7 +223,9 @@ jobs:
 
           test -f "$STAGE"
           grep -Fq 'menu-no-world-tick' "$STAGE"
+          grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
+          echo 'PRODUCTION_WORLD_MENU_PACKET_CLEANUP=PASS'
           grep -Fq 'entity-player-join-world' "$STAGE"
           grep -Fq 'world-ready-tick' "$STAGE"
           grep -Fq 'world-module-lifecycle-complete' "$STAGE"
@@ -263,12 +265,22 @@ jobs:
           echo 'PRODUCTION_WORLD_AMBIENCE_PACKET_CANCEL=PASS'
           echo 'PRODUCTION_WORLD_AMBIENCE_RENDER_EFFECT=PASS'
           grep -Fq 'macro-functional-probe-dispatch:Macro1:CHAT:OPENABYSS_MACRO_PROBE_7E51' "$STAGE"
+          grep -Fq 'macro-functional-probe-packet-buffer:false' "$STAGE"
           grep -Fq 'macro-functional-probe-client-send-pass:Macro1:OPENABYSS_MACRO_PROBE_7E51' "$STAGE"
           grep -Fq 'macro-functional-probe-restore-state-pass:Macro1' "$STAGE"
           grep -Fq 'macro-functional-probe-pass:Macro1:' "$STAGE"
+          grep -Fq 'chat-send-probe-payload:true' "$NETWORK_STAGE"
+          grep -Fq 'chat-send-decision:accepted' "$NETWORK_STAGE"
+          grep -Fq 'chat-receive-probe-echo:true' "$NETWORK_STAGE"
+          if grep -Fq 'chat-buffered:PacketManager' "$NETWORK_STAGE"; then
+            echo 'Macro1 synthetic chat was unexpectedly buffered by PacketManager.'
+            cat "$NETWORK_STAGE"
+            exit 1
+          fi
           grep -Fq 'OPENABYSS_MACRO_PROBE_7E51' "$RUNNER_TEMP/openabyss-production-world-server.log"
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_CLIENT=PASS'
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_SERVER_RECEIPT=PASS'
+          echo 'PRODUCTION_WORLD_MACRO1_CHAT_ROUNDTRIP=PASS'
           grep -Fq 'visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3' "$STAGE"
           grep -Fq 'visual-utility-functional-probe-restore-state-pass:InventoryHUD' "$STAGE"
           grep -Fq 'visual-utility-functional-probe-pass:InventoryHUD:' "$STAGE"
