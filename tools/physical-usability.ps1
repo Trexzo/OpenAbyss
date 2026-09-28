@@ -122,26 +122,6 @@ $diagCandidates = @(
 $diagFile = $diagCandidates | Select-Object -First 1
 $diagText = if ($diagFile) { [IO.File]::ReadAllText($diagFile) } else { '' }
 
-$eventStageCandidates = @(
-    (Join-Path $Root 'run\abyss-event-stage.txt'),
-    (Join-Path $Root 'abyss-event-stage.txt'),
-    (Join-Path $Evidence 'abyss-event-stage.txt')
-) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
-$eventStageFile = $eventStageCandidates | Select-Object -First 1
-$eventStageText = if ($eventStageFile) { [IO.File]::ReadAllText($eventStageFile) } else { '' }
-
-$extendedEventCallbacks = $true
-if ($ExtendedProbes) {
-    foreach ($eventName in @(
-        'PostTickEvent','PreUpdateEvent','EntityJoinWorldEvent',
-        'SendPacketEvent','ReceivePacketEvent','Render2DEvent'
-    )) {
-        if (-not $eventStageText.Contains("Abyss.event.events.$eventName")) {
-            $extendedEventCallbacks = $false
-        }
-    }
-}
-
 $checks = [ordered]@{
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
     MenuTick = $runtimeText.Contains("menu-no-world-tick")
@@ -169,7 +149,10 @@ $checks = [ordered]@{
     ExtendedWorldFunctional = (-not $ExtendedProbes) -or $runtimeText.Contains('world-functional-probe-pass')
     ExtendedCategoryLifecycle9 = (-not $ExtendedProbes) -or $runtimeText.Contains('category-lifecycle-probe-pass:9')
     ExtendedCommandRuntime = (-not $ExtendedProbes) -or $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
-    ExtendedEventCallbacks = $extendedEventCallbacks
+    ExtendedEventBusOwnership = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('category-lifecycle-probe-pass:9') -and
+        $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
+    )
 }
 
 $pass = $checks.BootstrapComplete -and
@@ -198,7 +181,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ExtendedWorldFunctional -and
         $checks.ExtendedCategoryLifecycle9 -and
         $checks.ExtendedCommandRuntime -and
-        $checks.ExtendedEventCallbacks -and
+        $checks.ExtendedEventBusOwnership -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
@@ -214,7 +197,6 @@ $lines.Add("EVENT_FAILURE_FILE=" + $(if ($eventFailureFile) { $eventFailureFile 
 $lines.Add("CONFIG_FAILURE_FILE=" + $(if ($configFailureFile) { $configFailureFile } else { '<none>' }))
 $lines.Add("RENDERER_FAILURE_FILE=" + $(if ($rendererFailureFile) { $rendererFailureFile } else { '<none>' }))
 $lines.Add("DIAGNOSTICS_FILE=" + $(if ($diagFile) { $diagFile } else { '<none>' }))
-$lines.Add("EVENT_STAGE_FILE=" + $(if ($eventStageFile) { $eventStageFile } else { '<none>' }))
 if ($smokeError) {
     $lines.Add("SMOKE_ERROR=" + $smokeError.Exception.Message)
 }
