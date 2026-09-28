@@ -124,6 +124,7 @@ import Abyss.util.SmoothMouseHelper;
 import Abyss.util.TimerUtil;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.IncomingPacketHold;
+import Abyss.util.packet.OutgoingPacketState;
 import Abyss.util.packet.PacketManager;
 import Abyss.util.render.CustomFont;
 import Abyss.util.render.VisualSpoofRenderer;
