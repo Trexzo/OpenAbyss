@@ -1958,10 +1958,7 @@ implements EventSubscriber {
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
         if (var3.H instanceof EntityPlayerSP) {
-            ++this.runtimeWorldSessionCount;
-            this.runtimeWorldSessionActive = true;
             runtimeMilestone("entity-player-join-world");
-            runtimeMilestone("world-session-join:" + this.runtimeWorldSessionCount);
             BedNuker.D.clear();
             BedNuker.B = false;
             this.bedScanActive = false;
@@ -2439,6 +2436,12 @@ implements EventSubscriber {
                         + ":a=" + PacketManager.a.size());
 }
         } else {
+            if (!this.runtimeWorldSessionActive) {
+                this.runtimeWorldSessionActive = true;
+                ++this.runtimeWorldSessionCount;
+                this.runtimeWorldHeartbeatTicks = 0L;
+                runtimeMilestone("world-session-join:" + this.runtimeWorldSessionCount);
+}
             runtimeMilestone("world-module-lifecycle-start");
             List<Module> var26 = ModuleManager.S;
             int subscribesBudget = 3;
