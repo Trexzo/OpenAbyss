@@ -24,6 +24,7 @@ import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
+import Abyss.internal.accessor.MinecraftAccessor;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
@@ -38,6 +39,7 @@ import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.world.BedNuker;
+import Abyss.module.impl.world.FastPlace;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
 import Abyss.util.ClientUtil;
@@ -87,6 +89,7 @@ import javax.crypto.spec.IvParameterSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S02PacketChat;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.util.BlockPos;
@@ -135,6 +138,14 @@ implements EventSubscriber {
             "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay",
             "NoHitDelay", "NoHurtCam", "Tracers", "AutoTool"
     };
+    private int eventFunctionalProbeStage;
+    private int eventFunctionalProbeWaitTicks;
+    private boolean eventFunctionalProbeOriginalEnabled;
+    private boolean eventFunctionalProbeOriginalFocus;
+    private float eventFunctionalProbeOriginalBlockDelay;
+    private int eventFunctionalProbeOriginalRightClickDelay;
+    private int eventFunctionalProbeInventorySlot = -1;
+    private ItemStack eventFunctionalProbeOriginalItem;
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -297,6 +308,132 @@ implements EventSubscriber {
 }
 }
 
+
+    private void restoreEventFunctionalProbeState(FastPlace probe) {
+        try {
+            if (FastPlace.blockDelay != null) {
+                FastPlace.blockDelay.o((byte)0, 0L, this.eventFunctionalProbeOriginalBlockDelay);
+            }
+            if (this.eventFunctionalProbeInventorySlot >= 0 && this.c.thePlayer != null
+                    && this.c.thePlayer.inventory != null
+                    && this.eventFunctionalProbeInventorySlot < this.c.thePlayer.inventory.mainInventory.length) {
+                this.c.thePlayer.inventory.mainInventory[this.eventFunctionalProbeInventorySlot] = this.eventFunctionalProbeOriginalItem;
+            }
+            this.c.inGameHasFocus = this.eventFunctionalProbeOriginalFocus;
+            MinecraftAccessor.j(0L, this.c, this.eventFunctionalProbeOriginalRightClickDelay);
+            if (probe != null && probe.o() != this.eventFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.eventFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("EventFunctionalProbe:FastPlace", "restore", restoreFailure);
+        }
+    }
+
+    private void pumpEventFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.eventFunctionalProbe")
+                || this.eventFunctionalProbeStage < 0
+                || this.eventFunctionalProbeStage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+
+        FastPlace probe = Modules.J(FastPlace.class);
+        try {
+            if (probe == null || FastPlace.blockDelay == null) {
+                throw new IllegalStateException("FastPlace module/Block-Delay setting is missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.eventFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.eventFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial FastPlace state did not settle");
+                    }
+                    return;
+                }
+                this.eventFunctionalProbeOriginalEnabled = stableEnabled;
+                this.eventFunctionalProbeOriginalFocus = this.c.inGameHasFocus;
+                this.eventFunctionalProbeOriginalBlockDelay = FastPlace.blockDelay.L();
+                this.eventFunctionalProbeOriginalRightClickDelay = MinecraftAccessor.C(this.c);
+                this.eventFunctionalProbeInventorySlot = this.c.thePlayer.inventory.currentItem;
+                this.eventFunctionalProbeOriginalItem =
+                        this.c.thePlayer.inventory.mainInventory[this.eventFunctionalProbeInventorySlot];
+
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.eventFunctionalProbeStage = 1;
+                    this.eventFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("event-functional-probe-enable-request:FastPlace");
+                    return;
+                }
+                this.eventFunctionalProbeStage = 1;
+            }
+
+            if (this.eventFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.eventFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("FastPlace did not enable/subscribe");
+                    }
+                    return;
+                }
+
+                FastPlace.blockDelay.o((byte)0, 0L, 1.0f);
+                this.c.thePlayer.inventory.mainInventory[this.eventFunctionalProbeInventorySlot] =
+                        new ItemStack(Blocks.stone);
+                this.c.inGameHasFocus = true;
+                MinecraftAccessor.j(0L, this.c, 4);
+                runtimeMilestone("event-functional-probe-dispatch:FastPlace:rightClickDelay=4");
+                w.e(new PreUpdateEvent(0, 0, 0), 0L);
+                int actual = MinecraftAccessor.C(this.c);
+                if (actual != 1) {
+                    throw new IllegalStateException("FastPlace PreUpdate did not change rightClickDelayTimer: " + actual);
+                }
+                runtimeMilestone("event-functional-probe-effect-pass:FastPlace:rightClickDelay=1");
+
+                FastPlace.blockDelay.o((byte)0, 0L, this.eventFunctionalProbeOriginalBlockDelay);
+                this.c.thePlayer.inventory.mainInventory[this.eventFunctionalProbeInventorySlot] =
+                        this.eventFunctionalProbeOriginalItem;
+                this.c.inGameHasFocus = this.eventFunctionalProbeOriginalFocus;
+                MinecraftAccessor.j(0L, this.c, this.eventFunctionalProbeOriginalRightClickDelay);
+
+                if (!this.eventFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                    this.eventFunctionalProbeStage = 2;
+                    this.eventFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("event-functional-probe-restore-request:FastPlace:enabled=false");
+                    return;
+                }
+
+                this.eventFunctionalProbeStage = 3;
+                runtimeMilestone("event-functional-probe-pass:FastPlace:restored=true");
+                return;
+            }
+
+            if (!stableDisabled) {
+                if (++this.eventFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("FastPlace did not restore disabled state");
+                }
+                return;
+            }
+            this.eventFunctionalProbeStage = 3;
+            runtimeMilestone("event-functional-probe-pass:FastPlace:restored=false");
+        }
+        catch (Throwable failure) {
+            this.eventFunctionalProbeStage = -1;
+            restoreEventFunctionalProbeState(probe);
+            recordFeatureFailure("EventFunctionalProbe:FastPlace", "preupdate-delay-effect", failure);
+            runtimeMilestone("event-functional-probe-fail:FastPlace:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpCommandRuntimeProbe() {
         if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
                 || this.commandRuntimeProbeStage < 0
@@ -308,6 +445,9 @@ implements EventSubscriber {
 }
         if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
                 && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
             return;
 }
         try {
@@ -1240,6 +1380,7 @@ implements EventSubscriber {
 }
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
+            this.pumpEventFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
