@@ -16,7 +16,9 @@ package Abyss;
 
 import Abyss.command.AbyssCommands;
 import Abyss.ASM.Hooks.Entity.EntityRendererHooks;
+import Abyss.ASM.Hooks.Render.ItemRendererHooks;
 import Abyss.ASM.Hooks.Block.BlockBarrierHooks;
+import Abyss.ASM.Hooks.CallbackInfo;
 import Abyss.ASM.Hooks.CallbackInfoReturnable;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
@@ -66,6 +68,7 @@ import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.VisualSpoof;
 import Abyss.module.impl.visual.Ambience;
+import Abyss.module.impl.visual.Animations;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.BarrierVisible;
 import Abyss.module.impl.visual.Freelook;
@@ -287,6 +290,11 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe8WaitTicks;
     private boolean highRiskFunctionalProbe8OriginalEnabled;
     private boolean highRiskFunctionalProbe8Saved;
+    private int highRiskFunctionalProbe9Stage;
+    private int highRiskFunctionalProbe9WaitTicks;
+    private boolean highRiskFunctionalProbe9OriginalEnabled;
+    private boolean highRiskFunctionalProbe9OriginalNoRotations;
+    private boolean highRiskFunctionalProbe9Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3471,6 +3479,151 @@ implements EventSubscriber {
         }
     }
 
+    private void verifyAnimationsRotationHookEffect(boolean expectCancel, String phase) {
+        Animations probe = Modules.J(Animations.class);
+        if (probe == null || ModuleManager.d != probe) {
+            throw new IllegalStateException("Animations hook singleton differs from registry singleton");
+        }
+
+        int previousMode = GL11.glGetInteger(GL11.GL_MATRIX_MODE);
+        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+        GL11.glPushMatrix();
+        CallbackInfo callback = new CallbackInfo();
+        try {
+            ItemRendererHooks.onFunc_178110_a(callback);
+        }
+        finally {
+            GL11.glPopMatrix();
+            GL11.glMatrixMode(previousMode);
+        }
+
+        if (callback.isCancelled() != expectCancel) {
+            throw new IllegalStateException("Animations rotation hook mismatch phase=" + phase
+                    + " cancelled=" + callback.isCancelled()
+                    + " expected=" + expectCancel
+                    + " enabled=" + probe.o()
+                    + " noRotations=" + Animations.noRotationsEffect.c());
+        }
+
+        runtimeMilestone("high-risk-functional-probe9-effect-pass:Animations:" + phase
+                + ":cancelled=" + callback.isCancelled()
+                + ":noRotations=" + Animations.noRotationsEffect.c());
+    }
+
+    private void restoreHighRiskFunctionalProbe9() {
+        if (!this.highRiskFunctionalProbe9Saved) {
+            return;
+        }
+        try {
+            Animations.noRotationsEffect.v(this.highRiskFunctionalProbe9OriginalNoRotations, 0L);
+            Animations probe = Modules.J(Animations.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe9OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe9OriginalEnabled);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe9:Animations", "restore", failure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe9() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe9")
+                || this.highRiskFunctionalProbe9Stage < 0
+                || this.highRiskFunctionalProbe9Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe8")
+                && this.highRiskFunctionalProbe8Stage < 4) return;
+
+        try {
+            Animations probe = Modules.J(Animations.class);
+            if (probe == null || ModuleManager.d != probe) {
+                throw new IllegalStateException("Animations module/singleton unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe9Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe9OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe9OriginalNoRotations = Animations.noRotationsEffect.c();
+                    this.highRiskFunctionalProbe9Saved = true;
+                    Animations.noRotationsEffect.v(true, 0L);
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe9Stage;
+                    this.highRiskFunctionalProbe9WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe9-state-request:Animations:enabled=false:noRotations=true");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe9WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyAnimationsRotationHookEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe9Stage;
+                        this.highRiskFunctionalProbe9WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe9-state-request:Animations:enabled=true:noRotations=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe9WaitTicks > 160) {
+                        throw new IllegalStateException("Animations did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe9WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()) {
+                        this.verifyAnimationsRotationHookEffect(true, "enabled");
+                        Animations.noRotationsEffect.v(
+                                this.highRiskFunctionalProbe9OriginalNoRotations, 0L);
+                        if (!this.highRiskFunctionalProbe9OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe9Stage;
+                        this.highRiskFunctionalProbe9WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe9-restore-request:Animations:enabled="
+                                + this.highRiskFunctionalProbe9OriginalEnabled
+                                + ":noRotations=" + this.highRiskFunctionalProbe9OriginalNoRotations);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe9WaitTicks > 160) {
+                        throw new IllegalStateException("Animations did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe9WaitTicks;
+                    if (probe.o() == this.highRiskFunctionalProbe9OriginalEnabled
+                            && !probe.l() && !probe.K()) {
+                        this.verifyAnimationsRotationHookEffect(
+                                this.highRiskFunctionalProbe9OriginalEnabled
+                                        && this.highRiskFunctionalProbe9OriginalNoRotations,
+                                "restored");
+                        runtimeMilestone("high-risk-functional-probe9-restore-pass:Animations:enabled="
+                                + this.highRiskFunctionalProbe9OriginalEnabled
+                                + ":noRotations=" + Animations.noRotationsEffect.c());
+                        ++this.highRiskFunctionalProbe9Stage;
+                        runtimeMilestone("high-risk-functional-probe9-module-pass:Animations");
+                        runtimeMilestone("high-risk-functional-probe9-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe9WaitTicks > 160) {
+                        throw new IllegalStateException("Animations original state did not restore");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe9();
+            this.highRiskFunctionalProbe9Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe9:Animations", "item-renderer-hook", failure);
+            runtimeMilestone("high-risk-functional-probe9-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4417,6 +4570,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe6();
         this.pumpHighRiskFunctionalProbe7();
         this.pumpHighRiskFunctionalProbe8();
+        this.pumpHighRiskFunctionalProbe9();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
