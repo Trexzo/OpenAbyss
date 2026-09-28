@@ -57,6 +57,7 @@ import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.misc.ContainerKeeper;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.misc.Timer;
 import Abyss.module.impl.movement.FastFall;
@@ -343,6 +344,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe14Stage;
     private int highRiskFunctionalProbe15Stage;
     private int highRiskFunctionalProbe16Stage;
+    private int highRiskFunctionalProbe17Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4663,6 +4665,118 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe17() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe17")
+                || this.highRiskFunctionalProbe17Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe16")
+                && this.highRiskFunctionalProbe16Stage < 1) return;
+
+        ContainerKeeper probe = Modules.J(ContainerKeeper.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        boolean originalRequireShift = false;
+        String originalToggleKey = null;
+        net.minecraft.client.gui.GuiScreen originalScreen = null;
+        boolean originalFocus = false;
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(ContainerKeeper.class) != probe
+                    || ModuleManager.byName("ContainerKeeper") != probe
+                    || ContainerKeeper.toggleKey == null
+                    || ContainerKeeper.requireShiftToSave == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException("ContainerKeeper live container authority unavailable");
+            }
+
+            originalEnabled = probe.o();
+            originalRequireShift = ContainerKeeper.requireShiftToSave.c();
+            originalToggleKey = ContainerKeeper.toggleKey.X();
+            originalScreen = this.c.currentScreen;
+            originalFocus = this.c.inGameHasFocus;
+            saved = true;
+
+            ContainerKeeper.requireShiftToSave.v(false, 0L);
+            Field armedField = ContainerKeeper.class.getDeclaredField("v");
+            Field savedField = ContainerKeeper.class.getDeclaredField("t");
+            Field debounceField = ContainerKeeper.class.getDeclaredField("T");
+            Field screenField = ContainerKeeper.class.getDeclaredField("H");
+            armedField.setAccessible(true);
+            savedField.setAccessible(true);
+            debounceField.setAccessible(true);
+            screenField.setAccessible(true);
+            Method toggle = ContainerKeeper.class.getDeclaredMethod("W", Boolean.TYPE, Long.TYPE);
+            toggle.setAccessible(true);
+
+            GuiInventory fixture = new GuiInventory(this.c.thePlayer);
+            this.c.displayGuiScreen(fixture);
+            armedField.setBoolean(probe, true);
+            debounceField.setBoolean(probe, false);
+            toggle.invoke(probe, Boolean.TRUE, Long.valueOf(0L));
+
+            if (this.c.currentScreen != null
+                    || !savedField.getBoolean(probe)
+                    || screenField.get(probe) != fixture) {
+                throw new IllegalStateException("ContainerKeeper did not hide and retain the active container");
+            }
+            runtimeMilestone("high-risk-functional-probe17-effect-pass:ContainerKeeper:hide=true");
+
+            debounceField.setBoolean(probe, false);
+            toggle.invoke(probe, Boolean.TRUE, Long.valueOf(0L));
+            if (this.c.currentScreen != fixture
+                    || savedField.getBoolean(probe)) {
+                throw new IllegalStateException("ContainerKeeper did not restore the retained container");
+            }
+            runtimeMilestone("high-risk-functional-probe17-effect-pass:ContainerKeeper:restoreGui=true");
+
+            probe.A(0L);
+            if (savedField.getBoolean(probe)
+                    || armedField.getBoolean(probe)
+                    || debounceField.getBoolean(probe)
+                    || screenField.get(probe) != null) {
+                throw new IllegalStateException("ContainerKeeper disable reset did not clear retained state");
+            }
+            runtimeMilestone("high-risk-functional-probe17-effect-pass:ContainerKeeper:disableReset=true");
+
+            ContainerKeeper.requireShiftToSave.v(originalRequireShift, 0L);
+            ContainerKeeper.toggleKey.O(originalToggleKey);
+            this.c.displayGuiScreen(originalScreen);
+            this.c.inGameHasFocus = originalFocus;
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+
+            if (probe.o() != originalEnabled
+                    || ContainerKeeper.requireShiftToSave.c() != originalRequireShift
+                    || !String.valueOf(originalToggleKey).equals(String.valueOf(ContainerKeeper.toggleKey.X()))
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("ContainerKeeper probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe17Stage = 1;
+            runtimeMilestone("high-risk-functional-probe17-restore-pass:ContainerKeeper:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe17-module-pass:ContainerKeeper");
+            runtimeMilestone("high-risk-functional-probe17-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    probe.A(0L);
+                    ContainerKeeper.requireShiftToSave.v(originalRequireShift, 0L);
+                    ContainerKeeper.toggleKey.O(originalToggleKey);
+                    this.c.displayGuiScreen(originalScreen);
+                    this.c.inGameHasFocus = originalFocus;
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe17:ContainerKeeper", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe17Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe17:ContainerKeeper", "retain-reopen-container", failure);
+            runtimeMilestone("high-risk-functional-probe17-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5637,6 +5751,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe14();
         this.pumpHighRiskFunctionalProbe15();
         this.pumpHighRiskFunctionalProbe16();
+        this.pumpHighRiskFunctionalProbe17();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
