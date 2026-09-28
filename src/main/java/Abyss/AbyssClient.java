@@ -18,6 +18,7 @@ import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
+import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
 import Abyss.event.events.PreMouseInputEvent;
@@ -36,6 +37,7 @@ import Abyss.module.Modules;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.movement.NoJumpDelay;
+import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
@@ -157,6 +159,10 @@ implements EventSubscriber {
     private boolean movementFunctionalProbeOriginalEnabled;
     private float movementFunctionalProbeOriginalSetting;
     private int movementFunctionalProbeOriginalJumpTicks;
+    private int playerFunctionalProbeStage;
+    private int playerFunctionalProbeWaitTicks;
+    private boolean playerFunctionalProbeOriginalEnabled;
+    private int playerFunctionalProbeOriginalLeftClickCounter;
     private int packetFunctionalProbeStage;
     private int packetFunctionalProbeWaitTicks;
     private boolean packetFunctionalProbeOriginalEnabled;
@@ -604,6 +610,125 @@ implements EventSubscriber {
     }
 
 
+
+    private void restorePlayerFunctionalProbeState(NoHitDelay probe) {
+        try {
+            MinecraftAccessor.c(this.c, this.playerFunctionalProbeOriginalLeftClickCounter, 0L);
+            if (probe != null && probe.o() != this.playerFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.playerFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("PlayerFunctionalProbe:NoHitDelay", "restore", restoreFailure);
+        }
+    }
+
+    private void verifyPlayerFunctionalProbeRestored() {
+        int actual = MinecraftAccessor.leftClickCounter(this.c);
+        if (actual != this.playerFunctionalProbeOriginalLeftClickCounter) {
+            throw new IllegalStateException("leftClickCounter was not restored after NoHitDelay probe: " + actual);
+        }
+        runtimeMilestone("player-functional-probe-restore-state-pass:NoHitDelay");
+    }
+
+    private void pumpPlayerFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.playerFunctionalProbe")
+                || this.playerFunctionalProbeStage < 0
+                || this.playerFunctionalProbeStage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+
+        NoHitDelay probe = Modules.J(NoHitDelay.class);
+        try {
+            if (probe == null) {
+                throw new IllegalStateException("NoHitDelay module is missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.playerFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.playerFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial NoHitDelay state did not settle");
+                    }
+                    return;
+                }
+                this.playerFunctionalProbeOriginalEnabled = stableEnabled;
+                this.playerFunctionalProbeOriginalLeftClickCounter =
+                        MinecraftAccessor.leftClickCounter(this.c);
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.playerFunctionalProbeStage = 1;
+                    this.playerFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("player-functional-probe-enable-request:NoHitDelay");
+                    return;
+                }
+                this.playerFunctionalProbeStage = 1;
+            }
+
+            if (this.playerFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.playerFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("NoHitDelay did not enable/subscribe");
+                    }
+                    return;
+                }
+
+                MinecraftAccessor.c(this.c, 7, 0L);
+                runtimeMilestone("player-functional-probe-dispatch:NoHitDelay:leftClickCounter=7");
+                w.e(new ClickMouseEvent(), 0L);
+                int actual = MinecraftAccessor.leftClickCounter(this.c);
+                if (actual != 0) {
+                    throw new IllegalStateException("NoHitDelay ClickMouse did not clear leftClickCounter: " + actual);
+                }
+                runtimeMilestone("player-functional-probe-effect-pass:NoHitDelay:leftClickCounter=0");
+
+                MinecraftAccessor.c(this.c, this.playerFunctionalProbeOriginalLeftClickCounter, 0L);
+                if (!this.playerFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                    this.playerFunctionalProbeStage = 2;
+                    this.playerFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("player-functional-probe-restore-request:NoHitDelay:enabled=false");
+                    return;
+                }
+
+                verifyPlayerFunctionalProbeRestored();
+                this.playerFunctionalProbeStage = 3;
+                runtimeMilestone("player-functional-probe-pass:NoHitDelay:restored=true");
+                return;
+            }
+
+            if (!stableDisabled) {
+                if (++this.playerFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("NoHitDelay did not restore disabled state");
+                }
+                return;
+            }
+            verifyPlayerFunctionalProbeRestored();
+            this.playerFunctionalProbeStage = 3;
+            runtimeMilestone("player-functional-probe-pass:NoHitDelay:restored=false");
+        }
+        catch (Throwable failure) {
+            this.playerFunctionalProbeStage = -1;
+            restorePlayerFunctionalProbeState(probe);
+            recordFeatureFailure("PlayerFunctionalProbe:NoHitDelay", "click-left-counter-effect", failure);
+            runtimeMilestone("player-functional-probe-fail:NoHitDelay:" + failure.getClass().getName());
+        }
+    }
+
     private void restorePacketFunctionalProbeState(Ambience probe) {
         try {
             if (Ambience.time != null) {
@@ -656,6 +781,9 @@ implements EventSubscriber {
             return;
         }
         if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.playerFunctionalProbe") && this.playerFunctionalProbeStage < 3) {
             return;
         }
 
@@ -1710,6 +1838,7 @@ implements EventSubscriber {
             this.pumpCategoryLifecycleProbe();
             this.pumpEventFunctionalProbe();
             this.pumpMovementFunctionalProbe();
+            this.pumpPlayerFunctionalProbe();
             this.pumpPacketFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
