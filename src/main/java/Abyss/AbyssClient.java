@@ -27,10 +27,12 @@ import Abyss.event.events.AttackEntityEvent;
 import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
+import Abyss.event.events.PostRenderEvent;
 import Abyss.event.events.PlayerRightClickEvent;
 import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
 import Abyss.event.events.PreMouseInputEvent;
+import Abyss.event.events.PreRenderEvent;
 import Abyss.event.events.PreTickEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
@@ -72,6 +74,7 @@ import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Animations;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.BarrierVisible;
+import Abyss.module.impl.visual.Chams;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.NoHurtCam;
@@ -303,6 +306,13 @@ implements EventSubscriber {
     private float highRiskFunctionalProbe10OriginalTimerSpeed;
     private float highRiskFunctionalProbe10DisabledBaseline;
     private boolean highRiskFunctionalProbe10Saved;
+    private int highRiskFunctionalProbe11Stage;
+    private int highRiskFunctionalProbe11WaitTicks;
+    private boolean highRiskFunctionalProbe11OriginalEnabled;
+    private boolean highRiskFunctionalProbe11OriginalPolygonOffsetEnabled;
+    private float highRiskFunctionalProbe11OriginalPolygonOffsetFactor;
+    private float highRiskFunctionalProbe11OriginalPolygonOffsetUnits;
+    private boolean highRiskFunctionalProbe11Saved;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -3787,6 +3797,165 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe11() {
+        if (!this.highRiskFunctionalProbe11Saved) {
+            return;
+        }
+        try {
+            Chams probe = Modules.J(Chams.class);
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe11OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe11OriginalEnabled);
+            }
+            GL11.glPolygonOffset(
+                    this.highRiskFunctionalProbe11OriginalPolygonOffsetFactor,
+                    this.highRiskFunctionalProbe11OriginalPolygonOffsetUnits);
+            if (this.highRiskFunctionalProbe11OriginalPolygonOffsetEnabled) {
+                GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+            }
+            else {
+                GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
+            }
+        }
+        catch (Throwable failure) {
+            recordFeatureFailure("HighRiskFunctionalProbe11:Chams", "restore", failure);
+        }
+    }
+
+    private void verifyChamsEventEffect(boolean enabledPhase, String phase) {
+        if (this.c.thePlayer == null) {
+            throw new IllegalStateException("Chams probe requires local player");
+        }
+
+        GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
+        GL11.glPolygonOffset(0.0f, 0.0f);
+
+        w.e(new PreRenderEvent(this.c.thePlayer), 0L);
+        boolean afterPre = GL11.glIsEnabled(GL11.GL_POLYGON_OFFSET_FILL);
+        if (afterPre != enabledPhase) {
+            throw new IllegalStateException("Chams PreRender polygon-offset mismatch phase=" + phase
+                    + " enabled=" + enabledPhase + " actual=" + afterPre);
+        }
+
+        w.e(new PostRenderEvent(this.c.thePlayer), 0L);
+        boolean afterPost = GL11.glIsEnabled(GL11.GL_POLYGON_OFFSET_FILL);
+        if (afterPost) {
+            throw new IllegalStateException("Chams PostRender did not disable polygon offset phase=" + phase);
+        }
+
+        runtimeMilestone("high-risk-functional-probe11-effect-pass:Chams:" + phase
+                + ":pre=" + afterPre + ":post=" + afterPost);
+    }
+
+    private void pumpHighRiskFunctionalProbe11() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe11")
+                || this.highRiskFunctionalProbe11Stage < 0
+                || this.highRiskFunctionalProbe11Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe10")
+                && this.highRiskFunctionalProbe10Stage < 5) return;
+
+        try {
+            Chams probe = Modules.J(Chams.class);
+            if (probe == null || ModuleManager.I != probe) {
+                throw new IllegalStateException("Chams module/singleton unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe11Stage) {
+                case 0:
+                    this.highRiskFunctionalProbe11OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe11OriginalPolygonOffsetEnabled =
+                            GL11.glIsEnabled(GL11.GL_POLYGON_OFFSET_FILL);
+                    this.highRiskFunctionalProbe11OriginalPolygonOffsetFactor =
+                            GL11.glGetFloat(GL11.GL_POLYGON_OFFSET_FACTOR);
+                    this.highRiskFunctionalProbe11OriginalPolygonOffsetUnits =
+                            GL11.glGetFloat(GL11.GL_POLYGON_OFFSET_UNITS);
+                    this.highRiskFunctionalProbe11Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                    }
+                    ++this.highRiskFunctionalProbe11Stage;
+                    this.highRiskFunctionalProbe11WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe11-state-request:Chams:enabled=false");
+                    return;
+
+                case 1:
+                    ++this.highRiskFunctionalProbe11WaitTicks;
+                    if (!probe.o() && !probe.l() && !probe.K()
+                            && !probe.P() && !w.isOwnerActive(probe)) {
+                        this.verifyChamsEventEffect(false, "disabled");
+                        probe.I(0L, true);
+                        ++this.highRiskFunctionalProbe11Stage;
+                        this.highRiskFunctionalProbe11WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe11-state-request:Chams:enabled=true");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe11WaitTicks > 160) {
+                        throw new IllegalStateException("Chams did not settle disabled");
+                    }
+                    return;
+
+                case 2:
+                    ++this.highRiskFunctionalProbe11WaitTicks;
+                    if (probe.o() && !probe.l() && !probe.K()
+                            && probe.P() && w.isOwnerActive(probe)) {
+                        this.verifyChamsEventEffect(true, "enabled");
+                        if (!this.highRiskFunctionalProbe11OriginalEnabled) {
+                            probe.I(0L, false);
+                        }
+                        ++this.highRiskFunctionalProbe11Stage;
+                        this.highRiskFunctionalProbe11WaitTicks = 0;
+                        runtimeMilestone("high-risk-functional-probe11-restore-request:Chams:enabled="
+                                + this.highRiskFunctionalProbe11OriginalEnabled);
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe11WaitTicks > 160) {
+                        throw new IllegalStateException("Chams did not settle enabled");
+                    }
+                    return;
+
+                case 3:
+                    ++this.highRiskFunctionalProbe11WaitTicks;
+                    boolean stableRestored = this.highRiskFunctionalProbe11OriginalEnabled
+                            ? probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe)
+                            : !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+                    if (stableRestored) {
+                        this.verifyChamsEventEffect(
+                                this.highRiskFunctionalProbe11OriginalEnabled, "restored");
+                        GL11.glPolygonOffset(
+                                this.highRiskFunctionalProbe11OriginalPolygonOffsetFactor,
+                                this.highRiskFunctionalProbe11OriginalPolygonOffsetUnits);
+                        if (this.highRiskFunctionalProbe11OriginalPolygonOffsetEnabled) {
+                            GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+                        }
+                        else {
+                            GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
+                        }
+                        ++this.highRiskFunctionalProbe11Stage;
+                        runtimeMilestone("high-risk-functional-probe11-restore-pass:Chams:enabled="
+                                + this.highRiskFunctionalProbe11OriginalEnabled);
+                        runtimeMilestone("high-risk-functional-probe11-module-pass:Chams");
+                        runtimeMilestone("high-risk-functional-probe11-pass:1");
+                        return;
+                    }
+                    if (this.highRiskFunctionalProbe11WaitTicks > 160) {
+                        throw new IllegalStateException("Chams original state did not restore");
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe11();
+            this.highRiskFunctionalProbe11Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe11:Chams", "pre-post-render-event", failure);
+            runtimeMilestone("high-risk-functional-probe11-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -4735,6 +4904,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe8();
         this.pumpHighRiskFunctionalProbe9();
         this.pumpHighRiskFunctionalProbe10();
+        this.pumpHighRiskFunctionalProbe11();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
