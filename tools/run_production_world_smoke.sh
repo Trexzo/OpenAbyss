@@ -148,6 +148,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe31=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe32=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe33=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe34=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1047,6 +1048,73 @@ if [ "$AUTOTOOL_RESTORED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_AUTOTOOL=PASS input=real-LMB switch=0->4->0'
+
+AIMASSIST_READY=0
+for _ in $(seq 1 320); do
+  if grep -Fq 'high-risk-functional-probe34-ready:AimAssist:mouse=left' "$STAGE"; then
+    AIMASSIST_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe34-fail:' "$STAGE"; then
+    echo 'AimAssist physical targeting probe failed before mouse input.'
+    grep -F 'high-risk-functional-probe34-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before AimAssist became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$AIMASSIST_READY" -ne 1 ]; then
+  echo 'AimAssist physical targeting probe did not become ready.'
+  grep -F 'high-risk-functional-probe34-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousedown 1
+AIMASSIST_EFFECT=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe34-effect-pass:AimAssist:yawChanged=true:lockAngles=true:' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe34-ready-release:AimAssist:mouse=left' "$STAGE"; then
+    AIMASSIST_EFFECT=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe34-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool mouseup 1
+if [ "$AIMASSIST_EFFECT" -ne 1 ]; then
+  echo 'AimAssist did not acquire/rotate toward the fixture from real X11 LMB input.'
+  grep -F 'high-risk-functional-probe34-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AIMASSIST_EFFECT=PASS input=xdotool-mousedown-1'
+
+AIMASSIST_RELEASED=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe34-release-pass:AimAssist:cacheCleared=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe34-pass:1' "$STAGE"; then
+    AIMASSIST_RELEASED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe34-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$AIMASSIST_RELEASED" -ne 1 ]; then
+  echo 'AimAssist did not clear/restore after real X11 LMB release.'
+  grep -F 'high-risk-functional-probe34-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AIMASSIST=PASS input=real-LMB target=zombie rotation=live'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
