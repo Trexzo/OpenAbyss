@@ -209,6 +209,7 @@ implements EventSubscriber {
     private static final byte[] KEY_OFFSETS;
     public static EventBus w;
     private static final Set<String> RUNTIME_MILESTONES = new CopyOnWriteArraySet<String>();
+    private long runtimeWorldHeartbeatTicks;
     private static final Set<String> MODULE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
     private static final Set<String> FEATURE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
 
@@ -2312,6 +2313,7 @@ implements EventSubscriber {
                 var35.A(false);
 }
             this.s = false;
+            this.runtimeWorldHeartbeatTicks = 0L;
             runtimeMilestone("menu-cleanup-complete:packetBuffer=" + PacketManager.e()
                     + ":u=" + PacketManager.u.size()
                     + ":v=" + PacketManager.v.size()
@@ -2375,6 +2377,12 @@ implements EventSubscriber {
                 }
 }
             runtimeMilestone("world-module-lifecycle-complete");
+            if (Boolean.getBoolean("abyss.runtimeSelfTest")) {
+                ++this.runtimeWorldHeartbeatTicks;
+                if (this.runtimeWorldHeartbeatTicks % 100L == 0L) {
+                    runtimeMilestone("world-heartbeat:" + this.runtimeWorldHeartbeatTicks);
+                }
+            }
             if (batching) {
                 w.endBatch();
 }
