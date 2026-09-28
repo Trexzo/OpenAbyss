@@ -246,7 +246,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe32=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe33=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe34=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=50'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe35=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=51'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -625,6 +626,16 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL34=PASS modules=AimAssist'
+          grep -Fq 'high-risk-functional-probe35-effect-pass:JumpReset:forward=1.0:jump=true:target=mobs' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-reset-pass:JumpReset:oneShot=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-module-pass:JumpReset' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe35-fail:' "$STAGE"; then
+            echo 'JumpReset knockback/move-input probe reported a failure.'
+            grep -F 'high-risk-functional-probe35-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL35=PASS modules=JumpReset'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
