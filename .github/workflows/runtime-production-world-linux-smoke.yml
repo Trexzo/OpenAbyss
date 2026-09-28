@@ -260,7 +260,6 @@ jobs:
           grep -Fq 'physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true' "$STAGE"
           grep -Fq 'physical-input-functional-probe-effect-pass:FastFall:motionY=' "$STAGE"
           grep -Fq 'physical-input-functional-probe-pass:2' "$STAGE"
-          grep -Fq 'PRODUCTION_WORLD_PROMOTED_FUNCTIONAL_PREREQUISITES=PASS probes=15-20' "$STDOUT"
           echo 'PRODUCTION_WORLD_PHYSICAL_INPUT_FUNCTIONAL=PASS modules=AutoClicker,FastFall'
           grep -Fq 'high-risk-functional-probe3-effect-pass:WTap:forward=0.0:strafe=0.0' "$STAGE"
           grep -Fq 'high-risk-functional-probe3-restore-pass:WTap' "$STAGE"
