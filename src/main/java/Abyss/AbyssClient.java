@@ -87,6 +87,7 @@ import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
@@ -162,7 +163,9 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
@@ -347,6 +350,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe16Stage;
     private int highRiskFunctionalProbe17Stage;
     private int highRiskFunctionalProbe18Stage;
+    private int highRiskFunctionalProbe19Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4886,6 +4890,84 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe19() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe19")
+                || this.highRiskFunctionalProbe19Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe18")
+                && this.highRiskFunctionalProbe18Stage < 1) return;
+
+        LeapModeHUD probe = Modules.J(LeapModeHUD.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        String originalMode = null;
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(LeapModeHUD.class) != probe
+                    || ModuleManager.byName("LeapModeHUD") != probe
+                    || LeapModeHUD.scale == null
+                    || LeapModeHUD.offsetX == null
+                    || LeapModeHUD.offsetY == null
+                    || LeapModeHUD.backgroundOpacity == null) {
+                throw new IllegalStateException("LeapModeHUD live packet-state authority unavailable");
+            }
+
+            Field modeField = LeapModeHUD.class.getDeclaredField("h");
+            modeField.setAccessible(true);
+            originalMode = (String)modeField.get(probe);
+            originalEnabled = probe.o();
+            saved = true;
+
+            S02PacketChat arcedPacket = new S02PacketChat(new ChatComponentText(
+                    "Your primary Leap skill switched to Arced mode."));
+            probe.onReceivePacket(0L, new ReceivePacketEvent(arcedPacket));
+            String mode = (String)modeField.get(probe);
+            if (!(EnumChatFormatting.AQUA + "Arced").equals(mode)) {
+                throw new IllegalStateException("LeapModeHUD did not enter Arced mode: " + mode);
+            }
+            runtimeMilestone("high-risk-functional-probe19-effect-pass:LeapModeHUD:arced=true");
+
+            S02PacketChat arrowPacket = new S02PacketChat(new ChatComponentText(
+                    "Your primary Leap skill switched to Arrow mode."));
+            probe.onReceivePacket(0L, new ReceivePacketEvent(arrowPacket));
+            mode = (String)modeField.get(probe);
+            if (!(EnumChatFormatting.GOLD + "Arrow").equals(mode)) {
+                throw new IllegalStateException("LeapModeHUD did not return to Arrow mode: " + mode);
+            }
+            runtimeMilestone("high-risk-functional-probe19-effect-pass:LeapModeHUD:arrow=true");
+
+            modeField.set(probe, originalMode);
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+            if (probe.o() != originalEnabled
+                    || !String.valueOf(originalMode).equals(String.valueOf(modeField.get(probe)))
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("LeapModeHUD probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe19Stage = 1;
+            runtimeMilestone("high-risk-functional-probe19-restore-pass:LeapModeHUD:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe19-module-pass:LeapModeHUD");
+            runtimeMilestone("high-risk-functional-probe19-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    Field modeField = LeapModeHUD.class.getDeclaredField("h");
+                    modeField.setAccessible(true);
+                    modeField.set(probe, originalMode);
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe19:LeapModeHUD", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe19Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe19:LeapModeHUD", "chat-packet-mode", failure);
+            runtimeMilestone("high-risk-functional-probe19-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5862,6 +5944,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe16();
         this.pumpHighRiskFunctionalProbe17();
         this.pumpHighRiskFunctionalProbe18();
+        this.pumpHighRiskFunctionalProbe19();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
