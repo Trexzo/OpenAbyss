@@ -218,10 +218,12 @@ jobs:
           grep -Fq 'category-lifecycle-probe-pass:9' "$STAGE"
           grep -Fq 'event-functional-probe-dispatch:FastPlace:rightClickDelay=4' "$STAGE"
           grep -Fq 'event-functional-probe-effect-pass:FastPlace:rightClickDelay=1' "$STAGE"
+          grep -Fq 'event-functional-probe-restore-state-pass:FastPlace' "$STAGE"
           grep -Fq 'event-functional-probe-pass:FastPlace:' "$STAGE"
           echo 'PRODUCTION_WORLD_FASTPLACE_EVENT_EFFECT=PASS'
           grep -Fq 'movement-functional-probe-dispatch:NoJumpDelay:jumpTicks=7' "$STAGE"
           grep -Fq 'movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1' "$STAGE"
+          grep -Fq 'movement-functional-probe-restore-state-pass:NoJumpDelay' "$STAGE"
           grep -Fq 'movement-functional-probe-pass:NoJumpDelay:' "$STAGE"
           echo 'PRODUCTION_WORLD_NOJUMPDELAY_EVENT_EFFECT=PASS'
           grep -Fq 'packet-functional-probe-dispatch:Ambience:S03PacketTimeUpdate' "$STAGE"
