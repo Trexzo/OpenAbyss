@@ -39,6 +39,7 @@ import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.VisualSpoof;
+import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.world.BedNuker;
@@ -94,6 +95,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S02PacketChat;
+import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
@@ -154,6 +156,9 @@ implements EventSubscriber {
     private boolean movementFunctionalProbeOriginalEnabled;
     private float movementFunctionalProbeOriginalSetting;
     private int movementFunctionalProbeOriginalJumpTicks;
+    private int packetFunctionalProbeStage;
+    private int packetFunctionalProbeWaitTicks;
+    private boolean packetFunctionalProbeOriginalEnabled;
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -558,6 +563,111 @@ implements EventSubscriber {
         }
     }
 
+
+    private void restorePacketFunctionalProbeState(Ambience probe) {
+        try {
+            if (probe != null && probe.o() != this.packetFunctionalProbeOriginalEnabled) {
+                probe.I(0L, this.packetFunctionalProbeOriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure("PacketFunctionalProbe:Ambience", "restore", restoreFailure);
+        }
+    }
+
+    private void pumpPacketFunctionalProbe() {
+        if (!Boolean.getBoolean("abyss.packetFunctionalProbe")
+                || this.packetFunctionalProbeStage < 0
+                || this.packetFunctionalProbeStage >= 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.worldFunctionalProbe") && this.worldFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.eventFunctionalProbe") && this.eventFunctionalProbeStage < 3) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+        }
+
+        Ambience probe = Modules.J(Ambience.class);
+        try {
+            if (probe == null) {
+                throw new IllegalStateException("Ambience module is missing");
+            }
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K() && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K() && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.packetFunctionalProbeStage == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.packetFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial Ambience state did not settle");
+                    }
+                    return;
+                }
+                this.packetFunctionalProbeOriginalEnabled = stableEnabled;
+                if (!stableEnabled) {
+                    probe.I(0L, true);
+                    this.packetFunctionalProbeStage = 1;
+                    this.packetFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("packet-functional-probe-enable-request:Ambience");
+                    return;
+                }
+                this.packetFunctionalProbeStage = 1;
+            }
+
+            if (this.packetFunctionalProbeStage == 1) {
+                if (!stableEnabled) {
+                    if (++this.packetFunctionalProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Ambience did not enable/subscribe");
+                    }
+                    return;
+                }
+
+                ReceivePacketEvent event =
+                        new ReceivePacketEvent(new S03PacketTimeUpdate(100L, 200L, true));
+                runtimeMilestone("packet-functional-probe-dispatch:Ambience:S03PacketTimeUpdate");
+                w.e(event, 0L);
+                if (!event.a()) {
+                    throw new IllegalStateException("Ambience did not cancel S03PacketTimeUpdate");
+                }
+                runtimeMilestone("packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true");
+
+                if (!this.packetFunctionalProbeOriginalEnabled) {
+                    probe.I(0L, false);
+                    this.packetFunctionalProbeStage = 2;
+                    this.packetFunctionalProbeWaitTicks = 0;
+                    runtimeMilestone("packet-functional-probe-restore-request:Ambience:enabled=false");
+                    return;
+                }
+
+                this.packetFunctionalProbeStage = 3;
+                runtimeMilestone("packet-functional-probe-pass:Ambience:restored=true");
+                return;
+            }
+
+            if (!stableDisabled) {
+                if (++this.packetFunctionalProbeWaitTicks > 120) {
+                    throw new IllegalStateException("Ambience did not restore disabled state");
+                }
+                return;
+            }
+            this.packetFunctionalProbeStage = 3;
+            runtimeMilestone("packet-functional-probe-pass:Ambience:restored=false");
+        }
+        catch (Throwable failure) {
+            this.packetFunctionalProbeStage = -1;
+            restorePacketFunctionalProbeState(probe);
+            recordFeatureFailure("PacketFunctionalProbe:Ambience", "receive-cancel", failure);
+            runtimeMilestone("packet-functional-probe-fail:Ambience:" + failure.getClass().getName());
+        }
+    }
+
     private void pumpCommandRuntimeProbe() {
         if (!Boolean.getBoolean("abyss.commandRuntimeProbe")
                 || this.commandRuntimeProbeStage < 0
@@ -575,6 +685,9 @@ implements EventSubscriber {
             return;
 }
         if (Boolean.getBoolean("abyss.movementFunctionalProbe") && this.movementFunctionalProbeStage < 3) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.packetFunctionalProbe") && this.packetFunctionalProbeStage < 3) {
             return;
 }
         try {
@@ -1509,6 +1622,7 @@ implements EventSubscriber {
             this.pumpCategoryLifecycleProbe();
             this.pumpEventFunctionalProbe();
             this.pumpMovementFunctionalProbe();
+            this.pumpPacketFunctionalProbe();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpClickGuiModeProbe();
