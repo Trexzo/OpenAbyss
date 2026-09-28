@@ -2405,9 +2405,11 @@ implements EventSubscriber {
         int var16 = 22243;
         int var21 = 12652;
         if (!inWorld) {
+            int exitedWorldSession = 0;
             if (this.runtimeWorldSessionActive) {
                 this.runtimeWorldSessionActive = false;
-                runtimeMilestone("world-session-exit:" + this.runtimeWorldSessionCount);
+                exitedWorldSession = this.runtimeWorldSessionCount;
+                runtimeMilestone("world-session-exit:" + exitedWorldSession);
 }
             BedNuker.B = false;
             PacketManager.M(false);
@@ -2429,6 +2431,13 @@ implements EventSubscriber {
                     + ":u=" + PacketManager.u.size()
                     + ":v=" + PacketManager.v.size()
                     + ":a=" + PacketManager.a.size());
+            if (exitedWorldSession > 0) {
+                runtimeMilestone("world-session-menu-cleanup:" + exitedWorldSession
+                        + ":packetBuffer=" + PacketManager.e()
+                        + ":u=" + PacketManager.u.size()
+                        + ":v=" + PacketManager.v.size()
+                        + ":a=" + PacketManager.a.size());
+}
         } else {
             runtimeMilestone("world-module-lifecycle-start");
             List<Module> var26 = ModuleManager.S;
@@ -2488,10 +2497,13 @@ implements EventSubscriber {
                 }
 }
             runtimeMilestone("world-module-lifecycle-complete");
+            runtimeMilestone("world-session-lifecycle-complete:" + this.runtimeWorldSessionCount);
             if (Boolean.getBoolean("abyss.runtimeSelfTest")) {
                 ++this.runtimeWorldHeartbeatTicks;
                 if (this.runtimeWorldHeartbeatTicks % 100L == 0L) {
                     runtimeMilestone("world-heartbeat:" + this.runtimeWorldHeartbeatTicks);
+                    runtimeMilestone("world-session-heartbeat:" + this.runtimeWorldSessionCount
+                            + ":" + this.runtimeWorldHeartbeatTicks);
                 }
             }
             if (batching) {
