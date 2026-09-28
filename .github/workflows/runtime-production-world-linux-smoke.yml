@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -231,6 +231,11 @@ jobs:
           grep -Fq 'player-functional-probe-restore-state-pass:NoHitDelay' "$STAGE"
           grep -Fq 'player-functional-probe-pass:NoHitDelay:' "$STAGE"
           echo 'PRODUCTION_WORLD_NOHITDELAY_CLICK_EFFECT=PASS'
+          grep -Fq 'combat-functional-probe-dispatch:KeepSprint:motion=1.25,-0.75:slowdown=50' "$STAGE"
+          grep -Fq 'combat-functional-probe-effect-pass:KeepSprint:motion=1.0,-0.6:sprinting=true' "$STAGE"
+          grep -Fq 'combat-functional-probe-restore-state-pass:KeepSprint' "$STAGE"
+          grep -Fq 'combat-functional-probe-pass:KeepSprint:' "$STAGE"
+          echo 'PRODUCTION_WORLD_KEEP_SPRINT_HOOK_EFFECT=PASS'
           grep -Fq 'packet-functional-probe-dispatch:Ambience:S03PacketTimeUpdate' "$STAGE"
           grep -Fq 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true' "$STAGE"
           grep -Fq 'render-functional-probe-dispatch:Ambience:worldTime=1234' "$STAGE"
