@@ -150,6 +150,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe33=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe34=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe35=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe36=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1116,6 +1117,75 @@ if [ "$AIMASSIST_RELEASED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_AIMASSIST=PASS input=real-LMB target=zombie rotation=live'
+
+SPRINTRESET_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe36-ready:SprintReset:key=w' "$STAGE"; then
+    SPRINTRESET_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe36-fail:' "$STAGE"; then
+    echo 'SprintReset physical forward-reset probe failed before W input.'
+    grep -F 'high-risk-functional-probe36-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before SprintReset became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$SPRINTRESET_READY" -ne 1 ]; then
+  echo 'SprintReset physical forward-reset probe did not become ready.'
+  grep -F 'high-risk-functional-probe35-' "$STAGE" || true
+  grep -F 'high-risk-functional-probe36-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool keydown w
+SPRINTRESET_EFFECT=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe36-effect-pass:SprintReset:forward=0.0:strafe=0.0:logicalW=false:physicalW=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe36-duration-pass:SprintReset:logicalW=true:physicalW=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe36-ready-release:SprintReset:key=w' "$STAGE"; then
+    SPRINTRESET_EFFECT=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe36-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool keyup w
+if [ "$SPRINTRESET_EFFECT" -ne 1 ]; then
+  echo 'SprintReset did not perform LEGIT forward reset/held-key restoration from real X11 W input.'
+  grep -F 'high-risk-functional-probe36-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_SPRINTRESET_EFFECT=PASS input=xdotool-keydown-w'
+
+SPRINTRESET_RELEASED=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe36-release-pass:SprintReset:logicalW=false:physicalW=false' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe36-pass:1' "$STAGE"; then
+    SPRINTRESET_RELEASED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe36-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$SPRINTRESET_RELEASED" -ne 1 ]; then
+  echo 'SprintReset did not resync logical W after real X11 W release.'
+  grep -F 'high-risk-functional-probe36-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_SPRINTRESET=PASS input=real-W mode=LEGIT'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
