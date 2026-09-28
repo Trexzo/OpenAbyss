@@ -216,6 +216,8 @@ implements EventSubscriber {
     public static EventBus w;
     private static final Set<String> RUNTIME_MILESTONES = new CopyOnWriteArraySet<String>();
     private long runtimeWorldHeartbeatTicks;
+    private int runtimeWorldSessionCount;
+    private boolean runtimeWorldSessionActive;
     private static final Set<String> MODULE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
     private static final Set<String> FEATURE_FAILURE_SIGNATURES = new CopyOnWriteArraySet<String>();
 
@@ -1956,7 +1958,10 @@ implements EventSubscriber {
 
     public void onEntityJoinWorld(long var1, EntityJoinWorldEvent var3) {
         if (var3.H instanceof EntityPlayerSP) {
+            ++this.runtimeWorldSessionCount;
+            this.runtimeWorldSessionActive = true;
             runtimeMilestone("entity-player-join-world");
+            runtimeMilestone("world-session-join:" + this.runtimeWorldSessionCount);
             BedNuker.D.clear();
             BedNuker.B = false;
             this.bedScanActive = false;
@@ -2400,6 +2405,10 @@ implements EventSubscriber {
         int var16 = 22243;
         int var21 = 12652;
         if (!inWorld) {
+            if (this.runtimeWorldSessionActive) {
+                this.runtimeWorldSessionActive = false;
+                runtimeMilestone("world-session-exit:" + this.runtimeWorldSessionCount);
+}
             BedNuker.B = false;
             PacketManager.M(false);
             PacketManager.u.clear();
