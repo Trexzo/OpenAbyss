@@ -61,6 +61,7 @@ import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NoObfuscation;
+import Abyss.module.impl.misc.RawInput;
 import Abyss.module.impl.misc.ContainerKeeper;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.misc.Timer;
@@ -109,11 +110,13 @@ import Abyss.util.KeyBindUtil;
 import Abyss.util.MinecraftRef;
 import Abyss.util.PlayerInfoCache;
 import Abyss.util.Sneaky;
+import Abyss.util.SmoothMouseHelper;
 import Abyss.util.TimerUtil;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.IncomingPacketHold;
 import Abyss.util.packet.PacketManager;
 import Abyss.util.render.CustomFont;
+import Abyss.util.render.VisualSpoofRenderer;
 import Abyss.util.render.abyss.FontManager;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -180,6 +183,7 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
+import net.minecraft.util.MouseHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3i;
 import com.mojang.authlib.GameProfile;
@@ -366,6 +370,18 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe19Stage;
     private int highRiskFunctionalProbe20Stage;
     private int highRiskFunctionalProbe21Stage;
+    private int highRiskFunctionalProbe22Stage;
+    private boolean highRiskFunctionalProbe22Saved;
+    private boolean highRiskFunctionalProbe22OriginalRawEnabled;
+    private MouseHelper highRiskFunctionalProbe22OriginalMouseHelper;
+    private ScheduledExecutorService highRiskFunctionalProbe22RawExecutor;
+    private boolean highRiskFunctionalProbe22OriginalDisableRenderVisual;
+    private boolean highRiskFunctionalProbe22OriginalScreenshotBypass;
+    private String highRiskFunctionalProbe22OriginalTheme;
+    private String highRiskFunctionalProbe22OriginalCustomTheme;
+    private String highRiskFunctionalProbe22OriginalColor1;
+    private String highRiskFunctionalProbe22OriginalColor2;
+    private String highRiskFunctionalProbe22OriginalColor3;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -5328,6 +5344,269 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe22() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe22")
+                || this.highRiskFunctionalProbe22Stage < 0
+                || this.highRiskFunctionalProbe22Stage >= 5) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe21")
+                && this.highRiskFunctionalProbe21Stage < 1) return;
+
+        RawInput rawInput = Modules.J(RawInput.class);
+        VisualSpoof visualSpoof = Modules.J(VisualSpoof.class);
+        Theme theme = Modules.J(Theme.class);
+        try {
+            if (rawInput == null
+                    || ModuleManager.byClass(RawInput.class) != rawInput
+                    || ModuleManager.byName("RawInput") != rawInput
+                    || visualSpoof == null
+                    || ModuleManager.byClass(VisualSpoof.class) != visualSpoof
+                    || ModuleManager.byName("VisualSpoof") != visualSpoof
+                    || theme == null
+                    || ModuleManager.byClass(Theme.class) != theme
+                    || ModuleManager.byName("Theme") != theme
+                    || VisualSpoof.t == null
+                    || VisualSpoof.o == null
+                    || Theme.theme == null
+                    || Theme.customTheme == null
+                    || Theme.customColor1 == null
+                    || Theme.customColor2 == null
+                    || Theme.customColor3 == null) {
+                throw new IllegalStateException("promoted infrastructure/config authority unavailable");
+            }
+
+            if (this.highRiskFunctionalProbe22Stage == 0) {
+                if (rawInput.l() || rawInput.K()) {
+                    return;
+                }
+                this.highRiskFunctionalProbe22OriginalRawEnabled = rawInput.o();
+                this.highRiskFunctionalProbe22OriginalMouseHelper = this.c.mouseHelper;
+                this.highRiskFunctionalProbe22OriginalDisableRenderVisual = VisualSpoof.t.c();
+                this.highRiskFunctionalProbe22OriginalScreenshotBypass = VisualSpoof.o.c();
+                this.highRiskFunctionalProbe22OriginalTheme = Theme.theme.Y();
+                this.highRiskFunctionalProbe22OriginalCustomTheme = Theme.customTheme.Y();
+                this.highRiskFunctionalProbe22OriginalColor1 = Theme.customColor1.Q();
+                this.highRiskFunctionalProbe22OriginalColor2 = Theme.customColor2.Q();
+                this.highRiskFunctionalProbe22OriginalColor3 = Theme.customColor3.Q();
+                this.highRiskFunctionalProbe22Saved = true;
+
+                if (rawInput.o()) {
+                    rawInput.I(0L, false);
+                    this.highRiskFunctionalProbe22Stage = 1;
+                    runtimeMilestone("high-risk-functional-probe22-request:RawInput:disable-original");
+                } else {
+                    rawInput.I(0L, true);
+                    this.highRiskFunctionalProbe22Stage = 2;
+                    runtimeMilestone("high-risk-functional-probe22-request:RawInput:enable");
+                }
+                return;
+            }
+
+            if (rawInput.l() || rawInput.K()) {
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe22Stage == 1) {
+                if (rawInput.o() || this.c.mouseHelper instanceof SmoothMouseHelper) {
+                    throw new IllegalStateException("RawInput original-enabled disable transition did not complete");
+                }
+                runtimeMilestone("high-risk-functional-probe22-effect-pass:RawInput:disable=true");
+                rawInput.I(0L, true);
+                this.highRiskFunctionalProbe22Stage = 2;
+                runtimeMilestone("high-risk-functional-probe22-request:RawInput:enable");
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe22Stage == 2) {
+                if (!rawInput.o() || !(this.c.mouseHelper instanceof SmoothMouseHelper)) {
+                    throw new IllegalStateException("RawInput enable transition did not install SmoothMouseHelper");
+                }
+                SmoothMouseHelper helper = (SmoothMouseHelper)this.c.mouseHelper;
+                Field executorField = SmoothMouseHelper.class.getDeclaredField("A");
+                executorField.setAccessible(true);
+                this.highRiskFunctionalProbe22RawExecutor =
+                        (ScheduledExecutorService)executorField.get(helper);
+                if (this.highRiskFunctionalProbe22RawExecutor == null
+                        || this.highRiskFunctionalProbe22RawExecutor.isShutdown()) {
+                    throw new IllegalStateException("RawInput worker executor was not live after enable");
+                }
+                int workers = 0;
+                for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                    if ("OpenAbyss-RawInput".equals(thread.getName()) && thread.isAlive()) {
+                        if (!thread.isDaemon()) {
+                            throw new IllegalStateException("RawInput worker was not daemon");
+                        }
+                        ++workers;
+                    }
+                }
+                if (workers < 1) {
+                    throw new IllegalStateException("RawInput worker thread was not observed");
+                }
+                runtimeMilestone("high-risk-functional-probe22-effect-pass:RawInput:enable=true:workers=" + workers);
+                rawInput.I(0L, false);
+                this.highRiskFunctionalProbe22Stage = 3;
+                runtimeMilestone("high-risk-functional-probe22-request:RawInput:disable");
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe22Stage == 3) {
+                if (rawInput.o() || this.c.mouseHelper instanceof SmoothMouseHelper) {
+                    throw new IllegalStateException("RawInput disable transition did not restore a vanilla helper");
+                }
+                if (this.highRiskFunctionalProbe22RawExecutor == null
+                        || !this.highRiskFunctionalProbe22RawExecutor.isShutdown()) {
+                    throw new IllegalStateException("RawInput worker executor did not shut down");
+                }
+                runtimeMilestone("high-risk-functional-probe22-effect-pass:RawInput:shutdown=true");
+
+                if (this.highRiskFunctionalProbe22OriginalRawEnabled) {
+                    rawInput.I(0L, true);
+                    this.highRiskFunctionalProbe22Stage = 4;
+                    runtimeMilestone("high-risk-functional-probe22-request:RawInput:restore-enable");
+                    return;
+                }
+                this.verifyHighRiskFunctionalProbe22Config(rawInput, visualSpoof, theme);
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe22Stage == 4) {
+                if (!rawInput.o() || !(this.c.mouseHelper instanceof SmoothMouseHelper)) {
+                    throw new IllegalStateException("RawInput original enabled state did not restore");
+                }
+                runtimeMilestone("high-risk-functional-probe22-rawinput-restore-enabled:true");
+                this.verifyHighRiskFunctionalProbe22Config(rawInput, visualSpoof, theme);
+            }
+        }
+        catch (Throwable failure) {
+            this.restoreHighRiskFunctionalProbe22(rawInput);
+            this.highRiskFunctionalProbe22Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe22", "rawinput-visualspoof-theme", failure);
+            runtimeMilestone("high-risk-functional-probe22-fail:" + failure.getClass().getName());
+        }
+    }
+
+    private void verifyHighRiskFunctionalProbe22Config(
+            RawInput rawInput, VisualSpoof visualSpoof, Theme theme) throws Throwable {
+        boolean oppositeDisableRender =
+                !this.highRiskFunctionalProbe22OriginalDisableRenderVisual;
+        VisualSpoof.t.v(oppositeDisableRender, 0L);
+        if (VisualSpoofRenderer.x() != oppositeDisableRender) {
+            throw new IllegalStateException("VisualSpoof disable-render setting did not reach renderer state");
+        }
+        VisualSpoof.t.v(
+                this.highRiskFunctionalProbe22OriginalDisableRenderVisual, 0L);
+        if (VisualSpoofRenderer.x()
+                != this.highRiskFunctionalProbe22OriginalDisableRenderVisual) {
+            throw new IllegalStateException("VisualSpoof disable-render state did not restore");
+        }
+
+        boolean oppositeScreenshot =
+                !this.highRiskFunctionalProbe22OriginalScreenshotBypass;
+        VisualSpoof.o.v(oppositeScreenshot, 0L);
+        if (VisualSpoofRenderer.B() != oppositeScreenshot) {
+            throw new IllegalStateException("VisualSpoof screenshot setting did not reach renderer state");
+        }
+        VisualSpoof.o.v(
+                this.highRiskFunctionalProbe22OriginalScreenshotBypass, 0L);
+        if (VisualSpoofRenderer.B()
+                != this.highRiskFunctionalProbe22OriginalScreenshotBypass) {
+            throw new IllegalStateException("VisualSpoof screenshot state did not restore");
+        }
+        runtimeMilestone("high-risk-functional-probe22-effect-pass:VisualSpoof:settings=2");
+
+        final String sentinelColor = "123456";
+        Theme.theme.i("CUSTOM");
+        Theme.customTheme.i("CUSTOM");
+        Theme.customColor1.e(sentinelColor);
+        Theme.customColor2.e(sentinelColor);
+        Theme.customColor3.e(sentinelColor);
+        int sentinelRgb = new java.awt.Color(Integer.parseInt(sentinelColor, 16)).getRGB();
+
+        List palette = Theme.w(0L, 2.0, 1.0, "CUSTOM");
+        if (palette == null || palette.size() != 3
+                || ((Integer)palette.get(0)).intValue() != sentinelRgb
+                || ((Integer)palette.get(1)).intValue() != sentinelRgb
+                || ((Integer)palette.get(2)).intValue() != sentinelRgb) {
+            throw new IllegalStateException("Theme custom palette did not route configured RGB authority");
+        }
+        List livePalette = Theme.k(0, 0, (short)0);
+        if (livePalette == null || !palette.equals(livePalette)) {
+            throw new IllegalStateException("Theme live palette did not follow CUSTOM setting");
+        }
+        if (Theme.S(0.0, 0L) != sentinelRgb || Theme.X(0L, 0.0) != sentinelRgb) {
+            throw new IllegalStateException("Theme custom gradient did not preserve uniform configured RGB");
+        }
+        runtimeMilestone("high-risk-functional-probe22-effect-pass:Theme:custom=123456");
+
+        Theme.theme.i(this.highRiskFunctionalProbe22OriginalTheme);
+        Theme.customTheme.i(this.highRiskFunctionalProbe22OriginalCustomTheme);
+        Theme.customColor1.e(this.highRiskFunctionalProbe22OriginalColor1);
+        Theme.customColor2.e(this.highRiskFunctionalProbe22OriginalColor2);
+        Theme.customColor3.e(this.highRiskFunctionalProbe22OriginalColor3);
+
+        if (!this.highRiskFunctionalProbe22OriginalTheme.equals(Theme.theme.Y())
+                || !this.highRiskFunctionalProbe22OriginalCustomTheme.equals(Theme.customTheme.Y())
+                || !this.highRiskFunctionalProbe22OriginalColor1.equals(Theme.customColor1.Q())
+                || !this.highRiskFunctionalProbe22OriginalColor2.equals(Theme.customColor2.Q())
+                || !this.highRiskFunctionalProbe22OriginalColor3.equals(Theme.customColor3.Q())
+                || VisualSpoof.t.c()
+                        != this.highRiskFunctionalProbe22OriginalDisableRenderVisual
+                || VisualSpoof.o.c()
+                        != this.highRiskFunctionalProbe22OriginalScreenshotBypass
+                || rawInput.o() != this.highRiskFunctionalProbe22OriginalRawEnabled) {
+            throw new IllegalStateException("promoted infrastructure/config state did not restore exactly");
+        }
+
+        this.highRiskFunctionalProbe22Stage = 5;
+        runtimeMilestone("high-risk-functional-probe22-restore-pass:modules=3");
+        runtimeMilestone("high-risk-functional-probe22-module-pass:RawInput");
+        runtimeMilestone("high-risk-functional-probe22-module-pass:VisualSpoof");
+        runtimeMilestone("high-risk-functional-probe22-module-pass:Theme");
+        runtimeMilestone("high-risk-functional-probe22-pass:3");
+    }
+
+    private void restoreHighRiskFunctionalProbe22(RawInput rawInput) {
+        if (!this.highRiskFunctionalProbe22Saved) {
+            return;
+        }
+        try {
+            if (rawInput != null) {
+                if (this.c.mouseHelper instanceof SmoothMouseHelper) {
+                    try {
+                        rawInput.A(0L);
+                    }
+                    catch (Throwable ignored) {
+                    }
+                }
+                this.setModuleEnabledRawForProbe(
+                        rawInput, this.highRiskFunctionalProbe22OriginalRawEnabled);
+                if (this.highRiskFunctionalProbe22OriginalRawEnabled
+                        && !(this.c.mouseHelper instanceof SmoothMouseHelper)) {
+                    rawInput.i(17998201765264L);
+                    this.setModuleEnabledRawForProbe(rawInput, true);
+                }
+                if (!this.highRiskFunctionalProbe22OriginalRawEnabled
+                        && this.highRiskFunctionalProbe22OriginalMouseHelper != null) {
+                    this.c.mouseHelper = this.highRiskFunctionalProbe22OriginalMouseHelper;
+                }
+            }
+            VisualSpoof.t.v(
+                    this.highRiskFunctionalProbe22OriginalDisableRenderVisual, 0L);
+            VisualSpoof.o.v(
+                    this.highRiskFunctionalProbe22OriginalScreenshotBypass, 0L);
+            Theme.theme.i(this.highRiskFunctionalProbe22OriginalTheme);
+            Theme.customTheme.i(this.highRiskFunctionalProbe22OriginalCustomTheme);
+            Theme.customColor1.e(this.highRiskFunctionalProbe22OriginalColor1);
+            Theme.customColor2.e(this.highRiskFunctionalProbe22OriginalColor2);
+            Theme.customColor3.e(this.highRiskFunctionalProbe22OriginalColor3);
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe22", "restore", restoreFailure);
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -6307,6 +6586,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe19();
         this.pumpHighRiskFunctionalProbe20();
         this.pumpHighRiskFunctionalProbe21();
+        this.pumpHighRiskFunctionalProbe22();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
