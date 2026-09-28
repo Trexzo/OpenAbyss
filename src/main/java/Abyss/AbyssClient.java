@@ -3857,7 +3857,7 @@ implements EventSubscriber {
 
         try {
             Chams probe = Modules.J(Chams.class);
-            if (probe == null || ModuleManager.I != probe) {
+            if (probe == null || ModuleManager.a != probe) {
                 throw new IllegalStateException("Chams module/singleton unavailable");
             }
 
