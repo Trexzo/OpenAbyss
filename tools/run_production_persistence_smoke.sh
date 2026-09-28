@@ -170,7 +170,7 @@ do
   rm -f "$GAME_DIR/$evidence"
 done
 
-launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true -Dabyss.eventRuntimeTrace=true -Dabyss.networkCommandProbe=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
+launch_client '-Dabyss.runtimeSelfTest=true -Dabyss.persistenceProbeExpectedClickGuiScale=1.75 -Dabyss.persistenceProbeMatrix=true -Dabyss.networkCommandProbe=true' CIVerify "$VERIFY_STDOUT" "$VERIFY_STDERR"
 wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbright=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_BOOT_VALUE'
 wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
@@ -194,18 +194,21 @@ fi
 echo 'PERSISTENCE_CONFIG_STABLE_ACROSS_RESTART=PASS'
 
 NETWORK_STAGE="$GAME_DIR/abyss-network-stage.txt"
-EVENT_STAGE="$GAME_DIR/abyss-event-stage.txt"
-
 test -s "$NETWORK_STAGE"
 grep -Fq 'send-hook:' "$NETWORK_STAGE"
 grep -Fq 'receive-hook:' "$NETWORK_STAGE"
 echo 'PERSISTENCE_RESTART_NETWORK_HOOKS=PASS'
 
-test -s "$EVENT_STAGE"
-for event in PostTickEvent PreUpdateEvent EntityJoinWorldEvent SendPacketEvent ReceivePacketEvent Render2DEvent; do
-  grep -Fq "Abyss.event.events.$event" "$EVENT_STAGE"
-done
-echo 'PERSISTENCE_RESTART_EVENT_CALLBACKS=PASS'
+grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"
+grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
+grep -Fq '[ABYSSDIAG] eventbus selftest  = PASS' "$DIAG"
+if [ -s "$GAME_DIR/abyss-event-failure.txt" ]; then
+  echo 'Event failure journal is non-empty after restart.'
+  cat "$GAME_DIR/abyss-event-failure.txt"
+  exit 1
+fi
+echo 'PERSISTENCE_RESTART_EVENT_SUBSCRIPTION=PASS'
 
 for failure in   abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt   abyss-config-failure.txt abyss-renderer-failure.txt
 do
