@@ -22,6 +22,12 @@ import Abyss.event.events.HandleChatEvent;
 import Abyss.event.events.KnockbackEvent;
 import Abyss.event.events.PostKnockbackEvent;
 import Abyss.util.MinecraftRef;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -36,6 +42,22 @@ import net.minecraft.util.IThreadListener;
 
 public class NetHandlerPlayClientHooks {
     private static final Minecraft g;
+    private static final Set<String> RUNTIME_MARKERS =
+            Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private static synchronized void runtimeMarker(String marker) {
+        if (marker == null || !RUNTIME_MARKERS.add(marker)) {
+            return;
+        }
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-network-stage.txt"), true), "UTF-8")) {
+                out.write(System.currentTimeMillis() + "\t" + marker + "\n");
+            }
+        }
+        catch (Throwable ignored) {
+        }
+    }
 
     public static void onHandleEntityVelocity(NetHandlerPlayClient var0, S12PacketEntityVelocity var1, CallbackInfo var2) {
         WorldClient var12 = NetHandlerPlayClientHooks.g.theWorld;
@@ -65,6 +87,12 @@ public class NetHandlerPlayClientHooks {
 }
 }
     public static void handleChat(S02PacketChat var0) {
+        if (var0 != null && var0.getChatComponent() != null) {
+            String text = var0.getChatComponent().getUnformattedText();
+            if (text != null && text.contains("OPENABYSS_MACRO_PROBE_")) {
+                runtimeMarker("chat-receive-probe-echo:true");
+            }
+        }
         AbyssClient.w.e(new HandleChatEvent(var0.getChatComponent()), 18670087776179L);
 }
     static {
