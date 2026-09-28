@@ -154,6 +154,16 @@ implements EventSubscriber {
             "HitBox", "Notifications", "Macro1", "NameHider", "NoJumpDelay",
             "NoHitDelay", "NoHurtCam", "Tracers", "AutoTool"
     };
+    private int promotedRegistryProbeIndex;
+    private int promotedRegistryProbePhase;
+    private int promotedRegistryProbeWaitTicks;
+    private boolean promotedRegistryProbeOriginalEnabled;
+    private static final String[] PROMOTED_REGISTRY_PROBE_MODULES = new String[]{
+            "CustomCape", "Font", "Gadgets", "Language", "Theme",
+            "InputFix", "NoObfuscation", "RawInput", "VisualSpoof", "CaveXray", "ItemScale",
+            "AntiNick", "ContainerKeeper", "BindGUI", "KeyStrokes", "TeamInvisible",
+            "ClosestPlayerHUD", "FKCounter", "FallIndicator", "LeapModeHUD"
+    };
     private int eventFunctionalProbeStage;
     private int eventFunctionalProbeWaitTicks;
     private boolean eventFunctionalProbeOriginalEnabled;
@@ -439,6 +449,107 @@ implements EventSubscriber {
 }
 }
 
+
+    private void pumpPromotedRegistryProbe() {
+        if (!Boolean.getBoolean("abyss.promotedRegistryProbe")
+                || this.promotedRegistryProbeIndex >= PROMOTED_REGISTRY_PROBE_MODULES.length) {
+            return;
+}
+        if (this.runtimeWorldHeartbeatTicks < 250L) {
+            return;
+}
+        if (Boolean.getBoolean("abyss.categoryLifecycleProbe")
+                && this.categoryLifecycleProbeIndex < CATEGORY_LIFECYCLE_PROBE_MODULES.length) {
+            return;
+}
+        String name = PROMOTED_REGISTRY_PROBE_MODULES[this.promotedRegistryProbeIndex];
+        Module probe = null;
+        try {
+            probe = ModuleManager.byName(name);
+            if (probe == null) {
+                throw new IllegalStateException("Promoted module is missing: " + name);
+}
+            boolean stableEnabled = probe.o() && !probe.l() && !probe.K()
+                    && probe.P() && w.isOwnerActive(probe);
+            boolean stableDisabled = !probe.o() && !probe.l() && !probe.K()
+                    && !probe.P() && !w.isOwnerActive(probe);
+
+            if (this.promotedRegistryProbePhase == 0) {
+                if (!stableEnabled && !stableDisabled) {
+                    if (++this.promotedRegistryProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Initial promoted module state did not settle: " + name
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                this.promotedRegistryProbeOriginalEnabled = stableEnabled;
+                this.promotedRegistryProbeWaitTicks = 0;
+                probe.I(0L, !this.promotedRegistryProbeOriginalEnabled);
+                this.promotedRegistryProbePhase = 1;
+                runtimeMilestone("promoted-registry-probe-transition-request:" + name
+                        + ":target=" + (!this.promotedRegistryProbeOriginalEnabled));
+                return;
+}
+
+            if (this.promotedRegistryProbePhase == 1) {
+                boolean targetReached = this.promotedRegistryProbeOriginalEnabled ? stableDisabled : stableEnabled;
+                if (!targetReached) {
+                    if (++this.promotedRegistryProbeWaitTicks > 120) {
+                        throw new IllegalStateException("Opposite promoted module state timed out: " + name
+                                + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                                + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                                + " ownerActive=" + w.isOwnerActive(probe));
+}
+                    return;
+}
+                runtimeMilestone("promoted-registry-probe-opposite-pass:" + name
+                        + ":enabled=" + probe.o()
+                        + ":subscribed=" + probe.P()
+                        + ":ownerActive=" + w.isOwnerActive(probe));
+                this.promotedRegistryProbeWaitTicks = 0;
+                probe.I(0L, this.promotedRegistryProbeOriginalEnabled);
+                this.promotedRegistryProbePhase = 2;
+                return;
+}
+
+            boolean restored = this.promotedRegistryProbeOriginalEnabled ? stableEnabled : stableDisabled;
+            if (!restored) {
+                if (++this.promotedRegistryProbeWaitTicks > 120) {
+                    throw new IllegalStateException("Promoted module restore timed out: " + name
+                            + " originalEnabled=" + this.promotedRegistryProbeOriginalEnabled
+                            + " enabled=" + probe.o() + " pendingEnable=" + probe.l()
+                            + " pendingDisable=" + probe.K() + " subscribed=" + probe.P()
+                            + " ownerActive=" + w.isOwnerActive(probe));
+}
+                return;
+}
+            runtimeMilestone("promoted-registry-probe-module-pass:" + name
+                    + ":restored=" + this.promotedRegistryProbeOriginalEnabled);
+            ++this.promotedRegistryProbeIndex;
+            this.promotedRegistryProbePhase = 0;
+            this.promotedRegistryProbeWaitTicks = 0;
+            if (this.promotedRegistryProbeIndex >= PROMOTED_REGISTRY_PROBE_MODULES.length) {
+                runtimeMilestone("promoted-registry-probe-pass:" + PROMOTED_REGISTRY_PROBE_MODULES.length);
+}
+}
+        catch (Throwable failure) {
+            if (probe != null) {
+                try {
+                    if (probe.o() != this.promotedRegistryProbeOriginalEnabled || probe.l() || probe.K()) {
+                        probe.I(0L, this.promotedRegistryProbeOriginalEnabled);
+}
+}
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("PromotedRegistryProbe:" + name, "restore-after-failure", restoreFailure);
+}
+}
+            this.promotedRegistryProbeIndex = PROMOTED_REGISTRY_PROBE_MODULES.length;
+            recordFeatureFailure("PromotedRegistryProbe:" + name, "transition-restore", failure);
+            runtimeMilestone("promoted-registry-probe-fail:" + name + ":" + failure.getClass().getName());
+}
+}
 
     private void restoreEventFunctionalProbeState(FastPlace probe) {
         try {
@@ -2514,6 +2625,7 @@ implements EventSubscriber {
 }
             this.pumpWorldFunctionalProbe();
             this.pumpCategoryLifecycleProbe();
+            this.pumpPromotedRegistryProbe();
             this.pumpEventFunctionalProbe();
             this.pumpMovementFunctionalProbe();
             this.pumpPlayerFunctionalProbe();
