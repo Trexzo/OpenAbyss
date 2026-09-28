@@ -161,7 +161,10 @@ echo "PRODUCTION_WORLD_DIRECT_CONNECT_CLICK=${DIRECT_X},${DIRECT_Y}"
 DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DIRECT_X" "$DIRECT_Y" click 1
 sleep 0.50
 
-DISPLAY=:99 xdotool key --clearmodifiers ctrl+a
+# The address field is focused by GuiScreenServerList. Clear it without
+# relying on Ctrl+A, which is timing-sensitive under Xvfb/xdotool.
+DISPLAY=:99 xdotool key --clearmodifiers End
+DISPLAY=:99 xdotool key --clearmodifiers --repeat 96 --delay 2 BackSpace
 DISPLAY=:99 xdotool type --clearmodifiers --delay 25 -- '127.0.0.1:25565'
 sleep 0.20
 DISPLAY=:99 xdotool key --clearmodifiers Return
@@ -739,7 +742,8 @@ DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$MULTIPLAYER_X" "$MULTIPLAYER_
 sleep 0.75
 DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DIRECT_X" "$DIRECT_Y" click 1
 sleep 0.50
-DISPLAY=:99 xdotool key --clearmodifiers ctrl+a
+DISPLAY=:99 xdotool key --clearmodifiers End
+DISPLAY=:99 xdotool key --clearmodifiers --repeat 96 --delay 2 BackSpace
 DISPLAY=:99 xdotool type --clearmodifiers --delay 25 -- '127.0.0.1:25565'
 sleep 0.20
 DISPLAY=:99 xdotool key --clearmodifiers Return
