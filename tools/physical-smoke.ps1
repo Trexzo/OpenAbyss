@@ -133,7 +133,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -379,6 +379,9 @@ try {
                 'macro-functional-probe-client-send-pass:Macro1:OPENABYSS_MACRO_PROBE_7E51',
                 'macro-functional-probe-restore-state-pass:Macro1',
                 'macro-functional-probe-pass:Macro1:',
+                'visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3',
+                'visual-utility-functional-probe-restore-state-pass:InventoryHUD',
+                'visual-utility-functional-probe-pass:InventoryHUD:',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
