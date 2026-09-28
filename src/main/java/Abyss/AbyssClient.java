@@ -195,6 +195,7 @@ implements EventSubscriber {
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
+    private float commandRuntimeProbeOriginalGamma;
     private int commandRuntimeProbeOutputStart;
     private int networkCommandProbeStage;
     private int networkCommandProbeWaitTicks;
@@ -1466,8 +1467,11 @@ implements EventSubscriber {
                     return;
 }
                 this.commandRuntimeProbeOriginalEnabled = stableEnabled;
+                this.commandRuntimeProbeOriginalGamma = this.c.gameSettings.gammaSetting;
                 this.commandRuntimeProbeWaitTicks = 0;
                 this.commandRuntimeProbeOutputStart = ConfigManagerWindow.D == null ? 0 : ConfigManagerWindow.D.size();
+                runtimeMilestone("command-runtime-probe-fullbright-original:enabled="
+                        + this.commandRuntimeProbeOriginalEnabled + ":gamma=" + this.commandRuntimeProbeOriginalGamma);
 
                 boolean help = AbyssCommands.dispatch(".help");
                 boolean list = AbyssCommands.dispatch(".list");
@@ -1505,7 +1509,14 @@ implements EventSubscriber {
 }
                     return;
 }
+                float oppositeGamma = this.c.gameSettings.gammaSetting;
+                if (!this.commandRuntimeProbeOriginalEnabled
+                        && Math.abs(oppositeGamma - 15.0f) > 0.0001f) {
+                    throw new IllegalStateException("FullBright enable did not set gamma to 15.0: " + oppositeGamma);
+}
                 runtimeMilestone("command-runtime-probe-toggle-pass:FullBright:enabled=" + probe.o());
+                runtimeMilestone("command-runtime-probe-fullbright-effect-pass:enabled="
+                        + probe.o() + ":gamma=" + oppositeGamma);
                 this.commandRuntimeProbeWaitTicks = 0;
                 if (!AbyssCommands.dispatch(".toggle FullBright")) {
                     throw new IllegalStateException("Restore toggle command was not consumed");
@@ -1526,6 +1537,16 @@ implements EventSubscriber {
 }
                 return;
 }
+            float restoredGamma = this.c.gameSettings.gammaSetting;
+            float expectedRestoredGamma = this.commandRuntimeProbeOriginalEnabled
+                    ? 15.0f : this.commandRuntimeProbeOriginalGamma;
+            if (Math.abs(restoredGamma - expectedRestoredGamma) > 0.0001f) {
+                throw new IllegalStateException("FullBright gamma did not restore"
+                        + " expected=" + expectedRestoredGamma + " actual=" + restoredGamma
+                        + " originalEnabled=" + this.commandRuntimeProbeOriginalEnabled);
+}
+            runtimeMilestone("command-runtime-probe-fullbright-restore-pass:enabled="
+                    + probe.o() + ":gamma=" + restoredGamma);
             if (!AbyssCommands.dispatch(".FullBright")) {
                 throw new IllegalStateException("Module-setting command was not consumed");
 }
