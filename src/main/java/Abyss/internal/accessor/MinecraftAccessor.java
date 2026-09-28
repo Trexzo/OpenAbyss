@@ -35,9 +35,6 @@ public final class MinecraftAccessor {
     public static void c(Minecraft var0, int var1, long var2) {
         B.T(var0, var1);
 }
-    public static int leftClickCounter(Minecraft var0) {
-        return B.m(var0);
-}
     public static void K(Minecraft var0, Framebuffer var1) {
         X.d(var0, var1);
 }
