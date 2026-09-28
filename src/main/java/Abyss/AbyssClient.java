@@ -10230,7 +10230,7 @@ implements EventSubscriber {
                                 "LagRange target fixture disappeared");
                     }
 
-                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(), 0L);
+                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(0, (byte)0, 0), 0L);
 
                     Field targetsField = null;
                     for (Field field : LagRange.class.getDeclaredFields()) {
@@ -10296,7 +10296,7 @@ implements EventSubscriber {
                 }
 
                 case 3: {
-                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(), 0L);
+                    probe.onPreLivingUpdate(new PreLivingUpdateEvent(0, (byte)0, 0), 0L);
                     probe.onRender2D(
                             (short)0,
                             new Render2DEvent(
