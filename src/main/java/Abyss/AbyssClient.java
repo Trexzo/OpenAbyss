@@ -10499,7 +10499,7 @@ implements EventSubscriber {
     private void pumpHighRiskFunctionalProbe42() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe42")
                 || this.highRiskFunctionalProbe42Stage < 0
-                || this.highRiskFunctionalProbe42Stage >= 6) {
+                || this.highRiskFunctionalProbe42Stage >= 5) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe41")
