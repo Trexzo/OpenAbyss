@@ -8,6 +8,7 @@ on:
     paths:
       - src/main/java/**
       - tools/recovery_audit.py
+      - tools/check_category_probe_coverage.py
       - .github/workflows/recovery-audit.yml
 
 permissions:
@@ -56,6 +57,9 @@ jobs:
               raise SystemExit(f"Recovery audit found {high} high-confidence finding(s).")
           print("RECOVERY_AUDIT_HIGH_CONFIDENCE_GATE=PASS")
           PY
+
+      - name: Verify nine-category lifecycle coverage
+        run: python tools/check_category_probe_coverage.py
 
       - name: Upload recovery audit
         if: always()
