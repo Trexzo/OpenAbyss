@@ -139,6 +139,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe22=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe23=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe24=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe25=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -422,6 +423,77 @@ grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
 grep -Fq 'command-runtime-probe-toggle-pass:FullBright:' "$STAGE"
 grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
 echo 'PRODUCTION_WORLD_COMMAND_RUNTIME=PASS commands=help,list,bind-list,config-list,unknown,toggle,module-setting'
+
+INPUTFIX_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe25-ready:InputFix:' "$STAGE"; then
+    INPUTFIX_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe25-fail:' "$STAGE"; then
+    echo 'InputFix physical probe failed before keyboard injection.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before InputFix became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$INPUTFIX_READY" -ne 1 ]; then
+  echo 'InputFix did not become ready for physical keyboard probe.'
+  cat "$STAGE" || true
+  exit 1
+fi
+
+WINDOW=""
+for _ in $(seq 1 30); do
+  WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
+  if [ -n "$WINDOW" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ -z "$WINDOW" ]; then
+  echo 'Production Minecraft window was not found for InputFix probe.'
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+sleep 0.5
+DISPLAY=:99 xdotool key --clearmodifiers t
+sleep 0.35
+DISPLAY=:99 xdotool type --clearmodifiers --delay 35 -- 'OPENABYSS_INPUTFIX_7E51'
+
+INPUTFIX_PASS=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe25-effect-pass:InputFix:text=true:takeovers=' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe25-pass:1' "$STAGE"; then
+    INPUTFIX_PASS=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe25-fail:' "$STAGE"; then
+    echo 'InputFix physical keyboard probe reported a failure.'
+    cat "$STAGE"
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited during InputFix physical keyboard probe.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$INPUTFIX_PASS" -ne 1 ]; then
+  echo 'InputFix did not observe exact physical chat text plus ASM takeover.'
+  cat "$STAGE" || true
+  exit 1
+fi
+DISPLAY=:99 xdotool key --clearmodifiers Escape
+sleep 0.4
+echo 'PRODUCTION_WORLD_PHYSICAL_INPUTFIX=PASS input=xdotool-chat sentinel=OPENABYSS_INPUTFIX_7E51'
 
 NETWORK_COMMAND_READY=0
 for _ in $(seq 1 240); do
