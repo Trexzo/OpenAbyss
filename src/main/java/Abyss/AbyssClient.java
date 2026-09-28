@@ -343,6 +343,26 @@ implements EventSubscriber {
         }
     }
 
+    private void verifyEventFunctionalProbeRestored() throws Exception {
+        if (FastPlace.blockDelay == null
+                || Math.abs(FastPlace.blockDelay.L() - this.eventFunctionalProbeOriginalBlockDelay) > 0.001f) {
+            throw new IllegalStateException("FastPlace Block-Delay was not restored");
+        }
+        if (this.c.inGameHasFocus != this.eventFunctionalProbeOriginalFocus) {
+            throw new IllegalStateException("Minecraft focus state was not restored after FastPlace probe");
+        }
+        if (MinecraftAccessor.C(this.c) != this.eventFunctionalProbeOriginalRightClickDelay) {
+            throw new IllegalStateException("rightClickDelayTimer was not restored after FastPlace probe");
+        }
+        if (this.eventFunctionalProbeInventorySlot >= 0 && this.c.thePlayer != null
+                && this.c.thePlayer.inventory != null
+                && this.c.thePlayer.inventory.mainInventory[this.eventFunctionalProbeInventorySlot]
+                        != this.eventFunctionalProbeOriginalItem) {
+            throw new IllegalStateException("Held inventory slot was not restored after FastPlace probe");
+        }
+        runtimeMilestone("event-functional-probe-restore-state-pass:FastPlace");
+    }
+
     private void pumpEventFunctionalProbe() {
         if (!Boolean.getBoolean("abyss.eventFunctionalProbe")
                 || this.eventFunctionalProbeStage < 0
@@ -425,6 +445,7 @@ implements EventSubscriber {
                     return;
                 }
 
+                verifyEventFunctionalProbeRestored();
                 this.eventFunctionalProbeStage = 3;
                 runtimeMilestone("event-functional-probe-pass:FastPlace:restored=true");
                 return;
@@ -436,6 +457,7 @@ implements EventSubscriber {
                 }
                 return;
             }
+            verifyEventFunctionalProbeRestored();
             this.eventFunctionalProbeStage = 3;
             runtimeMilestone("event-functional-probe-pass:FastPlace:restored=false");
         }
@@ -463,6 +485,18 @@ implements EventSubscriber {
         catch (Throwable restoreFailure) {
             recordFeatureFailure("MovementFunctionalProbe:NoJumpDelay", "restore", restoreFailure);
         }
+    }
+
+    private void verifyMovementFunctionalProbeRestored() throws Exception {
+        if (NoJumpDelay.jumpTicks == null
+                || Math.abs(NoJumpDelay.jumpTicks.L() - this.movementFunctionalProbeOriginalSetting) > 0.001f) {
+            throw new IllegalStateException("NoJumpDelay Jump-ticks setting was not restored");
+        }
+        if (this.c.thePlayer != null
+                && EntityLivingBaseStateAccessor.C(this.c.thePlayer) != this.movementFunctionalProbeOriginalJumpTicks) {
+            throw new IllegalStateException("player jumpTicks was not restored after NoJumpDelay probe");
+        }
+        runtimeMilestone("movement-functional-probe-restore-state-pass:NoJumpDelay");
     }
 
     private void pumpMovementFunctionalProbe() {
@@ -541,6 +575,7 @@ implements EventSubscriber {
                     return;
                 }
 
+                verifyMovementFunctionalProbeRestored();
                 this.movementFunctionalProbeStage = 3;
                 runtimeMilestone("movement-functional-probe-pass:NoJumpDelay:restored=true");
                 return;
@@ -552,6 +587,7 @@ implements EventSubscriber {
                 }
                 return;
             }
+            verifyMovementFunctionalProbeRestored();
             this.movementFunctionalProbeStage = 3;
             runtimeMilestone("movement-functional-probe-pass:NoJumpDelay:restored=false");
         }
