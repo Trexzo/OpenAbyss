@@ -222,6 +222,8 @@ jobs:
           SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
 
           test -f "$STAGE"
+          grep -Fq 'menu-no-world-tick' "$STAGE"
+          echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
           grep -Fq 'entity-player-join-world' "$STAGE"
           grep -Fq 'world-ready-tick' "$STAGE"
           grep -Fq 'world-module-lifecycle-complete' "$STAGE"
