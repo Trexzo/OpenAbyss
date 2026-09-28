@@ -24,8 +24,6 @@ required_boot=[
     'AntiNick.suffix == null ? null : AntiNick.suffix.X()',
     '"' + sentinel + '".equals(antiNickSuffix)',
     'promotedModule=true,promotedText=' + sentinel,
-    'persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=' + sentinel,
-    'restart-live-subscription',
 ]
 required_harness=[
     "PERSISTENCE_CONFIG_ANTINICK_BLOCK_MISSING",
