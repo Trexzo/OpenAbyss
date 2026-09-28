@@ -156,6 +156,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe39=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe40=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe41=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe42=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1257,6 +1258,73 @@ if [ "$AUTOWEAPON_RESTORED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_AUTOWEAPON=PASS input=real-LMB best=diamond_sword'
+
+FLY_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe42-ready:Fly:key=space' "$STAGE"; then
+    FLY_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe42-fail:' "$STAGE"; then
+    echo 'Fly physical Space probe failed before input.'
+    grep -F 'high-risk-functional-probe42-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before Fly became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$FLY_READY" -ne 1 ]; then
+  echo 'Fly physical Space probe did not become ready.'
+  grep -F 'high-risk-functional-probe42-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool keydown space
+FLY_EFFECT=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe42-effect-pass:Fly:verticalAccumulator=' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe42-effect-pass:Fly:motionY=' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe42-ready-release:Fly:key=space' "$STAGE"; then
+    FLY_EFFECT=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe42-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool keyup space
+if [ "$FLY_EFFECT" -ne 1 ]; then
+  echo 'Fly did not apply its recovered movement path under real X11 Space.'
+  grep -F 'high-risk-functional-probe42-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_FLY_EFFECT=PASS input=xdotool-keydown-space'
+
+FLY_RESTORED=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe42-pass:1' "$STAGE"; then
+    FLY_RESTORED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe42-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$FLY_RESTORED" -ne 1 ]; then
+  echo 'Fly physical Space probe did not restore cleanly after release.'
+  grep -F 'high-risk-functional-probe42-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_FLY=PASS input=real-Space binder=FlyBinder'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
