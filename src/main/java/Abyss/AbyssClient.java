@@ -4234,24 +4234,35 @@ implements EventSubscriber {
         }
     }
 
-    private void restoreHighRiskFunctionalProbe13Exact(CaveXray probe, ViewClip viewClip) {
+    private Field moduleEnabledProbeField() throws Exception {
+        Field field = Module.class.getDeclaredField("V");
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void setModuleEnabledRawForProbe(Module module, boolean enabled) throws Exception {
+        this.moduleEnabledProbeField().setBoolean(module, enabled);
+    }
+
+    private void restoreHighRiskFunctionalProbe13Raw(
+            CaveXray probe, ViewClip viewClip) {
         if (!this.highRiskFunctionalProbe13Saved) {
             return;
         }
         try {
-            CaveXray.reloadRenderer.v(false, 0L);
-            if (probe != null && probe.o() != this.highRiskFunctionalProbe13OriginalEnabled) {
-                probe.I(0L, this.highRiskFunctionalProbe13OriginalEnabled);
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(
+                        probe, this.highRiskFunctionalProbe13OriginalEnabled);
             }
-            if (viewClip != null
-                    && viewClip.o() != this.highRiskFunctionalProbe13OriginalViewClipEnabled) {
-                viewClip.I(0L, this.highRiskFunctionalProbe13OriginalViewClipEnabled);
+            if (viewClip != null) {
+                this.setModuleEnabledRawForProbe(
+                        viewClip, this.highRiskFunctionalProbe13OriginalViewClipEnabled);
             }
             CaveXray.reloadRenderer.v(
                     this.highRiskFunctionalProbe13OriginalReloadRenderer, 0L);
         }
         catch (Throwable failure) {
-            recordFeatureFailure("HighRiskFunctionalProbe13:CaveXray", "restore", failure);
+            recordFeatureFailure("HighRiskFunctionalProbe13:CaveXray", "raw-restore", failure);
         }
     }
 
@@ -4279,16 +4290,15 @@ implements EventSubscriber {
 
     private void pumpHighRiskFunctionalProbe13() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe13")
-                || this.highRiskFunctionalProbe13Stage < 0
-                || this.highRiskFunctionalProbe13Stage >= 4) {
+                || this.highRiskFunctionalProbe13Stage != 0) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe12")
                 && this.highRiskFunctionalProbe12Stage < 5) return;
 
+        CaveXray probe = Modules.J(CaveXray.class);
+        ViewClip viewClip = Modules.J(ViewClip.class);
         try {
-            CaveXray probe = Modules.J(CaveXray.class);
-            ViewClip viewClip = Modules.J(ViewClip.class);
             if (probe == null
                     || ModuleManager.m != probe
                     || ModuleManager.byClass(CaveXray.class) != probe
@@ -4298,118 +4308,63 @@ implements EventSubscriber {
                 throw new IllegalStateException(
                         "CaveXray/ViewClip live hook authority unavailable");
             }
-
-            switch (this.highRiskFunctionalProbe13Stage) {
-                case 0:
-                    this.highRiskFunctionalProbe13OriginalEnabled = probe.o();
-                    this.highRiskFunctionalProbe13OriginalViewClipEnabled = viewClip.o();
-                    this.highRiskFunctionalProbe13OriginalReloadRenderer =
-                            CaveXray.reloadRenderer.c();
-                    this.highRiskFunctionalProbe13Saved = true;
-
-                    // The full-reload option intentionally rebuilds all chunks under the
-                    // CaveXray VisGraph hook and is prohibitively slow under llvmpipe.
-                    // The normal/default lifecycle already has independent promoted-module
-                    // coverage, so isolate the ASM effect with the lightweight default path.
-                    CaveXray.reloadRenderer.v(false, 0L);
-                    if (probe.o()) {
-                        probe.I(0L, false);
-                    }
-                    if (viewClip.o()) {
-                        viewClip.I(0L, false);
-                    }
-                    ++this.highRiskFunctionalProbe13Stage;
-                    this.highRiskFunctionalProbe13WaitTicks = 0;
-                    runtimeMilestone(
-                            "high-risk-functional-probe13-state-request:CaveXray=false:ViewClip=false");
-                    return;
-
-                case 1:
-                    ++this.highRiskFunctionalProbe13WaitTicks;
-                    if (!probe.o() && !probe.l() && !probe.K()
-                            && !viewClip.o() && !viewClip.l() && !viewClip.K()) {
-                        this.verifyCaveXrayVisGraphEffect(false, "disabled");
-                        probe.I(0L, true);
-                        ++this.highRiskFunctionalProbe13Stage;
-                        this.highRiskFunctionalProbe13WaitTicks = 0;
-                        runtimeMilestone(
-                                "high-risk-functional-probe13-state-request:CaveXray=true:ViewClip=false");
-                        return;
-                    }
-                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
-                        throw new IllegalStateException(
-                                "CaveXray/ViewClip disabled baseline did not settle");
-                    }
-                    return;
-
-                case 2:
-                    ++this.highRiskFunctionalProbe13WaitTicks;
-                    if (probe.o() && !probe.l() && !probe.K()
-                            && !viewClip.o() && !viewClip.l() && !viewClip.K()) {
-                        this.verifyCaveXrayVisGraphEffect(true, "enabled");
-                        if (!this.highRiskFunctionalProbe13OriginalEnabled) {
-                            probe.I(0L, false);
-                        }
-                        if (this.highRiskFunctionalProbe13OriginalViewClipEnabled) {
-                            viewClip.I(0L, true);
-                        }
-                        ++this.highRiskFunctionalProbe13Stage;
-                        this.highRiskFunctionalProbe13WaitTicks = 0;
-                        runtimeMilestone("high-risk-functional-probe13-restore-request:CaveXray="
-                                + this.highRiskFunctionalProbe13OriginalEnabled
-                                + ":ViewClip="
-                                + this.highRiskFunctionalProbe13OriginalViewClipEnabled);
-                        return;
-                    }
-                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
-                        throw new IllegalStateException("CaveXray enabled state did not settle");
-                    }
-                    return;
-
-                case 3:
-                    ++this.highRiskFunctionalProbe13WaitTicks;
-                    boolean caveStable = this.highRiskFunctionalProbe13OriginalEnabled
-                            ? probe.o() && !probe.l() && !probe.K()
-                            : !probe.o() && !probe.l() && !probe.K();
-                    boolean viewStable = this.highRiskFunctionalProbe13OriginalViewClipEnabled
-                            ? viewClip.o() && !viewClip.l() && !viewClip.K()
-                            : !viewClip.o() && !viewClip.l() && !viewClip.K();
-                    if (caveStable && viewStable) {
-                        CaveXray.reloadRenderer.v(
-                                this.highRiskFunctionalProbe13OriginalReloadRenderer, 0L);
-                        boolean expectedRestoredHook =
-                                this.highRiskFunctionalProbe13OriginalEnabled
-                                || this.highRiskFunctionalProbe13OriginalViewClipEnabled;
-                        this.verifyCaveXrayVisGraphEffect(
-                                expectedRestoredHook, "restored");
-
-                        runtimeMilestone("high-risk-functional-probe13-restore-pass:CaveXray="
-                                + this.highRiskFunctionalProbe13OriginalEnabled
-                                + ":ViewClip="
-                                + this.highRiskFunctionalProbe13OriginalViewClipEnabled
-                                + ":reloadRenderer="
-                                + this.highRiskFunctionalProbe13OriginalReloadRenderer);
-                        ++this.highRiskFunctionalProbe13Stage;
-                        runtimeMilestone("high-risk-functional-probe13-module-pass:CaveXray");
-                        runtimeMilestone("high-risk-functional-probe13-pass:1");
-                        return;
-                    }
-                    if (this.highRiskFunctionalProbe13WaitTicks > 160) {
-                        throw new IllegalStateException(
-                                "CaveXray/ViewClip original state did not restore");
-                    }
-                    return;
-
-                default:
-                    return;
+            if (probe.l() || probe.K() || viewClip.l() || viewClip.K()) {
+                return;
             }
+
+            this.highRiskFunctionalProbe13OriginalEnabled = probe.o();
+            this.highRiskFunctionalProbe13OriginalViewClipEnabled = viewClip.o();
+            this.highRiskFunctionalProbe13OriginalReloadRenderer =
+                    CaveXray.reloadRenderer.c();
+            this.highRiskFunctionalProbe13Saved = true;
+
+            // Probe only the VisGraph ASM predicate. CaveXray's normal lifecycle is
+            // independently covered by PromotedRegistryProbe after the world renderer
+            // has stabilized. Raw same-tick state avoids the module's intentionally huge
+            // 900-block render invalidation from dominating the early llvmpipe test.
+            this.setModuleEnabledRawForProbe(probe, false);
+            this.setModuleEnabledRawForProbe(viewClip, false);
+            this.verifyCaveXrayVisGraphEffect(false, "disabled");
+
+            this.setModuleEnabledRawForProbe(probe, true);
+            this.verifyCaveXrayVisGraphEffect(true, "enabled");
+
+            this.setModuleEnabledRawForProbe(
+                    probe, this.highRiskFunctionalProbe13OriginalEnabled);
+            this.setModuleEnabledRawForProbe(
+                    viewClip, this.highRiskFunctionalProbe13OriginalViewClipEnabled);
+            CaveXray.reloadRenderer.v(
+                    this.highRiskFunctionalProbe13OriginalReloadRenderer, 0L);
+
+            boolean expectedRestoredHook =
+                    this.highRiskFunctionalProbe13OriginalEnabled
+                    || this.highRiskFunctionalProbe13OriginalViewClipEnabled;
+            this.verifyCaveXrayVisGraphEffect(expectedRestoredHook, "restored");
+
+            if (probe.o() != this.highRiskFunctionalProbe13OriginalEnabled
+                    || viewClip.o() != this.highRiskFunctionalProbe13OriginalViewClipEnabled
+                    || CaveXray.reloadRenderer.c()
+                            != this.highRiskFunctionalProbe13OriginalReloadRenderer
+                    || probe.l() || probe.K() || viewClip.l() || viewClip.K()) {
+                throw new IllegalStateException(
+                        "CaveXray/ViewClip raw hook state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe13Stage = 1;
+            runtimeMilestone("high-risk-functional-probe13-restore-pass:CaveXray="
+                    + this.highRiskFunctionalProbe13OriginalEnabled
+                    + ":ViewClip="
+                    + this.highRiskFunctionalProbe13OriginalViewClipEnabled
+                    + ":reloadRenderer="
+                    + this.highRiskFunctionalProbe13OriginalReloadRenderer);
+            runtimeMilestone("high-risk-functional-probe13-module-pass:CaveXray");
+            runtimeMilestone("high-risk-functional-probe13-pass:1");
         }
         catch (Throwable failure) {
-            this.restoreHighRiskFunctionalProbe13Exact(
-                    Modules.J(CaveXray.class), Modules.J(ViewClip.class));
+            this.restoreHighRiskFunctionalProbe13Raw(probe, viewClip);
             this.highRiskFunctionalProbe13Stage = -1;
             recordFeatureFailure(
-                    "HighRiskFunctionalProbe13:CaveXray", "visgraph-hook", failure);
+                    "HighRiskFunctionalProbe13:CaveXray", "visgraph-hook-raw-state", failure);
             runtimeMilestone("high-risk-functional-probe13-fail:"
                     + failure.getClass().getName());
         }
