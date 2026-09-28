@@ -183,6 +183,7 @@ wait_for_stage "$BOOT_STAGE" 'persistence-probe-verify-pass:scale=1.75,fullbrigh
 wait_for_stage "$BOOT_STAGE" 'persistence-matrix-verify-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_MATRIX_RESTART_BOOT_VALUE'
 echo 'PERSISTENCE_PROMOTED_ANTINICK_RESTART=PASS status=true suffix=OPENABYSS_PROMOTED_PERSIST_7E51'
 wait_for_stage "$STAGE" 'world-ready-tick' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_WORLD_READY'
+wait_for_stage "$STAGE" 'persistence-promoted-live-pass:AntiNick:enabled=true:subscribed=true:ownerActive=true:suffix=OPENABYSS_PROMOTED_PERSIST_7E51' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_PROMOTED_ANTINICK_LIVE'
 wait_for_stage "$STAGE" 'network-command-probe-ready:CommandLine:original=' "$VERIFY_STDOUT" "$VERIFY_STDERR" 'PERSISTENCE_RESTART_COMMAND_READY'
 touch "$GAME_DIR/abyss-network-command-probe-done"
 echo 'PERSISTENCE_RESTART_COMMAND_HANDSHAKE=PASS'
@@ -218,6 +219,7 @@ if [ -s "$GAME_DIR/abyss-event-failure.txt" ]; then
   exit 1
 fi
 echo 'PERSISTENCE_RESTART_EVENT_SUBSCRIPTION=PASS'
+echo 'PERSISTENCE_PROMOTED_ANTINICK_LIVE_SUBSCRIPTION=PASS'
 
 for failure in   abyss-module-failure.txt abyss-feature-failure.txt abyss-event-failure.txt   abyss-config-failure.txt abyss-renderer-failure.txt
 do
