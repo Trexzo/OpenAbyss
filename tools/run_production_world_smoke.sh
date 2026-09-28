@@ -980,6 +980,73 @@ DISPLAY=:99 xdotool key --clearmodifiers Escape
 sleep 0.4
 echo 'PRODUCTION_WORLD_PHYSICAL_INPUTFIX=PASS input=xdotool-chat sentinel=OPENABYSS_INPUTFIX_7E51'
 
+AUTOTOOL_READY=0
+for _ in $(seq 1 480); do
+  if grep -Fq 'high-risk-functional-probe32-ready:AutoTool:mouse=left' "$STAGE"; then
+    AUTOTOOL_READY=1
+    break
+  fi
+  if grep -Eq 'high-risk-functional-probe(26|27|28|29|30|31|32)-fail:' "$STAGE"; then
+    echo 'AutoTool prerequisite/probe chain failed before physical mouse input.'
+    grep -E 'high-risk-functional-probe(26|27|28|29|30|31|32)-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before AutoTool physical-input probe became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$AUTOTOOL_READY" -ne 1 ]; then
+  echo 'AutoTool physical-input probe did not become ready after probes 26-31.'
+  grep -E 'high-risk-functional-probe(26|27|28|29|30|31|32)-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousedown 1
+AUTOTOOL_SWITCHED=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe32-effect-pass:AutoTool:switch=0->4' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe32-ready-release:AutoTool:mouse=left' "$STAGE"; then
+    AUTOTOOL_SWITCHED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe32-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool mouseup 1
+if [ "$AUTOTOOL_SWITCHED" -ne 1 ]; then
+  echo 'AutoTool did not switch to the ranked pickaxe from real X11 LMB input.'
+  grep -F 'high-risk-functional-probe32-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AUTOTOOL_SWITCH=PASS input=xdotool-mousedown-1 slot=0->4'
+
+AUTOTOOL_RESTORED=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe32-effect-pass:AutoTool:switchBack=4->0' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe32-pass:1' "$STAGE"; then
+    AUTOTOOL_RESTORED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe32-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$AUTOTOOL_RESTORED" -ne 1 ]; then
+  echo 'AutoTool did not restore the original slot after real X11 LMB release.'
+  grep -F 'high-risk-functional-probe32-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AUTOTOOL=PASS input=real-LMB switch=0->4->0'
+
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
 DISPLAY=:99 xdotool keyup Shift_R
