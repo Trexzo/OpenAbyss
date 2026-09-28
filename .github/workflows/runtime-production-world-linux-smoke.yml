@@ -235,7 +235,8 @@ jobs:
             grep -Fq "clickgui-mode-probe-open:$mode:" "$STAGE"
             grep -Fq "clickgui-mode-probe-close:$mode" "$STAGE"
           done
-          grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"
+          grep -Fq 'clickgui-font-ready' "$STAGE"
+grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"
           grep -Fq 'clickgui-open-success:' "$STAGE"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
