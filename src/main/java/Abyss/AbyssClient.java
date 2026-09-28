@@ -6722,7 +6722,7 @@ implements EventSubscriber {
                     return;
                 }
 
-                int disabled = AutoBlock.t(0L);
+                int disabled = AutoBlock.t(81424435728200L);
                 if (disabled != 0) {
                     throw new IllegalStateException(
                             "AutoBlock disabled readiness was " + disabled);
@@ -6806,7 +6806,7 @@ implements EventSubscriber {
                     this.c.theWorld.addEntityToWorld(fixtureId, fixture);
 
                     smartCounter.setInt(null, 0);
-                    int ready = AutoBlock.t(0L);
+                    int ready = AutoBlock.t(81424435728200L);
                     if (ready != 1) {
                         throw new IllegalStateException(
                                 "AutoBlock ready state mismatch expected=1 actual="
@@ -6817,7 +6817,7 @@ implements EventSubscriber {
                                     + "ready=1");
 
                     smartCounter.setInt(null, 3);
-                    int smart = AutoBlock.t(0L);
+                    int smart = AutoBlock.t(81424435728200L);
                     if (smart != 2) {
                         throw new IllegalStateException(
                                 "AutoBlock smart-unblock state mismatch expected=2 actual="
@@ -6828,7 +6828,7 @@ implements EventSubscriber {
                                     + "smartUnblock=2");
 
                     AutoBlock.mode.i("NONE");
-                    int none = AutoBlock.t(0L);
+                    int none = AutoBlock.t(81424435728200L);
                     if (none != 0) {
                         throw new IllegalStateException(
                                 "AutoBlock NONE mode readiness mismatch expected=0 actual="
