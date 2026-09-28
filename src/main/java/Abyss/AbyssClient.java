@@ -60,6 +60,7 @@ import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.misc.InputFix;
 import Abyss.module.impl.misc.NoObfuscation;
 import Abyss.module.impl.misc.RawInput;
 import Abyss.module.impl.misc.ContainerKeeper;
