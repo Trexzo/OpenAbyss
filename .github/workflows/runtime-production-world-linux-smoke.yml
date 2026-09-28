@@ -354,13 +354,14 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL12=PASS modules=Freelook'
-          grep -Fq 'high-risk-functional-probe13-request-pass:CaveXray:pending=true' "$STAGE"
-          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:pending=false:lastReloadAdvanced=true' "$STAGE"
-          grep -Fq 'high-risk-functional-probe13-restore-pass:CaveXray:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:disabled:cancelled=false:opaqueBit=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:enabled:cancelled=true:opaqueBit=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:restored:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-restore-pass:CaveXray=' "$STAGE"
           grep -Fq 'high-risk-functional-probe13-module-pass:CaveXray' "$STAGE"
           grep -Fq 'high-risk-functional-probe13-pass:1' "$STAGE"
           if grep -Fq 'high-risk-functional-probe13-fail:' "$STAGE"; then
-            echo 'CaveXray deferred-renderer-reload probe reported a failure.'
+            echo 'CaveXray VisGraph-hook probe reported a failure.'
             grep -F 'high-risk-functional-probe13-' "$STAGE" || true
             exit 1
           fi
