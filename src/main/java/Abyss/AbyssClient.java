@@ -21,6 +21,9 @@ import Abyss.ASM.Hooks.VisGraphHooks;
 import Abyss.ASM.Hooks.Block.BlockBarrierHooks;
 import Abyss.ASM.Hooks.CallbackInfo;
 import Abyss.ASM.Hooks.CallbackInfoReturnable;
+import Abyss.ASM.Hooks.Gui.GuiScreenHooks;
+import Abyss.ASM.Hooks.Render.EffectRendererHooks;
+import Abyss.ASM.Hooks.Render.LoadingScreenRendererHooks;
 import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
@@ -57,6 +60,7 @@ import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.misc.NoObfuscation;
 import Abyss.module.impl.misc.ContainerKeeper;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.misc.Timer;
@@ -70,6 +74,10 @@ import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.NoHitDelay;
 import Abyss.module.impl.player.NoInteract;
 import Abyss.module.impl.configuration.ClickGUI;
+import Abyss.module.impl.configuration.CustomCape;
+import Abyss.module.impl.configuration.Font;
+import Abyss.module.impl.configuration.Gadgets;
+import Abyss.module.impl.configuration.Language;
 import Abyss.module.impl.configuration.Notifications;
 import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.Teams;
@@ -105,6 +113,7 @@ import Abyss.util.TimerUtil;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.IncomingPacketHold;
 import Abyss.util.packet.PacketManager;
+import Abyss.util.render.CustomFont;
 import Abyss.util.render.abyss.FontManager;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -356,6 +365,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe18Stage;
     private int highRiskFunctionalProbe19Stage;
     private int highRiskFunctionalProbe20Stage;
+    private int highRiskFunctionalProbe21Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -5098,6 +5108,226 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe21() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe21")
+                || this.highRiskFunctionalProbe21Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe20")
+                && this.highRiskFunctionalProbe20Stage < 1) return;
+
+        CustomCape customCape = Modules.J(CustomCape.class);
+        Font font = Modules.J(Font.class);
+        Gadgets gadgets = Modules.J(Gadgets.class);
+        NoObfuscation noObfuscation = Modules.J(NoObfuscation.class);
+        Language language = Modules.J(Language.class);
+
+        boolean saved = false;
+        String originalCape = null;
+        String originalOthersFont = null;
+        String originalScoreboardFont = null;
+        String originalNotificationsFont = null;
+        String originalClickGuiFont = null;
+        String originalHudFont = null;
+        String originalArrayListFont = null;
+        boolean originalNoMiningParticles = false;
+        boolean originalBetterWorldSwapping = false;
+        boolean originalNoScreenBackground = false;
+
+        try {
+            if (customCape == null || font == null || gadgets == null
+                    || noObfuscation == null || language == null
+                    || CustomCape.cape == null || CustomCape.O == null
+                    || Font.othersFont == null || Font.scoreboardFont == null
+                    || Font.notificationsFont == null || Font.clickguiFont == null
+                    || Font.hudFont == null || Font.arraylistFont == null
+                    || Gadgets.noMiningParticles == null
+                    || Gadgets.betterWorldSwapping == null
+                    || Gadgets.noScreenBackground == null
+                    || Language.language == null) {
+                throw new IllegalStateException("promoted helper/config authority unavailable");
+            }
+
+            originalCape = CustomCape.cape.Y();
+            originalOthersFont = Font.othersFont.Y();
+            originalScoreboardFont = Font.scoreboardFont.Y();
+            originalNotificationsFont = Font.notificationsFont.Y();
+            originalClickGuiFont = Font.clickguiFont.Y();
+            originalHudFont = Font.hudFont.Y();
+            originalArrayListFont = Font.arraylistFont.Y();
+            originalNoMiningParticles = Gadgets.noMiningParticles.c();
+            originalBetterWorldSwapping = Gadgets.betterWorldSwapping.c();
+            originalNoScreenBackground = Gadgets.noScreenBackground.c();
+            saved = true;
+
+            if (CustomCape.O.size() != 23) {
+                throw new IllegalStateException("CustomCape mapping count was " + CustomCape.O.size());
+            }
+            for (Map.Entry<String, String> entry : CustomCape.O.entrySet()) {
+                if (!CustomCape.cape.S().contains(entry.getKey())) {
+                    throw new IllegalStateException("CustomCape mode missing mapping key " + entry.getKey());
+                }
+                CustomCape.cape.i(entry.getKey());
+                net.minecraft.util.ResourceLocation location = CustomCape.d(0L);
+                String expectedPath = "capes/" + entry.getValue() + ".png";
+                if (!"minecraft".equals(location.getResourceDomain())
+                        || !expectedPath.equals(location.getResourcePath())) {
+                    throw new IllegalStateException("CustomCape path mismatch "
+                            + entry.getKey() + " -> " + location);
+                }
+                if (CustomCape.class.getResource("/assets/minecraft/" + expectedPath) == null) {
+                    throw new IllegalStateException("CustomCape resource missing " + expectedPath);
+                }
+            }
+            runtimeMilestone("high-risk-functional-probe21-effect-pass:CustomCape:mappings=23");
+
+            Font.othersFont.i("NONE");
+            Font.scoreboardFont.i("NONE");
+            Font.notificationsFont.i("NONE");
+            Font.clickguiFont.i("NONE");
+            Font.hudFont.i("NONE");
+            Font.arraylistFont.i("NONE");
+            CustomFont noneOthers = Font.s(0L);
+            CustomFont noneScoreboard = Font.J();
+            CustomFont noneNotifications = Font.O((short)0, 0);
+            CustomFont noneClickGui = Font.m(0L);
+            CustomFont noneHud = Font.F(0L);
+            CustomFont noneArrayList = Font.Q(0L);
+
+            Font.othersFont.i("PRODUCT_SANS");
+            Font.scoreboardFont.i("PRODUCT_SANS");
+            Font.notificationsFont.i("PRODUCT_SANS");
+            Font.clickguiFont.i("PRODUCT_SANS");
+            Font.hudFont.i("PRODUCT_SANS");
+            Font.arraylistFont.i("PRODUCT_SANS");
+            CustomFont product = Font.s(0L);
+            if (product == null
+                    || product == noneOthers
+                    || Font.J() != product
+                    || Font.O((short)0, 0) != product
+                    || Font.m(0L) != product
+                    || Font.F(0L) != product
+                    || Font.Q(0L) != product
+                    || noneScoreboard != noneOthers
+                    || noneNotifications != noneOthers
+                    || noneClickGui != noneOthers
+                    || noneHud != noneOthers
+                    || noneArrayList != noneOthers) {
+                throw new IllegalStateException("Font mode routing did not select shared PRODUCT_SANS authority");
+            }
+            Font.hudFont.i("TAHOMA");
+            if (Font.F(0L) == product || Font.F(0L) == noneHud) {
+                throw new IllegalStateException("Font HUD TAHOMA selector did not change authority");
+            }
+            runtimeMilestone("high-risk-functional-probe21-effect-pass:Font:selectors=6");
+
+            Gadgets.noMiningParticles.v(false, 0L);
+            CallbackInfo particlesOff = new CallbackInfo();
+            EffectRendererHooks.cancelDestroyParticles(particlesOff);
+            if (particlesOff.isCancelled()) {
+                throw new IllegalStateException("Gadgets cancelled mining particles while disabled");
+            }
+            Gadgets.noMiningParticles.v(true, 0L);
+            CallbackInfo destroyOn = new CallbackInfo();
+            CallbackInfo hitOn = new CallbackInfo();
+            EffectRendererHooks.cancelDestroyParticles(destroyOn);
+            EffectRendererHooks.cancelHitParticles(hitOn);
+            if (!destroyOn.isCancelled() || !hitOn.isCancelled()) {
+                throw new IllegalStateException("Gadgets mining-particle hooks did not cancel");
+            }
+
+            Gadgets.betterWorldSwapping.v(false, 0L);
+            CallbackInfo loadingOff = new CallbackInfo();
+            LoadingScreenRendererHooks.forSkipProgress(0, loadingOff);
+            if (loadingOff.isCancelled()) {
+                throw new IllegalStateException("Gadgets loading hook cancelled while disabled");
+            }
+            Gadgets.betterWorldSwapping.v(true, 0L);
+            CallbackInfo loadingOn = new CallbackInfo();
+            LoadingScreenRendererHooks.forSkipProgress(0, loadingOn);
+            if (!loadingOn.isCancelled()) {
+                throw new IllegalStateException("Gadgets loading hook did not cancel");
+            }
+
+            Gadgets.noScreenBackground.v(false, 0L);
+            if (GuiScreenHooks.shouldCancel()) {
+                throw new IllegalStateException("Gadgets screen background cancelled while disabled");
+            }
+            Gadgets.noScreenBackground.v(true, 0L);
+            if (!GuiScreenHooks.shouldCancel()) {
+                throw new IllegalStateException("Gadgets screen background did not cancel in-world");
+            }
+            runtimeMilestone("high-risk-functional-probe21-effect-pass:Gadgets:hooks=3");
+
+            String obfuscated = "A\u00a7kB\u00a7kC";
+            if (!"ABC".equals(NoObfuscation.f(obfuscated)) || NoObfuscation.f(null) != null) {
+                throw new IllegalStateException("NoObfuscation formatter contract failed");
+            }
+            runtimeMilestone("high-risk-functional-probe21-effect-pass:NoObfuscation:strip=true");
+
+            if (!"Set".equals(Language.z("clickgui.studio.set", 0L))
+                    || !"openabyss.unknown.key".equals(Language.z("openabyss.unknown.key", 0L))) {
+                throw new IllegalStateException("Language known/fallback lookup contract failed");
+            }
+            runtimeMilestone("high-risk-functional-probe21-effect-pass:Language:lookup=true");
+
+            CustomCape.cape.i(originalCape);
+            Font.othersFont.i(originalOthersFont);
+            Font.scoreboardFont.i(originalScoreboardFont);
+            Font.notificationsFont.i(originalNotificationsFont);
+            Font.clickguiFont.i(originalClickGuiFont);
+            Font.hudFont.i(originalHudFont);
+            Font.arraylistFont.i(originalArrayListFont);
+            Gadgets.noMiningParticles.v(originalNoMiningParticles, 0L);
+            Gadgets.betterWorldSwapping.v(originalBetterWorldSwapping, 0L);
+            Gadgets.noScreenBackground.v(originalNoScreenBackground, 0L);
+
+            if (!originalCape.equals(CustomCape.cape.Y())
+                    || !originalOthersFont.equals(Font.othersFont.Y())
+                    || !originalScoreboardFont.equals(Font.scoreboardFont.Y())
+                    || !originalNotificationsFont.equals(Font.notificationsFont.Y())
+                    || !originalClickGuiFont.equals(Font.clickguiFont.Y())
+                    || !originalHudFont.equals(Font.hudFont.Y())
+                    || !originalArrayListFont.equals(Font.arraylistFont.Y())
+                    || Gadgets.noMiningParticles.c() != originalNoMiningParticles
+                    || Gadgets.betterWorldSwapping.c() != originalBetterWorldSwapping
+                    || Gadgets.noScreenBackground.c() != originalNoScreenBackground) {
+                throw new IllegalStateException("promoted helper/config probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe21Stage = 1;
+            runtimeMilestone("high-risk-functional-probe21-restore-pass:modules=5");
+            runtimeMilestone("high-risk-functional-probe21-module-pass:CustomCape");
+            runtimeMilestone("high-risk-functional-probe21-module-pass:Font");
+            runtimeMilestone("high-risk-functional-probe21-module-pass:Gadgets");
+            runtimeMilestone("high-risk-functional-probe21-module-pass:NoObfuscation");
+            runtimeMilestone("high-risk-functional-probe21-module-pass:Language");
+            runtimeMilestone("high-risk-functional-probe21-pass:5");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    CustomCape.cape.i(originalCape);
+                    Font.othersFont.i(originalOthersFont);
+                    Font.scoreboardFont.i(originalScoreboardFont);
+                    Font.notificationsFont.i(originalNotificationsFont);
+                    Font.clickguiFont.i(originalClickGuiFont);
+                    Font.hudFont.i(originalHudFont);
+                    Font.arraylistFont.i(originalArrayListFont);
+                    Gadgets.noMiningParticles.v(originalNoMiningParticles, 0L);
+                    Gadgets.betterWorldSwapping.v(originalBetterWorldSwapping, 0L);
+                    Gadgets.noScreenBackground.v(originalNoScreenBackground, 0L);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe21", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe21Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe21", "promoted-helper-config", failure);
+            runtimeMilestone("high-risk-functional-probe21-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -6076,6 +6306,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe18();
         this.pumpHighRiskFunctionalProbe19();
         this.pumpHighRiskFunctionalProbe20();
+        this.pumpHighRiskFunctionalProbe21();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
