@@ -24,6 +24,7 @@ import Abyss.event.events.PreMouseInputEvent;
 import Abyss.event.events.PreTickEvent;
 import Abyss.event.events.PreUpdateEvent;
 import Abyss.event.events.ReceivePacketEvent;
+import Abyss.event.events.Render2DEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
 import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
@@ -159,6 +160,9 @@ implements EventSubscriber {
     private int packetFunctionalProbeStage;
     private int packetFunctionalProbeWaitTicks;
     private boolean packetFunctionalProbeOriginalEnabled;
+    private float packetFunctionalProbeOriginalTimeSetting;
+    private float packetFunctionalProbeOriginalSpeedSetting;
+    private long packetFunctionalProbeOriginalWorldTime;
     private int commandRuntimeProbeStage;
     private int commandRuntimeProbeWaitTicks;
     private boolean commandRuntimeProbeOriginalEnabled;
@@ -602,6 +606,15 @@ implements EventSubscriber {
 
     private void restorePacketFunctionalProbeState(Ambience probe) {
         try {
+            if (Ambience.time != null) {
+                Ambience.time.o((byte)0, 0L, this.packetFunctionalProbeOriginalTimeSetting);
+            }
+            if (Ambience.speed != null) {
+                Ambience.speed.o((byte)0, 0L, this.packetFunctionalProbeOriginalSpeedSetting);
+            }
+            if (this.c.theWorld != null) {
+                this.c.theWorld.setWorldTime(this.packetFunctionalProbeOriginalWorldTime);
+            }
             if (probe != null && probe.o() != this.packetFunctionalProbeOriginalEnabled) {
                 probe.I(0L, this.packetFunctionalProbeOriginalEnabled);
             }
@@ -609,6 +622,21 @@ implements EventSubscriber {
         catch (Throwable restoreFailure) {
             recordFeatureFailure("PacketFunctionalProbe:Ambience", "restore", restoreFailure);
         }
+    }
+
+    private void verifyPacketFunctionalProbeRestored() {
+        if (Ambience.time == null || Ambience.speed == null) {
+            throw new IllegalStateException("Ambience settings disappeared during restore");
+        }
+        if (Math.abs(Ambience.time.L() - this.packetFunctionalProbeOriginalTimeSetting) > 0.001f
+                || Math.abs(Ambience.speed.L() - this.packetFunctionalProbeOriginalSpeedSetting) > 0.001f) {
+            throw new IllegalStateException("Ambience time/speed settings were not restored");
+        }
+        if (this.c.theWorld != null && this.c.theWorld.getWorldTime() != this.packetFunctionalProbeOriginalWorldTime) {
+            throw new IllegalStateException("World time was not restored after Ambience probe: "
+                    + this.c.theWorld.getWorldTime());
+        }
+        runtimeMilestone("packet-functional-probe-restore-state-pass:Ambience");
     }
 
     private void pumpPacketFunctionalProbe() {
@@ -647,6 +675,12 @@ implements EventSubscriber {
                     return;
                 }
                 this.packetFunctionalProbeOriginalEnabled = stableEnabled;
+                if (Ambience.time == null || Ambience.speed == null || this.c.theWorld == null) {
+                    throw new IllegalStateException("Ambience settings/world unavailable");
+                }
+                this.packetFunctionalProbeOriginalTimeSetting = Ambience.time.L();
+                this.packetFunctionalProbeOriginalSpeedSetting = Ambience.speed.L();
+                this.packetFunctionalProbeOriginalWorldTime = this.c.theWorld.getWorldTime();
                 if (!stableEnabled) {
                     probe.I(0L, true);
                     this.packetFunctionalProbeStage = 1;
@@ -674,6 +708,22 @@ implements EventSubscriber {
                 }
                 runtimeMilestone("packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true");
 
+                Ambience.time.o((byte)0, 0L, 6000.0f);
+                Ambience.speed.o((byte)0, 0L, 0.0f);
+                this.c.theWorld.setWorldTime(1234L);
+                runtimeMilestone("render-functional-probe-dispatch:Ambience:worldTime=1234");
+                w.e(new Render2DEvent(0, (short)0, 0.0f, (short)0, null), 0L);
+                long renderWorldTime = this.c.theWorld.getWorldTime();
+                if (renderWorldTime != 6000L) {
+                    throw new IllegalStateException("Ambience Render2D did not set world time to 6000: "
+                            + renderWorldTime);
+                }
+                runtimeMilestone("render-functional-probe-effect-pass:Ambience:worldTime=6000");
+
+                Ambience.time.o((byte)0, 0L, this.packetFunctionalProbeOriginalTimeSetting);
+                Ambience.speed.o((byte)0, 0L, this.packetFunctionalProbeOriginalSpeedSetting);
+                this.c.theWorld.setWorldTime(this.packetFunctionalProbeOriginalWorldTime);
+
                 if (!this.packetFunctionalProbeOriginalEnabled) {
                     probe.I(0L, false);
                     this.packetFunctionalProbeStage = 2;
@@ -682,6 +732,7 @@ implements EventSubscriber {
                     return;
                 }
 
+                verifyPacketFunctionalProbeRestored();
                 this.packetFunctionalProbeStage = 3;
                 runtimeMilestone("packet-functional-probe-pass:Ambience:restored=true");
                 return;
@@ -693,6 +744,7 @@ implements EventSubscriber {
                 }
                 return;
             }
+            verifyPacketFunctionalProbeRestored();
             this.packetFunctionalProbeStage = 3;
             runtimeMilestone("packet-functional-probe-pass:Ambience:restored=false");
         }
