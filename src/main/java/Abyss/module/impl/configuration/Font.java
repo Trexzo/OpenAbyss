@@ -65,6 +65,24 @@ extends Module {
         return S;
 }
     private static CustomFont Q(String var2) {
+        if (var2 == null) {
+            return S;
+}
+        if ("PRODUCT_SANS".equalsIgnoreCase(var2)) {
+            return J;
+}
+        if ("INTER".equalsIgnoreCase(var2)) {
+            return d;
+}
+        if ("PING_FANG".equalsIgnoreCase(var2)) {
+            return H;
+}
+        if ("ROBOTO".equalsIgnoreCase(var2)) {
+            return c;
+}
+        if ("TAHOMA".equalsIgnoreCase(var2)) {
+            return n;
+}
         return S;
 }
     public static CustomFont m(long var0) {
