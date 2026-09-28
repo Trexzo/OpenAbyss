@@ -689,10 +689,14 @@ if [ "$SESSION_EXIT_READY" -ne 1 ]; then
 fi
 echo 'PRODUCTION_WORLD_SESSION1_EXIT_CLEANUP=PASS'
 
-# Disconnect returns the client to the normal main menu. Re-enter Multiplayer
-# and Direct Connect through the same real UI path used for the first session.
+# Depending on the vanilla parent screen, Disconnect may return to GuiMultiplayer
+# or directly to the main menu. Normalize with one Escape before re-entering the
+# same Multiplayer -> Direct Connect path used for the first session.
 sleep 0.75
 DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool key --clearmodifiers Escape
+sleep 0.40
+DISPLAY=:99 scrot "$RUNNER_TEMP/openabyss-production-world-reconnect-menu.png" || true
 DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$MULTIPLAYER_X" "$MULTIPLAYER_Y" click 1
 sleep 0.75
 DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DIRECT_X" "$DIRECT_Y" click 1
