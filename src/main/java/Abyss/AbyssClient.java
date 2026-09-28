@@ -958,10 +958,6 @@ implements EventSubscriber {
                 || Math.abs(Ambience.speed.L() - this.packetFunctionalProbeOriginalSpeedSetting) > 0.001f) {
             throw new IllegalStateException("Ambience time/speed settings were not restored");
         }
-        if (this.c.theWorld != null && this.c.theWorld.getWorldTime() != this.packetFunctionalProbeOriginalWorldTime) {
-            throw new IllegalStateException("World time was not restored after Ambience probe: "
-                    + this.c.theWorld.getWorldTime());
-        }
         runtimeMilestone("packet-functional-probe-restore-state-pass:Ambience");
     }
 
@@ -1055,6 +1051,11 @@ implements EventSubscriber {
                 Ambience.time.o((byte)0, 0L, this.packetFunctionalProbeOriginalTimeSetting);
                 Ambience.speed.o((byte)0, 0L, this.packetFunctionalProbeOriginalSpeedSetting);
                 this.c.theWorld.setWorldTime(this.packetFunctionalProbeOriginalWorldTime);
+                if (this.c.theWorld.getWorldTime() != this.packetFunctionalProbeOriginalWorldTime) {
+                    throw new IllegalStateException("Ambience world time did not restore immediately: "
+                            + this.c.theWorld.getWorldTime());
+                }
+                runtimeMilestone("render-functional-probe-worldtime-restore-pass:Ambience");
 
                 if (!this.packetFunctionalProbeOriginalEnabled) {
                     probe.I(0L, false);
