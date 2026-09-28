@@ -145,7 +145,10 @@ DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
 sleep 0.5
 
 MULTIPLAYER_X=$((WIDTH / 2))
-MULTIPLAYER_Y=$((HEIGHT / 4 + 82))
+# Runnable-era GuiMainMenuHooks inserts Alt Manager after Multiplayer and shifts
+# every button at/above the Multiplayer anchor upward by 12 GUI pixels.
+# Vanilla Multiplayer center is HEIGHT/4+82; recovered center is therefore +70.
+MULTIPLAYER_Y=$((HEIGHT / 4 + 70))
 DIRECT_X=$((WIDTH / 2))
 DIRECT_Y=$((HEIGHT - 42))
 
