@@ -722,7 +722,27 @@ if [ "$INVMOVE_READY" -ne 1 ]; then
 fi
 
 DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
-DISPLAY=:99 xdotool key --clearmodifiers e
+DISPLAY=:99 xdotool keydown e
+INVMOVE_E_SEEN=0
+for _ in $(seq 1 40); do
+  if grep -Fq 'invmove-physical-probe-input-seen:inventory=true' "$STAGE"; then
+    INVMOVE_E_SEEN=1
+    break
+  fi
+  if grep -Fq 'invmove-physical-probe-ready:forward-input' "$STAGE"; then
+    INVMOVE_E_SEEN=1
+    break
+  fi
+  sleep 0.05
+done
+sleep 0.10
+DISPLAY=:99 xdotool keyup e
+if [ "$INVMOVE_E_SEEN" -ne 1 ]; then
+  echo 'InvMove/Minecraft did not observe the real X11 E key-down input.'
+  cat "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_INVMOVE_INVENTORY_KEY=PASS input=xdotool-keydown-e'
 
 INVMOVE_GUI_READY=0
 for _ in $(seq 1 120); do
