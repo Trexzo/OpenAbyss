@@ -44,6 +44,7 @@ import Abyss.event.events.ReceivePacketEvent;
 import Abyss.event.events.Render2DEvent;
 import Abyss.event.events.RedirectIsUsingItemEvent;
 import Abyss.event.events.SetKeyBindStateEvent;
+import Abyss.event.events.SetAnglesEvent;
 import Abyss.internal.accessor.EntityLivingBaseStateAccessor;
 import Abyss.internal.accessor.MinecraftAccessor;
 import Abyss.internal.restore.AbyssConfig;
@@ -51,6 +52,7 @@ import Abyss.internal.restore.AbyssNameMap;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.AimAssist;
 import Abyss.module.impl.combat.AutoBlock;
 import Abyss.module.impl.combat.AutoClicker;
 import Abyss.module.impl.combat.BackTrack;
@@ -117,6 +119,8 @@ import Abyss.util.ItemUtil;
 import Abyss.util.DeferredRendererReload;
 import Abyss.util.KeyBindUtil;
 import Abyss.util.MathUtil;
+import Abyss.util.Pair;
+import Abyss.util.RotationManager;
 import Abyss.util.RotationUtil;
 import Abyss.util.MinecraftRef;
 import Abyss.util.PlacementTarget;
@@ -427,6 +431,31 @@ implements EventSubscriber {
     private Object highRiskFunctionalProbe33OriginalTarget;
     private int highRiskFunctionalProbe33OriginalTargetTicks;
     private int highRiskFunctionalProbe33OriginalPauseTicks;
+    private int highRiskFunctionalProbe34Stage;
+    private int highRiskFunctionalProbe34WaitTicks;
+    private boolean highRiskFunctionalProbe34Saved;
+    private boolean highRiskFunctionalProbe34OriginalEnabled;
+    private boolean highRiskFunctionalProbe34OriginalLock;
+    private float highRiskFunctionalProbe34OriginalHorizontalSpeed;
+    private float highRiskFunctionalProbe34OriginalVerticalSpeed;
+    private boolean highRiskFunctionalProbe34OriginalPlayers;
+    private boolean highRiskFunctionalProbe34OriginalMobs;
+    private boolean highRiskFunctionalProbe34OriginalAnimals;
+    private boolean highRiskFunctionalProbe34OriginalBosses;
+    private boolean highRiskFunctionalProbe34OriginalFriends;
+    private boolean highRiskFunctionalProbe34OriginalEnemies;
+    private boolean highRiskFunctionalProbe34OriginalTeammates;
+    private boolean highRiskFunctionalProbe34OriginalBots;
+    private boolean highRiskFunctionalProbe34OriginalBreakBlocks;
+    private boolean highRiskFunctionalProbe34OriginalSwordOnly;
+    private boolean highRiskFunctionalProbe34OriginalIgnoreBehindWall;
+    private float highRiskFunctionalProbe34OriginalFov;
+    private float highRiskFunctionalProbe34OriginalRange;
+    private String highRiskFunctionalProbe34OriginalSort;
+    private float highRiskFunctionalProbe34OriginalYaw;
+    private float highRiskFunctionalProbe34OriginalPitch;
+    private Object highRiskFunctionalProbe34OriginalCachedAngles;
+    private int highRiskFunctionalProbe34FixtureId;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -7688,6 +7717,256 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe34() {
+        if (!this.highRiskFunctionalProbe34Saved) {
+            return;
+        }
+
+        AimAssist probe = Modules.J(AimAssist.class);
+        try {
+            if (this.c.theWorld != null && this.highRiskFunctionalProbe34FixtureId != 0) {
+                this.c.theWorld.removeEntityFromWorld(this.highRiskFunctionalProbe34FixtureId);
+            }
+
+            Field cachedAngles = AimAssist.class.getDeclaredField("g");
+            cachedAngles.setAccessible(true);
+
+            AimAssist.lock.v(this.highRiskFunctionalProbe34OriginalLock, 0L);
+            AimAssist.horizontalSpeed.o((byte)0, 0L, this.highRiskFunctionalProbe34OriginalHorizontalSpeed);
+            AimAssist.verticalSpeed.o((byte)0, 0L, this.highRiskFunctionalProbe34OriginalVerticalSpeed);
+            AimAssist.players.v(this.highRiskFunctionalProbe34OriginalPlayers, 0L);
+            AimAssist.mobs.v(this.highRiskFunctionalProbe34OriginalMobs, 0L);
+            AimAssist.animals.v(this.highRiskFunctionalProbe34OriginalAnimals, 0L);
+            AimAssist.bosses.v(this.highRiskFunctionalProbe34OriginalBosses, 0L);
+            AimAssist.friends.v(this.highRiskFunctionalProbe34OriginalFriends, 0L);
+            AimAssist.enemies.v(this.highRiskFunctionalProbe34OriginalEnemies, 0L);
+            AimAssist.teammates.v(this.highRiskFunctionalProbe34OriginalTeammates, 0L);
+            AimAssist.bots.v(this.highRiskFunctionalProbe34OriginalBots, 0L);
+            AimAssist.breakBlocks.v(this.highRiskFunctionalProbe34OriginalBreakBlocks, 0L);
+            AimAssist.swordOnly.v(this.highRiskFunctionalProbe34OriginalSwordOnly, 0L);
+            AimAssist.ignoreBehindWall.v(this.highRiskFunctionalProbe34OriginalIgnoreBehindWall, 0L);
+            AimAssist.fov.o((byte)0, 0L, this.highRiskFunctionalProbe34OriginalFov);
+            AimAssist.range.o((byte)0, 0L, this.highRiskFunctionalProbe34OriginalRange);
+            AimAssist.sort.i(this.highRiskFunctionalProbe34OriginalSort);
+            cachedAngles.set(probe, this.highRiskFunctionalProbe34OriginalCachedAngles);
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.rotationYaw = this.highRiskFunctionalProbe34OriginalYaw;
+                this.c.thePlayer.prevRotationYaw = this.highRiskFunctionalProbe34OriginalYaw;
+                this.c.thePlayer.rotationPitch = this.highRiskFunctionalProbe34OriginalPitch;
+                this.c.thePlayer.prevRotationPitch = this.highRiskFunctionalProbe34OriginalPitch;
+            }
+
+            if (probe != null && probe.o() != this.highRiskFunctionalProbe34OriginalEnabled) {
+                probe.I(0L, this.highRiskFunctionalProbe34OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe34:AimAssist",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        this.highRiskFunctionalProbe34Saved = false;
+        this.highRiskFunctionalProbe34WaitTicks = 0;
+        this.highRiskFunctionalProbe34FixtureId = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe34() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe34")
+                || this.highRiskFunctionalProbe34Stage < 0
+                || this.highRiskFunctionalProbe34Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe33")
+                && this.highRiskFunctionalProbe33Stage < 4) {
+            return;
+        }
+
+        AimAssist probe = Modules.J(AimAssist.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AimAssist.class) != probe
+                    || ModuleManager.byName("AimAssist") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException("AimAssist live-world authority unavailable");
+            }
+
+            Field cachedAngles = AimAssist.class.getDeclaredField("g");
+            cachedAngles.setAccessible(true);
+
+            switch (this.highRiskFunctionalProbe34Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe34OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe34OriginalLock = AimAssist.lock.c();
+                    this.highRiskFunctionalProbe34OriginalHorizontalSpeed = AimAssist.horizontalSpeed.L();
+                    this.highRiskFunctionalProbe34OriginalVerticalSpeed = AimAssist.verticalSpeed.L();
+                    this.highRiskFunctionalProbe34OriginalPlayers = AimAssist.players.c();
+                    this.highRiskFunctionalProbe34OriginalMobs = AimAssist.mobs.c();
+                    this.highRiskFunctionalProbe34OriginalAnimals = AimAssist.animals.c();
+                    this.highRiskFunctionalProbe34OriginalBosses = AimAssist.bosses.c();
+                    this.highRiskFunctionalProbe34OriginalFriends = AimAssist.friends.c();
+                    this.highRiskFunctionalProbe34OriginalEnemies = AimAssist.enemies.c();
+                    this.highRiskFunctionalProbe34OriginalTeammates = AimAssist.teammates.c();
+                    this.highRiskFunctionalProbe34OriginalBots = AimAssist.bots.c();
+                    this.highRiskFunctionalProbe34OriginalBreakBlocks = AimAssist.breakBlocks.c();
+                    this.highRiskFunctionalProbe34OriginalSwordOnly = AimAssist.swordOnly.c();
+                    this.highRiskFunctionalProbe34OriginalIgnoreBehindWall = AimAssist.ignoreBehindWall.c();
+                    this.highRiskFunctionalProbe34OriginalFov = AimAssist.fov.L();
+                    this.highRiskFunctionalProbe34OriginalRange = AimAssist.range.L();
+                    this.highRiskFunctionalProbe34OriginalSort = AimAssist.sort.Y();
+                    this.highRiskFunctionalProbe34OriginalYaw = this.c.thePlayer.rotationYaw;
+                    this.highRiskFunctionalProbe34OriginalPitch = this.c.thePlayer.rotationPitch;
+                    this.highRiskFunctionalProbe34OriginalCachedAngles = cachedAngles.get(probe);
+                    this.highRiskFunctionalProbe34Saved = true;
+
+                    AimAssist.lock.v(true, 0L);
+                    AimAssist.horizontalSpeed.o((byte)0, 0L, 20.0f);
+                    AimAssist.verticalSpeed.o((byte)0, 0L, 20.0f);
+                    AimAssist.players.v(false, 0L);
+                    AimAssist.mobs.v(true, 0L);
+                    AimAssist.animals.v(false, 0L);
+                    AimAssist.bosses.v(false, 0L);
+                    AimAssist.friends.v(false, 0L);
+                    AimAssist.enemies.v(false, 0L);
+                    AimAssist.teammates.v(false, 0L);
+                    AimAssist.bots.v(false, 0L);
+                    AimAssist.breakBlocks.v(false, 0L);
+                    AimAssist.swordOnly.v(false, 0L);
+                    AimAssist.ignoreBehindWall.v(false, 0L);
+                    AimAssist.fov.o((byte)0, 0L, 360.0f);
+                    AimAssist.range.o((byte)0, 0L, 8.0f);
+                    AimAssist.sort.i("DISTANCE");
+                    cachedAngles.set(probe, null);
+
+                    this.c.thePlayer.rotationYaw = 0.0f;
+                    this.c.thePlayer.prevRotationYaw = 0.0f;
+                    this.c.thePlayer.rotationPitch = 0.0f;
+                    this.c.thePlayer.prevRotationPitch = 0.0f;
+
+                    this.highRiskFunctionalProbe34FixtureId = -2147483598;
+                    EntityZombie target = new EntityZombie(this.c.theWorld);
+                    target.setPosition(
+                            this.c.thePlayer.posX + 2.0,
+                            this.c.thePlayer.posY,
+                            this.c.thePlayer.posZ + 2.0);
+                    this.c.theWorld.addEntityToWorld(
+                            this.highRiskFunctionalProbe34FixtureId,
+                            target);
+
+                    if (!probe.o()) {
+                        probe.I(0L, true);
+                    }
+                    this.highRiskFunctionalProbe34Stage = 1;
+                    this.highRiskFunctionalProbe34WaitTicks = 0;
+                    runtimeMilestone("high-risk-functional-probe34-enable-request:AimAssist");
+                    return;
+                }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe34WaitTicks;
+                    boolean active = probe.o() && probe.P() && w.isOwnerActive(probe);
+                    if (!active) {
+                        if (this.highRiskFunctionalProbe34WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "AimAssist did not enter enabled/subscribed state"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive=" + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone("high-risk-functional-probe34-ready:AimAssist:mouse=left");
+                    this.highRiskFunctionalProbe34Stage = 2;
+                    return;
+                }
+
+                case 2: {
+                    int attackKey = this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (!KeyBindUtil.V(attackKey, 64165991731362L)) {
+                        return;
+                    }
+
+                    Object cached = cachedAngles.get(probe);
+                    float yaw = this.c.thePlayer.rotationYaw;
+                    float pitch = this.c.thePlayer.rotationPitch;
+                    if (!(cached instanceof Pair) || Math.abs(yaw) < 5.0f) {
+                        return;
+                    }
+
+                    Pair pair = (Pair)cached;
+                    float cachedYaw = ((Float)pair.a()).floatValue();
+                    float cachedPitch = ((Float)pair.p()).floatValue();
+                    if (Math.abs(yaw - cachedYaw) > 0.05f
+                            || Math.abs(pitch - cachedPitch) > 0.05f) {
+                        throw new IllegalStateException(
+                                "AimAssist camera/cache mismatch"
+                                        + " camera=" + yaw + "," + pitch
+                                        + " cached=" + cachedYaw + "," + cachedPitch);
+                    }
+
+                    SetAnglesEvent angles = new SetAnglesEvent(123.0f, 45.0f);
+                    probe.onSetAngles(angles, 0L);
+                    if (!angles.l()
+                            || Math.abs(angles.x() - cachedYaw) > 0.05f
+                            || Math.abs(angles.s() - cachedPitch) > 0.05f) {
+                        throw new IllegalStateException(
+                                "AimAssist lock-angle propagation mismatch"
+                                        + " changed=" + angles.l()
+                                        + " event=" + angles.x() + "," + angles.s()
+                                        + " cached=" + cachedYaw + "," + cachedPitch);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe34-effect-pass:"
+                                    + "AimAssist:yawChanged=true:lockAngles=true:"
+                                    + "yaw=" + yaw + ":pitch=" + pitch);
+                    runtimeMilestone("high-risk-functional-probe34-ready-release:AimAssist:mouse=left");
+                    this.highRiskFunctionalProbe34Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    int attackKey = this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (KeyBindUtil.V(attackKey, 64165991731362L)) {
+                        return;
+                    }
+
+                    if (cachedAngles.get(probe) != null) {
+                        probe.onPostTick(0L, new PostTickEvent());
+                    }
+                    if (cachedAngles.get(probe) != null) {
+                        throw new IllegalStateException(
+                                "AimAssist cached lock state did not clear after attack release");
+                    }
+
+                    runtimeMilestone("high-risk-functional-probe34-release-pass:AimAssist:cacheCleared=true");
+                    this.highRiskFunctionalProbe34Stage = 4;
+                    runtimeMilestone("high-risk-functional-probe34-module-pass:AimAssist");
+                    runtimeMilestone("high-risk-functional-probe34-pass:1");
+                    this.restoreHighRiskFunctionalProbe34();
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe34Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe34:AimAssist",
+                    "physical-target-rotation",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe34-fail:" + failure.getClass().getName());
+            this.restoreHighRiskFunctionalProbe34();
+        }
+    }
+
     private void restoreHighRiskFunctionalProbe33() {
         if (!this.highRiskFunctionalProbe33Saved) {
             return;
@@ -8960,6 +9239,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe31();
         this.pumpHighRiskFunctionalProbe32();
         this.pumpHighRiskFunctionalProbe33();
+        this.pumpHighRiskFunctionalProbe34();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
