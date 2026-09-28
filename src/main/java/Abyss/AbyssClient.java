@@ -378,6 +378,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe24Stage;
     private int highRiskFunctionalProbe25Stage;
     private int highRiskFunctionalProbe26Stage;
+    private int highRiskFunctionalProbe27Stage;
     private int highRiskFunctionalProbe25WaitTicks;
     private boolean highRiskFunctionalProbe25OriginalEnabled;
     private boolean highRiskFunctionalProbe25Saved;
@@ -6243,6 +6244,196 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe27() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe27")
+                || this.highRiskFunctionalProbe27Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe26")
+                && this.highRiskFunctionalProbe26Stage < 1) return;
+
+        Abyss.module.impl.combat.FakeLag probe =
+                Modules.J(Abyss.module.impl.combat.FakeLag.class);
+        Field targetSetField = null;
+        Field intervalField = null;
+        Field durationField = null;
+        Field intervalTimerField = null;
+        Field durationTimerField = null;
+        Field bufferingFlagField = null;
+        Field activeFlagField = null;
+        Field flushFlagField = null;
+        java.util.Set savedTargets = null;
+        long savedInterval = 0L;
+        long savedDuration = 0L;
+        long savedIntervalTimer = 0L;
+        long savedDurationTimer = 0L;
+        boolean savedBufferingFlag = false;
+        boolean savedActiveFlag = false;
+        boolean savedFlushFlag = false;
+        boolean savedSwordOnly = false;
+        float savedAllowedTargets = 0.0f;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Abyss.module.impl.combat.FakeLag.class) != probe
+                    || ModuleManager.byName("FakeLag") != probe
+                    || this.c.theWorld == null
+                    || PacketManager.e()
+                    || !PacketManager.u.isEmpty()) {
+                throw new IllegalStateException(
+                        "FakeLag probe requires live world and clean packet buffer");
+            }
+
+            Class<?> type = Abyss.module.impl.combat.FakeLag.class;
+            targetSetField = type.getDeclaredField("m");
+            intervalField = type.getDeclaredField("b");
+            durationField = type.getDeclaredField("k");
+            intervalTimerField = type.getDeclaredField("s");
+            durationTimerField = type.getDeclaredField("M");
+            bufferingFlagField = type.getDeclaredField("K");
+            activeFlagField = type.getDeclaredField("G");
+            flushFlagField = type.getDeclaredField("t");
+            for (Field field : new Field[]{
+                    targetSetField, intervalField, durationField,
+                    intervalTimerField, durationTimerField,
+                    bufferingFlagField, activeFlagField, flushFlagField}) {
+                field.setAccessible(true);
+            }
+
+            java.util.Set targets = (java.util.Set)targetSetField.get(probe);
+            Abyss.util.TimerUtil intervalTimer =
+                    (Abyss.util.TimerUtil)intervalTimerField.get(probe);
+            Abyss.util.TimerUtil durationTimer =
+                    (Abyss.util.TimerUtil)durationTimerField.get(probe);
+
+            savedTargets = new java.util.HashSet(targets);
+            savedInterval = intervalField.getLong(probe);
+            savedDuration = durationField.getLong(probe);
+            savedIntervalTimer = intervalTimer.I;
+            savedDurationTimer = durationTimer.I;
+            savedBufferingFlag = bufferingFlagField.getBoolean(null);
+            savedActiveFlag = activeFlagField.getBoolean(null);
+            savedFlushFlag = flushFlagField.getBoolean(null);
+            savedSwordOnly = Abyss.module.impl.combat.FakeLag.swordOnly.c();
+            savedAllowedTargets =
+                    Abyss.module.impl.combat.FakeLag.allowedTargetsAmount.L();
+            saved = true;
+
+            if (savedBufferingFlag || savedActiveFlag || savedFlushFlag) {
+                throw new IllegalStateException(
+                        "FakeLag static state was not clean before probe K="
+                                + savedBufferingFlag + " G=" + savedActiveFlag
+                                + " t=" + savedFlushFlag);
+            }
+
+            EntityZombie fixture = new EntityZombie(this.c.theWorld);
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 4.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+
+            targets.clear();
+            targets.add(fixture);
+            Abyss.module.impl.combat.FakeLag.swordOnly.v(false, 0L);
+            Abyss.module.impl.combat.FakeLag.allowedTargetsAmount.o(
+                    (byte)0, 0L, 3.0f);
+            intervalField.setLong(probe, 0L);
+            durationField.setLong(probe, 60000L);
+            intervalTimer.F(0L);
+            durationTimer.W();
+
+            probe.onRender2D(0L, null);
+
+            boolean active = activeFlagField.getBoolean(null);
+            boolean buffering = bufferingFlagField.getBoolean(null);
+            boolean flushArmed = flushFlagField.getBoolean(null);
+            if (!PacketManager.e() || !active || !buffering || !flushArmed) {
+                throw new IllegalStateException(
+                        "FakeLag activation mismatch packetBuffer=" + PacketManager.e()
+                                + " K=" + buffering + " G=" + active
+                                + " t=" + flushArmed);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe27-effect-pass:FakeLag:"
+                            + "buffering=true:flags=true");
+
+            probe.onSendPacket(
+                    0L,
+                    new Abyss.event.events.SendPacketEvent(
+                            new net.minecraft.network.play.client.C02PacketUseEntity(
+                                    fixture,
+                                    net.minecraft.network.play.client.C02PacketUseEntity.Action.ATTACK)));
+
+            if (PacketManager.e()
+                    || !PacketManager.u.isEmpty()
+                    || bufferingFlagField.getBoolean(null)
+                    || activeFlagField.getBoolean(null)
+                    || flushFlagField.getBoolean(null)) {
+                throw new IllegalStateException(
+                        "FakeLag attack reset mismatch packetBuffer=" + PacketManager.e()
+                                + " queued=" + PacketManager.u.size()
+                                + " K=" + bufferingFlagField.getBoolean(null)
+                                + " G=" + activeFlagField.getBoolean(null)
+                                + " t=" + flushFlagField.getBoolean(null));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe27-effect-pass:FakeLag:"
+                            + "attackFlush=true");
+
+            this.highRiskFunctionalProbe27Stage = 1;
+            runtimeMilestone("high-risk-functional-probe27-module-pass:FakeLag");
+            runtimeMilestone("high-risk-functional-probe27-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe27Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe27:FakeLag",
+                    "packet-buffer-state-machine",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe27-fail:"
+                            + failure.getClass().getName());
+        }
+        finally {
+            if (PacketManager.e() || !PacketManager.u.isEmpty()) {
+                try {
+                    PacketManager.j();
+                    PacketManager.M(false);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    java.util.Set targets =
+                            (java.util.Set)targetSetField.get(probe);
+                    targets.clear();
+                    targets.addAll(savedTargets);
+                    intervalField.setLong(probe, savedInterval);
+                    durationField.setLong(probe, savedDuration);
+                    ((Abyss.util.TimerUtil)intervalTimerField.get(probe)).F(
+                            savedIntervalTimer);
+                    ((Abyss.util.TimerUtil)durationTimerField.get(probe)).F(
+                            savedDurationTimer);
+                    bufferingFlagField.setBoolean(null, savedBufferingFlag);
+                    activeFlagField.setBoolean(null, savedActiveFlag);
+                    flushFlagField.setBoolean(null, savedFlushFlag);
+                    Abyss.module.impl.combat.FakeLag.swordOnly.v(
+                            savedSwordOnly, 0L);
+                    Abyss.module.impl.combat.FakeLag.allowedTargetsAmount.o(
+                            (byte)0, 0L, savedAllowedTargets);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe27:FakeLag",
+                            "restore",
+                            restoreFailure);
+                }
+            }
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -7227,6 +7418,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe24();
         this.pumpHighRiskFunctionalProbe25();
         this.pumpHighRiskFunctionalProbe26();
+        this.pumpHighRiskFunctionalProbe27();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
