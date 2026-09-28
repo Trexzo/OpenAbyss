@@ -472,6 +472,9 @@ for MODE in STUDIO RAVEN VESTIGE; do
     exit 1
   fi
 
+  # The Java milestone is emitted when displayGuiScreen assigns the screen; allow
+  # at least one render frame before capturing visual evidence.
+  sleep 0.35
   MODE_LOWER="$(printf '%s' "$MODE" | tr '[:upper:]' '[:lower:]')"
   MODE_SCREENSHOT="$CLICKGUI_MODE_SCREENSHOT_PREFIX-$MODE_LOWER.png"
   DISPLAY=:99 scrot "$MODE_SCREENSHOT"
