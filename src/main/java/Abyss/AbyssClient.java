@@ -11049,10 +11049,27 @@ implements EventSubscriber {
                             10,
                             new ItemStack(Items.diamond_sword));
                     this.c.thePlayer.inventory.currentItem = 0;
+
+                    // Normalize InvManager's private machine/J/L state through
+                    // the same production handler before opening GuiInventory.
+                    // In particular, onPreUpdate clears the only-sort-once
+                    // latch whenever the inventory GUI is not open, while a
+                    // stale running machine is allowed to finish/abort normally.
+                    this.c.displayGuiScreen(null);
+                    this.setModuleEnabledRawForProbe(probe, true);
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "InvManager fixture EventBus binding inactive");
+                    }
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-normalize-pass:"
+                                    + "InvManager:screen=<null>");
+
                     this.c.displayGuiScreen(
                             new GuiInventory(this.c.thePlayer));
-
-                    this.setModuleEnabledRawForProbe(probe, true);
 
                     Pair bestSwordBefore =
                             ItemUtil.q(
@@ -11089,13 +11106,6 @@ implements EventSubscriber {
                                             this.c.thePlayer.inventory.getStackInSlot(10))
                                     + ":container36=" + this.describeProbeStack(containerHotbarBefore)
                                     + ":container10=" + this.describeProbeStack(containerSourceBefore));
-
-                    EventBus fixtureBus = new EventBus();
-                    fixtureBus.s(probe, 0L);
-                    if (!fixtureBus.isOwnerActive(probe)) {
-                        throw new IllegalStateException(
-                                "InvManager fixture EventBus binding inactive");
-                    }
 
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
                     fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
