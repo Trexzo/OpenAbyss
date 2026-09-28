@@ -200,7 +200,6 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.promotedRegistryProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.highRiskFunctionalProbe=true -Dabyss.highRiskFunctionalProbe2=true -Dabyss.physicalInputFunctionalProbe=true -Dabyss.highRiskFunctionalProbe3=true -Dabyss.highRiskFunctionalProbe4=true -Dabyss.invMovePhysicalProbe=true -Dabyss.highRiskFunctionalProbe5=true -Dabyss.highRiskFunctionalProbe6=true -Dabyss.highRiskFunctionalProbe7=true -Dabyss.highRiskFunctionalProbe8=true -Dabyss.highRiskFunctionalProbe9=true -Dabyss.highRiskFunctionalProbe10=true -Dabyss.highRiskFunctionalProbe11=true -Dabyss.highRiskFunctionalProbe12=true -Dabyss.highRiskFunctionalProbe13=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
