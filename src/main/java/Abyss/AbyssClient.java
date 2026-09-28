@@ -395,6 +395,24 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe30Stage;
     private int highRiskFunctionalProbe31Stage;
     private int highRiskFunctionalProbe32Stage;
+    private int highRiskFunctionalProbe32WaitTicks;
+    private boolean highRiskFunctionalProbe32Saved;
+    private BlockPos highRiskFunctionalProbe32Fixture;
+    private IBlockState highRiskFunctionalProbe32OriginalState;
+    private ItemStack highRiskFunctionalProbe32SavedSlot0;
+    private ItemStack highRiskFunctionalProbe32SavedSlot4;
+    private int highRiskFunctionalProbe32SavedCurrentItem;
+    private MovingObjectPosition highRiskFunctionalProbe32SavedMouseOver;
+    private boolean highRiskFunctionalProbe32SavedPriority;
+    private boolean highRiskFunctionalProbe32SavedDisableSword;
+    private boolean highRiskFunctionalProbe32SavedSwitchBackToSword;
+    private boolean highRiskFunctionalProbe32SavedSwitchBack;
+    private boolean highRiskFunctionalProbe32SavedRequireSneak;
+    private float highRiskFunctionalProbe32SavedDelay;
+    private boolean highRiskFunctionalProbe32SavedSwitching;
+    private int highRiskFunctionalProbe32SavedOriginalSlot;
+    private boolean highRiskFunctionalProbe32SavedPrimed;
+    private long highRiskFunctionalProbe32SavedTimerStart;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -7246,38 +7264,125 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe32() {
+        if (!this.highRiskFunctionalProbe32Saved) {
+            return;
+        }
+
+        AutoTool probe = Modules.J(AutoTool.class);
+        try {
+            if (probe != null) {
+                Field fieldOriginalSlot =
+                        AutoTool.class.getDeclaredField("J");
+                Field fieldSwitching =
+                        AutoTool.class.getDeclaredField("I");
+                Field fieldPrimed =
+                        AutoTool.class.getDeclaredField("S");
+                Field fieldTimer =
+                        AutoTool.class.getDeclaredField("t");
+                fieldOriginalSlot.setAccessible(true);
+                fieldSwitching.setAccessible(true);
+                fieldPrimed.setAccessible(true);
+                fieldTimer.setAccessible(true);
+
+                AutoTool.disableWhenHoldingSword.v(
+                        this.highRiskFunctionalProbe32SavedDisableSword, 0L);
+                AutoTool.switchBackToSword.v(
+                        this.highRiskFunctionalProbe32SavedSwitchBackToSword,
+                        0L);
+                AutoTool.switchBack.v(
+                        this.highRiskFunctionalProbe32SavedSwitchBack, 0L);
+                AutoTool.requireSneak.v(
+                        this.highRiskFunctionalProbe32SavedRequireSneak, 0L);
+                AutoTool.delay.o(
+                        (byte)0, 0L,
+                        this.highRiskFunctionalProbe32SavedDelay);
+                probe.T(this.highRiskFunctionalProbe32SavedPriority);
+
+                fieldSwitching.setBoolean(
+                        probe,
+                        this.highRiskFunctionalProbe32SavedSwitching);
+                fieldOriginalSlot.setInt(
+                        probe,
+                        this.highRiskFunctionalProbe32SavedOriginalSlot);
+                fieldPrimed.setBoolean(
+                        probe,
+                        this.highRiskFunctionalProbe32SavedPrimed);
+
+                TimerUtil timer = (TimerUtil)fieldTimer.get(probe);
+                if (timer != null) {
+                    timer.p(this.highRiskFunctionalProbe32SavedTimerStart);
+                }
+            }
+
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.inventory.mainInventory[0] =
+                        this.highRiskFunctionalProbe32SavedSlot0;
+                this.c.thePlayer.inventory.mainInventory[4] =
+                        this.highRiskFunctionalProbe32SavedSlot4;
+                this.c.thePlayer.inventory.currentItem =
+                        this.highRiskFunctionalProbe32SavedCurrentItem;
+            }
+            this.c.objectMouseOver =
+                    this.highRiskFunctionalProbe32SavedMouseOver;
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe32:AutoTool",
+                    "restore-state",
+                    restoreFailure);
+        }
+
+        if (this.c.theWorld != null
+                && this.highRiskFunctionalProbe32Fixture != null
+                && this.highRiskFunctionalProbe32OriginalState != null) {
+            try {
+                this.c.theWorld.setBlockState(
+                        this.highRiskFunctionalProbe32Fixture,
+                        this.highRiskFunctionalProbe32OriginalState,
+                        3);
+            }
+            catch (Throwable restoreFailure) {
+                recordFeatureFailure(
+                        "HighRiskFunctionalProbe32:AutoTool",
+                        "restore-world",
+                        restoreFailure);
+            }
+        }
+
+        this.highRiskFunctionalProbe32Saved = false;
+        this.highRiskFunctionalProbe32Fixture = null;
+        this.highRiskFunctionalProbe32OriginalState = null;
+        this.highRiskFunctionalProbe32SavedSlot0 = null;
+        this.highRiskFunctionalProbe32SavedSlot4 = null;
+        this.highRiskFunctionalProbe32SavedMouseOver = null;
+        this.highRiskFunctionalProbe32WaitTicks = 0;
+    }
+
+    private void pointAutoToolProbeAtFixture() {
+        BlockPos fixture = this.highRiskFunctionalProbe32Fixture;
+        if (fixture == null) {
+            return;
+        }
+        this.c.objectMouseOver = new MovingObjectPosition(
+                new Vec3(
+                        (double)fixture.getX() + 0.5,
+                        (double)fixture.getY() + 0.5,
+                        (double)fixture.getZ() + 0.5),
+                EnumFacing.UP,
+                fixture);
+    }
+
     private void pumpHighRiskFunctionalProbe32() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe32")
-                || this.highRiskFunctionalProbe32Stage != 0) {
+                || this.highRiskFunctionalProbe32Stage < 0
+                || this.highRiskFunctionalProbe32Stage >= 3) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe31")
                 && this.highRiskFunctionalProbe31Stage < 1) return;
 
         AutoTool probe = Modules.J(AutoTool.class);
-        BlockPos fixture = null;
-        IBlockState originalState = null;
-        ItemStack savedSlot0 = null;
-        ItemStack savedSlot4 = null;
-        int savedCurrentItem = -1;
-        MovingObjectPosition savedMouseOver = null;
-        boolean savedAttackDown = false;
-        boolean savedPriority = false;
-        boolean savedDisableSword = false;
-        boolean savedSwitchBackToSword = false;
-        boolean savedSwitchBack = false;
-        boolean savedRequireSneak = false;
-        float savedDelay = 0.0f;
-        Field fieldSwitching = null;
-        Field fieldOriginalSlot = null;
-        Field fieldPrimed = null;
-        Field fieldTimer = null;
-        TimerUtil probeTimer = null;
-        boolean savedSwitching = false;
-        int savedOriginalSlot = -1;
-        boolean savedPrimed = false;
-        long savedTimerStart = 0L;
-        boolean saved = false;
 
         try {
             if (probe == null
@@ -7297,202 +7402,225 @@ implements EventSubscriber {
                 return;
             }
 
-            fieldOriginalSlot = AutoTool.class.getDeclaredField("J");
+            Field fieldOriginalSlot =
+                    AutoTool.class.getDeclaredField("J");
+            Field fieldSwitching =
+                    AutoTool.class.getDeclaredField("I");
+            Field fieldPrimed =
+                    AutoTool.class.getDeclaredField("S");
+            Field fieldTimer =
+                    AutoTool.class.getDeclaredField("t");
             fieldOriginalSlot.setAccessible(true);
-            fieldSwitching = AutoTool.class.getDeclaredField("I");
             fieldSwitching.setAccessible(true);
-            fieldPrimed = AutoTool.class.getDeclaredField("S");
             fieldPrimed.setAccessible(true);
-            fieldTimer = AutoTool.class.getDeclaredField("t");
             fieldTimer.setAccessible(true);
-            probeTimer = (TimerUtil)fieldTimer.get(probe);
+            TimerUtil probeTimer = (TimerUtil)fieldTimer.get(probe);
             if (probeTimer == null) {
                 throw new IllegalStateException(
                         "AutoTool timer authority unavailable");
             }
 
-            savedCurrentItem = this.c.thePlayer.inventory.currentItem;
-            savedSlot0 = this.c.thePlayer.inventory.mainInventory[0];
-            savedSlot4 = this.c.thePlayer.inventory.mainInventory[4];
-            savedMouseOver = this.c.objectMouseOver;
-            savedAttackDown = this.c.gameSettings.keyBindAttack.isKeyDown();
-            savedPriority = probe.Y();
-            savedDisableSword = AutoTool.disableWhenHoldingSword.c();
-            savedSwitchBackToSword = AutoTool.switchBackToSword.c();
-            savedSwitchBack = AutoTool.switchBack.c();
-            savedRequireSneak = AutoTool.requireSneak.c();
-            savedDelay = AutoTool.delay.L();
-            savedSwitching = fieldSwitching.getBoolean(probe);
-            savedOriginalSlot = fieldOriginalSlot.getInt(probe);
-            savedPrimed = fieldPrimed.getBoolean(probe);
-            savedTimerStart = probeTimer.I;
-            saved = true;
-
-            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
-            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
-            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
-            for (int dy = 3; dy <= 6 && fixture == null; ++dy) {
-                for (int dx = 2; dx <= 6; ++dx) {
-                    BlockPos candidate =
-                            new BlockPos(baseX + dx, baseY + dy, baseZ + 1);
-                    if (this.c.theWorld.isAirBlock(candidate)) {
-                        fixture = candidate;
-                        break;
+            switch (this.highRiskFunctionalProbe32Stage) {
+                case 0: {
+                    BlockPos fixture = null;
+                    int baseX =
+                            MathHelper.floor_double(this.c.thePlayer.posX);
+                    int baseY =
+                            MathHelper.floor_double(this.c.thePlayer.posY);
+                    int baseZ =
+                            MathHelper.floor_double(this.c.thePlayer.posZ);
+                    for (int dy = 3; dy <= 6 && fixture == null; ++dy) {
+                        for (int dx = 2; dx <= 6; ++dx) {
+                            BlockPos candidate = new BlockPos(
+                                    baseX + dx,
+                                    baseY + dy,
+                                    baseZ + 1);
+                            if (this.c.theWorld.isAirBlock(candidate)) {
+                                fixture = candidate;
+                                break;
+                            }
+                        }
                     }
+                    if (fixture == null) {
+                        throw new IllegalStateException(
+                                "AutoTool probe found no temporary air position");
+                    }
+
+                    this.highRiskFunctionalProbe32Fixture = fixture;
+                    this.highRiskFunctionalProbe32OriginalState =
+                            this.c.theWorld.getBlockState(fixture);
+                    this.highRiskFunctionalProbe32SavedSlot0 =
+                            this.c.thePlayer.inventory.mainInventory[0];
+                    this.highRiskFunctionalProbe32SavedSlot4 =
+                            this.c.thePlayer.inventory.mainInventory[4];
+                    this.highRiskFunctionalProbe32SavedCurrentItem =
+                            this.c.thePlayer.inventory.currentItem;
+                    this.highRiskFunctionalProbe32SavedMouseOver =
+                            this.c.objectMouseOver;
+                    this.highRiskFunctionalProbe32SavedPriority = probe.Y();
+                    this.highRiskFunctionalProbe32SavedDisableSword =
+                            AutoTool.disableWhenHoldingSword.c();
+                    this.highRiskFunctionalProbe32SavedSwitchBackToSword =
+                            AutoTool.switchBackToSword.c();
+                    this.highRiskFunctionalProbe32SavedSwitchBack =
+                            AutoTool.switchBack.c();
+                    this.highRiskFunctionalProbe32SavedRequireSneak =
+                            AutoTool.requireSneak.c();
+                    this.highRiskFunctionalProbe32SavedDelay =
+                            AutoTool.delay.L();
+                    this.highRiskFunctionalProbe32SavedSwitching =
+                            fieldSwitching.getBoolean(probe);
+                    this.highRiskFunctionalProbe32SavedOriginalSlot =
+                            fieldOriginalSlot.getInt(probe);
+                    this.highRiskFunctionalProbe32SavedPrimed =
+                            fieldPrimed.getBoolean(probe);
+                    this.highRiskFunctionalProbe32SavedTimerStart =
+                            probeTimer.I;
+                    this.highRiskFunctionalProbe32Saved = true;
+
+                    if (!this.c.theWorld.setBlockState(
+                            fixture, Blocks.stone.getDefaultState(), 3)) {
+                        throw new IllegalStateException(
+                                "AutoTool probe could not place temporary stone");
+                    }
+
+                    this.c.thePlayer.inventory.mainInventory[0] =
+                            new ItemStack(Items.stick);
+                    this.c.thePlayer.inventory.mainInventory[4] =
+                            new ItemStack(Items.iron_pickaxe);
+                    this.c.thePlayer.inventory.currentItem = 0;
+
+                    AutoTool.disableWhenHoldingSword.v(false, 0L);
+                    AutoTool.switchBackToSword.v(false, 0L);
+                    AutoTool.switchBack.v(true, 0L);
+                    AutoTool.requireSneak.v(false, 0L);
+                    AutoTool.delay.o((byte)0, 0L, 0.0f);
+                    probe.T(true);
+                    fieldSwitching.setBoolean(probe, false);
+                    fieldOriginalSlot.setInt(probe, -1);
+                    fieldPrimed.setBoolean(probe, false);
+                    probeTimer.p(0L);
+
+                    int best = ItemUtil.e(0L, Blocks.stone);
+                    if (best != 4) {
+                        throw new IllegalStateException(
+                                "AutoTool ItemUtil ranking mismatch"
+                                        + " expected=4 actual=" + best);
+                    }
+
+                    this.pointAutoToolProbeAtFixture();
+                    this.highRiskFunctionalProbe32Stage = 1;
+                    this.highRiskFunctionalProbe32WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-ready:"
+                                    + "AutoTool:mouse=left");
+                    return;
                 }
+
+                case 1: {
+                    ++this.highRiskFunctionalProbe32WaitTicks;
+                    int attackKey =
+                            this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (!KeyBindUtil.V(
+                            attackKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe32WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "AutoTool physical mouse-down timeout");
+                        }
+                        return;
+                    }
+                    if (OutgoingPacketState.P || OutgoingPacketState.h) {
+                        return;
+                    }
+
+                    this.pointAutoToolProbeAtFixture();
+                    probe.onPreMouseInput(
+                            0L, new PreMouseInputEvent());
+
+                    if (this.c.thePlayer.inventory.currentItem == 4
+                            && fieldSwitching.getBoolean(probe)
+                            && fieldOriginalSlot.getInt(probe) == 0) {
+                        runtimeMilestone(
+                                "high-risk-functional-probe32-effect-pass:"
+                                        + "AutoTool:switch=0->4");
+                        this.highRiskFunctionalProbe32Stage = 2;
+                        this.highRiskFunctionalProbe32WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe32-ready-release:"
+                                        + "AutoTool:mouse=left");
+                        return;
+                    }
+
+                    if (this.highRiskFunctionalProbe32WaitTicks > 160) {
+                        throw new IllegalStateException(
+                                "AutoTool did not switch to ranked pickaxe"
+                                        + " slot="
+                                        + this.c.thePlayer.inventory.currentItem
+                                        + " switching="
+                                        + fieldSwitching.getBoolean(probe)
+                                        + " original="
+                                        + fieldOriginalSlot.getInt(probe));
+                    }
+                    return;
+                }
+
+                case 2: {
+                    ++this.highRiskFunctionalProbe32WaitTicks;
+                    int attackKey =
+                            this.c.gameSettings.keyBindAttack.getKeyCode();
+                    if (KeyBindUtil.V(
+                            attackKey, 64165991731362L)) {
+                        if (this.highRiskFunctionalProbe32WaitTicks > 480) {
+                            throw new IllegalStateException(
+                                    "AutoTool physical mouse-release timeout");
+                        }
+                        return;
+                    }
+
+                    this.pointAutoToolProbeAtFixture();
+                    probe.onPreMouseInput(
+                            0L, new PreMouseInputEvent());
+
+                    if (this.c.thePlayer.inventory.currentItem != 0
+                            || fieldSwitching.getBoolean(probe)
+                            || fieldOriginalSlot.getInt(probe) != -1) {
+                        throw new IllegalStateException(
+                                "AutoTool switch-back mismatch"
+                                        + " slot="
+                                        + this.c.thePlayer.inventory.currentItem
+                                        + " switching="
+                                        + fieldSwitching.getBoolean(probe)
+                                        + " original="
+                                        + fieldOriginalSlot.getInt(probe));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-effect-pass:"
+                                    + "AutoTool:switchBack=4->0");
+                    this.highRiskFunctionalProbe32Stage = 3;
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-module-pass:"
+                                    + "AutoTool");
+                    runtimeMilestone(
+                            "high-risk-functional-probe32-pass:1");
+                    this.restoreHighRiskFunctionalProbe32();
+                    return;
+                }
+
+                default:
+                    return;
             }
-            if (fixture == null) {
-                throw new IllegalStateException(
-                        "AutoTool probe found no temporary air position");
-            }
-            originalState = this.c.theWorld.getBlockState(fixture);
-            if (!this.c.theWorld.setBlockState(
-                    fixture, Blocks.stone.getDefaultState(), 3)) {
-                throw new IllegalStateException(
-                        "AutoTool probe could not place temporary stone");
-            }
-
-            this.c.thePlayer.inventory.mainInventory[0] =
-                    new ItemStack(Items.stick);
-            this.c.thePlayer.inventory.mainInventory[4] =
-                    new ItemStack(Items.iron_pickaxe);
-            this.c.thePlayer.inventory.currentItem = 0;
-
-            AutoTool.disableWhenHoldingSword.v(false, 0L);
-            AutoTool.switchBackToSword.v(false, 0L);
-            AutoTool.switchBack.v(true, 0L);
-            AutoTool.requireSneak.v(false, 0L);
-            AutoTool.delay.o((byte)0, 0L, 0.0f);
-            probe.T(true);
-            fieldSwitching.setBoolean(probe, false);
-            fieldOriginalSlot.setInt(probe, -1);
-            fieldPrimed.setBoolean(probe, false);
-            probeTimer.p(0L);
-
-            int best = ItemUtil.e(0L, Blocks.stone);
-            if (best != 4) {
-                throw new IllegalStateException(
-                        "AutoTool ItemUtil ranking mismatch expected=4 actual="
-                                + best);
-            }
-
-            this.c.objectMouseOver = new MovingObjectPosition(
-                    new Vec3(
-                            (double)fixture.getX() + 0.5,
-                            (double)fixture.getY() + 0.5,
-                            (double)fixture.getZ() + 0.5),
-                    EnumFacing.UP,
-                    fixture);
-            KeyBinding.setKeyBindState(
-                    this.c.gameSettings.keyBindAttack.getKeyCode(), true);
-
-            probe.onPreMouseInput(0L, new PreMouseInputEvent());
-
-            if (this.c.thePlayer.inventory.currentItem != 4
-                    || !fieldSwitching.getBoolean(probe)
-                    || fieldOriginalSlot.getInt(probe) != 0) {
-                throw new IllegalStateException(
-                        "AutoTool did not switch to ranked pickaxe"
-                                + " slot="
-                                + this.c.thePlayer.inventory.currentItem
-                                + " switching="
-                                + fieldSwitching.getBoolean(probe)
-                                + " original="
-                                + fieldOriginalSlot.getInt(probe));
-            }
-            runtimeMilestone(
-                    "high-risk-functional-probe32-effect-pass:AutoTool:"
-                            + "switch=0->4");
-
-            KeyBinding.setKeyBindState(
-                    this.c.gameSettings.keyBindAttack.getKeyCode(), false);
-            probe.onPreMouseInput(0L, new PreMouseInputEvent());
-
-            if (this.c.thePlayer.inventory.currentItem != 0
-                    || fieldSwitching.getBoolean(probe)
-                    || fieldOriginalSlot.getInt(probe) != -1) {
-                throw new IllegalStateException(
-                        "AutoTool switch-back mismatch"
-                                + " slot="
-                                + this.c.thePlayer.inventory.currentItem
-                                + " switching="
-                                + fieldSwitching.getBoolean(probe)
-                                + " original="
-                                + fieldOriginalSlot.getInt(probe));
-            }
-            runtimeMilestone(
-                    "high-risk-functional-probe32-effect-pass:AutoTool:"
-                            + "switchBack=4->0");
-
-            this.highRiskFunctionalProbe32Stage = 1;
-            runtimeMilestone(
-                    "high-risk-functional-probe32-module-pass:AutoTool");
-            runtimeMilestone("high-risk-functional-probe32-pass:1");
         }
         catch (Throwable failure) {
             this.highRiskFunctionalProbe32Stage = -1;
             recordFeatureFailure(
                     "HighRiskFunctionalProbe32:AutoTool",
-                    "tool-selection-switchback",
+                    "physical-tool-selection-switchback",
                     failure);
             runtimeMilestone(
                     "high-risk-functional-probe32-fail:"
                             + failure.getClass().getName());
-        }
-        finally {
-            try {
-                KeyBinding.setKeyBindState(
-                        this.c.gameSettings.keyBindAttack.getKeyCode(),
-                        savedAttackDown);
-            }
-            catch (Throwable ignored) {
-            }
-
-            if (saved && probe != null && this.c.thePlayer != null) {
-                try {
-                    this.c.thePlayer.inventory.mainInventory[0] = savedSlot0;
-                    this.c.thePlayer.inventory.mainInventory[4] = savedSlot4;
-                    this.c.thePlayer.inventory.currentItem = savedCurrentItem;
-                    this.c.objectMouseOver = savedMouseOver;
-
-                    AutoTool.disableWhenHoldingSword.v(
-                            savedDisableSword, 0L);
-                    AutoTool.switchBackToSword.v(
-                            savedSwitchBackToSword, 0L);
-                    AutoTool.switchBack.v(savedSwitchBack, 0L);
-                    AutoTool.requireSneak.v(savedRequireSneak, 0L);
-                    AutoTool.delay.o((byte)0, 0L, savedDelay);
-                    probe.T(savedPriority);
-
-                    fieldSwitching.setBoolean(probe, savedSwitching);
-                    fieldOriginalSlot.setInt(probe, savedOriginalSlot);
-                    fieldPrimed.setBoolean(probe, savedPrimed);
-                    if (probeTimer != null) {
-                        probeTimer.p(savedTimerStart);
-                    }
-                }
-                catch (Throwable restoreFailure) {
-                    recordFeatureFailure(
-                            "HighRiskFunctionalProbe32:AutoTool",
-                            "restore-state",
-                            restoreFailure);
-                }
-            }
-
-            if (this.c.theWorld != null
-                    && fixture != null
-                    && originalState != null) {
-                try {
-                    this.c.theWorld.setBlockState(
-                            fixture, originalState, 3);
-                }
-                catch (Throwable restoreFailure) {
-                    recordFeatureFailure(
-                            "HighRiskFunctionalProbe32:AutoTool",
-                            "restore-world",
-                            restoreFailure);
-                }
-            }
+            this.restoreHighRiskFunctionalProbe32();
         }
     }
 
