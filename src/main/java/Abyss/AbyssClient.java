@@ -38,6 +38,7 @@ import Abyss.module.impl.combat.HitBox;
 import Abyss.module.impl.combat.KeepSprint;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.macro.Macro1;
+import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.NameHider;
 import Abyss.module.impl.movement.NoJumpDelay;
@@ -1995,7 +1996,7 @@ implements EventSubscriber {
         try {
             if (ClickGUI.scale == null || ClickGUI.mode == null || ClickGUI.keybind == null
                     || Notifications.textShadow == null || Velocity.horizontal == null
-                    || Theme.customColor1 == null) {
+                    || Theme.customColor1 == null || AntiNick.suffix == null) {
                 throw new IllegalStateException("Persistence matrix setting is null");
 }
             ClickGUI.scale.o((byte)0, 0L, 1.75f);
@@ -2004,20 +2005,23 @@ implements EventSubscriber {
             Notifications.textShadow.v(false, 0L);
             Velocity.horizontal.d(67);
             Theme.customColor1.e("A1B2C3");
+            AntiNick.suffix.O("OPENABYSS_PROMOTED_PERSIST_7E51");
 
             if (Math.abs(ClickGUI.scale.L() - 1.75f) > 0.001f
                     || !ClickGUI.mode.R("RAVEN")
                     || !"LSHIFT".equals(ClickGUI.keybind.X())
                     || Notifications.textShadow.c()
                     || Velocity.horizontal.k() != 67
-                    || !"A1B2C3".equals(Theme.customColor1.Q())) {
+                    || !"A1B2C3".equals(Theme.customColor1.Q())
+                    || !"OPENABYSS_PROMOTED_PERSIST_7E51".equals(AntiNick.suffix.X())) {
                 throw new IllegalStateException("Persistence matrix did not accept seed values"
                         + " scale=" + ClickGUI.scale.L()
                         + " mode=" + ClickGUI.mode.Y()
                         + " keybind=" + ClickGUI.keybind.X()
                         + " textShadow=" + Notifications.textShadow.c()
                         + " horizontal=" + Velocity.horizontal.k()
-                        + " color=" + Theme.customColor1.Q());
+                        + " color=" + Theme.customColor1.Q()
+                        + " antiNickSuffix=" + AntiNick.suffix.X());
 }
             FullBright persistedModule = Modules.J(FullBright.class);
             if (persistedModule == null) {
@@ -2027,12 +2031,20 @@ implements EventSubscriber {
             if (!persistedModule.o()) {
                 throw new IllegalStateException("FullBright did not enter enabled state before save");
 }
+            AntiNick promotedPersistedModule = Modules.J(AntiNick.class);
+            if (promotedPersistedModule == null) {
+                throw new IllegalStateException("AntiNick module is missing");
+}
+            promotedPersistedModule.I(0L, true);
+            if (!promotedPersistedModule.o()) {
+                throw new IllegalStateException("AntiNick did not enter enabled state before save");
+}
             AbyssConfig.SaveResult result = AbyssConfig.save("current");
             if (result == null || !result.ok) {
                 throw new IllegalStateException("current config save failed: " + String.valueOf(result));
 }
-            runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true");
-            runtimeMilestone("persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true");
+            runtimeMilestone("persistence-probe-seed-pass:ClickGUI.Scale=1.75,FullBright=true,AntiNick=true");
+            runtimeMilestone("persistence-matrix-seed-pass:boolean=false,percentage=67,number=1.75,mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51");
 }
         catch (Throwable failure) {
             recordFeatureFailure("PersistenceProbe:ClickGUI", "seed-save", failure);
