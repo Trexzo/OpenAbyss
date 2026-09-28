@@ -133,7 +133,7 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
+        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
@@ -366,6 +366,9 @@ try {
                 'movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1',
                 'movement-functional-probe-restore-state-pass:NoJumpDelay',
                 'movement-functional-probe-pass:NoJumpDelay:',
+                'player-functional-probe-effect-pass:NoHitDelay:leftClickCounter=0',
+                'player-functional-probe-restore-state-pass:NoHitDelay',
+                'player-functional-probe-pass:NoHitDelay:',
                 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true',
                 'render-functional-probe-effect-pass:Ambience:worldTime=6000',
                 'packet-functional-probe-restore-state-pass:Ambience',
