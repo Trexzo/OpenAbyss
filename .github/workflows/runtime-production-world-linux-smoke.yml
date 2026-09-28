@@ -185,7 +185,7 @@ jobs:
                 OPENABYSS_PRODUCTION_WORLD_MC="$9" \
                 OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
                 LIBGL_ALWAYS_SOFTWARE=1 \
-                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
+                JAVA_TOOL_OPTIONS="-Dabyss.runtimeSelfTest=true -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.commandRuntimeProbe=true -Dabyss.networkCommandProbe=true -Dabyss.clickGuiModeProbe=true" \
                 GITHUB_TOKEN= \
                 ACTIONS_RUNTIME_TOKEN= \
                 ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
@@ -216,6 +216,10 @@ jobs:
           grep -Fq 'receive-hook:' "$NETWORK_STAGE"
           grep -Fq 'world-functional-probe-pass' "$STAGE"
           grep -Fq 'category-lifecycle-probe-pass:9' "$STAGE"
+          grep -Fq 'event-functional-probe-dispatch:FastPlace:rightClickDelay=4' "$STAGE"
+          grep -Fq 'event-functional-probe-effect-pass:FastPlace:rightClickDelay=1' "$STAGE"
+          grep -Fq 'event-functional-probe-pass:FastPlace:' "$STAGE"
+          echo 'PRODUCTION_WORLD_FASTPLACE_EVENT_EFFECT=PASS'
           for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
             grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
           done
