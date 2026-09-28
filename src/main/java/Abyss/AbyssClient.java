@@ -29,6 +29,7 @@ import Abyss.event.events.ClickMouseEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
 import Abyss.event.events.PostRenderEvent;
+import Abyss.event.events.PlayerGetNameEvent;
 import Abyss.event.events.PlayerRightClickEvent;
 import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.PostUpdateWalkingPlayerEvent;
@@ -138,6 +139,7 @@ import javax.crypto.spec.IvParameterSpec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -337,6 +339,7 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe13OriginalReloadRenderer;
     private boolean highRiskFunctionalProbe13Saved;
     private int highRiskFunctionalProbe14Stage;
+    private int highRiskFunctionalProbe15Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4491,6 +4494,81 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe15() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe15")
+                || this.highRiskFunctionalProbe15Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe14")
+                && this.highRiskFunctionalProbe14Stage < 1) return;
+
+        AntiNick probe = Modules.J(AntiNick.class);
+        boolean saved = false;
+        boolean originalEnabled = false;
+        String originalSuffix = null;
+        try {
+            if (probe == null
+                    || ModuleManager.f != probe
+                    || ModuleManager.byClass(AntiNick.class) != probe
+                    || ModuleManager.byName("AntiNick") != probe
+                    || AntiNick.suffix == null) {
+                throw new IllegalStateException("AntiNick live name-decoration authority unavailable");
+            }
+
+            originalEnabled = probe.o();
+            originalSuffix = AntiNick.suffix.X();
+            saved = true;
+
+            final String sentinel = " [OPENABYSS_ANTINICK_PROBE]";
+            AntiNick.suffix.O(sentinel);
+
+            NetworkPlayerInfo nicked = new NetworkPlayerInfo(new GameProfile(
+                    UUID.fromString("00000000-0000-1000-8000-000000000001"), "NickProbe"));
+            PlayerGetNameEvent nickedEvent = new PlayerGetNameEvent(nicked, "NickProbe");
+            probe.onPlayerGetName(nickedEvent);
+            if (!("NickProbe" + sentinel).equals(nickedEvent.d())) {
+                throw new IllegalStateException("AntiNick version-1 profile decoration mismatch: " + nickedEvent.d());
+            }
+            runtimeMilestone("high-risk-functional-probe15-effect-pass:AntiNick:version1=true");
+
+            NetworkPlayerInfo ordinary = new NetworkPlayerInfo(new GameProfile(
+                    UUID.fromString("00000000-0000-4000-8000-000000000001"), "OrdinaryProbe"));
+            PlayerGetNameEvent ordinaryEvent = new PlayerGetNameEvent(ordinary, "OrdinaryProbe");
+            probe.onPlayerGetName(ordinaryEvent);
+            if (!"OrdinaryProbe".equals(ordinaryEvent.d())) {
+                throw new IllegalStateException("AntiNick non-version-1 profile was decorated: " + ordinaryEvent.d());
+            }
+            runtimeMilestone("high-risk-functional-probe15-effect-pass:AntiNick:version4=false");
+
+            AntiNick.suffix.O(originalSuffix);
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+            if (probe.o() != originalEnabled
+                    || !String.valueOf(originalSuffix).equals(String.valueOf(AntiNick.suffix.X()))
+                    || probe.l() || probe.K()) {
+                throw new IllegalStateException("AntiNick probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe15Stage = 1;
+            runtimeMilestone("high-risk-functional-probe15-restore-pass:AntiNick:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe15-module-pass:AntiNick");
+            runtimeMilestone("high-risk-functional-probe15-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    AntiNick.suffix.O(originalSuffix);
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe15:AntiNick", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe15Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe15:AntiNick", "player-name-decoration", failure);
+            runtimeMilestone("high-risk-functional-probe15-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5463,6 +5541,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe12();
         this.pumpHighRiskFunctionalProbe13();
         this.pumpHighRiskFunctionalProbe14();
+        this.pumpHighRiskFunctionalProbe15();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
