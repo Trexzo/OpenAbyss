@@ -97,7 +97,49 @@ OPTIONS
 # Intentionally do NOT pass Minecraft's --server argument here.
 # Direct --server skips the main menu, which also skips OpenAbyss's normal
 # no-world tick cleanup (including PacketManager buffering reset).
-python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch   --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC"   --game-dir "$GAME_DIR"   --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR"   --java "$JAVA_HOME/bin/java"   --username CIProdWorld   >"$STDOUT" 2>"$STDERR" &
+#
+# Pass diagnostic properties as explicit JVM arguments. The Java 8 launcher
+# silently stopped consuming JAVA_TOOL_OPTIONS once this probe set exceeded
+# roughly 1 KiB, which disabled every runtime probe at once.
+PROBE_JVM_ARGS=(
+  "--jvm-arg=-Dabyss.runtimeSelfTest=true"
+  "--jvm-arg=-Dabyss.worldFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.categoryLifecycleProbe=true"
+  "--jvm-arg=-Dabyss.promotedRegistryProbe=true"
+  "--jvm-arg=-Dabyss.eventFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.movementFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.playerFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.combatFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.packetFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.macroFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.visualUtilityFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe2=true"
+  "--jvm-arg=-Dabyss.physicalInputFunctionalProbe=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe3=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe4=true"
+  "--jvm-arg=-Dabyss.invMovePhysicalProbe=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe5=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe6=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe7=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe8=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe9=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe10=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe11=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe12=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe13=true"
+  "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
+  "--jvm-arg=-Dabyss.networkCommandProbe=true"
+  "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
+)
+python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch \
+  --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC" \
+  --game-dir "$GAME_DIR" \
+  --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR" \
+  --java "$JAVA_HOME/bin/java" \
+  --username CIProdWorld \
+  "${PROBE_JVM_ARGS[@]}" \
+  >"$STDOUT" 2>"$STDERR" &
 CLIENT_PID=$!
 
 STAGE="$GAME_DIR/abyss-runtime-stage.txt"
