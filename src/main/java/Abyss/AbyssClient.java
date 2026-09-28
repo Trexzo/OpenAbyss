@@ -1184,6 +1184,7 @@ implements EventSubscriber {
                     return;
                 }
                 runtimeMilestone("macro-functional-probe-dispatch:Macro1:CHAT:" + MACRO_FUNCTIONAL_PROBE_SENTINEL);
+                runtimeMilestone("macro-functional-probe-packet-buffer:" + PacketManager.e());
                 w.e(new PreTickEvent(), 0L);
                 if (probe.o()) {
                     throw new IllegalStateException("Macro1 CHAT PreTick did not request self-disable");
