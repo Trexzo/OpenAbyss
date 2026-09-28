@@ -81,6 +81,7 @@ import Abyss.module.impl.visual.CaveXray;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.ItemScale;
+import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
@@ -140,6 +141,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -340,6 +342,7 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe13Saved;
     private int highRiskFunctionalProbe14Stage;
     private int highRiskFunctionalProbe15Stage;
+    private int highRiskFunctionalProbe16Stage;
     private int invMovePhysicalProbeStage;
     private int invMovePhysicalProbeWaitTicks;
     private boolean invMovePhysicalOriginalEnabled;
@@ -4569,6 +4572,97 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe16() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe16")
+                || this.highRiskFunctionalProbe16Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe15")
+                && this.highRiskFunctionalProbe15Stage < 1) return;
+
+        KeyStrokes probe = Modules.J(KeyStrokes.class);
+        Map<KeyBinding, Long> timestamps = null;
+        Map<KeyBinding, Long> originalTimestamps = null;
+        boolean originalEnabled = false;
+        boolean saved = false;
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(KeyStrokes.class) != probe
+                    || ModuleManager.byName("KeyStrokes") != probe
+                    || KeyStrokes.offsetX == null
+                    || KeyStrokes.offsetY == null
+                    || KeyStrokes.backgroundOpacity == null) {
+                throw new IllegalStateException("KeyStrokes live input-display authority unavailable");
+            }
+
+            Field timestampsField = KeyStrokes.class.getDeclaredField("h");
+            timestampsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<KeyBinding, Long> liveTimestamps = (Map<KeyBinding, Long>)timestampsField.get(null);
+            timestamps = liveTimestamps;
+            if (timestamps == null) {
+                throw new IllegalStateException("KeyStrokes timestamp map is null");
+            }
+
+            originalTimestamps = new HashMap<KeyBinding, Long>(timestamps);
+            originalEnabled = probe.o();
+            saved = true;
+
+            KeyStrokes.T();
+            KeyBinding forward = this.c.gameSettings.keyBindForward;
+            if (!timestamps.containsKey(forward)) {
+                throw new IllegalStateException("KeyStrokes forward binding was not initialized");
+            }
+
+            timestamps.put(forward, Long.valueOf(0L));
+            long before = System.currentTimeMillis();
+            probe.onSetKeyBindState(new SetKeyBindStateEvent(forward.getKeyCode()));
+            Long stamped = timestamps.get(forward);
+            if (stamped == null || stamped.longValue() < before) {
+                throw new IllegalStateException("KeyStrokes SetKeyBindState event did not stamp the forward key");
+            }
+            runtimeMilestone("high-risk-functional-probe16-effect-pass:KeyStrokes:setKeyBindState=true");
+
+            timestamps.put(forward, Long.valueOf(0L));
+            probe.onIsPressed(new Abyss.event.events.IsPressedEvent(forward.getKeyCode(), true));
+            stamped = timestamps.get(forward);
+            if (stamped == null || stamped.longValue() <= 0L) {
+                throw new IllegalStateException("KeyStrokes IsPressed event did not stamp the forward key");
+            }
+            runtimeMilestone("high-risk-functional-probe16-effect-pass:KeyStrokes:isPressed=true");
+
+            timestamps.clear();
+            timestamps.putAll(originalTimestamps);
+            this.setModuleEnabledRawForProbe(probe, originalEnabled);
+            if (probe.o() != originalEnabled || probe.l() || probe.K()
+                    || !timestamps.equals(originalTimestamps)) {
+                throw new IllegalStateException("KeyStrokes probe state did not restore exactly");
+            }
+
+            this.highRiskFunctionalProbe16Stage = 1;
+            runtimeMilestone("high-risk-functional-probe16-restore-pass:KeyStrokes:enabled=" + originalEnabled);
+            runtimeMilestone("high-risk-functional-probe16-module-pass:KeyStrokes");
+            runtimeMilestone("high-risk-functional-probe16-pass:1");
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    if (timestamps != null && originalTimestamps != null) {
+                        timestamps.clear();
+                        timestamps.putAll(originalTimestamps);
+                    }
+                    this.setModuleEnabledRawForProbe(probe, originalEnabled);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure("HighRiskFunctionalProbe16:KeyStrokes", "restore", restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe16Stage = -1;
+            recordFeatureFailure("HighRiskFunctionalProbe16:KeyStrokes", "input-timestamp-events", failure);
+            runtimeMilestone("high-risk-functional-probe16-fail:" + failure.getClass().getName());
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -5542,6 +5636,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe13();
         this.pumpHighRiskFunctionalProbe14();
         this.pumpHighRiskFunctionalProbe15();
+        this.pumpHighRiskFunctionalProbe16();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
