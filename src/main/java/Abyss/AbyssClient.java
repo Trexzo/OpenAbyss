@@ -390,6 +390,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe29Stage;
     private int highRiskFunctionalProbe29WaitTicks;
     private int highRiskFunctionalProbe30Stage;
+    private int highRiskFunctionalProbe31Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -7114,6 +7115,130 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe31() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe31")
+                || this.highRiskFunctionalProbe31Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe30")
+                && this.highRiskFunctionalProbe30Stage < 1) return;
+
+        BlockPos fixture = null;
+        IBlockState originalState = null;
+        List<BlockPos> savedBeds = new ArrayList<BlockPos>(BedNuker.D);
+        boolean savedActive = this.bedScanActive;
+        int savedCursor = this.bedScanCursor;
+        int savedMinX = this.bedScanMinX;
+        int savedMinY = this.bedScanMinY;
+        int savedMinZ = this.bedScanMinZ;
+        int savedSpanY = this.bedScanSpanY;
+        int savedSpanZ = this.bedScanSpanZ;
+        int savedVolume = this.bedScanVolume;
+
+        try {
+            if (ModuleManager.byName("BedNuker") == null
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || BedNuker.D == null) {
+                throw new IllegalStateException(
+                        "BedNuker scan authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            for (int dy = 3; dy <= 6 && fixture == null; ++dy) {
+                for (int dx = 2; dx <= 6; ++dx) {
+                    BlockPos candidate =
+                            new BlockPos(baseX + dx, baseY + dy, baseZ + 2);
+                    if (this.c.theWorld.isAirBlock(candidate)) {
+                        fixture = candidate;
+                        break;
+                    }
+                }
+            }
+            if (fixture == null) {
+                throw new IllegalStateException(
+                        "BedNuker probe found no temporary air position");
+            }
+
+            originalState = this.c.theWorld.getBlockState(fixture);
+            if (!this.c.theWorld.setBlockState(
+                    fixture, Blocks.bed.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "BedNuker probe could not place temporary bed");
+            }
+
+            BedNuker.D.clear();
+            this.bedScanMinX = fixture.getX();
+            this.bedScanMinY = fixture.getY();
+            this.bedScanMinZ = fixture.getZ();
+            this.bedScanSpanY = 1;
+            this.bedScanSpanZ = 1;
+            this.bedScanVolume = 1;
+            this.bedScanCursor = 0;
+            this.bedScanActive = true;
+
+            this.pumpBedScan();
+
+            if (this.bedScanActive
+                    || this.bedScanCursor != 1
+                    || BedNuker.D.size() != 1
+                    || !BedNuker.D.contains(fixture)) {
+                throw new IllegalStateException(
+                        "BedNuker one-cell scan mismatch active="
+                                + this.bedScanActive
+                                + " cursor=" + this.bedScanCursor
+                                + " beds=" + BedNuker.D);
+            }
+
+            runtimeMilestone(
+                    "high-risk-functional-probe31-effect-pass:BedNuker:"
+                            + "scanFixture=1:cursor=1:active=false");
+            this.highRiskFunctionalProbe31Stage = 1;
+            runtimeMilestone(
+                    "high-risk-functional-probe31-module-pass:BedNuker");
+            runtimeMilestone("high-risk-functional-probe31-pass:1");
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe31Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe31:BedNuker",
+                    "one-cell-scan",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe31-fail:"
+                            + failure.getClass().getName());
+        }
+        finally {
+            try {
+                if (this.c.theWorld != null
+                        && fixture != null
+                        && originalState != null) {
+                    this.c.theWorld.setBlockState(
+                            fixture, originalState, 3);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                recordFeatureFailure(
+                        "HighRiskFunctionalProbe31:BedNuker",
+                        "restore-world",
+                        restoreFailure);
+            }
+
+            BedNuker.D.clear();
+            BedNuker.D.addAll(savedBeds);
+            this.bedScanActive = savedActive;
+            this.bedScanCursor = savedCursor;
+            this.bedScanMinX = savedMinX;
+            this.bedScanMinY = savedMinY;
+            this.bedScanMinZ = savedMinZ;
+            this.bedScanSpanY = savedSpanY;
+            this.bedScanSpanZ = savedSpanZ;
+            this.bedScanVolume = savedVolume;
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -8102,6 +8227,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe28();
         this.pumpHighRiskFunctionalProbe29();
         this.pumpHighRiskFunctionalProbe30();
+        this.pumpHighRiskFunctionalProbe31();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
