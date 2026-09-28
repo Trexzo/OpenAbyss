@@ -154,6 +154,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe37=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe38=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe39=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe40=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1189,6 +1190,72 @@ if [ "$SPRINTRESET_RELEASED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_SPRINTRESET=PASS input=real-W mode=LEGIT'
+
+AUTOWEAPON_READY=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe40-ready:AutoWeapon:mouse=left:best=4' "$STAGE"; then
+    AUTOWEAPON_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe40-fail:' "$STAGE"; then
+    echo 'AutoWeapon physical best-weapon probe failed before LMB input.'
+    grep -F 'high-risk-functional-probe40-' "$STAGE" || true
+    cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+    exit 1
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before AutoWeapon became ready.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$AUTOWEAPON_READY" -ne 1 ]; then
+  echo 'AutoWeapon physical best-weapon probe did not become ready.'
+  grep -F 'high-risk-functional-probe40-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+DISPLAY=:99 xdotool mousedown 1
+AUTOWEAPON_EFFECT=0
+for _ in $(seq 1 160); do
+  if grep -Fq 'high-risk-functional-probe40-effect-pass:AutoWeapon:switch=0->4:physicalLmb=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe40-ready-release:AutoWeapon:mouse=left' "$STAGE"; then
+    AUTOWEAPON_EFFECT=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe40-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+DISPLAY=:99 xdotool mouseup 1
+if [ "$AUTOWEAPON_EFFECT" -ne 1 ]; then
+  echo 'AutoWeapon did not switch from wooden sword slot 0 to diamond sword slot 4 under real X11 LMB.'
+  grep -F 'high-risk-functional-probe40-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AUTOWEAPON_EFFECT=PASS input=xdotool-mousedown-1 switch=0->4'
+
+AUTOWEAPON_RESTORED=0
+for _ in $(seq 1 240); do
+  if grep -Fq 'high-risk-functional-probe40-pass:1' "$STAGE"; then
+    AUTOWEAPON_RESTORED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe40-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$AUTOWEAPON_RESTORED" -ne 1 ]; then
+  echo 'AutoWeapon physical best-weapon probe did not restore cleanly after LMB release.'
+  grep -F 'high-risk-functional-probe40-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_PHYSICAL_AUTOWEAPON=PASS input=real-LMB best=diamond_sword'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
