@@ -83,10 +83,87 @@ if [ "$SERVER_READY" -ne 1 ]; then
 fi
 echo 'PRODUCTION_WORLD_SERVER_READY=PASS'
 
-python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch   --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC"   --game-dir "$GAME_DIR"   --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR"   --java "$JAVA_HOME/bin/java"   --username CIProdWorld   --server 127.0.0.1   --port 25565   >"$STDOUT" 2>"$STDERR" &
+# Use a deterministic 1:1 GUI scale so xdotool coordinates match vanilla GuiScreen coordinates.
+# The game directory is isolated and newly created above, so this does not alter a user's profile.
+cat > "$GAME_DIR/options.txt" <<'OPTIONS'
+guiScale:1
+lang:en_US
+OPTIONS
+
+# Intentionally do NOT pass Minecraft's --server argument here.
+# Direct --server skips the main menu, which also skips OpenAbyss's normal
+# no-world tick cleanup (including PacketManager buffering reset).
+python "$GITHUB_WORKSPACE/tools/production_forge_linux.py" launch   --minecraft-dir "$OPENABYSS_PRODUCTION_WORLD_MC"   --game-dir "$GAME_DIR"   --abyss-jar "$OPENABYSS_PRODUCTION_WORLD_JAR"   --java "$JAVA_HOME/bin/java"   --username CIProdWorld   >"$STDOUT" 2>"$STDERR" &
 CLIENT_PID=$!
 
 STAGE="$GAME_DIR/abyss-runtime-stage.txt"
+MENU_READY=0
+for _ in $(seq 1 120); do
+  if [ -f "$STAGE" ] && grep -Fq 'menu-no-world-tick' "$STAGE"; then
+    MENU_READY=1
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before main-menu/no-world tick.'
+    tail -n 300 "$STDOUT" || true
+    tail -n 300 "$STDERR" || true
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$MENU_READY" -ne 1 ]; then
+  echo 'Production main-menu/no-world tick was not observed before connect.'
+  cat "$STAGE" 2>/dev/null || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_MENU_TICK=PASS'
+
+WINDOW=""
+for _ in $(seq 1 120); do
+  WINDOW="$(DISPLAY=:99 xdotool search --onlyvisible --name 'Minecraft' 2>/dev/null | head -n 1 || true)"
+  if [ -n "$WINDOW" ]; then
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before Minecraft window became available.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ -z "$WINDOW" ]; then
+  echo 'Production Minecraft window was not found at main menu.'
+  exit 1
+fi
+
+eval "$(DISPLAY=:99 xdotool getwindowgeometry --shell "$WINDOW")"
+if [ -z "${WIDTH:-}" ] || [ -z "${HEIGHT:-}" ]; then
+  echo 'Could not resolve production Minecraft window geometry.'
+  exit 1
+fi
+
+DISPLAY=:99 xdotool windowfocus --sync "$WINDOW"
+sleep 0.5
+
+MULTIPLAYER_X=$((WIDTH / 2))
+MULTIPLAYER_Y=$((HEIGHT / 4 + 82))
+DIRECT_X=$((WIDTH / 2))
+DIRECT_Y=$((HEIGHT - 42))
+
+echo "PRODUCTION_WORLD_MENU_GEOMETRY=${WIDTH}x${HEIGHT}"
+echo "PRODUCTION_WORLD_MULTIPLAYER_CLICK=${MULTIPLAYER_X},${MULTIPLAYER_Y}"
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$MULTIPLAYER_X" "$MULTIPLAYER_Y" click 1
+sleep 0.75
+
+echo "PRODUCTION_WORLD_DIRECT_CONNECT_CLICK=${DIRECT_X},${DIRECT_Y}"
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$DIRECT_X" "$DIRECT_Y" click 1
+sleep 0.50
+
+DISPLAY=:99 xdotool key --clearmodifiers ctrl+a
+DISPLAY=:99 xdotool type --clearmodifiers --delay 25 -- '127.0.0.1:25565'
+sleep 0.20
+DISPLAY=:99 xdotool key --clearmodifiers Return
+echo 'PRODUCTION_WORLD_UI_CONNECT_REQUEST=PASS'
+
 WORLD_READY=0
 STALL_DUMPED=0
 for WAIT_ITER in $(seq 1 180); do
