@@ -11208,8 +11208,19 @@ implements EventSubscriber {
                                     + "cleared=" + clearedPriorityEntries
                                     + ":available=" + probe.Y());
 
-                    this.c.displayGuiScreen(
-                            new GuiInventory(this.c.thePlayer));
+                    // GuiInventory.initGui() redirects to GuiContainerCreative
+                    // when the local controller is creative. InvManager OPEN_INV
+                    // intentionally accepts only GuiInventory, while this probe
+                    // intentionally needs creative authority to seed exact slots.
+                    // Hold an uninitialized GuiInventory as currentScreen only for
+                    // these synchronous handler calls; sorting itself uses
+                    // playerController + inventoryContainer and does not depend on
+                    // GUI rendering coordinates.
+                    this.c.currentScreen =
+                            new GuiInventory(this.c.thePlayer);
+                    runtimeMilestone(
+                            "high-risk-functional-probe43-screen-fixture-pass:"
+                                    + this.c.currentScreen.getClass().getSimpleName());
 
                     Pair bestSwordBefore =
                             ItemUtil.q(
