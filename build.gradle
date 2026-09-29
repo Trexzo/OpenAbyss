@@ -269,3 +269,4 @@ task packageWindowsLauncher(type: Zip, dependsOn: [abyssReobfJar, writeLauncherB
         include 'README.txt'
     }
 }
+// Certification trigger only: no build behavior change.
