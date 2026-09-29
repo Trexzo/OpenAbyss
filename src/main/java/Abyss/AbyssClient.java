@@ -93,6 +93,7 @@ import Abyss.module.impl.movement.Speed;
 import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
+import Abyss.module.impl.player.ChestStealer;
 import Abyss.module.impl.player.InvClicker;
 import Abyss.module.impl.player.InvManager;
 import Abyss.module.impl.player.NoHitDelay;
@@ -618,6 +619,16 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe45OriginalAutoDisable;
     private static final String HIGH_RISK_FUNCTIONAL_PROBE45_SENTINEL =
             "OPENABYSS_BLINK_45";
+    private int highRiskFunctionalProbe46Stage;
+    private int highRiskFunctionalProbe46WaitTicks;
+    private boolean highRiskFunctionalProbe46Saved;
+    private boolean highRiskFunctionalProbe46OriginalEnabled;
+    private boolean[] highRiskFunctionalProbe46OriginalBooleans;
+    private float[] highRiskFunctionalProbe46OriginalNumbers;
+    private ItemStack[] highRiskFunctionalProbe46OriginalMainInventory;
+    private int highRiskFunctionalProbe46OriginalCurrentItem;
+    private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe46OriginalScreen;
+    private net.minecraft.inventory.Container highRiskFunctionalProbe46OriginalOpenContainer;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12009,6 +12020,325 @@ implements EventSubscriber {
         }
     }
 
+    private int highRiskFunctionalProbe46CountItem(
+            net.minecraft.item.Item item) {
+        if (this.c.thePlayer == null || item == null) {
+            return 0;
+        }
+        int count = 0;
+        for (int slot = 0; slot < 36; ++slot) {
+            ItemStack stack = this.c.thePlayer.inventory.getStackInSlot(slot);
+            if (stack != null && stack.getItem() == item) {
+                count += stack.stackSize;
+            }
+        }
+        return count;
+    }
+
+    private void restoreHighRiskFunctionalProbe46() {
+        if (!this.highRiskFunctionalProbe46Saved) {
+            return;
+        }
+        try {
+            ChestStealer probe = Modules.J(ChestStealer.class);
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(probe, false);
+            }
+
+            if (this.c.thePlayer != null
+                    && this.highRiskFunctionalProbe46OriginalMainInventory != null) {
+                for (int slot = 0;
+                        slot < this.highRiskFunctionalProbe46OriginalMainInventory.length;
+                        ++slot) {
+                    this.syncCreativeProbeSlot(
+                            slot,
+                            this.highRiskFunctionalProbe46OriginalMainInventory[slot]);
+                }
+                this.c.thePlayer.inventory.currentItem =
+                        this.highRiskFunctionalProbe46OriginalCurrentItem;
+                if (this.highRiskFunctionalProbe46OriginalOpenContainer != null) {
+                    this.c.thePlayer.openContainer =
+                            this.highRiskFunctionalProbe46OriginalOpenContainer;
+                }
+            }
+
+            if (this.c.currentScreen
+                    != this.highRiskFunctionalProbe46OriginalScreen) {
+                this.c.displayGuiScreen(null);
+                if (this.highRiskFunctionalProbe46OriginalScreen != null) {
+                    this.c.displayGuiScreen(
+                            this.highRiskFunctionalProbe46OriginalScreen);
+                }
+            }
+
+            if (this.highRiskFunctionalProbe46OriginalBooleans != null) {
+                boolean[] b = this.highRiskFunctionalProbe46OriginalBooleans;
+                ChestStealer.autoClose.v(b[0], 0L);
+                ChestStealer.ignoreTrash.v(b[1], 0L);
+                ChestStealer.chestIntegrityCheck.v(b[2], 0L);
+                ChestStealer.silent.v(b[3], 0L);
+                ChestStealer.armor.v(b[4], 0L);
+                ChestStealer.blocks.v(b[5], 0L);
+                ChestStealer.bow.v(b[6], 0L);
+                ChestStealer.food.v(b[7], 0L);
+                ChestStealer.potions.v(b[8], 0L);
+                ChestStealer.projectiles.v(b[9], 0L);
+                ChestStealer.sword.v(b[10], 0L);
+                ChestStealer.tools.v(b[11], 0L);
+            }
+            if (this.highRiskFunctionalProbe46OriginalNumbers != null) {
+                float[] n = this.highRiskFunctionalProbe46OriginalNumbers;
+                ChestStealer.startDelay.o((byte)0, 0L, n[0]);
+                ChestStealer.minDelay.o((byte)0, 0L, n[1]);
+                ChestStealer.maxDelay.o((byte)0, 0L, n[2]);
+            }
+
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe46OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe46:ChestStealer",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe46WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe46() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe46")
+                || this.highRiskFunctionalProbe46Stage < 0
+                || this.highRiskFunctionalProbe46Stage >= 4) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe45")
+                && this.highRiskFunctionalProbe45Stage < 8) {
+            return;
+        }
+
+        ChestStealer probe = Modules.J(ChestStealer.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(ChestStealer.class) != probe
+                    || ModuleManager.byName("ChestStealer") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || !this.c.playerController.isInCreativeMode()) {
+                throw new IllegalStateException(
+                        "ChestStealer creative inventory authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe46Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe46OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe46OriginalBooleans =
+                            new boolean[] {
+                                ChestStealer.autoClose.c(),
+                                ChestStealer.ignoreTrash.c(),
+                                ChestStealer.chestIntegrityCheck.c(),
+                                ChestStealer.silent.c(),
+                                ChestStealer.armor.c(),
+                                ChestStealer.blocks.c(),
+                                ChestStealer.bow.c(),
+                                ChestStealer.food.c(),
+                                ChestStealer.potions.c(),
+                                ChestStealer.projectiles.c(),
+                                ChestStealer.sword.c(),
+                                ChestStealer.tools.c()
+                            };
+                    this.highRiskFunctionalProbe46OriginalNumbers =
+                            new float[] {
+                                ChestStealer.startDelay.L(),
+                                ChestStealer.minDelay.L(),
+                                ChestStealer.maxDelay.L()
+                            };
+                    this.highRiskFunctionalProbe46OriginalMainInventory =
+                            new ItemStack[36];
+                    for (int slot = 0; slot < 36; ++slot) {
+                        ItemStack original =
+                                this.c.thePlayer.inventory.getStackInSlot(slot);
+                        this.highRiskFunctionalProbe46OriginalMainInventory[slot] =
+                                original == null ? null : original.copy();
+                    }
+                    this.highRiskFunctionalProbe46OriginalCurrentItem =
+                            this.c.thePlayer.inventory.currentItem;
+                    this.highRiskFunctionalProbe46OriginalScreen =
+                            this.c.currentScreen;
+                    this.highRiskFunctionalProbe46OriginalOpenContainer =
+                            this.c.thePlayer.openContainer;
+                    this.highRiskFunctionalProbe46Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                        this.highRiskFunctionalProbe46Stage = 1;
+                        this.highRiskFunctionalProbe46WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe46-isolate-request:"
+                                        + "ChestStealer");
+                        return;
+                    }
+                    this.highRiskFunctionalProbe46Stage = 2;
+                    return;
+                }
+
+                case 1: {
+                    if (probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || probe.P()
+                            || w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe46WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "ChestStealer did not isolate from live lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    this.highRiskFunctionalProbe46Stage = 2;
+                    this.highRiskFunctionalProbe46WaitTicks = 0;
+                    return;
+                }
+
+                case 2: {
+                    ChestStealer.autoClose.v(false, 0L);
+                    ChestStealer.ignoreTrash.v(false, 0L);
+                    ChestStealer.chestIntegrityCheck.v(false, 0L);
+                    ChestStealer.silent.v(false, 0L);
+                    ChestStealer.armor.v(false, 0L);
+                    ChestStealer.blocks.v(false, 0L);
+                    ChestStealer.bow.v(false, 0L);
+                    ChestStealer.food.v(true, 0L);
+                    ChestStealer.potions.v(false, 0L);
+                    ChestStealer.projectiles.v(false, 0L);
+                    ChestStealer.sword.v(false, 0L);
+                    ChestStealer.tools.v(false, 0L);
+                    ChestStealer.startDelay.o((byte)0, 0L, 0.0f);
+                    ChestStealer.minDelay.o((byte)0, 0L, 0.0f);
+                    ChestStealer.maxDelay.o((byte)0, 0L, 0.0f);
+
+                    for (int slot = 0; slot < 36; ++slot) {
+                        this.syncCreativeProbeSlot(slot, null);
+                    }
+                    this.c.thePlayer.inventory.currentItem = 0;
+
+                    InventoryBasic chest =
+                            new InventoryBasic(
+                                    "OpenAbyss ChestStealer Probe",
+                                    false,
+                                    9);
+                    chest.setInventorySlotContents(
+                            0,
+                            new ItemStack(Items.apple, 3));
+                    GuiChest fixture =
+                            new GuiChest(
+                                    this.c.thePlayer.inventory,
+                                    chest);
+                    this.c.displayGuiScreen(fixture);
+                    this.c.thePlayer.openContainer = fixture.inventorySlots;
+
+                    this.setModuleEnabledRawForProbe(probe, true);
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "ChestStealer fixture EventBus binding inactive");
+                    }
+
+                    int applesBefore =
+                            this.highRiskFunctionalProbe46CountItem(
+                                    Items.apple);
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
+                    int applesAfter =
+                            this.highRiskFunctionalProbe46CountItem(
+                                    Items.apple);
+                    ItemStack chestAfter = chest.getStackInSlot(0);
+
+                    if (applesBefore != 0
+                            || applesAfter != 3
+                            || chestAfter != null) {
+                        throw new IllegalStateException(
+                                "ChestStealer shift-click effect mismatch"
+                                        + " before=" + applesBefore
+                                        + " after=" + applesAfter
+                                        + " chest="
+                                        + this.describeProbeStack(chestAfter));
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe46-effect-pass:"
+                                    + "ChestStealer:shiftClick=chest0->player"
+                                    + ":item=apple*3");
+                    this.highRiskFunctionalProbe46Stage = 3;
+                    return;
+                }
+
+                case 3: {
+                    this.restoreHighRiskFunctionalProbe46();
+                    ChestStealer restored =
+                            Modules.J(ChestStealer.class);
+                    boolean enabledRestored =
+                            restored != null
+                                    && restored.o()
+                                            == this.highRiskFunctionalProbe46OriginalEnabled;
+                    boolean inventoryRestored = true;
+                    for (int slot = 0; slot < 36; ++slot) {
+                        ItemStack expected =
+                                this.highRiskFunctionalProbe46OriginalMainInventory[slot];
+                        ItemStack actual =
+                                this.c.thePlayer.inventory.getStackInSlot(slot);
+                        if (!ItemStack.areItemStacksEqual(expected, actual)) {
+                            inventoryRestored = false;
+                            break;
+                        }
+                    }
+                    if (!enabledRestored || !inventoryRestored) {
+                        throw new IllegalStateException(
+                                "ChestStealer probe state did not restore"
+                                        + " enabled=" + enabledRestored
+                                        + " inventory=" + inventoryRestored);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe46-restore-pass:"
+                                    + "ChestStealer:enabled="
+                                    + this.highRiskFunctionalProbe46OriginalEnabled
+                                    + ":inventory=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe46-module-pass:"
+                                    + "ChestStealer");
+                    runtimeMilestone(
+                            "high-risk-functional-probe46-pass:1");
+                    this.highRiskFunctionalProbe46Saved = false;
+                    this.highRiskFunctionalProbe46Stage = 4;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe46Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe46:ChestStealer",
+                    "physical-shift-click",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe46-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe46();
+        }
+    }
+
     private boolean highRiskFunctionalProbe45ContainsChat(
             java.util.Collection<? extends net.minecraft.network.Packet<?>> packets) {
         if (packets == null) {
@@ -13388,6 +13718,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe43();
         this.pumpHighRiskFunctionalProbe44();
         this.pumpHighRiskFunctionalProbe45();
+        this.pumpHighRiskFunctionalProbe46();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
