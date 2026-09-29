@@ -747,6 +747,7 @@ jobs:
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL44=PASS modules=InvClicker'
           grep -Fq 'high-risk-functional-probe45-buffer-armed:Blink:buffering=true' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-buffered-pass:Blink:sentinel=OPENABYSS_BLINK_45' "$STAGE"
+          grep -Fq 'chat-buffered:PacketManager:OPENABYSS_BLINK_45' "$NETWORK_STAGE"
           grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-restore-pass:Blink:enabled=' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-module-pass:Blink' "$STAGE"
@@ -803,11 +804,12 @@ jobs:
           grep -Fq 'chat-send-probe-payload:true' "$NETWORK_STAGE"
           grep -Fq 'chat-send-decision:accepted' "$NETWORK_STAGE"
           grep -Fq 'chat-receive-probe-echo:true' "$NETWORK_STAGE"
-          if grep -Fq 'chat-buffered:PacketManager' "$NETWORK_STAGE"; then
+          if grep -Fq 'chat-buffered:PacketManager:OPENABYSS_MACRO_PROBE_7E51' "$NETWORK_STAGE"; then
             echo 'Macro1 synthetic chat was unexpectedly buffered by PacketManager.'
             cat "$NETWORK_STAGE"
             exit 1
           fi
+          grep -Fq 'chat-buffered:PacketManager:OPENABYSS_BLINK_45' "$NETWORK_STAGE"
           grep -Fq 'OPENABYSS_MACRO_PROBE_7E51' "$RUNNER_TEMP/openabyss-production-world-server.log"
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_CLIENT=PASS'
           echo 'PRODUCTION_WORLD_MACRO1_CHAT_SERVER_RECEIPT=PASS'
