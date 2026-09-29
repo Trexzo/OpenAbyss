@@ -634,6 +634,11 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe47Saved;
     private boolean highRiskFunctionalProbe47OriginalEnabled;
     private boolean[] highRiskFunctionalProbe47OriginalBooleans;
+    private int highRiskFunctionalProbe48Stage;
+    private int highRiskFunctionalProbe48WaitTicks;
+    private boolean highRiskFunctionalProbe48Saved;
+    private boolean highRiskFunctionalProbe48OriginalEnabled;
+    private boolean highRiskFunctionalProbe48OriginalTablistCheck;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12025,6 +12030,147 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe48() {
+        if (!this.highRiskFunctionalProbe48Saved) {
+            return;
+        }
+        try {
+            AntiBot probe = Modules.J(AntiBot.class);
+            AntiBot.tablistCheck.v(
+                    this.highRiskFunctionalProbe48OriginalTablistCheck,
+                    0L);
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe48OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe48:AntiBot",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe48WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe48() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe48")
+                || this.highRiskFunctionalProbe48Stage < 0
+                || this.highRiskFunctionalProbe48Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe47")
+                && this.highRiskFunctionalProbe47Stage < 2) {
+            return;
+        }
+
+        AntiBot probe = Modules.J(AntiBot.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AntiBot.class) != probe
+                    || ModuleManager.byName("AntiBot") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.getNetHandler() == null
+                    || this.c.isSingleplayer()) {
+                throw new IllegalStateException(
+                        "AntiBot multiplayer authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe48Stage) {
+                case 0: {
+                    PlayerInfoCache.refresh();
+                    String localName = this.c.thePlayer.getName();
+                    if (!PlayerInfoCache.inTabList(localName)) {
+                        if (++this.highRiskFunctionalProbe48WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "AntiBot local player never entered tab cache: "
+                                            + localName);
+                        }
+                        return;
+                    }
+
+                    this.highRiskFunctionalProbe48OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe48OriginalTablistCheck =
+                            AntiBot.tablistCheck.c();
+                    this.highRiskFunctionalProbe48Saved = true;
+                    AntiBot.tablistCheck.v(true, 0L);
+
+                    EntityOtherPlayerMP fixture =
+                            new EntityOtherPlayerMP(
+                                    this.c.theWorld,
+                                    new GameProfile(
+                                            UUID.fromString(
+                                                    "00000000-0000-4000-8000-000000000048"),
+                                            "OpenAbyssAntiBotProbe48"));
+                    if (PlayerInfoCache.inTabList(fixture.getName())) {
+                        throw new IllegalStateException(
+                                "AntiBot fixture unexpectedly exists in tab cache");
+                    }
+
+                    boolean fixtureBot = AntiBot.T((short)0, fixture);
+                    boolean localBot = AntiBot.T((short)0, this.c.thePlayer);
+                    if (!fixtureBot || localBot) {
+                        throw new IllegalStateException(
+                                "AntiBot classification mismatch"
+                                        + " fixtureBot=" + fixtureBot
+                                        + " localBot=" + localBot);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe48-effect-pass:"
+                                    + "AntiBot:absentTabPlayer=true:localPlayer=false");
+                    this.highRiskFunctionalProbe48Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe48();
+                    AntiBot restored = Modules.J(AntiBot.class);
+                    if (restored == null
+                            || restored.o()
+                                    != this.highRiskFunctionalProbe48OriginalEnabled
+                            || AntiBot.tablistCheck.c()
+                                    != this.highRiskFunctionalProbe48OriginalTablistCheck) {
+                        throw new IllegalStateException(
+                                "AntiBot probe state did not restore");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe48-restore-pass:"
+                                    + "AntiBot:enabled="
+                                    + this.highRiskFunctionalProbe48OriginalEnabled
+                                    + ":tablist="
+                                    + this.highRiskFunctionalProbe48OriginalTablistCheck);
+                    runtimeMilestone(
+                            "high-risk-functional-probe48-module-pass:AntiBot");
+                    runtimeMilestone(
+                            "high-risk-functional-probe48-pass:1");
+                    this.highRiskFunctionalProbe48Saved = false;
+                    this.highRiskFunctionalProbe48Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe48Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe48:AntiBot",
+                    "tablist-classification",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe48-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe48();
+        }
+    }
+
     private void restoreHighRiskFunctionalProbe47() {
         if (!this.highRiskFunctionalProbe47Saved) {
             return;
@@ -13865,6 +14011,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe45();
         this.pumpHighRiskFunctionalProbe46();
         this.pumpHighRiskFunctionalProbe47();
+        this.pumpHighRiskFunctionalProbe48();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
