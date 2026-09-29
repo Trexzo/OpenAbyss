@@ -135,6 +135,7 @@ import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.TabGUI;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
@@ -714,6 +715,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe55OriginalSelectedModule;
     private int highRiskFunctionalProbe55OriginalSelectedProperty;
     private int highRiskFunctionalProbe55OriginalSelectedValue;
+    private int highRiskFunctionalProbe56Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12105,6 +12107,228 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Set<net.minecraft.entity.Entity> indicatorsTrackedForProbe(
+            Indicators probe) throws Exception {
+        Field field = Indicators.class.getDeclaredField("m");
+        field.setAccessible(true);
+        return (Set<net.minecraft.entity.Entity>)field.get(probe);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<net.minecraft.entity.Entity, net.minecraft.util.Vec3>
+            indicatorsPositionsForProbe(Indicators probe) throws Exception {
+        Field field = Indicators.class.getDeclaredField("p");
+        field.setAccessible(true);
+        return (Map<net.minecraft.entity.Entity, net.minecraft.util.Vec3>)
+                field.get(probe);
+    }
+
+    private Field indicatorsCounterFieldForProbe() throws Exception {
+        Field field = Indicators.class.getDeclaredField("Y");
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void pumpHighRiskFunctionalProbe56() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe56")
+                || this.highRiskFunctionalProbe56Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe55")
+                && this.highRiskFunctionalProbe55Stage < 2) {
+            return;
+        }
+
+        Indicators probe = Modules.J(Indicators.class);
+        final int fixtureId = -73556;
+        net.minecraft.entity.projectile.EntitySnowball fixture = null;
+        boolean saved = false;
+        boolean originalRenderSnowballs = false;
+        boolean originalOnlyWhenApproaching = false;
+        int originalCounter = 0;
+        java.util.Set<net.minecraft.entity.Entity> originalTracked = null;
+        java.util.Map<net.minecraft.entity.Entity, net.minecraft.util.Vec3>
+                originalPositions = null;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Indicators.class) != probe
+                    || ModuleManager.byName("Indicators") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.getNetHandler() == null
+                    || Indicators.renderSnowballs == null
+                    || Indicators.onlyWhenApproaching == null) {
+                throw new IllegalStateException(
+                        "Indicators live-world authority unavailable");
+            }
+
+            Set<net.minecraft.entity.Entity> tracked =
+                    this.indicatorsTrackedForProbe(probe);
+            Map<net.minecraft.entity.Entity, net.minecraft.util.Vec3>
+                    positions = this.indicatorsPositionsForProbe(probe);
+            Field counter = this.indicatorsCounterFieldForProbe();
+
+            originalRenderSnowballs = Indicators.renderSnowballs.c();
+            originalOnlyWhenApproaching =
+                    Indicators.onlyWhenApproaching.c();
+            originalCounter = counter.getInt(probe);
+            originalTracked =
+                    new java.util.HashSet<net.minecraft.entity.Entity>(tracked);
+            originalPositions =
+                    new java.util.HashMap<
+                            net.minecraft.entity.Entity,
+                            net.minecraft.util.Vec3>(positions);
+            saved = true;
+
+            fixture =
+                    new net.minecraft.entity.projectile.EntitySnowball(
+                            this.c.theWorld);
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 6.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(fixtureId, fixture);
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "Indicators fixture EventBus binding inactive");
+            }
+
+            Indicators.renderSnowballs.v(true, 0L);
+            Indicators.onlyWhenApproaching.v(false, 0L);
+            counter.setInt(probe, 4);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (!tracked.contains(fixture)
+                    || !positions.containsKey(fixture)) {
+                throw new IllegalStateException(
+                        "Indicators snowball classifier did not track fixture"
+                                + " tracked=" + tracked.contains(fixture)
+                                + " position="
+                                + positions.containsKey(fixture));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe56-effect-pass:"
+                            + "Indicators:snowballTracked=true");
+
+            Indicators.renderSnowballs.v(false, 0L);
+            counter.setInt(probe, 4);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (tracked.contains(fixture)
+                    || positions.containsKey(fixture)) {
+                throw new IllegalStateException(
+                        "Indicators renderSnowballs setting gate failed"
+                                + " tracked=" + tracked.contains(fixture)
+                                + " position="
+                                + positions.containsKey(fixture));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe56-effect-pass:"
+                            + "Indicators:settingGate=true");
+
+            Indicators.renderSnowballs.v(true, 0L);
+            Indicators.onlyWhenApproaching.v(true, 0L);
+            tracked.remove(fixture);
+            positions.remove(fixture);
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 8.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            counter.setInt(probe, 4);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (tracked.contains(fixture)
+                    || !positions.containsKey(fixture)) {
+                throw new IllegalStateException(
+                        "Indicators approach baseline mismatch"
+                                + " tracked=" + tracked.contains(fixture)
+                                + " cached="
+                                + positions.containsKey(fixture));
+            }
+
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            counter.setInt(probe, 4);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (!tracked.contains(fixture)) {
+                throw new IllegalStateException(
+                        "Indicators approaching projectile was not selected");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe56-effect-pass:"
+                            + "Indicators:approachFilter=true");
+
+            runtimeMilestone(
+                    "high-risk-functional-probe56-module-pass:Indicators");
+            runtimeMilestone(
+                    "high-risk-functional-probe56-pass:1");
+            this.highRiskFunctionalProbe56Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe56Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe56:Indicators",
+                    "projectile-cache-selection",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe56-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(fixtureId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    Indicators.renderSnowballs.v(
+                            originalRenderSnowballs, 0L);
+                    Indicators.onlyWhenApproaching.v(
+                            originalOnlyWhenApproaching, 0L);
+                    Field counter = this.indicatorsCounterFieldForProbe();
+                    counter.setInt(probe, originalCounter);
+                    Set<net.minecraft.entity.Entity> tracked =
+                            this.indicatorsTrackedForProbe(probe);
+                    Map<net.minecraft.entity.Entity, net.minecraft.util.Vec3>
+                            positions =
+                                    this.indicatorsPositionsForProbe(probe);
+                    tracked.clear();
+                    tracked.addAll(originalTracked);
+                    positions.clear();
+                    positions.putAll(originalPositions);
+                    runtimeMilestone(
+                            "high-risk-functional-probe56-restore-pass:"
+                                    + "Indicators:settings=true:caches=true:"
+                                    + "counter=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe56:Indicators",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe56Stage >= 0) {
+                        this.highRiskFunctionalProbe56Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe56-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field tabGuiFieldForProbe(String name) throws Exception {
         Field field = TabGUI.class.getDeclaredField(name);
         field.setAccessible(true);
@@ -15592,6 +15816,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe53();
         this.pumpHighRiskFunctionalProbe54();
         this.pumpHighRiskFunctionalProbe55();
+        this.pumpHighRiskFunctionalProbe56();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
