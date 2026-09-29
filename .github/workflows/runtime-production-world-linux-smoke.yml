@@ -287,7 +287,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe73=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe74=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe75=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=91'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe76=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=92'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1148,6 +1149,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL75=PASS modules=BlockIn'
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:remoteCache=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:selfExcluded=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:worldJoinReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-module-pass:KillEffect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe76-fail:' "$STAGE"; then
+            echo 'KillEffect target-cache semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe76-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL76=PASS modules=KillEffect'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
