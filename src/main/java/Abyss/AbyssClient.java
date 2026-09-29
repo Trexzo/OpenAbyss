@@ -158,6 +158,7 @@ import Abyss.module.impl.visual_utility.TrajectorySimulationResult;
 import Abyss.module.impl.visual_utility.TrajectoryStep;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
+import Abyss.module.impl.world.AutoDigPlace;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
@@ -754,6 +755,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe66Stage;
     private int highRiskFunctionalProbe67Stage;
     private int highRiskFunctionalProbe68Stage;
+    private int highRiskFunctionalProbe69Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12376,6 +12378,262 @@ implements EventSubscriber {
         }
     }
 
+    private Object autoDigPlaceInvokeForProbe(
+            AutoDigPlace probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = AutoDigPlace.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe69() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe69")
+                || this.highRiskFunctionalProbe69Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe68")
+                && this.highRiskFunctionalProbe68Stage < 1) {
+            return;
+        }
+
+        AutoDigPlace probe = Modules.J(AutoDigPlace.class);
+        BlockPos target = null;
+        BlockPos upperSupport = null;
+        BlockPos lowerSupport = null;
+        IBlockState originalTarget = null;
+        IBlockState originalUpper = null;
+        IBlockState originalLower = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(AutoDigPlace.class) != probe
+                    || ModuleManager.byName("AutoDigPlace") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "AutoDigPlace live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            int[][] directions = new int[][]{
+                    {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+            };
+            outer:
+            for (int rise = 3; rise <= 7; ++rise) {
+                for (int distance = 4; distance <= 8; ++distance) {
+                    for (int[] direction : directions) {
+                        BlockPos candidate = new BlockPos(
+                                baseX + direction[0] * distance,
+                                baseY + rise,
+                                baseZ + direction[1] * distance);
+                        if (this.c.theWorld.isAirBlock(candidate)
+                                && this.c.theWorld.isAirBlock(candidate.up())
+                                && this.c.theWorld.isAirBlock(candidate.down())
+                                && this.c.theWorld.isAirBlock(candidate.north())
+                                && this.c.theWorld.isAirBlock(candidate.south())
+                                && this.c.theWorld.isAirBlock(candidate.west())
+                                && this.c.theWorld.isAirBlock(candidate.east())) {
+                            target = candidate;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (target == null) {
+                throw new IllegalStateException(
+                        "AutoDigPlace probe found no isolated air fixture");
+            }
+
+            upperSupport = target.up();
+            lowerSupport = target.down();
+            originalTarget = this.c.theWorld.getBlockState(target);
+            originalUpper = this.c.theWorld.getBlockState(upperSupport);
+            originalLower = this.c.theWorld.getBlockState(lowerSupport);
+            saved = true;
+
+            this.c.theWorld.setBlockState(
+                    upperSupport, Blocks.stone.getDefaultState(), 3);
+            PlacementTarget upper =
+                    (PlacementTarget)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{target});
+            boolean upperPlaceable =
+                    ((Boolean)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "E",
+                            new Class<?>[]{BlockPos.class, Long.TYPE},
+                            new Object[]{target, Long.valueOf(0L)}))
+                            .booleanValue();
+            if (upper == null
+                    || !upperSupport.equals(upper.q)
+                    || upper.Z != EnumFacing.DOWN
+                    || !upper.o
+                    || !upperPlaceable) {
+                throw new IllegalStateException(
+                        "AutoDigPlace upper-support mapping mismatch q="
+                                + (upper == null ? "<null>" : upper.q)
+                                + " face="
+                                + (upper == null ? "<null>" : upper.Z)
+                                + " expanded="
+                                + (upper == null ? "<null>" : upper.o)
+                                + " placeable="
+                                + upperPlaceable);
+            }
+
+            this.c.theWorld.setBlockState(
+                    lowerSupport, Blocks.stone.getDefaultState(), 3);
+            PlacementTarget priority =
+                    (PlacementTarget)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{target});
+            if (priority == null
+                    || !upperSupport.equals(priority.q)
+                    || priority.Z != EnumFacing.DOWN) {
+                throw new IllegalStateException(
+                        "AutoDigPlace face priority mismatch q="
+                                + (priority == null ? "<null>" : priority.q)
+                                + " face="
+                                + (priority == null
+                                        ? "<null>"
+                                        : priority.Z));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe69-effect-pass:"
+                            + "AutoDigPlace:priority=upper-support/DOWN");
+
+            this.c.theWorld.setBlockState(
+                    upperSupport, Blocks.air.getDefaultState(), 3);
+            PlacementTarget lower =
+                    (PlacementTarget)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{target});
+            boolean lowerPlaceable =
+                    ((Boolean)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "E",
+                            new Class<?>[]{BlockPos.class, Long.TYPE},
+                            new Object[]{target, Long.valueOf(0L)}))
+                            .booleanValue();
+            if (lower == null
+                    || !lowerSupport.equals(lower.q)
+                    || lower.Z != EnumFacing.UP
+                    || lower.o
+                    || !lowerPlaceable) {
+                throw new IllegalStateException(
+                        "AutoDigPlace lower-support mapping mismatch q="
+                                + (lower == null ? "<null>" : lower.q)
+                                + " face="
+                                + (lower == null ? "<null>" : lower.Z)
+                                + " expanded="
+                                + (lower == null ? "<null>" : lower.o)
+                                + " placeable="
+                                + lowerPlaceable);
+            }
+
+            this.c.theWorld.setBlockState(
+                    lowerSupport, Blocks.air.getDefaultState(), 3);
+            PlacementTarget unsupported =
+                    (PlacementTarget)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{target});
+            boolean unsupportedPlaceable =
+                    ((Boolean)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "E",
+                            new Class<?>[]{BlockPos.class, Long.TYPE},
+                            new Object[]{target, Long.valueOf(0L)}))
+                            .booleanValue();
+            if (unsupported != null || unsupportedPlaceable) {
+                throw new IllegalStateException(
+                        "AutoDigPlace unsupported-air gate mismatch target="
+                                + unsupported
+                                + " placeable="
+                                + unsupportedPlaceable);
+            }
+
+            this.c.theWorld.setBlockState(
+                    target, Blocks.stone.getDefaultState(), 3);
+            boolean occupiedPlaceable =
+                    ((Boolean)this.autoDigPlaceInvokeForProbe(
+                            probe,
+                            "E",
+                            new Class<?>[]{BlockPos.class, Long.TYPE},
+                            new Object[]{target, Long.valueOf(0L)}))
+                            .booleanValue();
+            if (occupiedPlaceable) {
+                throw new IllegalStateException(
+                        "AutoDigPlace occupied-target gate returned true");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe69-effect-pass:"
+                            + "AutoDigPlace:airSupportGate=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe69-module-pass:"
+                            + "AutoDigPlace");
+            runtimeMilestone(
+                    "high-risk-functional-probe69-pass:1");
+            this.highRiskFunctionalProbe69Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe69Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe69:AutoDigPlace",
+                    "placement-target-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe69-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(
+                                target, originalTarget, 3);
+                        this.c.theWorld.setBlockState(
+                                upperSupport, originalUpper, 3);
+                        this.c.theWorld.setBlockState(
+                                lowerSupport, originalLower, 3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe69-restore-pass:"
+                                    + "AutoDigPlace:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe69:AutoDigPlace",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe69Stage >= 0) {
+                        this.highRiskFunctionalProbe69Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe69-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Object trajectoriesInvokeForProbe(
             Trajectories probe,
             String name,
@@ -18727,6 +18985,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe66();
         this.pumpHighRiskFunctionalProbe67();
         this.pumpHighRiskFunctionalProbe68();
+        this.pumpHighRiskFunctionalProbe69();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
