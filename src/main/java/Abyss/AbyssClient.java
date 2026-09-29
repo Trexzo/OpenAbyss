@@ -151,6 +151,7 @@ import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BedPlates;
+import Abyss.module.impl.visual_utility.StorageESP;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoTool;
@@ -251,6 +252,11 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.tileentity.TileEntityBrewingStand;
+import net.minecraft.tileentity.TileEntityDispenser;
+import net.minecraft.tileentity.TileEntityEnderChest;
+import net.minecraft.tileentity.TileEntityFurnace;
+import net.minecraft.tileentity.TileEntityHopper;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
@@ -739,6 +745,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe63Stage;
     private int highRiskFunctionalProbe64Stage;
     private int highRiskFunctionalProbe65Stage;
+    private int highRiskFunctionalProbe66Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12361,6 +12368,186 @@ implements EventSubscriber {
         }
     }
 
+    private int storageEspColorForProbe(StorageESP probe, TileEntity tile)
+            throws Exception {
+        Method method = StorageESP.class.getDeclaredMethod(
+                "colorFor", TileEntity.class);
+        method.setAccessible(true);
+        return ((Integer)method.invoke(probe, tile)).intValue();
+    }
+
+    private void pumpHighRiskFunctionalProbe66() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe66")
+                || this.highRiskFunctionalProbe66Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe65")
+                && this.highRiskFunctionalProbe65Stage < 1) {
+            return;
+        }
+
+        StorageESP probe = Modules.J(StorageESP.class);
+        boolean saved = false;
+        boolean originalChests = false;
+        boolean originalFurnaces = false;
+        boolean originalDispensers = false;
+        boolean originalHoppers = false;
+        boolean originalEnderChests = false;
+        String originalFurnaceColor = null;
+        String originalDispenserColor = null;
+        String originalHopperColor = null;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(StorageESP.class) != probe
+                    || ModuleManager.byName("StorageESP") != probe
+                    || StorageESP.chests == null
+                    || StorageESP.furnaces == null
+                    || StorageESP.dispensers == null
+                    || StorageESP.hoppers == null
+                    || StorageESP.enderChests == null
+                    || StorageESP.furnaceColor == null
+                    || StorageESP.dispenserColor == null
+                    || StorageESP.hopperColor == null) {
+                throw new IllegalStateException(
+                        "StorageESP runtime authority unavailable");
+            }
+
+            originalChests = StorageESP.chests.c();
+            originalFurnaces = StorageESP.furnaces.c();
+            originalDispensers = StorageESP.dispensers.c();
+            originalHoppers = StorageESP.hoppers.c();
+            originalEnderChests = StorageESP.enderChests.c();
+            originalFurnaceColor = StorageESP.furnaceColor.Q();
+            originalDispenserColor = StorageESP.dispenserColor.Q();
+            originalHopperColor = StorageESP.hopperColor.Q();
+            saved = true;
+
+            StorageESP.chests.v(true, 0L);
+            StorageESP.furnaces.v(true, 0L);
+            StorageESP.dispensers.v(true, 0L);
+            StorageESP.hoppers.v(true, 0L);
+            StorageESP.enderChests.v(true, 0L);
+            StorageESP.furnaceColor.e("123456");
+            StorageESP.dispenserColor.e("654321");
+            StorageESP.hopperColor.e("ABCDEF");
+
+            int chestColor = this.storageEspColorForProbe(
+                    probe, new TileEntityChest());
+            int brewingColor = this.storageEspColorForProbe(
+                    probe, new TileEntityBrewingStand());
+            int enderColor = this.storageEspColorForProbe(
+                    probe, new TileEntityEnderChest());
+            int furnaceColor = this.storageEspColorForProbe(
+                    probe, new TileEntityFurnace());
+            int dispenserColor = this.storageEspColorForProbe(
+                    probe, new TileEntityDispenser());
+            int hopperColor = this.storageEspColorForProbe(
+                    probe, new TileEntityHopper());
+
+            if (chestColor == 0 || brewingColor != chestColor) {
+                throw new IllegalStateException(
+                        "StorageESP chest/brewing classification mismatch: "
+                                + chestColor + "/" + brewingColor);
+            }
+            if (enderColor == 0) {
+                throw new IllegalStateException(
+                        "StorageESP ender chest classification returned zero");
+            }
+            if (furnaceColor != 0xFF123456
+                    || dispenserColor != 0xFF654321
+                    || hopperColor != 0xFFABCDEF) {
+                throw new IllegalStateException(
+                        "StorageESP custom color mismatch: furnace="
+                                + Integer.toHexString(furnaceColor)
+                                + " dispenser="
+                                + Integer.toHexString(dispenserColor)
+                                + " hopper="
+                                + Integer.toHexString(hopperColor));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe66-effect-pass:"
+                            + "StorageESP:types=chest+brewing+ender+furnace+"
+                            + "dispenser+hopper");
+            runtimeMilestone(
+                    "high-risk-functional-probe66-effect-pass:"
+                            + "StorageESP:customColors=123456+654321+ABCDEF");
+
+            StorageESP.chests.v(false, 0L);
+            StorageESP.furnaces.v(false, 0L);
+            StorageESP.dispensers.v(false, 0L);
+            StorageESP.hoppers.v(false, 0L);
+            StorageESP.enderChests.v(false, 0L);
+
+            if (this.storageEspColorForProbe(probe, new TileEntityChest()) != 0
+                    || this.storageEspColorForProbe(
+                            probe, new TileEntityBrewingStand()) != 0
+                    || this.storageEspColorForProbe(
+                            probe, new TileEntityEnderChest()) != 0
+                    || this.storageEspColorForProbe(
+                            probe, new TileEntityFurnace()) != 0
+                    || this.storageEspColorForProbe(
+                            probe, new TileEntityDispenser()) != 0
+                    || this.storageEspColorForProbe(
+                            probe, new TileEntityHopper()) != 0) {
+                throw new IllegalStateException(
+                        "StorageESP disabled setting gate returned a color");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe66-effect-pass:"
+                            + "StorageESP:disabledGates=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe66-module-pass:StorageESP");
+            runtimeMilestone(
+                    "high-risk-functional-probe66-pass:1");
+            this.highRiskFunctionalProbe66Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe66Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe66:StorageESP",
+                    "tile-filter-color-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe66-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    StorageESP.chests.v(originalChests, 0L);
+                    StorageESP.furnaces.v(originalFurnaces, 0L);
+                    StorageESP.dispensers.v(originalDispensers, 0L);
+                    StorageESP.hoppers.v(originalHoppers, 0L);
+                    StorageESP.enderChests.v(originalEnderChests, 0L);
+                    StorageESP.furnaceColor.e(originalFurnaceColor);
+                    StorageESP.dispenserColor.e(originalDispenserColor);
+                    StorageESP.hopperColor.e(originalHopperColor);
+                    runtimeMilestone(
+                            "high-risk-functional-probe66-restore-pass:"
+                                    + "StorageESP:settings=true:colors=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe66:StorageESP",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe66Stage >= 0) {
+                        this.highRiskFunctionalProbe66Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe66-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field bedPlatesFieldForProbe(
             String name) throws Exception {
         Field field = BedPlates.class.getDeclaredField(name);
@@ -17914,6 +18101,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe63();
         this.pumpHighRiskFunctionalProbe64();
         this.pumpHighRiskFunctionalProbe65();
+        this.pumpHighRiskFunctionalProbe66();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
