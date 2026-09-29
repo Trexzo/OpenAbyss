@@ -165,6 +165,7 @@ import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoDigPlace;
 import Abyss.module.impl.world.AntiVoid;
 import Abyss.module.impl.world.AutoTool;
+import Abyss.module.impl.world.AutoTunnel;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.BridgeAssist;
 import Abyss.module.impl.world.BlockIn;
@@ -185,6 +186,7 @@ import Abyss.util.ItemUtil;
 import Abyss.util.DeferredRendererReload;
 import Abyss.util.KeyBindUtil;
 import Abyss.util.MathUtil;
+import Abyss.util.MiningConstants;
 import Abyss.util.MoveUtil;
 import Abyss.util.Pair;
 import Abyss.util.RotationManager;
@@ -195,6 +197,7 @@ import Abyss.util.PlayerInfoCache;
 import Abyss.util.Sneaky;
 import Abyss.util.SmoothMouseHelper;
 import Abyss.util.TimerUtil;
+import Abyss.util.TunnelEngine;
 import Abyss.util.Vector3d;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.IncomingPacketHold;
@@ -773,6 +776,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe74Stage;
     private int highRiskFunctionalProbe75Stage;
     private int highRiskFunctionalProbe76Stage;
+    private int highRiskFunctionalProbe77Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12403,6 +12407,277 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe77() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe77")
+                || this.highRiskFunctionalProbe77Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe76")
+                && this.highRiskFunctionalProbe76Stage < 1) {
+            return;
+        }
+
+        AutoTunnel live = Modules.J(AutoTunnel.class);
+
+        String originalMode = null;
+        String originalSneakMode = null;
+        boolean originalAutoTool = false;
+        boolean originalAutoTurn = false;
+        boolean originalAutoBack = false;
+        boolean originalOwnedChestsOnly = false;
+        boolean originalSideOffsetScan = false;
+        boolean originalGapAltOnlyStone = false;
+        boolean originalUserManualScreenMove = false;
+        float originalTurnSpeed = 0.0f;
+        float originalStuckTimeout = 0.0f;
+        float originalNoBreakTimeout = 0.0f;
+        float originalUnsneakDuration = 0.0f;
+        float originalChestScanRadius = 0.0f;
+        int originalUnsneakChance = 0;
+
+        int originalMiningJ = 0;
+        boolean originalMiningV = false;
+        int originalMiningW = 0;
+        boolean originalMiningR = false;
+        boolean originalMiningA = false;
+        boolean originalMiningX = false;
+        boolean originalMiningK = false;
+        boolean originalMiningQFlag = false;
+        boolean originalMiningGapAltOnlyStone = false;
+        boolean originalMiningUserManualScreenMove = false;
+        float originalMiningC = 0.0f;
+        float originalMiningXTimeout = 0.0f;
+        float originalMiningSTimeout = 0.0f;
+        float originalMiningQChance = 0.0f;
+        float originalMiningE = 0.0f;
+        float originalMiningH = 0.0f;
+
+        boolean saved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AutoTunnel.class) != live
+                    || ModuleManager.byName("AutoTunnel") != live
+                    || AutoTunnel.mode == null
+                    || AutoTunnel.sneakMode == null
+                    || AutoTunnel.autoTool == null
+                    || AutoTunnel.autoTurn == null
+                    || AutoTunnel.autoBack == null
+                    || AutoTunnel.ownedChestsOnly == null
+                    || AutoTunnel.sideOffsetScan == null
+                    || AutoTunnel.gapAltOnlyStone == null
+                    || AutoTunnel.userManualScreenMove == null
+                    || AutoTunnel.turnSpeed == null
+                    || AutoTunnel.stuckTimeout == null
+                    || AutoTunnel.noBreakTimeout == null
+                    || AutoTunnel.unsneakChance == null
+                    || AutoTunnel.unsneakDuration == null
+                    || AutoTunnel.chestScanRadius == null
+                    || !AutoTunnel.mode.S().contains("NORMAL")
+                    || !AutoTunnel.mode.S().contains("STAIRCASE")
+                    || !AutoTunnel.mode.S().contains("GAP_ALT")
+                    || !AutoTunnel.sneakMode.S().contains("NONE")
+                    || !AutoTunnel.sneakMode.S().contains("RANDOM")
+                    || !AutoTunnel.sneakMode.S().contains("KEEP")) {
+                throw new IllegalStateException(
+                        "AutoTunnel live authority unavailable");
+            }
+
+            originalMode = AutoTunnel.mode.Y();
+            originalSneakMode = AutoTunnel.sneakMode.Y();
+            originalAutoTool = AutoTunnel.autoTool.c();
+            originalAutoTurn = AutoTunnel.autoTurn.c();
+            originalAutoBack = AutoTunnel.autoBack.c();
+            originalOwnedChestsOnly = AutoTunnel.ownedChestsOnly.c();
+            originalSideOffsetScan = AutoTunnel.sideOffsetScan.c();
+            originalGapAltOnlyStone = AutoTunnel.gapAltOnlyStone.c();
+            originalUserManualScreenMove =
+                    AutoTunnel.userManualScreenMove.c();
+            originalTurnSpeed = AutoTunnel.turnSpeed.L();
+            originalStuckTimeout = AutoTunnel.stuckTimeout.L();
+            originalNoBreakTimeout = AutoTunnel.noBreakTimeout.L();
+            originalUnsneakChance = AutoTunnel.unsneakChance.k();
+            originalUnsneakDuration = AutoTunnel.unsneakDuration.L();
+            originalChestScanRadius = AutoTunnel.chestScanRadius.L();
+
+            originalMiningJ = MiningConstants.J;
+            originalMiningV = MiningConstants.v;
+            originalMiningW = MiningConstants.w;
+            originalMiningR = MiningConstants.r;
+            originalMiningA = MiningConstants.A;
+            originalMiningX = MiningConstants.x;
+            originalMiningK = MiningConstants.k;
+            originalMiningQFlag = MiningConstants.q;
+            originalMiningGapAltOnlyStone =
+                    MiningConstants.gapAltOnlyStone;
+            originalMiningUserManualScreenMove =
+                    MiningConstants.userManualScreenMove;
+            originalMiningC = MiningConstants.C;
+            originalMiningXTimeout = MiningConstants.X;
+            originalMiningSTimeout = MiningConstants.s;
+            originalMiningQChance = MiningConstants.Q;
+            originalMiningE = MiningConstants.e;
+            originalMiningH = MiningConstants.H;
+            saved = true;
+
+            AutoTunnel.mode.i("NORMAL");
+            AutoTunnel.sneakMode.i("KEEP");
+            AutoTunnel.autoTool.v(false, 0L);
+            AutoTunnel.autoTurn.v(true, 0L);
+            AutoTunnel.autoBack.v(true, 0L);
+            AutoTunnel.ownedChestsOnly.v(false, 0L);
+            AutoTunnel.sideOffsetScan.v(true, 0L);
+            AutoTunnel.gapAltOnlyStone.v(true, 0L);
+            AutoTunnel.userManualScreenMove.v(false, 0L);
+            AutoTunnel.turnSpeed.o((byte)0, 0L, 37.0f);
+            AutoTunnel.stuckTimeout.o((byte)0, 0L, 4.2f);
+            AutoTunnel.noBreakTimeout.o((byte)0, 0L, 6.3f);
+            AutoTunnel.unsneakChance.d(73);
+            AutoTunnel.unsneakDuration.o((byte)0, 0L, 275.0f);
+            AutoTunnel.chestScanRadius.o((byte)0, 0L, 42.0f);
+
+            TunnelEngine.V(0L);
+
+            if (!"NORMAL".equals(live.g(0L))
+                    || MiningConstants.J != 0
+                    || MiningConstants.v
+                    || MiningConstants.w != 0
+                    || MiningConstants.r
+                    || !MiningConstants.A
+                    || !MiningConstants.x
+                    || MiningConstants.k
+                    || !MiningConstants.q
+                    || !MiningConstants.gapAltOnlyStone
+                    || MiningConstants.userManualScreenMove
+                    || Math.abs(MiningConstants.C - 37.0f) > 0.001f
+                    || Math.abs(MiningConstants.X - 4.2f) > 0.001f
+                    || Math.abs(MiningConstants.s - 6.3f) > 0.001f
+                    || Math.abs(MiningConstants.Q - 73.0f) > 0.001f
+                    || Math.abs(MiningConstants.e - 275.0f) > 0.001f
+                    || Math.abs(MiningConstants.H - 42.0f) > 0.001f) {
+                throw new IllegalStateException(
+                        "AutoTunnel NORMAL/KEEP constant mapping mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe77-effect-pass:"
+                            + "AutoTunnel:normal+keep=true");
+
+            AutoTunnel.mode.i("GAP_ALT");
+            AutoTunnel.sneakMode.i("NONE");
+            TunnelEngine.V(0L);
+            if (!"GAP_ALT".equals(live.g(0L))
+                    || MiningConstants.J != 2
+                    || MiningConstants.v
+                    || MiningConstants.w != 2) {
+                throw new IllegalStateException(
+                        "AutoTunnel GAP_ALT/NONE constant mapping mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe77-effect-pass:"
+                            + "AutoTunnel:gapAlt+none=true");
+
+            AutoTunnel.mode.i("STAIRCASE");
+            AutoTunnel.sneakMode.i("RANDOM");
+            TunnelEngine.V(0L);
+            if (!"STAIRCASE".equals(live.g(0L))
+                    || MiningConstants.J != 1
+                    || !MiningConstants.v
+                    || MiningConstants.w != 1) {
+                throw new IllegalStateException(
+                        "AutoTunnel STAIRCASE/RANDOM constant mapping mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe77-effect-pass:"
+                            + "AutoTunnel:staircase+random=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    AutoTunnel.mode.i(originalMode);
+                    AutoTunnel.sneakMode.i(originalSneakMode);
+                    AutoTunnel.autoTool.v(originalAutoTool, 0L);
+                    AutoTunnel.autoTurn.v(originalAutoTurn, 0L);
+                    AutoTunnel.autoBack.v(originalAutoBack, 0L);
+                    AutoTunnel.ownedChestsOnly.v(
+                            originalOwnedChestsOnly, 0L);
+                    AutoTunnel.sideOffsetScan.v(
+                            originalSideOffsetScan, 0L);
+                    AutoTunnel.gapAltOnlyStone.v(
+                            originalGapAltOnlyStone, 0L);
+                    AutoTunnel.userManualScreenMove.v(
+                            originalUserManualScreenMove, 0L);
+                    AutoTunnel.turnSpeed.o(
+                            (byte)0, 0L, originalTurnSpeed);
+                    AutoTunnel.stuckTimeout.o(
+                            (byte)0, 0L, originalStuckTimeout);
+                    AutoTunnel.noBreakTimeout.o(
+                            (byte)0, 0L, originalNoBreakTimeout);
+                    AutoTunnel.unsneakChance.d(originalUnsneakChance);
+                    AutoTunnel.unsneakDuration.o(
+                            (byte)0, 0L, originalUnsneakDuration);
+                    AutoTunnel.chestScanRadius.o(
+                            (byte)0, 0L, originalChestScanRadius);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe77:AutoTunnel",
+                            "restore-settings",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+
+                MiningConstants.J = originalMiningJ;
+                MiningConstants.v = originalMiningV;
+                MiningConstants.w = originalMiningW;
+                MiningConstants.r = originalMiningR;
+                MiningConstants.A = originalMiningA;
+                MiningConstants.x = originalMiningX;
+                MiningConstants.k = originalMiningK;
+                MiningConstants.q = originalMiningQFlag;
+                MiningConstants.gapAltOnlyStone =
+                        originalMiningGapAltOnlyStone;
+                MiningConstants.userManualScreenMove =
+                        originalMiningUserManualScreenMove;
+                MiningConstants.C = originalMiningC;
+                MiningConstants.X = originalMiningXTimeout;
+                MiningConstants.s = originalMiningSTimeout;
+                MiningConstants.Q = originalMiningQChance;
+                MiningConstants.e = originalMiningE;
+                MiningConstants.H = originalMiningH;
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe77Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe77:AutoTunnel",
+                    "settings-to-mining-constants",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe77-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe77-restore-pass:"
+                        + "AutoTunnel:settings+constants=true");
+        runtimeMilestone(
+                "high-risk-functional-probe77-module-pass:"
+                        + "AutoTunnel");
+        runtimeMilestone(
+                "high-risk-functional-probe77-pass:1");
+        this.highRiskFunctionalProbe77Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe76() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe76")
                 || this.highRiskFunctionalProbe76Stage != 0) {
@@ -20340,6 +20615,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe74();
         this.pumpHighRiskFunctionalProbe75();
         this.pumpHighRiskFunctionalProbe76();
+        this.pumpHighRiskFunctionalProbe77();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
