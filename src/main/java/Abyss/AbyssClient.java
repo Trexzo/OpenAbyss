@@ -12079,7 +12079,7 @@ implements EventSubscriber {
     private void pumpHighRiskFunctionalProbe45() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe45")
                 || this.highRiskFunctionalProbe45Stage < 0
-                || this.highRiskFunctionalProbe45Stage >= 7) {
+                || this.highRiskFunctionalProbe45Stage >= 8) {
             return;
         }
         if (Boolean.getBoolean("abyss.highRiskFunctionalProbe44")
@@ -12301,13 +12301,6 @@ implements EventSubscriber {
                         flushGate.deleteOnExit();
                     }
 
-                    if (this.highRiskFunctionalProbe45OriginalEnabled) {
-                        probe.I(0L, true);
-                        throw new IllegalStateException(
-                                "Blink probe does not yet support restoring"
-                                        + " an originally enabled instance");
-                    }
-
                     if (!this.highRiskFunctionalProbe45OriginalMode.equals(
                                     Blink.mode.Y())
                             || Blink.showDelay.c()
@@ -12320,6 +12313,16 @@ implements EventSubscriber {
                                 "Blink settings did not restore");
                     }
 
+                    if (this.highRiskFunctionalProbe45OriginalEnabled) {
+                        probe.I(0L, true);
+                        this.highRiskFunctionalProbe45Stage = 7;
+                        this.highRiskFunctionalProbe45WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe45-restore-request:"
+                                        + "Blink:enabled=true");
+                        return;
+                    }
+
                     runtimeMilestone(
                             "high-risk-functional-probe45-restore-pass:"
                                     + "Blink:enabled=false:settings=true");
@@ -12327,7 +12330,38 @@ implements EventSubscriber {
                             "high-risk-functional-probe45-module-pass:Blink");
                     runtimeMilestone("high-risk-functional-probe45-pass:1");
                     this.highRiskFunctionalProbe45Saved = false;
-                    this.highRiskFunctionalProbe45Stage = 7;
+                    this.highRiskFunctionalProbe45Stage = 8;
+                    return;
+                }
+
+                case 7: {
+                    boolean restored =
+                            probe.o()
+                                    && !probe.l()
+                                    && !probe.K()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!restored) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "Blink originally-enabled lifecycle did not restore"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-restore-pass:"
+                                    + "Blink:enabled=true:settings=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-module-pass:Blink");
+                    runtimeMilestone("high-risk-functional-probe45-pass:1");
+                    this.highRiskFunctionalProbe45Saved = false;
+                    this.highRiskFunctionalProbe45Stage = 8;
                     return;
                 }
 
