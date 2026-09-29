@@ -187,6 +187,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe69=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe70=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe71=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe72=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe70=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
