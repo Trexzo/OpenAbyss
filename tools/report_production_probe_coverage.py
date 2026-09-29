@@ -6,22 +6,22 @@ import re
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "src/main/java/Abyss/internal/restore/AbyssModuleRegistry.java"
+REGISTRY_ORDER = ROOT / "tools/reference-module-registry-order.txt"
 WORLD_CI = ROOT / ".github/workflows/runtime-production-world-linux-smoke.yml"
 MODULE_ROOT = ROOT / "src/main/java/Abyss/module/impl"
 
 
 def registered_names() -> list[str]:
-    text = REGISTRY.read_text(encoding="utf-8")
-    names = re.findall(r',\s*[A-Za-z0-9_]+\.class,\s*"([A-Za-z0-9]+)"', text)
-    # Preserve registry order while removing repeats from comments/helper paths.
-    out: list[str] = []
-    seen: set[str] = set()
-    for name in names:
-        if name not in seen:
-            seen.add(name)
-            out.append(name)
-    return out
+    names = [
+        line.strip()
+        for line in REGISTRY_ORDER.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if len(names) != 112 or len(set(names)) != 112:
+        raise SystemExit(
+            f"REGISTRY_ORDER_AUTHORITY_MISMATCH count={len(names)} unique={len(set(names))}"
+        )
+    return names
 
 
 def module_sources() -> dict[str, pathlib.Path]:
