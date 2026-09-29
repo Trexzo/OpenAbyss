@@ -119,6 +119,7 @@ import Abyss.module.impl.configuration.Font;
 import Abyss.module.impl.configuration.Gadgets;
 import Abyss.module.impl.configuration.Language;
 import Abyss.module.impl.configuration.Notifications;
+import Abyss.module.impl.configuration.ScoreBoard;
 import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.configuration.Teams;
 import Abyss.module.impl.configuration.VisualSpoof;
@@ -777,6 +778,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe75Stage;
     private int highRiskFunctionalProbe76Stage;
     private int highRiskFunctionalProbe77Stage;
+    private int highRiskFunctionalProbe78Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12407,6 +12409,144 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe78() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe78")
+                || this.highRiskFunctionalProbe78Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe77")
+                && this.highRiskFunctionalProbe77Stage < 1) {
+            return;
+        }
+
+        ScoreBoard live = Modules.J(ScoreBoard.class);
+        boolean saved = false;
+        boolean originalHide = false;
+        boolean originalDisableScores = false;
+        boolean originalTextShadow = false;
+        boolean originalRoundedRectangle = false;
+        int originalBackgroundOpacity = 0;
+        float originalScale = 0.0f;
+        float originalOffsetX = 0.0f;
+        float originalOffsetY = 0.0f;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(ScoreBoard.class) != live
+                    || ModuleManager.byName("ScoreBoard") != live
+                    || ScoreBoard.hideScoreboard == null
+                    || ScoreBoard.disableScores == null
+                    || ScoreBoard.textShadow == null
+                    || ScoreBoard.roundedRectangle == null
+                    || ScoreBoard.backgroundOpacity == null
+                    || ScoreBoard.scale == null
+                    || ScoreBoard.offsetX == null
+                    || ScoreBoard.offsetY == null) {
+                throw new IllegalStateException(
+                        "ScoreBoard live authority unavailable");
+            }
+
+            originalHide = ScoreBoard.hideScoreboard.c();
+            originalDisableScores = ScoreBoard.disableScores.c();
+            originalTextShadow = ScoreBoard.textShadow.c();
+            originalRoundedRectangle = ScoreBoard.roundedRectangle.c();
+            originalBackgroundOpacity = ScoreBoard.backgroundOpacity.k();
+            originalScale = ScoreBoard.scale.L();
+            originalOffsetX = ScoreBoard.offsetX.L();
+            originalOffsetY = ScoreBoard.offsetY.L();
+            saved = true;
+
+            ScoreBoard.hideScoreboard.v(true, 0L);
+            ScoreBoard.disableScores.v(false, 0L);
+            ScoreBoard.textShadow.v(true, 0L);
+            ScoreBoard.roundedRectangle.v(true, 0L);
+            ScoreBoard.backgroundOpacity.d(47);
+            ScoreBoard.scale.o((byte)0, 0L, 1.37f);
+            ScoreBoard.offsetX.o((byte)0, 0L, 123.0f);
+            ScoreBoard.offsetY.o((byte)0, 0L, -45.0f);
+
+            // The recovered renderer must return at the hide gate before it
+            // dereferences either render argument. Null sentinels make that
+            // contract explicit without touching OpenGL or the live scoreboard.
+            ScoreBoard.n(null, null);
+
+            if (!ScoreBoard.hideScoreboard.c()
+                    || ScoreBoard.disableScores.c()
+                    || !ScoreBoard.textShadow.c()
+                    || !ScoreBoard.roundedRectangle.c()
+                    || ScoreBoard.backgroundOpacity.k() != 47
+                    || Math.abs(ScoreBoard.scale.L() - 1.37f) > 0.001f
+                    || Math.abs(ScoreBoard.offsetX.L() - 123.0f) > 0.001f
+                    || Math.abs(ScoreBoard.offsetY.L() + 45.0f) > 0.001f) {
+                throw new IllegalStateException(
+                        "ScoreBoard setting round-trip mismatch");
+            }
+
+            runtimeMilestone(
+                    "high-risk-functional-probe78-effect-pass:"
+                            + "ScoreBoard:hiddenShortCircuit=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe78-effect-pass:"
+                            + "ScoreBoard:settingsRoundTrip=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    ScoreBoard.hideScoreboard.v(originalHide, 0L);
+                    ScoreBoard.disableScores.v(
+                            originalDisableScores, 0L);
+                    ScoreBoard.textShadow.v(originalTextShadow, 0L);
+                    ScoreBoard.roundedRectangle.v(
+                            originalRoundedRectangle, 0L);
+                    ScoreBoard.backgroundOpacity.d(
+                            originalBackgroundOpacity);
+                    ScoreBoard.scale.o(
+                            (byte)0, 0L, originalScale);
+                    ScoreBoard.offsetX.o(
+                            (byte)0, 0L, originalOffsetX);
+                    ScoreBoard.offsetY.o(
+                            (byte)0, 0L, originalOffsetY);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe78:ScoreBoard",
+                            "restore-settings",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe78Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe78:ScoreBoard",
+                    "hidden-render-gate",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe78-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe78-restore-pass:"
+                        + "ScoreBoard:settings=true");
+        runtimeMilestone(
+                "high-risk-functional-probe78-module-pass:"
+                        + "ScoreBoard");
+        runtimeMilestone("high-risk-functional-probe78-pass:1");
+        this.highRiskFunctionalProbe78Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe77() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe77")
                 || this.highRiskFunctionalProbe77Stage != 0) {
@@ -20616,6 +20756,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe75();
         this.pumpHighRiskFunctionalProbe76();
         this.pumpHighRiskFunctionalProbe77();
+        this.pumpHighRiskFunctionalProbe78();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
