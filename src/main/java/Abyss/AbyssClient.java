@@ -94,6 +94,7 @@ import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.ChestStealer;
+import Abyss.module.impl.player.GhostHand;
 import Abyss.module.impl.player.InvClicker;
 import Abyss.module.impl.player.InvManager;
 import Abyss.module.impl.player.NoHitDelay;
@@ -629,6 +630,10 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe46OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe46OriginalScreen;
     private net.minecraft.inventory.Container highRiskFunctionalProbe46OriginalOpenContainer;
+    private int highRiskFunctionalProbe47Stage;
+    private boolean highRiskFunctionalProbe47Saved;
+    private boolean highRiskFunctionalProbe47OriginalEnabled;
+    private boolean[] highRiskFunctionalProbe47OriginalBooleans;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12020,6 +12025,146 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe47() {
+        if (!this.highRiskFunctionalProbe47Saved) {
+            return;
+        }
+        try {
+            GhostHand probe = Modules.J(GhostHand.class);
+            if (this.highRiskFunctionalProbe47OriginalBooleans != null) {
+                boolean[] b = this.highRiskFunctionalProbe47OriginalBooleans;
+                GhostHand.teammatesOnly.v(b[0], 0L);
+                GhostHand.disableWhileHoldingSword.v(b[1], 0L);
+                GhostHand.toolsOnly.v(b[2], 0L);
+                GhostHand.playersOnly.v(b[3], 0L);
+                GhostHand.blacklistEnemy.v(b[4], 0L);
+            }
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe47OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe47:GhostHand",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe47() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe47")
+                || this.highRiskFunctionalProbe47Stage < 0
+                || this.highRiskFunctionalProbe47Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe46")
+                && this.highRiskFunctionalProbe46Stage < 4) {
+            return;
+        }
+
+        GhostHand probe = Modules.J(GhostHand.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(GhostHand.class) != probe
+                    || ModuleManager.byName("GhostHand") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "GhostHand live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe47Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe47OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe47OriginalBooleans =
+                            new boolean[] {
+                                GhostHand.teammatesOnly.c(),
+                                GhostHand.disableWhileHoldingSword.c(),
+                                GhostHand.toolsOnly.c(),
+                                GhostHand.playersOnly.c(),
+                                GhostHand.blacklistEnemy.c()
+                            };
+                    this.highRiskFunctionalProbe47Saved = true;
+
+                    GhostHand.teammatesOnly.v(false, 0L);
+                    GhostHand.disableWhileHoldingSword.v(false, 0L);
+                    GhostHand.toolsOnly.v(false, 0L);
+                    GhostHand.playersOnly.v(false, 0L);
+                    GhostHand.blacklistEnemy.v(false, 0L);
+
+                    java.util.List<net.minecraft.entity.Entity> permissive =
+                            new java.util.ArrayList<net.minecraft.entity.Entity>();
+                    permissive.add(new EntityZombie(this.c.theWorld));
+                    GhostHand.T(permissive);
+                    if (!permissive.isEmpty()) {
+                        throw new IllegalStateException(
+                                "GhostHand permissive filter did not remove fixture");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe47-effect-pass:"
+                                    + "GhostHand:permissiveRemoved=true");
+
+                    GhostHand.toolsOnly.v(true, 0L);
+                    java.util.List<net.minecraft.entity.Entity> toolRequired =
+                            new java.util.ArrayList<net.minecraft.entity.Entity>();
+                    toolRequired.add(new EntityZombie(this.c.theWorld));
+                    GhostHand.T(toolRequired);
+                    if (toolRequired.size() != 1) {
+                        throw new IllegalStateException(
+                                "GhostHand tools-only filter removed fixture"
+                                        + " with empty hand");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe47-effect-pass:"
+                                    + "GhostHand:toolsOnlyEmptyHandRetained=true");
+
+                    this.highRiskFunctionalProbe47Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe47();
+                    GhostHand restored = Modules.J(GhostHand.class);
+                    if (restored == null
+                            || restored.o()
+                                    != this.highRiskFunctionalProbe47OriginalEnabled) {
+                        throw new IllegalStateException(
+                                "GhostHand enabled state did not restore");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe47-restore-pass:"
+                                    + "GhostHand:enabled="
+                                    + this.highRiskFunctionalProbe47OriginalEnabled);
+                    runtimeMilestone(
+                            "high-risk-functional-probe47-module-pass:GhostHand");
+                    runtimeMilestone(
+                            "high-risk-functional-probe47-pass:1");
+                    this.highRiskFunctionalProbe47Saved = false;
+                    this.highRiskFunctionalProbe47Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe47Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe47:GhostHand",
+                    "entity-filter",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe47-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe47();
+        }
+    }
+
     private int highRiskFunctionalProbe46CountItem(
             net.minecraft.item.Item item) {
         if (this.c.thePlayer == null || item == null) {
@@ -13719,6 +13864,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe44();
         this.pumpHighRiskFunctionalProbe45();
         this.pumpHighRiskFunctionalProbe46();
+        this.pumpHighRiskFunctionalProbe47();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
