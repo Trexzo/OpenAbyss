@@ -108,8 +108,41 @@ def main() -> int:
     print("EXPLICIT_DISABLED=" + ",".join(explicit_disabled))
     print("UNPROVEN=" + ",".join(unproven))
 
+    expected_disabled = {"AutoProjectiles", "FreeCam", "NoFall"}
+    failures: list[str] = []
+
     if len(registered) != 112:
-        print("WARNING=registry parser did not recover 112 unique names")
+        failures.append(
+            "registry-count expected=112 actual=" + str(len(registered))
+        )
+    if len(proven) != 109:
+        failures.append(
+            "proven-count expected=109 actual=" + str(len(proven))
+        )
+    if set(explicit_disabled) != expected_disabled:
+        failures.append(
+            "disabled-set expected="
+            + ",".join(sorted(expected_disabled))
+            + " actual="
+            + ",".join(sorted(explicit_disabled))
+        )
+    if unproven:
+        failures.append(
+            "unproven-live-or-unclassified=" + ",".join(unproven)
+        )
+
+    print("PRODUCTION_FUNCTIONAL_COVERAGE_FAILURES=" + str(len(failures)))
+    for failure in failures:
+        print("PRODUCTION_FUNCTIONAL_COVERAGE_FAILURE=" + failure)
+
+    if failures:
+        print("PRODUCTION_FUNCTIONAL_COVERAGE_GATE=FAIL")
+        return 1
+
+    print(
+        "PRODUCTION_FUNCTIONAL_COVERAGE_GATE=PASS "
+        "registered=112 proven=109 explicit-disabled=3 unproven=0"
+    )
     return 0
 
 
