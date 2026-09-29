@@ -135,6 +135,8 @@ import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.TabGUI;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.ItemESP;
+import Abyss.module.impl.visual_utility.ItemESPEntry;
 import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
@@ -716,6 +718,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe55OriginalSelectedProperty;
     private int highRiskFunctionalProbe55OriginalSelectedValue;
     private int highRiskFunctionalProbe56Stage;
+    private int highRiskFunctionalProbe57Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12108,6 +12111,211 @@ implements EventSubscriber {
     }
 
     @SuppressWarnings("unchecked")
+    private List<ItemESPEntry> itemEspEntriesForProbe(
+            ItemESP probe) throws Exception {
+        Field field = ItemESP.class.getDeclaredField("t");
+        field.setAccessible(true);
+        return (List<ItemESPEntry>)field.get(probe);
+    }
+
+    private boolean itemEspContainsEntityForProbe(
+            List<ItemESPEntry> entries,
+            net.minecraft.entity.item.EntityItem entity) {
+        for (ItemESPEntry entry : entries) {
+            if (ItemESPEntry.w(entry) == entity) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void pumpHighRiskFunctionalProbe57() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe57")
+                || this.highRiskFunctionalProbe57Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe56")
+                && this.highRiskFunctionalProbe56Stage < 1) {
+            return;
+        }
+
+        ItemESP probe = Modules.J(ItemESP.class);
+        final int diamondId = -73557;
+        final int ironId = -73558;
+        net.minecraft.entity.item.EntityItem diamond = null;
+        net.minecraft.entity.item.EntityItem iron = null;
+        boolean saved = false;
+        boolean originalEmeralds = false;
+        boolean originalDiamonds = false;
+        boolean originalGolds = false;
+        boolean originalIrons = false;
+        java.util.List<ItemESPEntry> originalEntries = null;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(ItemESP.class) != probe
+                    || ModuleManager.byName("ItemESP") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || ItemESP.emeralds == null
+                    || ItemESP.diamonds == null
+                    || ItemESP.golds == null
+                    || ItemESP.irons == null) {
+                throw new IllegalStateException(
+                        "ItemESP live-world authority unavailable");
+            }
+
+            List<ItemESPEntry> entries =
+                    this.itemEspEntriesForProbe(probe);
+            originalEmeralds = ItemESP.emeralds.c();
+            originalDiamonds = ItemESP.diamonds.c();
+            originalGolds = ItemESP.golds.c();
+            originalIrons = ItemESP.irons.c();
+            originalEntries =
+                    new java.util.ArrayList<ItemESPEntry>(entries);
+            saved = true;
+
+            diamond = new net.minecraft.entity.item.EntityItem(
+                    this.c.theWorld,
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ,
+                    new net.minecraft.item.ItemStack(
+                            net.minecraft.init.Items.diamond, 2));
+            iron = new net.minecraft.entity.item.EntityItem(
+                    this.c.theWorld,
+                    this.c.thePlayer.posX + 4.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ,
+                    new net.minecraft.item.ItemStack(
+                            net.minecraft.init.Items.iron_ingot, 3));
+            diamond.ticksExisted = 3;
+            iron.ticksExisted = 3;
+            this.c.theWorld.addEntityToWorld(diamondId, diamond);
+            this.c.theWorld.addEntityToWorld(ironId, iron);
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "ItemESP fixture EventBus binding inactive");
+            }
+
+            ItemESP.emeralds.v(false, 0L);
+            ItemESP.diamonds.v(true, 0L);
+            ItemESP.golds.v(false, 0L);
+            ItemESP.irons.v(false, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (!this.itemEspContainsEntityForProbe(entries, diamond)
+                    || this.itemEspContainsEntityForProbe(entries, iron)) {
+                throw new IllegalStateException(
+                        "ItemESP diamond category gate mismatch"
+                                + " diamond="
+                                + this.itemEspContainsEntityForProbe(
+                                        entries, diamond)
+                                + " iron="
+                                + this.itemEspContainsEntityForProbe(
+                                        entries, iron));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe57-effect-pass:"
+                            + "ItemESP:diamondOnly=true");
+
+            ItemESP.diamonds.v(false, 0L);
+            ItemESP.irons.v(true, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (this.itemEspContainsEntityForProbe(entries, diamond)
+                    || !this.itemEspContainsEntityForProbe(entries, iron)) {
+                throw new IllegalStateException(
+                        "ItemESP iron category gate mismatch"
+                                + " diamond="
+                                + this.itemEspContainsEntityForProbe(
+                                        entries, diamond)
+                                + " iron="
+                                + this.itemEspContainsEntityForProbe(
+                                        entries, iron));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe57-effect-pass:"
+                            + "ItemESP:ironOnly=true");
+
+            iron.ticksExisted = 2;
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (this.itemEspContainsEntityForProbe(entries, iron)) {
+                throw new IllegalStateException(
+                        "ItemESP age gate accepted ticksExisted=2");
+            }
+            iron.ticksExisted = 3;
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (!this.itemEspContainsEntityForProbe(entries, iron)) {
+                throw new IllegalStateException(
+                        "ItemESP age gate rejected ticksExisted=3");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe57-effect-pass:"
+                            + "ItemESP:ageGate=3");
+
+            runtimeMilestone(
+                    "high-risk-functional-probe57-module-pass:ItemESP");
+            runtimeMilestone(
+                    "high-risk-functional-probe57-pass:1");
+            this.highRiskFunctionalProbe57Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe57Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe57:ItemESP",
+                    "dropped-item-filtering",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe57-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(diamondId);
+                    this.c.theWorld.removeEntityFromWorld(ironId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    ItemESP.emeralds.v(originalEmeralds, 0L);
+                    ItemESP.diamonds.v(originalDiamonds, 0L);
+                    ItemESP.golds.v(originalGolds, 0L);
+                    ItemESP.irons.v(originalIrons, 0L);
+                    List<ItemESPEntry> entries =
+                            this.itemEspEntriesForProbe(probe);
+                    entries.clear();
+                    entries.addAll(originalEntries);
+                    runtimeMilestone(
+                            "high-risk-functional-probe57-restore-pass:"
+                                    + "ItemESP:settings=true:entries=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe57:ItemESP",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe57Stage >= 0) {
+                        this.highRiskFunctionalProbe57Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe57-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private Set<net.minecraft.entity.Entity> indicatorsTrackedForProbe(
             Indicators probe) throws Exception {
         Field field = Indicators.class.getDeclaredField("m");
@@ -15817,6 +16025,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe54();
         this.pumpHighRiskFunctionalProbe55();
         this.pumpHighRiskFunctionalProbe56();
+        this.pumpHighRiskFunctionalProbe57();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
