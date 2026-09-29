@@ -81,6 +81,7 @@ import Abyss.module.impl.macro.Macro1;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.AntiBot;
 import Abyss.module.impl.misc.CommandLine;
+import Abyss.module.impl.misc.Denick;
 import Abyss.module.impl.misc.InputFix;
 import Abyss.module.impl.misc.NoObfuscation;
 import Abyss.module.impl.misc.RawInput;
@@ -653,6 +654,13 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe50OriginalEnabled;
     private String highRiskFunctionalProbe50OriginalMode;
     private float highRiskFunctionalProbe50OriginalPulseDelay;
+    private int highRiskFunctionalProbe51Stage;
+    private boolean highRiskFunctionalProbe51Saved;
+    private boolean highRiskFunctionalProbe51OriginalEnabled;
+    private String highRiskFunctionalProbe51OriginalMode;
+    private UUID highRiskFunctionalProbe51FixtureUuid;
+    private String highRiskFunctionalProbe51OriginalResolved;
+    private boolean highRiskFunctionalProbe51HadOriginalResolved;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12044,6 +12052,201 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<UUID, String> denickResolvedMapForProbe(Denick probe) throws Exception {
+        Field resolvedField = Denick.class.getDeclaredField("k");
+        resolvedField.setAccessible(true);
+        return (Map<UUID, String>)resolvedField.get(probe);
+    }
+
+    private void restoreHighRiskFunctionalProbe51() {
+        if (!this.highRiskFunctionalProbe51Saved) {
+            return;
+        }
+        try {
+            Denick probe = Modules.J(Denick.class);
+            if (Denick.mode != null && this.highRiskFunctionalProbe51OriginalMode != null) {
+                Denick.mode.i(this.highRiskFunctionalProbe51OriginalMode);
+            }
+            if (probe != null && this.highRiskFunctionalProbe51FixtureUuid != null) {
+                Map<UUID, String> resolved = this.denickResolvedMapForProbe(probe);
+                if (this.highRiskFunctionalProbe51HadOriginalResolved) {
+                    resolved.put(
+                            this.highRiskFunctionalProbe51FixtureUuid,
+                            this.highRiskFunctionalProbe51OriginalResolved);
+                } else {
+                    resolved.remove(this.highRiskFunctionalProbe51FixtureUuid);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe51:Denick",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe51() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe51")
+                || this.highRiskFunctionalProbe51Stage < 0
+                || this.highRiskFunctionalProbe51Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe50")
+                && this.highRiskFunctionalProbe50Stage < 2) {
+            return;
+        }
+
+        Denick probe = Modules.J(Denick.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Denick.class) != probe
+                    || ModuleManager.byName("Denick") != probe
+                    || Denick.mode == null
+                    || this.c.thePlayer == null
+                    || this.c.getNetHandler() == null) {
+                throw new IllegalStateException(
+                        "Denick live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe51Stage) {
+                case 0: {
+                    NetworkPlayerInfo info = this.c.getNetHandler()
+                            .getPlayerInfo(this.c.thePlayer.getUniqueID());
+                    if (info == null
+                            || info.getGameProfile() == null
+                            || info.getGameProfile().getId() == null
+                            || info.getGameProfile().getName() == null) {
+                        throw new IllegalStateException(
+                                "Denick live player info unavailable");
+                    }
+
+                    this.highRiskFunctionalProbe51OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe51OriginalMode = Denick.mode.Y();
+                    this.highRiskFunctionalProbe51FixtureUuid =
+                            info.getGameProfile().getId();
+                    Map<UUID, String> resolved =
+                            this.denickResolvedMapForProbe(probe);
+                    this.highRiskFunctionalProbe51HadOriginalResolved =
+                            resolved.containsKey(
+                                    this.highRiskFunctionalProbe51FixtureUuid);
+                    this.highRiskFunctionalProbe51OriginalResolved =
+                            resolved.get(this.highRiskFunctionalProbe51FixtureUuid);
+                    this.highRiskFunctionalProbe51Saved = true;
+
+                    String nick = info.getGameProfile().getName();
+                    String real = "OpenAbyssResolvedProbe51";
+                    Denick.mode.i("DUPLICATE");
+                    resolved.put(this.highRiskFunctionalProbe51FixtureUuid, real);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "Denick fixture EventBus binding inactive");
+                    }
+
+                    PlayerGetNameEvent append =
+                            new PlayerGetNameEvent(info, nick);
+                    fixtureBus.e(append, 0L);
+                    String expected =
+                            nick + " \u00a7f(\u00a7b" + real + "\u00a7f)";
+                    if (!expected.equals(append.d())) {
+                        throw new IllegalStateException(
+                                "Denick duplicate suffix mismatch expected="
+                                        + expected
+                                        + " actual="
+                                        + append.d());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe51-effect-pass:"
+                                    + "Denick:duplicateAppend=true");
+
+                    String alreadyResolved = nick + " " + real;
+                    PlayerGetNameEvent guard =
+                            new PlayerGetNameEvent(info, alreadyResolved);
+                    fixtureBus.e(guard, 0L);
+                    if (!alreadyResolved.equals(guard.d())) {
+                        throw new IllegalStateException(
+                                "Denick duplicate guard appended unexpectedly: "
+                                        + guard.d());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe51-effect-pass:"
+                                    + "Denick:duplicateGuard=true");
+
+                    this.highRiskFunctionalProbe51Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe51();
+                    Denick restored = Modules.J(Denick.class);
+                    Map<UUID, String> resolved =
+                            this.denickResolvedMapForProbe(restored);
+                    boolean restoredMapping =
+                            this.highRiskFunctionalProbe51HadOriginalResolved
+                                    ? String.valueOf(
+                                                    this.highRiskFunctionalProbe51OriginalResolved)
+                                            .equals(
+                                                    String.valueOf(
+                                                            resolved.get(
+                                                                    this.highRiskFunctionalProbe51FixtureUuid)))
+                                    : !resolved.containsKey(
+                                            this.highRiskFunctionalProbe51FixtureUuid);
+                    if (restored == null
+                            || restored.o()
+                                    != this.highRiskFunctionalProbe51OriginalEnabled
+                            || !String.valueOf(
+                                            this.highRiskFunctionalProbe51OriginalMode)
+                                    .equals(String.valueOf(Denick.mode.Y()))
+                            || !restoredMapping) {
+                        throw new IllegalStateException(
+                                "Denick probe state did not restore exactly"
+                                        + " enabled="
+                                        + (restored != null && restored.o())
+                                        + " mode="
+                                        + Denick.mode.Y()
+                                        + " mapping="
+                                        + restoredMapping);
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe51-restore-pass:"
+                                    + "Denick:enabled="
+                                    + this.highRiskFunctionalProbe51OriginalEnabled
+                                    + ":mode="
+                                    + this.highRiskFunctionalProbe51OriginalMode
+                                    + ":mapping=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe51-module-pass:Denick");
+                    runtimeMilestone(
+                            "high-risk-functional-probe51-pass:1");
+                    this.highRiskFunctionalProbe51Saved = false;
+                    this.highRiskFunctionalProbe51Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe51Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe51:Denick",
+                    "duplicate-name-resolution",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe51-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe51();
+        }
+    }
+
     private void restoreHighRiskFunctionalProbe50() {
         if (!this.highRiskFunctionalProbe50Saved) {
             return;
@@ -14390,6 +14593,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe48();
         this.pumpHighRiskFunctionalProbe49();
         this.pumpHighRiskFunctionalProbe50();
+        this.pumpHighRiskFunctionalProbe51();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
