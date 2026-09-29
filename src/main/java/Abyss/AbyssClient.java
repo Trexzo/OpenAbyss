@@ -139,6 +139,8 @@ import Abyss.module.impl.visual_utility.NameTags;
 import Abyss.module.impl.visual_utility.ESP;
 import Abyss.module.impl.visual_utility.ItemESP;
 import Abyss.module.impl.visual_utility.ItemESPEntry;
+import Abyss.module.impl.visual_utility.ItemTags;
+import Abyss.module.impl.visual_utility.ItemTagsEntry;
 import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
@@ -722,6 +724,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe56Stage;
     private int highRiskFunctionalProbe57Stage;
     private int highRiskFunctionalProbe58Stage;
+    private int highRiskFunctionalProbe59Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12114,6 +12117,253 @@ implements EventSubscriber {
     }
 
     @SuppressWarnings("unchecked")
+    private List<ItemTagsEntry> itemTagsEntriesForProbe(
+            ItemTags probe) throws Exception {
+        Field field = ItemTags.class.getDeclaredField("S");
+        field.setAccessible(true);
+        return (List<ItemTagsEntry>)field.get(probe);
+    }
+
+    private ItemTagsEntry itemTagsEntryForEntityForProbe(
+            List<ItemTagsEntry> entries,
+            net.minecraft.entity.item.EntityItem entity) {
+        for (ItemTagsEntry entry : entries) {
+            if (ItemTagsEntry.H(entry) == entity) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private void pumpHighRiskFunctionalProbe59() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe59")
+                || this.highRiskFunctionalProbe59Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe58")
+                && this.highRiskFunctionalProbe58Stage < 1) {
+            return;
+        }
+
+        ItemTags probe = Modules.J(ItemTags.class);
+        final int diamondId = -73560;
+        final int ironId = -73561;
+        final int stoneId = -73562;
+        boolean saved = false;
+        boolean originalNbtOnly = false;
+        boolean originalRenderAll = false;
+        boolean originalMegawalls = false;
+        boolean originalBedwars = false;
+        boolean originalWeapons = false;
+        boolean originalBlocks = false;
+        boolean originalGapples = false;
+        java.util.List<ItemTagsEntry> originalEntries = null;
+        net.minecraft.entity.item.EntityItem diamond = null;
+        net.minecraft.entity.item.EntityItem iron = null;
+        net.minecraft.entity.item.EntityItem stone = null;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(ItemTags.class) != probe
+                    || ModuleManager.byName("ItemTags") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || ItemTags.nbtOnly == null
+                    || ItemTags.renderALL == null
+                    || ItemTags.megawallsItems == null
+                    || ItemTags.bedwarsResources == null
+                    || ItemTags.renderSwordsAndBows == null
+                    || ItemTags.renderBlocks == null
+                    || ItemTags.renderGoldenApples == null) {
+                throw new IllegalStateException(
+                        "ItemTags live-world authority unavailable");
+            }
+
+            List<ItemTagsEntry> entries =
+                    this.itemTagsEntriesForProbe(probe);
+            originalNbtOnly = ItemTags.nbtOnly.c();
+            originalRenderAll = ItemTags.renderALL.c();
+            originalMegawalls = ItemTags.megawallsItems.c();
+            originalBedwars = ItemTags.bedwarsResources.c();
+            originalWeapons = ItemTags.renderSwordsAndBows.c();
+            originalBlocks = ItemTags.renderBlocks.c();
+            originalGapples = ItemTags.renderGoldenApples.c();
+            originalEntries =
+                    new java.util.ArrayList<ItemTagsEntry>(entries);
+            saved = true;
+
+            diamond = new net.minecraft.entity.item.EntityItem(
+                    this.c.theWorld,
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ,
+                    new net.minecraft.item.ItemStack(
+                            net.minecraft.init.Items.diamond, 2));
+            iron = new net.minecraft.entity.item.EntityItem(
+                    this.c.theWorld,
+                    this.c.thePlayer.posX + 4.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ,
+                    new net.minecraft.item.ItemStack(
+                            net.minecraft.init.Items.iron_ingot, 3));
+            stone = new net.minecraft.entity.item.EntityItem(
+                    this.c.theWorld,
+                    this.c.thePlayer.posX + 5.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ,
+                    new net.minecraft.item.ItemStack(
+                            net.minecraft.init.Blocks.stone, 4));
+            this.c.theWorld.addEntityToWorld(diamondId, diamond);
+            this.c.theWorld.addEntityToWorld(ironId, iron);
+            this.c.theWorld.addEntityToWorld(stoneId, stone);
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "ItemTags fixture EventBus binding inactive");
+            }
+
+            ItemTags.nbtOnly.v(false, 0L);
+            ItemTags.renderALL.v(false, 0L);
+            ItemTags.megawallsItems.v(false, 0L);
+            ItemTags.bedwarsResources.v(true, 0L);
+            ItemTags.renderSwordsAndBows.v(false, 0L);
+            ItemTags.renderBlocks.v(false, 0L);
+            ItemTags.renderGoldenApples.v(false, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+
+            ItemTagsEntry diamondEntry =
+                    this.itemTagsEntryForEntityForProbe(entries, diamond);
+            ItemTagsEntry ironEntry =
+                    this.itemTagsEntryForEntityForProbe(entries, iron);
+            ItemTagsEntry stoneEntry =
+                    this.itemTagsEntryForEntityForProbe(entries, stone);
+            if (diamondEntry == null
+                    || ironEntry == null
+                    || stoneEntry != null
+                    || ItemTagsEntry.z(diamondEntry) != 0x55FFFF
+                    || ItemTagsEntry.z(ironEntry) != 0xAAAAAA
+                    || !ItemTagsEntry.T(diamondEntry).contains("x2")
+                    || !ItemTagsEntry.T(ironEntry).contains("x3")) {
+                throw new IllegalStateException(
+                        "ItemTags BedWars resource mapping mismatch"
+                                + " diamond=" + (diamondEntry != null)
+                                + " iron=" + (ironEntry != null)
+                                + " stone=" + (stoneEntry != null));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe59-effect-pass:"
+                            + "ItemTags:bedwarsResources=true:colors=true:"
+                            + "stackCounts=true");
+
+            ItemTags.bedwarsResources.v(false, 0L);
+            ItemTags.renderALL.v(true, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            stoneEntry =
+                    this.itemTagsEntryForEntityForProbe(entries, stone);
+            if (stoneEntry == null
+                    || ItemTagsEntry.z(stoneEntry) != 0xFFFFFF
+                    || !ItemTagsEntry.T(stoneEntry).contains("x4")) {
+                throw new IllegalStateException(
+                        "ItemTags render-all mapping mismatch"
+                                + " stone=" + (stoneEntry != null)
+                                + " color="
+                                + (stoneEntry == null
+                                        ? "<none>"
+                                        : ItemTagsEntry.z(stoneEntry)));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe59-effect-pass:"
+                            + "ItemTags:renderAll=true");
+
+            ItemTags.nbtOnly.v(true, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (this.itemTagsEntryForEntityForProbe(entries, diamond) != null
+                    || this.itemTagsEntryForEntityForProbe(entries, iron) != null
+                    || this.itemTagsEntryForEntityForProbe(entries, stone) != null) {
+                throw new IllegalStateException(
+                        "ItemTags NBT-only gate accepted untagged fixtures");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe59-effect-pass:"
+                            + "ItemTags:nbtOnlyGate=true");
+
+            probe.A(0L);
+            if (!entries.isEmpty()) {
+                throw new IllegalStateException(
+                        "ItemTags reset did not clear entries");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe59-effect-pass:"
+                            + "ItemTags:reset=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe59-module-pass:ItemTags");
+            runtimeMilestone(
+                    "high-risk-functional-probe59-pass:1");
+            this.highRiskFunctionalProbe59Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe59Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe59:ItemTags",
+                    "dropped-item-tagging",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe59-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(diamondId);
+                    this.c.theWorld.removeEntityFromWorld(ironId);
+                    this.c.theWorld.removeEntityFromWorld(stoneId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    ItemTags.nbtOnly.v(originalNbtOnly, 0L);
+                    ItemTags.renderALL.v(originalRenderAll, 0L);
+                    ItemTags.megawallsItems.v(originalMegawalls, 0L);
+                    ItemTags.bedwarsResources.v(originalBedwars, 0L);
+                    ItemTags.renderSwordsAndBows.v(
+                            originalWeapons, 0L);
+                    ItemTags.renderBlocks.v(originalBlocks, 0L);
+                    ItemTags.renderGoldenApples.v(
+                            originalGapples, 0L);
+                    List<ItemTagsEntry> entries =
+                            this.itemTagsEntriesForProbe(probe);
+                    entries.clear();
+                    entries.addAll(originalEntries);
+                    runtimeMilestone(
+                            "high-risk-functional-probe59-restore-pass:"
+                                    + "ItemTags:settings=true:entries=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe59:ItemTags",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe59Stage >= 0) {
+                        this.highRiskFunctionalProbe59Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe59-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private List<net.minecraft.entity.EntityLivingBase>
             nameTagsTargetsForProbe(NameTags probe) throws Exception {
         Field field = NameTags.class.getDeclaredField("Y");
@@ -16260,6 +16510,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe56();
         this.pumpHighRiskFunctionalProbe57();
         this.pumpHighRiskFunctionalProbe58();
+        this.pumpHighRiskFunctionalProbe59();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
