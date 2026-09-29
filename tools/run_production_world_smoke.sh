@@ -160,6 +160,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe42=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe43=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe44=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe45=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
@@ -1442,6 +1443,76 @@ if [ "$INVCLICKER_RESTORED" -ne 1 ]; then
   exit 1
 fi
 echo 'PRODUCTION_WORLD_PHYSICAL_INVCLICKER=PASS input=real-Shift+LMB binder=InvClickerBinder'
+
+BLINK_SENTINEL='OPENABYSS_BLINK_45'
+BLINK_BUFFERED=0
+for _ in $(seq 1 320); do
+  if grep -Fq "high-risk-functional-probe45-buffered-pass:Blink:sentinel=$BLINK_SENTINEL" "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe45-ready-flush:Blink:gate=abyss-blink-probe-flush-go' "$STAGE"; then
+    BLINK_BUFFERED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe45-fail:' "$STAGE"; then
+    break
+  fi
+  if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+    echo 'Production client exited before Blink buffered the sentinel packet.'
+    exit 1
+  fi
+  sleep 0.25
+done
+if [ "$BLINK_BUFFERED" -ne 1 ]; then
+  echo 'Blink did not buffer the real sentinel chat packet.'
+  grep -F 'high-risk-functional-probe45-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+
+sleep 0.75
+if grep -Fq "$BLINK_SENTINEL" "$SERVER_LOG"; then
+  echo 'Blink sentinel reached the local server before flush release.'
+  grep -F "$BLINK_SENTINEL" "$SERVER_LOG" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_BLINK_WITHHELD=PASS sentinel=absent-server-side'
+
+touch "$GAME_DIR/abyss-blink-probe-flush-go"
+
+BLINK_FLUSHED=0
+for _ in $(seq 1 320); do
+  if grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0:sentinel-recorded=true' "$STAGE" &&
+     grep -Fq 'high-risk-functional-probe45-pass:1' "$STAGE"; then
+    BLINK_FLUSHED=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe45-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$BLINK_FLUSHED" -ne 1 ]; then
+  echo 'Blink did not flush and restore after release gate.'
+  grep -F 'high-risk-functional-probe45-' "$STAGE" || true
+  cat "$GAME_DIR/abyss-feature-failure.txt" 2>/dev/null || true
+  exit 1
+fi
+
+BLINK_SERVER_DELIVERED=0
+for _ in $(seq 1 120); do
+  if grep -Fq "$BLINK_SENTINEL" "$SERVER_LOG"; then
+    BLINK_SERVER_DELIVERED=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$BLINK_SERVER_DELIVERED" -ne 1 ]; then
+  echo 'Blink flushed internally but the sentinel did not reach the local server.'
+  tail -n 250 "$SERVER_LOG" || true
+  grep -F 'high-risk-functional-probe45-' "$STAGE" || true
+  exit 1
+fi
+echo 'PRODUCTION_WORLD_BLINK_FLUSH_DELIVERED=PASS sentinel=server-observed'
+echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL45=PASS modules=Blink'
 
 DISPLAY=:99 xdotool keydown Shift_R
 sleep 0.45
