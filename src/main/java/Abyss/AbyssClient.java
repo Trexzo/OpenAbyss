@@ -784,6 +784,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe80Stage;
     private int highRiskFunctionalProbe81Stage;
     private int highRiskFunctionalProbe82Stage;
+    private int highRiskFunctionalProbe83Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12414,6 +12415,170 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe83() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe83")
+                || this.highRiskFunctionalProbe83Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe82")
+                && this.highRiskFunctionalProbe82Stage < 1) {
+            return;
+        }
+
+        Abyss.module.impl.visual.ArrayList live =
+                Modules.J(Abyss.module.impl.visual.ArrayList.class);
+        String originalMode = null;
+        boolean saved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(
+                            Abyss.module.impl.visual.ArrayList.class) != live
+                    || ModuleManager.byName("ArrayList") != live
+                    || Abyss.module.impl.visual.ArrayList.mode == null
+                    || !Abyss.module.impl.visual.ArrayList.mode.S()
+                            .contains("TOP")
+                    || !Abyss.module.impl.visual.ArrayList.mode.S()
+                            .contains("BOTTOM")) {
+                throw new IllegalStateException(
+                        "ArrayList live/mode authority unavailable");
+            }
+
+            originalMode =
+                    Abyss.module.impl.visual.ArrayList.mode.Y();
+            saved = true;
+
+            Abyss.module.impl.visual.ArrayList.mode.i("TOP");
+            if (!"TOP".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "ArrayList TOP tag mismatch: " + live.g(0L));
+            }
+            Abyss.module.impl.visual.ArrayList.mode.i("BOTTOM");
+            if (!"BOTTOM".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "ArrayList BOTTOM tag mismatch: " + live.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe83-effect-pass:"
+                            + "ArrayList:modeTag=true");
+
+            java.lang.reflect.Method cubic =
+                    Abyss.module.impl.visual.ArrayList.class
+                            .getDeclaredMethod("V", Float.TYPE);
+            cubic.setAccessible(true);
+            float cubicHalf = ((Float)cubic.invoke(
+                    null, Float.valueOf(0.5f))).floatValue();
+            float cubicLow = ((Float)cubic.invoke(
+                    null, Float.valueOf(-2.0f))).floatValue();
+            float cubicHigh = ((Float)cubic.invoke(
+                    null, Float.valueOf(2.0f))).floatValue();
+            if (Math.abs(cubicHalf - 0.125f) > 0.0001f
+                    || Math.abs(cubicLow) > 0.0001f
+                    || Math.abs(cubicHigh - 1.0f) > 0.0001f) {
+                throw new IllegalStateException(
+                        "ArrayList cubic easing mismatch"
+                                + " half=" + cubicHalf
+                                + " low=" + cubicLow
+                                + " high=" + cubicHigh);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe83-effect-pass:"
+                            + "ArrayList:cubicClamp=true");
+
+            java.lang.reflect.Method alpha =
+                    Abyss.module.impl.visual.ArrayList.class
+                            .getDeclaredMethod(
+                                    "u", Integer.TYPE, Float.TYPE);
+            alpha.setAccessible(true);
+            int halfAlpha = ((Integer)alpha.invoke(
+                    null,
+                    Integer.valueOf(0x80ABCDEF),
+                    Float.valueOf(0.5f))).intValue();
+            int zeroAlpha = ((Integer)alpha.invoke(
+                    null,
+                    Integer.valueOf(0x80ABCDEF),
+                    Float.valueOf(-1.0f))).intValue();
+            int fullAlpha = ((Integer)alpha.invoke(
+                    null,
+                    Integer.valueOf(0x80ABCDEF),
+                    Float.valueOf(2.0f))).intValue();
+            if (halfAlpha != 0x40ABCDEF
+                    || zeroAlpha != 0x00ABCDEF
+                    || fullAlpha != 0x80ABCDEF) {
+                throw new IllegalStateException(
+                        "ArrayList alpha scaling mismatch"
+                                + " half=" + Integer.toHexString(halfAlpha)
+                                + " zero=" + Integer.toHexString(zeroAlpha)
+                                + " full=" + Integer.toHexString(fullAlpha));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe83-effect-pass:"
+                            + "ArrayList:alphaClamp=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    Abyss.module.impl.visual.ArrayList.mode.i(
+                            originalMode);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe83:ArrayList",
+                            "restore-mode",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe83Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe83:ArrayList",
+                    "mode-and-easing-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe83-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        if (!java.util.Objects.equals(
+                originalMode,
+                Abyss.module.impl.visual.ArrayList.mode.Y())) {
+            this.highRiskFunctionalProbe83Stage = -1;
+            IllegalStateException restoreFailure =
+                    new IllegalStateException(
+                            "ArrayList mode restore mismatch");
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe83:ArrayList",
+                    "restore-verify",
+                    restoreFailure);
+            runtimeMilestone(
+                    "high-risk-functional-probe83-fail:"
+                            + restoreFailure.getClass().getName()
+                            + ":"
+                            + restoreFailure.getMessage());
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe83-restore-pass:"
+                        + "ArrayList:mode=true");
+        runtimeMilestone(
+                "high-risk-functional-probe83-module-pass:ArrayList");
+        runtimeMilestone("high-risk-functional-probe83-pass:1");
+        this.highRiskFunctionalProbe83Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe82() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe82")
                 || this.highRiskFunctionalProbe82Stage != 0) {
@@ -21337,6 +21502,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe80();
         this.pumpHighRiskFunctionalProbe81();
         this.pumpHighRiskFunctionalProbe82();
+        this.pumpHighRiskFunctionalProbe83();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();

@@ -30,7 +30,7 @@ Write-Host 'During this run:' -ForegroundColor Yellow
 Write-Host '  1. Wait for the Minecraft main menu.'
 Write-Host '  2. Enter a singleplayer world or a server.'
 if ($ExtendedProbes) {
-    Write-Host '  3. Stay in-world while the full extended functional chain (through probe82) settles.'
+    Write-Host '  3. Stay in-world while the full extended functional chain (through probe83) settles.'
     Write-Host '  4. Press RSHIFT to open the ClickGUI; confirm its labels/text are visibly rendered, then close it.'
     Write-Host '  5. Remain in-world until the deep probe chain has had time to complete.'
     Write-Host '  6. Close Minecraft normally.'
@@ -198,9 +198,9 @@ $checks = [ordered]@{
         $runtimeText.Contains('category-lifecycle-probe-pass:9') -and
         $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
     )
-    ExtendedHighRiskChain82 = (-not $ExtendedProbes) -or (
-        $runtimeText.Contains('high-risk-functional-probe82-pass:1') -and
-        -not $runtimeText.Contains('high-risk-functional-probe82-fail:')
+    ExtendedHighRiskChain83 = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('high-risk-functional-probe83-pass:1') -and
+        -not $runtimeText.Contains('high-risk-functional-probe83-fail:')
     )
 }
 
@@ -239,7 +239,7 @@ $pass = $checks.BootstrapComplete -and
         $checks.ExtendedInventoryHudEffect -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
-        $checks.ExtendedHighRiskChain82 -and
+        $checks.ExtendedHighRiskChain83 -and
         ($null -eq $smokeError)
 
 $lines = New-Object System.Collections.Generic.List[string]
