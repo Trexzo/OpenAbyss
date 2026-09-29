@@ -151,6 +151,7 @@ import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BedPlates;
+import Abyss.module.impl.visual_utility.BedESP;
 import Abyss.module.impl.visual_utility.StorageESP;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
@@ -746,6 +747,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe64Stage;
     private int highRiskFunctionalProbe65Stage;
     private int highRiskFunctionalProbe66Stage;
+    private int highRiskFunctionalProbe67Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12368,6 +12370,206 @@ implements EventSubscriber {
         }
     }
 
+    private Object bedEspInvokeForProbe(
+            BedESP probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = BedESP.class.getDeclaredMethod(name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe67() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe67")
+                || this.highRiskFunctionalProbe67Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe66")
+                && this.highRiskFunctionalProbe66Stage < 1) {
+            return;
+        }
+
+        BedESP probe = Modules.J(BedESP.class);
+        BlockPos head = null;
+        BlockPos foot = null;
+        BlockPos obsidian = null;
+        IBlockState originalHead = null;
+        IBlockState originalFoot = null;
+        IBlockState originalObsidian = null;
+        String originalColorMode = null;
+        String originalCustomColor = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BedESP.class) != probe
+                    || ModuleManager.byName("BedESP") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || BedESP.color == null
+                    || BedESP.customColor == null) {
+                throw new IllegalStateException(
+                        "BedESP live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            outer:
+            for (int rise = 4; rise <= 8; ++rise) {
+                for (int offset = 3; offset <= 7; ++offset) {
+                    BlockPos candidate = new BlockPos(
+                            baseX + offset, baseY + rise, baseZ);
+                    if (this.c.theWorld.isAirBlock(candidate)
+                            && this.c.theWorld.isAirBlock(candidate.west())
+                            && this.c.theWorld.isAirBlock(candidate.north())) {
+                        head = candidate;
+                        break outer;
+                    }
+                }
+            }
+            if (head == null) {
+                throw new IllegalStateException(
+                        "BedESP probe found no isolated air fixture");
+            }
+            foot = head.west();
+            obsidian = head.north();
+            originalHead = this.c.theWorld.getBlockState(head);
+            originalFoot = this.c.theWorld.getBlockState(foot);
+            originalObsidian = this.c.theWorld.getBlockState(obsidian);
+            originalColorMode = BedESP.color.Y();
+            originalCustomColor = BedESP.customColor.Q();
+            saved = true;
+
+            IBlockState headState = Blocks.bed.getDefaultState()
+                    .withProperty(
+                            net.minecraft.block.BlockBed.PART,
+                            net.minecraft.block.BlockBed.EnumPartType.HEAD)
+                    .withProperty(
+                            net.minecraft.block.BlockBed.FACING,
+                            EnumFacing.EAST);
+            IBlockState footState = Blocks.bed.getDefaultState()
+                    .withProperty(
+                            net.minecraft.block.BlockBed.PART,
+                            net.minecraft.block.BlockBed.EnumPartType.FOOT)
+                    .withProperty(
+                            net.minecraft.block.BlockBed.FACING,
+                            EnumFacing.EAST);
+            if (!this.c.theWorld.setBlockState(head, headState, 3)
+                    || !this.c.theWorld.setBlockState(foot, footState, 3)
+                    || !this.c.theWorld.setBlockState(
+                            obsidian, Blocks.obsidian.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "BedESP probe could not place fixture");
+            }
+
+            boolean headRecognized = ((Boolean)this.bedEspInvokeForProbe(
+                    probe,
+                    "Z",
+                    new Class<?>[]{BlockPos.class},
+                    new Object[]{head})).booleanValue();
+            boolean footRecognized = ((Boolean)this.bedEspInvokeForProbe(
+                    probe,
+                    "I",
+                    new Class<?>[]{BlockPos.class},
+                    new Object[]{foot})).booleanValue();
+            BlockPos resolvedFoot = (BlockPos)this.bedEspInvokeForProbe(
+                    probe,
+                    "C",
+                    new Class<?>[]{BlockPos.class, IBlockState.class},
+                    new Object[]{head, headState});
+            boolean obsidianRecognized = ((Boolean)this.bedEspInvokeForProbe(
+                    probe,
+                    "M",
+                    new Class<?>[]{BlockPos.class},
+                    new Object[]{obsidian})).booleanValue();
+
+            if (!headRecognized
+                    || !footRecognized
+                    || !foot.equals(resolvedFoot)
+                    || !obsidianRecognized) {
+                throw new IllegalStateException(
+                        "BedESP structure semantics mismatch head="
+                                + headRecognized
+                                + " foot=" + footRecognized
+                                + " resolved=" + resolvedFoot
+                                + " obsidian=" + obsidianRecognized);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe67-effect-pass:"
+                            + "BedESP:headFootOrientation=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe67-effect-pass:"
+                            + "BedESP:obsidianDetection=true");
+
+            BedESP.color.i("CUSTOM");
+            BedESP.customColor.e("13579B");
+            int customColor = ((Integer)this.bedEspInvokeForProbe(
+                    probe,
+                    "z",
+                    new Class<?>[]{Long.TYPE},
+                    new Object[]{Long.valueOf(0L)})).intValue();
+            if (customColor != 0xFF13579B) {
+                throw new IllegalStateException(
+                        "BedESP custom color mismatch: "
+                                + Integer.toHexString(customColor));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe67-effect-pass:"
+                            + "BedESP:customColor=13579B");
+            runtimeMilestone(
+                    "high-risk-functional-probe67-module-pass:BedESP");
+            runtimeMilestone(
+                    "high-risk-functional-probe67-pass:1");
+            this.highRiskFunctionalProbe67Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe67Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe67:BedESP",
+                    "bed-structure-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe67-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    BedESP.color.i(originalColorMode);
+                    BedESP.customColor.e(originalCustomColor);
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(head, originalHead, 3);
+                        this.c.theWorld.setBlockState(foot, originalFoot, 3);
+                        this.c.theWorld.setBlockState(
+                                obsidian, originalObsidian, 3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe67-restore-pass:"
+                                    + "BedESP:color=true:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe67:BedESP",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe67Stage >= 0) {
+                        this.highRiskFunctionalProbe67Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe67-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private int storageEspColorForProbe(StorageESP probe, TileEntity tile)
             throws Exception {
         Method method = StorageESP.class.getDeclaredMethod(
@@ -18102,6 +18304,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe64();
         this.pumpHighRiskFunctionalProbe65();
         this.pumpHighRiskFunctionalProbe66();
+        this.pumpHighRiskFunctionalProbe67();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
