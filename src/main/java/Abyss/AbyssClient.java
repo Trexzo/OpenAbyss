@@ -790,6 +790,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe85Stage;
     private int highRiskFunctionalProbe86Stage;
     private int highRiskFunctionalProbe87Stage;
+    private int highRiskFunctionalProbe88Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12420,6 +12421,91 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe88() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe88")
+                || this.highRiskFunctionalProbe88Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe87")
+                && this.highRiskFunctionalProbe87Stage < 1) {
+            return;
+        }
+
+        AntiNick live = Modules.J(AntiNick.class);
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AntiNick.class) != live
+                    || ModuleManager.byName("AntiNick") != live
+                    || AntiNick.suffix == null) {
+                throw new IllegalStateException(
+                        "AntiNick live/setting authority unavailable");
+            }
+
+            java.lang.reflect.Method predicate =
+                    AntiNick.class.getDeclaredMethod(
+                            "isVersion", java.util.UUID.class);
+            predicate.setAccessible(true);
+
+            java.util.UUID version1 =
+                    java.util.UUID.fromString(
+                            "00000000-0000-1000-8000-000000000001");
+            java.util.UUID version4 =
+                    java.util.UUID.fromString(
+                            "00000000-0000-4000-8000-000000000001");
+
+            boolean v1 = ((Boolean)predicate.invoke(
+                    null, version1)).booleanValue();
+            boolean v4 = ((Boolean)predicate.invoke(
+                    null, version4)).booleanValue();
+
+            if (!v1 || v4) {
+                throw new IllegalStateException(
+                        "AntiNick UUID-version predicate mismatch"
+                                + " v1=" + v1
+                                + " v4=" + v4);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe88-effect-pass:"
+                            + "AntiNick:uuidVersion1=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe88-effect-pass:"
+                            + "AntiNick:uuidVersion4=false");
+
+            String suffix = AntiNick.suffix.X();
+            if (suffix == null || suffix.isEmpty()) {
+                throw new IllegalStateException(
+                        "AntiNick suffix authority empty");
+            }
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe88Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe88:AntiNick",
+                    "uuid-version-nick-detection-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe88-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe88-restore-pass:"
+                        + "AntiNick:readOnly=true");
+        runtimeMilestone(
+                "high-risk-functional-probe88-module-pass:AntiNick");
+        runtimeMilestone("high-risk-functional-probe88-pass:1");
+        this.highRiskFunctionalProbe88Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe87() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe87")
                 || this.highRiskFunctionalProbe87Stage != 0) {
@@ -22009,6 +22095,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe85();
         this.pumpHighRiskFunctionalProbe86();
         this.pumpHighRiskFunctionalProbe87();
+        this.pumpHighRiskFunctionalProbe88();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
