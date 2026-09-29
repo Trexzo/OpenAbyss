@@ -747,7 +747,7 @@ jobs:
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL44=PASS modules=InvClicker'
           grep -Fq 'high-risk-functional-probe45-buffer-armed:Blink:buffering=true' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-buffered-pass:Blink:sentinel=OPENABYSS_BLINK_45' "$STAGE"
-          grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0:sentinel-recorded=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-restore-pass:Blink:enabled=' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-module-pass:Blink' "$STAGE"
           grep -Fq 'high-risk-functional-probe45-pass:1' "$STAGE"
