@@ -147,7 +147,7 @@ try {
             '-Dabyss.visualUtilityFunctionalProbe=true'
             '-Dabyss.highRiskFunctionalProbe=true'
         )
-        foreach ($ProbeIndex in 2..62) {
+        foreach ($ProbeIndex in 2..63) {
             $ExtendedProbeArgs += "-Dabyss.highRiskFunctionalProbe${ProbeIndex}=true"
         }
         $ExtendedProbeArgs += '-Dabyss.commandRuntimeProbe=true'
@@ -172,7 +172,7 @@ try {
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "extended_probes=$ExtendedProbes"
-        "extended_probe_max=$(if ($ExtendedProbes) { 62 } else { 0 })"
+        "extended_probe_max=$(if ($ExtendedProbes) { 63 } else { 0 })"
         "reference_bootstrap=$UseReferenceBootstrap"
         "skip_chat_menu=$UseSkipChatMenu"
         "skip_cheater_detector=$UseSkipCheaterDetector"
@@ -466,6 +466,7 @@ try {
                 'high-risk-functional-probe60-pass:1',
                 'high-risk-functional-probe61-pass:1',
                 'high-risk-functional-probe62-pass:1',
+                'high-risk-functional-probe63-pass:1',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
@@ -614,7 +615,7 @@ try {
         "JAR_SHA256=$JarHash"
         "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "EXTENDED_PROBES=$ExtendedProbes"
-        "EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 62 } else { 0 })"
+        "EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 63 } else { 0 })"
         "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
         "SKIP_CHAT_MENU=$UseSkipChatMenu"
         "SKIP_CHEATER_DETECTOR=$UseSkipCheaterDetector"
