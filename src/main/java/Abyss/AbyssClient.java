@@ -29,6 +29,8 @@ import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.AttackEntityEvent;
 import Abyss.event.events.KnockbackEvent;
+import Abyss.event.events.MoveEntityEvent;
+import Abyss.event.events.MoveEntityWithHeadingEvent;
 import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.MoveFlyingEvent;
 import Abyss.event.events.WorldLoadEvent;
@@ -92,6 +94,7 @@ import Abyss.module.impl.movement.NoJumpDelay;
 import Abyss.module.impl.movement.NoSlow;
 import Abyss.module.impl.movement.Speed;
 import Abyss.module.impl.movement.Sprint;
+import Abyss.module.impl.movement.Stuck;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.ChestStealer;
@@ -645,6 +648,11 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe49OriginalEnabled;
     private java.util.Set<String> highRiskFunctionalProbe49OriginalFriends;
     private java.util.Set<String> highRiskFunctionalProbe49OriginalEnemies;
+    private int highRiskFunctionalProbe50Stage;
+    private boolean highRiskFunctionalProbe50Saved;
+    private boolean highRiskFunctionalProbe50OriginalEnabled;
+    private String highRiskFunctionalProbe50OriginalMode;
+    private float highRiskFunctionalProbe50OriginalPulseDelay;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12036,6 +12044,185 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe50() {
+        if (!this.highRiskFunctionalProbe50Saved) {
+            return;
+        }
+        try {
+            Stuck probe = Modules.J(Stuck.class);
+            Stuck.mode.i(this.highRiskFunctionalProbe50OriginalMode);
+            Stuck.pulseDelay.o(
+                    (byte)0,
+                    0L,
+                    this.highRiskFunctionalProbe50OriginalPulseDelay);
+            if (probe != null) {
+                probe.A(0L);
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe50OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe50:Stuck",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe50() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe50")
+                || this.highRiskFunctionalProbe50Stage < 0
+                || this.highRiskFunctionalProbe50Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe49")
+                && this.highRiskFunctionalProbe49Stage < 2) {
+            return;
+        }
+
+        Stuck probe = Modules.J(Stuck.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Stuck.class) != probe
+                    || ModuleManager.byName("Stuck") != probe
+                    || Stuck.mode == null
+                    || Stuck.pulseDelay == null
+                    || this.c.thePlayer == null
+                    || this.c.theWorld == null) {
+                throw new IllegalStateException(
+                        "Stuck live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe50Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe50OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe50OriginalMode =
+                            Stuck.mode.Y();
+                    this.highRiskFunctionalProbe50OriginalPulseDelay =
+                            Stuck.pulseDelay.L();
+                    this.highRiskFunctionalProbe50Saved = true;
+
+                    Stuck.mode.i("NORMAL");
+                    probe.A(0L);
+                    this.setModuleEnabledRawForProbe(probe, true);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "Stuck fixture EventBus binding inactive");
+                    }
+
+                    MoveInputEvent input =
+                            new MoveInputEvent(
+                                    1.0f,
+                                    -1.0f,
+                                    true,
+                                    true,
+                                    0.3);
+                    fixtureBus.e(input, 0L);
+                    if (Math.abs(input.t()) > 0.0001f
+                            || Math.abs(input.R()) > 0.0001f) {
+                        throw new IllegalStateException(
+                                "Stuck MoveInputEvent was not zeroed"
+                                        + " forward=" + input.t()
+                                        + " strafe=" + input.R());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-effect-pass:"
+                                    + "Stuck:moveInputZero=true");
+
+                    MoveEntityEvent move =
+                            new MoveEntityEvent(
+                                    (short)0,
+                                    0,
+                                    (short)0,
+                                    this.c.thePlayer);
+                    fixtureBus.e(move, 0L);
+                    if (!move.a()) {
+                        throw new IllegalStateException(
+                                "Stuck MoveEntityEvent was not cancelled");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-effect-pass:"
+                                    + "Stuck:moveEntityCancelled=true");
+
+                    MoveEntityWithHeadingEvent heading =
+                            new MoveEntityWithHeadingEvent(
+                                    (short)0,
+                                    this.c.thePlayer,
+                                    (short)0,
+                                    0);
+                    fixtureBus.e(heading, 0L);
+                    if (!heading.a()) {
+                        throw new IllegalStateException(
+                                "Stuck MoveEntityWithHeadingEvent was not cancelled");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-effect-pass:"
+                                    + "Stuck:moveHeadingCancelled=true");
+
+                    this.highRiskFunctionalProbe50Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe50();
+                    Stuck restored = Modules.J(Stuck.class);
+                    if (restored == null
+                            || restored.o()
+                                    != this.highRiskFunctionalProbe50OriginalEnabled
+                            || !String.valueOf(
+                                            this.highRiskFunctionalProbe50OriginalMode)
+                                    .equals(String.valueOf(Stuck.mode.Y()))
+                            || Math.abs(
+                                            Stuck.pulseDelay.L()
+                                                    - this.highRiskFunctionalProbe50OriginalPulseDelay)
+                                    > 0.001f) {
+                        throw new IllegalStateException(
+                                "Stuck probe state did not restore exactly"
+                                        + " enabled="
+                                        + (restored != null && restored.o())
+                                        + " mode=" + Stuck.mode.Y()
+                                        + " pulseDelay="
+                                        + Stuck.pulseDelay.L());
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-restore-pass:"
+                                    + "Stuck:enabled="
+                                    + this.highRiskFunctionalProbe50OriginalEnabled
+                                    + ":mode="
+                                    + this.highRiskFunctionalProbe50OriginalMode);
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-module-pass:Stuck");
+                    runtimeMilestone(
+                            "high-risk-functional-probe50-pass:1");
+                    this.highRiskFunctionalProbe50Saved = false;
+                    this.highRiskFunctionalProbe50Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe50Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe50:Stuck",
+                    "movement-cancellation",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe50-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe50();
+        }
+    }
+
     private void restoreHighRiskFunctionalProbe49() {
         if (!this.highRiskFunctionalProbe49Saved) {
             return;
@@ -14202,6 +14389,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe47();
         this.pumpHighRiskFunctionalProbe48();
         this.pumpHighRiskFunctionalProbe49();
+        this.pumpHighRiskFunctionalProbe50();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
