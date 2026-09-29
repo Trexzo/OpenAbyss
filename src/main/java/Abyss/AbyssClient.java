@@ -785,6 +785,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe81Stage;
     private int highRiskFunctionalProbe82Stage;
     private int highRiskFunctionalProbe83Stage;
+    private int highRiskFunctionalProbe84Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12415,6 +12416,174 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe84() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe84")
+                || this.highRiskFunctionalProbe84Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe83")
+                && this.highRiskFunctionalProbe83Stage < 1) {
+            return;
+        }
+
+        InvMove live = Modules.J(InvMove.class);
+        net.minecraft.inventory.Container originalContainer = null;
+        boolean originalInternalClickState = false;
+        boolean containerSaved = false;
+        boolean clickStateSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(InvMove.class) != live
+                    || ModuleManager.byName("InvMove") != live
+                    || InvMove.containerMode == null
+                    || InvMove.inventoryMode == null
+                    || InvMove.clickgui == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "InvMove live/settings/player authority unavailable");
+            }
+
+            final net.minecraft.inventory.InventoryCraftResult craftResult =
+                    new net.minecraft.inventory.InventoryCraftResult();
+            final net.minecraft.inventory.InventoryBasic ordinary =
+                    new net.minecraft.inventory.InventoryBasic(
+                            "openabyss-probe", false, 1);
+            net.minecraft.inventory.Container fixture =
+                    new net.minecraft.inventory.Container() {
+                        {
+                            this.addSlotToContainer(
+                                    new net.minecraft.inventory.Slot(
+                                            craftResult, 0, 0, 0));
+                            this.addSlotToContainer(
+                                    new net.minecraft.inventory.Slot(
+                                            ordinary, 0, 0, 0));
+                        }
+
+                        @Override
+                        public boolean canInteractWith(
+                                net.minecraft.entity.player.EntityPlayer player) {
+                            return true;
+                        }
+                    };
+
+            originalContainer = this.c.thePlayer.openContainer;
+            containerSaved = true;
+            this.c.thePlayer.openContainer = fixture;
+
+            java.lang.reflect.Method slotClassifier =
+                    InvMove.class.getDeclaredMethod(
+                            "Z", Integer.TYPE);
+            slotClassifier.setAccessible(true);
+            boolean crafting = ((Boolean)slotClassifier.invoke(
+                    live, Integer.valueOf(0))).booleanValue();
+            boolean ordinarySlot = ((Boolean)slotClassifier.invoke(
+                    live, Integer.valueOf(1))).booleanValue();
+            boolean negative = ((Boolean)slotClassifier.invoke(
+                    live, Integer.valueOf(-1))).booleanValue();
+            boolean outOfRange = ((Boolean)slotClassifier.invoke(
+                    live, Integer.valueOf(99))).booleanValue();
+
+            if (!crafting
+                    || ordinarySlot
+                    || negative
+                    || outOfRange) {
+                throw new IllegalStateException(
+                        "InvMove click-slot classifier mismatch"
+                                + " crafting=" + crafting
+                                + " ordinary=" + ordinarySlot
+                                + " negative=" + negative
+                                + " out=" + outOfRange);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe84-effect-pass:"
+                            + "InvMove:slotClassifier=true");
+
+            java.lang.reflect.Field clickState =
+                    InvMove.class.getDeclaredField("c");
+            clickState.setAccessible(true);
+            originalInternalClickState =
+                    clickState.getBoolean(live);
+            clickStateSaved = true;
+            clickState.setBoolean(live, true);
+            live.A(0L);
+            if (clickState.getBoolean(live)) {
+                throw new IllegalStateException(
+                        "InvMove disable reset did not clear click state");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe84-effect-pass:"
+                            + "InvMove:disableReset=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (containerSaved && this.c.thePlayer != null) {
+                this.c.thePlayer.openContainer = originalContainer;
+            }
+            if (clickStateSaved) {
+                try {
+                    java.lang.reflect.Field clickState =
+                            InvMove.class.getDeclaredField("c");
+                    clickState.setAccessible(true);
+                    clickState.setBoolean(
+                            live, originalInternalClickState);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe84:InvMove",
+                            "restore-click-state",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe84Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe84:InvMove",
+                    "slot-classifier-disable-reset",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe84-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        if (this.c.thePlayer == null
+                || this.c.thePlayer.openContainer != originalContainer) {
+            this.highRiskFunctionalProbe84Stage = -1;
+            IllegalStateException restoreFailure =
+                    new IllegalStateException(
+                            "InvMove container restore mismatch");
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe84:InvMove",
+                    "restore-verify",
+                    restoreFailure);
+            runtimeMilestone(
+                    "high-risk-functional-probe84-fail:"
+                            + restoreFailure.getClass().getName()
+                            + ":"
+                            + restoreFailure.getMessage());
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe84-restore-pass:"
+                        + "InvMove:container+clickState=true");
+        runtimeMilestone(
+                "high-risk-functional-probe84-module-pass:InvMove");
+        runtimeMilestone("high-risk-functional-probe84-pass:1");
+        this.highRiskFunctionalProbe84Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe83() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe83")
                 || this.highRiskFunctionalProbe83Stage != 0) {
@@ -21503,6 +21672,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe81();
         this.pumpHighRiskFunctionalProbe82();
         this.pumpHighRiskFunctionalProbe83();
+        this.pumpHighRiskFunctionalProbe84();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
