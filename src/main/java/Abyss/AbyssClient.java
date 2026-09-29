@@ -117,6 +117,7 @@ import Abyss.module.impl.visual.Ambience;
 import Abyss.module.impl.visual.Animations;
 import Abyss.module.impl.visual.AntiDebuff;
 import Abyss.module.impl.visual.BarrierVisible;
+import Abyss.module.impl.visual.BreakProgress;
 import Abyss.module.impl.visual.BindGUI;
 import Abyss.module.impl.visual.Chams;
 import Abyss.module.impl.visual.CaveXray;
@@ -661,6 +662,15 @@ implements EventSubscriber {
     private UUID highRiskFunctionalProbe51FixtureUuid;
     private String highRiskFunctionalProbe51OriginalResolved;
     private boolean highRiskFunctionalProbe51HadOriginalResolved;
+    private int highRiskFunctionalProbe52Stage;
+    private boolean highRiskFunctionalProbe52Saved;
+    private boolean highRiskFunctionalProbe52OriginalEnabled;
+    private float highRiskFunctionalProbe52OriginalDamage;
+    private boolean highRiskFunctionalProbe52OriginalCreative;
+    private boolean highRiskFunctionalProbe52OriginalAllowEdit;
+    private double highRiskFunctionalProbe52OriginalProgress;
+    private BlockPos highRiskFunctionalProbe52OriginalPos;
+    private String highRiskFunctionalProbe52OriginalText;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12052,6 +12062,240 @@ implements EventSubscriber {
         }
     }
 
+    private Object[] breakProgressStateForProbe(BreakProgress probe) throws Exception {
+        Field progressField = BreakProgress.class.getDeclaredField("B");
+        Field posField = BreakProgress.class.getDeclaredField("p");
+        Field textField = BreakProgress.class.getDeclaredField("g");
+        progressField.setAccessible(true);
+        posField.setAccessible(true);
+        textField.setAccessible(true);
+        return new Object[]{
+                Double.valueOf(progressField.getDouble(probe)),
+                (BlockPos)posField.get(probe),
+                (String)textField.get(probe)
+        };
+    }
+
+    private void setBreakProgressStateForProbe(
+            BreakProgress probe,
+            double progress,
+            BlockPos pos,
+            String text) throws Exception {
+        Field progressField = BreakProgress.class.getDeclaredField("B");
+        Field posField = BreakProgress.class.getDeclaredField("p");
+        Field textField = BreakProgress.class.getDeclaredField("g");
+        progressField.setAccessible(true);
+        posField.setAccessible(true);
+        textField.setAccessible(true);
+        progressField.setDouble(probe, progress);
+        posField.set(probe, pos);
+        textField.set(probe, text);
+    }
+
+    private void restoreHighRiskFunctionalProbe52() {
+        if (!this.highRiskFunctionalProbe52Saved) {
+            return;
+        }
+        try {
+            BreakProgress probe = Modules.J(BreakProgress.class);
+            if (this.c.playerController != null) {
+                PlayerControllerStateAccessor.e(
+                        0L,
+                        this.c.playerController,
+                        this.highRiskFunctionalProbe52OriginalDamage);
+            }
+            if (this.c.thePlayer != null) {
+                this.c.thePlayer.capabilities.isCreativeMode =
+                        this.highRiskFunctionalProbe52OriginalCreative;
+                this.c.thePlayer.capabilities.allowEdit =
+                        this.highRiskFunctionalProbe52OriginalAllowEdit;
+            }
+            if (probe != null) {
+                this.setBreakProgressStateForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe52OriginalProgress,
+                        this.highRiskFunctionalProbe52OriginalPos,
+                        this.highRiskFunctionalProbe52OriginalText);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe52:BreakProgress",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe52() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe52")
+                || this.highRiskFunctionalProbe52Stage < 0
+                || this.highRiskFunctionalProbe52Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe51")
+                && this.highRiskFunctionalProbe51Stage < 2) {
+            return;
+        }
+
+        BreakProgress probe = Modules.J(BreakProgress.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BreakProgress.class) != probe
+                    || ModuleManager.byName("BreakProgress") != probe
+                    || this.c.thePlayer == null
+                    || this.c.playerController == null) {
+                throw new IllegalStateException(
+                        "BreakProgress live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe52Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe52OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe52OriginalDamage =
+                            PlayerControllerStateAccessor.s(
+                                    0L,
+                                    this.c.playerController);
+                    this.highRiskFunctionalProbe52OriginalCreative =
+                            this.c.thePlayer.capabilities.isCreativeMode;
+                    this.highRiskFunctionalProbe52OriginalAllowEdit =
+                            this.c.thePlayer.capabilities.allowEdit;
+                    Object[] original = this.breakProgressStateForProbe(probe);
+                    this.highRiskFunctionalProbe52OriginalProgress =
+                            ((Double)original[0]).doubleValue();
+                    this.highRiskFunctionalProbe52OriginalPos =
+                            (BlockPos)original[1];
+                    this.highRiskFunctionalProbe52OriginalText =
+                            (String)original[2];
+                    this.highRiskFunctionalProbe52Saved = true;
+
+                    this.c.thePlayer.capabilities.isCreativeMode = false;
+                    this.c.thePlayer.capabilities.allowEdit = true;
+                    float fixtureDamage = 0.42f;
+                    PlayerControllerStateAccessor.e(
+                            0L,
+                            this.c.playerController,
+                            fixtureDamage);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "BreakProgress fixture EventBus binding inactive");
+                    }
+                    fixtureBus.e(new PostTickEvent(), 0L);
+
+                    Object[] sampled = this.breakProgressStateForProbe(probe);
+                    double progress = ((Double)sampled[0]).doubleValue();
+                    BlockPos pos = (BlockPos)sampled[1];
+                    String text = (String)sampled[2];
+                    String expectedText =
+                            ((int)(100.0 * (double)fixtureDamage)) + "%";
+                    if (Math.abs(progress - (double)fixtureDamage) > 0.0001
+                            || pos == null
+                            || !expectedText.equals(text)) {
+                        throw new IllegalStateException(
+                                "BreakProgress sample mismatch"
+                                        + " progress=" + progress
+                                        + " pos=" + pos
+                                        + " text=" + text
+                                        + " expectedText=" + expectedText);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe52-effect-pass:"
+                                    + "BreakProgress:progress=true:text="
+                                    + expectedText);
+                    this.highRiskFunctionalProbe52Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    PlayerControllerStateAccessor.e(
+                            0L,
+                            this.c.playerController,
+                            0.0f);
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    fixtureBus.e(new PostTickEvent(), 0L);
+                    Object[] cleared = this.breakProgressStateForProbe(probe);
+                    if (Math.abs(((Double)cleared[0]).doubleValue()) > 0.0001
+                            || cleared[1] != null
+                            || !"".equals(String.valueOf(cleared[2]))) {
+                        throw new IllegalStateException(
+                                "BreakProgress zero-progress clear mismatch"
+                                        + " progress=" + cleared[0]
+                                        + " pos=" + cleared[1]
+                                        + " text=" + cleared[2]);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe52-effect-pass:"
+                                    + "BreakProgress:zeroClear=true");
+
+                    this.restoreHighRiskFunctionalProbe52();
+                    Object[] restoredState =
+                            this.breakProgressStateForProbe(probe);
+                    BlockPos restoredPos = (BlockPos)restoredState[1];
+                    boolean posRestored =
+                            this.highRiskFunctionalProbe52OriginalPos == null
+                                    ? restoredPos == null
+                                    : this.highRiskFunctionalProbe52OriginalPos.equals(
+                                            restoredPos);
+                    if (probe.o()
+                                    != this.highRiskFunctionalProbe52OriginalEnabled
+                            || Math.abs(
+                                            PlayerControllerStateAccessor.s(
+                                                    0L,
+                                                    this.c.playerController)
+                                                    - this.highRiskFunctionalProbe52OriginalDamage)
+                                    > 0.0001f
+                            || this.c.thePlayer.capabilities.isCreativeMode
+                                    != this.highRiskFunctionalProbe52OriginalCreative
+                            || this.c.thePlayer.capabilities.allowEdit
+                                    != this.highRiskFunctionalProbe52OriginalAllowEdit
+                            || Math.abs(
+                                            ((Double)restoredState[0]).doubleValue()
+                                                    - this.highRiskFunctionalProbe52OriginalProgress)
+                                    > 0.0001
+                            || !posRestored
+                            || !String.valueOf(
+                                            this.highRiskFunctionalProbe52OriginalText)
+                                    .equals(String.valueOf(restoredState[2]))) {
+                        throw new IllegalStateException(
+                                "BreakProgress probe state did not restore exactly");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe52-restore-pass:"
+                                    + "BreakProgress:enabled="
+                                    + this.highRiskFunctionalProbe52OriginalEnabled
+                                    + ":controller=true:moduleState=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe52-module-pass:BreakProgress");
+                    runtimeMilestone(
+                            "high-risk-functional-probe52-pass:1");
+                    this.highRiskFunctionalProbe52Saved = false;
+                    this.highRiskFunctionalProbe52Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe52Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe52:BreakProgress",
+                    "posttick-progress-state",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe52-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe52();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Map<UUID, String> denickResolvedMapForProbe(Denick probe) throws Exception {
         Field resolvedField = Denick.class.getDeclaredField("k");
@@ -14594,6 +14838,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe49();
         this.pumpHighRiskFunctionalProbe50();
         this.pumpHighRiskFunctionalProbe51();
+        this.pumpHighRiskFunctionalProbe52();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
