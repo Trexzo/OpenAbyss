@@ -608,6 +608,16 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe44OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe44OriginalScreen;
     private net.minecraft.world.WorldSettings.GameType highRiskFunctionalProbe44OriginalGameType;
+    private int highRiskFunctionalProbe45Stage;
+    private int highRiskFunctionalProbe45WaitTicks;
+    private boolean highRiskFunctionalProbe45Saved;
+    private boolean highRiskFunctionalProbe45OriginalEnabled;
+    private String highRiskFunctionalProbe45OriginalMode;
+    private boolean highRiskFunctionalProbe45OriginalShowDelay;
+    private boolean highRiskFunctionalProbe45OriginalTurnOffOnHit;
+    private boolean highRiskFunctionalProbe45OriginalAutoDisable;
+    private static final String HIGH_RISK_FUNCTIONAL_PROBE45_SENTINEL =
+            "OPENABYSS_BLINK_45";
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -11999,6 +12009,347 @@ implements EventSubscriber {
         }
     }
 
+    private boolean highRiskFunctionalProbe45ContainsChat(
+            java.util.Collection<? extends net.minecraft.network.Packet<?>> packets) {
+        if (packets == null) {
+            return false;
+        }
+        for (net.minecraft.network.Packet<?> packet : packets) {
+            if (!(packet
+                    instanceof net.minecraft.network.play.client.C01PacketChatMessage)) {
+                continue;
+            }
+            net.minecraft.network.play.client.C01PacketChatMessage chat =
+                    (net.minecraft.network.play.client.C01PacketChatMessage)packet;
+            if (HIGH_RISK_FUNCTIONAL_PROBE45_SENTINEL.equals(
+                    chat.getMessage())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void restoreHighRiskFunctionalProbe45() {
+        if (!this.highRiskFunctionalProbe45Saved) {
+            return;
+        }
+        try {
+            Blink probe = Modules.J(Blink.class);
+            File flushGate = new File("abyss-blink-probe-flush-go");
+            if (flushGate.exists() && !flushGate.delete()) {
+                flushGate.deleteOnExit();
+            }
+
+            if (probe != null) {
+                if (probe.o()
+                        || probe.l()
+                        || probe.K()
+                        || probe.P()
+                        || w.isOwnerActive(probe)) {
+                    probe.I(0L, false);
+                }
+            }
+
+            if (PacketManager.e() || !PacketManager.u.isEmpty()) {
+                PacketManager.j();
+                PacketManager.M(false);
+            }
+
+            Blink.mode.i(this.highRiskFunctionalProbe45OriginalMode);
+            Blink.showDelay.v(
+                    this.highRiskFunctionalProbe45OriginalShowDelay, 0L);
+            Blink.turnOffOnHit.v(
+                    this.highRiskFunctionalProbe45OriginalTurnOffOnHit, 0L);
+            Blink.autoDisable.v(
+                    this.highRiskFunctionalProbe45OriginalAutoDisable, 0L);
+
+            if (probe != null && this.highRiskFunctionalProbe45OriginalEnabled) {
+                probe.I(0L, true);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe45:Blink",
+                    "restore-state",
+                    restoreFailure);
+        }
+        this.highRiskFunctionalProbe45WaitTicks = 0;
+    }
+
+    private void pumpHighRiskFunctionalProbe45() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe45")
+                || this.highRiskFunctionalProbe45Stage < 0
+                || this.highRiskFunctionalProbe45Stage >= 7) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe44")
+                && this.highRiskFunctionalProbe44Stage < 6) {
+            return;
+        }
+
+        Blink probe = Modules.J(Blink.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Blink.class) != probe
+                    || ModuleManager.byName("Blink") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || this.c.getNetHandler() == null) {
+                throw new IllegalStateException(
+                        "Blink live-world network authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe45Stage) {
+                case 0: {
+                    if (PacketManager.e() || !PacketManager.u.isEmpty()) {
+                        throw new IllegalStateException(
+                                "Blink probe requires clean packet buffer"
+                                        + " buffering=" + PacketManager.e()
+                                        + " queued=" + PacketManager.u.size());
+                    }
+                    File flushGate = new File("abyss-blink-probe-flush-go");
+                    if (flushGate.exists() && !flushGate.delete()) {
+                        throw new IllegalStateException(
+                                "Blink flush gate could not be cleared");
+                    }
+
+                    this.highRiskFunctionalProbe45OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe45OriginalMode = Blink.mode.Y();
+                    this.highRiskFunctionalProbe45OriginalShowDelay =
+                            Blink.showDelay.c();
+                    this.highRiskFunctionalProbe45OriginalTurnOffOnHit =
+                            Blink.turnOffOnHit.c();
+                    this.highRiskFunctionalProbe45OriginalAutoDisable =
+                            Blink.autoDisable.c();
+                    this.highRiskFunctionalProbe45Saved = true;
+
+                    if (probe.o()) {
+                        probe.I(0L, false);
+                        this.highRiskFunctionalProbe45Stage = 1;
+                        this.highRiskFunctionalProbe45WaitTicks = 0;
+                        runtimeMilestone(
+                                "high-risk-functional-probe45-isolate-request:"
+                                        + "Blink");
+                        return;
+                    }
+                    this.highRiskFunctionalProbe45Stage = 2;
+                    return;
+                }
+
+                case 1: {
+                    if (probe.o()
+                            || probe.l()
+                            || probe.K()
+                            || probe.P()
+                            || w.isOwnerActive(probe)) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "Blink did not isolate from live lifecycle"
+                                            + " enabled=" + probe.o()
+                                            + " pendingEnable=" + probe.l()
+                                            + " pendingDisable=" + probe.K()
+                                            + " subscribed=" + probe.P()
+                                            + " ownerActive="
+                                            + w.isOwnerActive(probe));
+                        }
+                        return;
+                    }
+                    this.highRiskFunctionalProbe45Stage = 2;
+                    this.highRiskFunctionalProbe45WaitTicks = 0;
+                    return;
+                }
+
+                case 2: {
+                    Blink.mode.i("NORMAL");
+                    Blink.showDelay.v(false, 0L);
+                    Blink.turnOffOnHit.v(false, 0L);
+                    Blink.autoDisable.v(false, 0L);
+                    PacketManager.j();
+                    PacketManager.M(false);
+
+                    probe.I(0L, true);
+                    this.highRiskFunctionalProbe45Stage = 3;
+                    this.highRiskFunctionalProbe45WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-enable-request:"
+                                    + "Blink:mode=NORMAL");
+                    return;
+                }
+
+                case 3: {
+                    boolean active =
+                            probe.o()
+                                    && !probe.l()
+                                    && !probe.K()
+                                    && probe.P()
+                                    && w.isOwnerActive(probe);
+                    if (!active || !PacketManager.e()) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "Blink NORMAL mode did not arm packet buffer"
+                                            + " active=" + active
+                                            + " buffering=" + PacketManager.e()
+                                            + " queued=" + PacketManager.u.size());
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-buffer-armed:"
+                                    + "Blink:buffering=true");
+                    this.c.thePlayer.sendChatMessage(
+                            HIGH_RISK_FUNCTIONAL_PROBE45_SENTINEL);
+                    this.highRiskFunctionalProbe45Stage = 4;
+                    this.highRiskFunctionalProbe45WaitTicks = 0;
+                    return;
+                }
+
+                case 4: {
+                    boolean buffered =
+                            this.highRiskFunctionalProbe45ContainsChat(
+                                    PacketManager.u);
+                    if (!buffered) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 160) {
+                            throw new IllegalStateException(
+                                    "Blink did not buffer sentinel chat"
+                                            + " buffering=" + PacketManager.e()
+                                            + " queued=" + PacketManager.u.size());
+                        }
+                        return;
+                    }
+                    if (!PacketManager.e()) {
+                        throw new IllegalStateException(
+                                "Blink buffered sentinel while buffer flag false");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-buffered-pass:"
+                                    + "Blink:sentinel="
+                                    + HIGH_RISK_FUNCTIONAL_PROBE45_SENTINEL
+                                    + ":queued="
+                                    + PacketManager.u.size());
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-ready-flush:"
+                                    + "Blink:gate=abyss-blink-probe-flush-go");
+                    this.highRiskFunctionalProbe45Stage = 5;
+                    this.highRiskFunctionalProbe45WaitTicks = 0;
+                    return;
+                }
+
+                case 5: {
+                    File flushGate = new File("abyss-blink-probe-flush-go");
+                    if (!flushGate.isFile()) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 1200) {
+                            throw new IllegalStateException(
+                                    "Blink flush gate was not released");
+                        }
+                        return;
+                    }
+
+                    probe.I(0L, false);
+                    this.highRiskFunctionalProbe45Stage = 6;
+                    this.highRiskFunctionalProbe45WaitTicks = 0;
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-disable-request:"
+                                    + "Blink");
+                    return;
+                }
+
+                case 6: {
+                    boolean disabled =
+                            !probe.o()
+                                    && !probe.l()
+                                    && !probe.K()
+                                    && !probe.P()
+                                    && !w.isOwnerActive(probe);
+                    boolean flushed =
+                            !PacketManager.e()
+                                    && PacketManager.u.isEmpty()
+                                    && this.highRiskFunctionalProbe45ContainsChat(
+                                            PacketManager.v);
+                    if (!disabled || !flushed) {
+                        if (++this.highRiskFunctionalProbe45WaitTicks > 240) {
+                            throw new IllegalStateException(
+                                    "Blink disable/flush did not stabilize"
+                                            + " disabled=" + disabled
+                                            + " buffering=" + PacketManager.e()
+                                            + " queued=" + PacketManager.u.size()
+                                            + " sentRecord="
+                                            + this.highRiskFunctionalProbe45ContainsChat(
+                                                    PacketManager.v));
+                        }
+                        return;
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-flush-pass:"
+                                    + "Blink:buffering=false:queued=0:sentinel-recorded=true");
+
+                    Blink.mode.i(this.highRiskFunctionalProbe45OriginalMode);
+                    Blink.showDelay.v(
+                            this.highRiskFunctionalProbe45OriginalShowDelay,
+                            0L);
+                    Blink.turnOffOnHit.v(
+                            this.highRiskFunctionalProbe45OriginalTurnOffOnHit,
+                            0L);
+                    Blink.autoDisable.v(
+                            this.highRiskFunctionalProbe45OriginalAutoDisable,
+                            0L);
+
+                    File flushGate = new File("abyss-blink-probe-flush-go");
+                    if (flushGate.exists() && !flushGate.delete()) {
+                        flushGate.deleteOnExit();
+                    }
+
+                    if (this.highRiskFunctionalProbe45OriginalEnabled) {
+                        probe.I(0L, true);
+                        throw new IllegalStateException(
+                                "Blink probe does not yet support restoring"
+                                        + " an originally enabled instance");
+                    }
+
+                    if (!this.highRiskFunctionalProbe45OriginalMode.equals(
+                                    Blink.mode.Y())
+                            || Blink.showDelay.c()
+                                    != this.highRiskFunctionalProbe45OriginalShowDelay
+                            || Blink.turnOffOnHit.c()
+                                    != this.highRiskFunctionalProbe45OriginalTurnOffOnHit
+                            || Blink.autoDisable.c()
+                                    != this.highRiskFunctionalProbe45OriginalAutoDisable) {
+                        throw new IllegalStateException(
+                                "Blink settings did not restore");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-restore-pass:"
+                                    + "Blink:enabled=false:settings=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe45-module-pass:Blink");
+                    runtimeMilestone("high-risk-functional-probe45-pass:1");
+                    this.highRiskFunctionalProbe45Saved = false;
+                    this.highRiskFunctionalProbe45Stage = 7;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe45Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe45:Blink",
+                    "real-packet-buffer-flush",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe45-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe45();
+        }
+    }
+
     private void restoreInvMovePhysicalProbe() {
         if (!this.invMovePhysicalSaved) {
             return;
@@ -13007,6 +13358,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe42();
         this.pumpHighRiskFunctionalProbe43();
         this.pumpHighRiskFunctionalProbe44();
+        this.pumpHighRiskFunctionalProbe45();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
