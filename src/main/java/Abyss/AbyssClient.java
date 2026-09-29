@@ -152,7 +152,6 @@ import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BedPlates;
 import Abyss.module.impl.visual_utility.BedESP;
-import Abyss.module.impl.visual_utility.StorageESP;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoTool;
@@ -12570,9 +12569,17 @@ implements EventSubscriber {
         }
     }
 
-    private int storageEspColorForProbe(StorageESP probe, TileEntity tile)
+    private Object storageEspStaticFieldForProbe(
+            Class<?> storageClass, String name) throws Exception {
+        Field field = storageClass.getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(null);
+    }
+
+    private int storageEspColorForProbe(
+            Class<?> storageClass, Object probe, TileEntity tile)
             throws Exception {
-        Method method = StorageESP.class.getDeclaredMethod(
+        Method method = storageClass.getDeclaredMethod(
                 "colorFor", TileEntity.class);
         method.setAccessible(true);
         return ((Integer)method.invoke(probe, tile)).intValue();
@@ -12588,7 +12595,16 @@ implements EventSubscriber {
             return;
         }
 
-        StorageESP probe = Modules.J(StorageESP.class);
+        Class<?> storageClass = null;
+        Object probe = null;
+        Abyss.setting.settings.BooleanSetting chests = null;
+        Abyss.setting.settings.BooleanSetting furnaces = null;
+        Abyss.setting.settings.BooleanSetting dispensers = null;
+        Abyss.setting.settings.BooleanSetting hoppers = null;
+        Abyss.setting.settings.BooleanSetting enderChests = null;
+        Abyss.setting.settings.ColorSetting furnaceColorSetting = null;
+        Abyss.setting.settings.ColorSetting dispenserColorSetting = null;
+        Abyss.setting.settings.ColorSetting hopperColorSetting = null;
         boolean saved = false;
         boolean originalChests = false;
         boolean originalFurnaces = false;
@@ -12600,52 +12616,84 @@ implements EventSubscriber {
         String originalHopperColor = null;
 
         try {
-            if (probe == null
-                    || ModuleManager.byClass(StorageESP.class) != probe
-                    || ModuleManager.byName("StorageESP") != probe
-                    || StorageESP.chests == null
-                    || StorageESP.furnaces == null
-                    || StorageESP.dispensers == null
-                    || StorageESP.hoppers == null
-                    || StorageESP.enderChests == null
-                    || StorageESP.furnaceColor == null
-                    || StorageESP.dispenserColor == null
-                    || StorageESP.hopperColor == null) {
+            storageClass = Class.forName(
+                    "Abyss.module.impl.visual_utility.StorageESP");
+            probe = storageClass.getConstructor(Long.TYPE)
+                    .newInstance(Long.valueOf(0L));
+            if (!(probe instanceof Module)
+                    || ModuleManager.byName("StorageESP") != null) {
                 throw new IllegalStateException(
-                        "StorageESP runtime authority unavailable");
+                        "StorageESP orphan authority mismatch");
             }
 
-            originalChests = StorageESP.chests.c();
-            originalFurnaces = StorageESP.furnaces.c();
-            originalDispensers = StorageESP.dispensers.c();
-            originalHoppers = StorageESP.hoppers.c();
-            originalEnderChests = StorageESP.enderChests.c();
-            originalFurnaceColor = StorageESP.furnaceColor.Q();
-            originalDispenserColor = StorageESP.dispenserColor.Q();
-            originalHopperColor = StorageESP.hopperColor.Q();
+            chests = (Abyss.setting.settings.BooleanSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "chests");
+            furnaces = (Abyss.setting.settings.BooleanSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "furnaces");
+            dispensers = (Abyss.setting.settings.BooleanSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "dispensers");
+            hoppers = (Abyss.setting.settings.BooleanSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "hoppers");
+            enderChests = (Abyss.setting.settings.BooleanSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "enderChests");
+            furnaceColorSetting = (Abyss.setting.settings.ColorSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "furnaceColor");
+            dispenserColorSetting = (Abyss.setting.settings.ColorSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "dispenserColor");
+            hopperColorSetting = (Abyss.setting.settings.ColorSetting)
+                    this.storageEspStaticFieldForProbe(
+                            storageClass, "hopperColor");
+
+            if (chests == null
+                    || furnaces == null
+                    || dispensers == null
+                    || hoppers == null
+                    || enderChests == null
+                    || furnaceColorSetting == null
+                    || dispenserColorSetting == null
+                    || hopperColorSetting == null) {
+                throw new IllegalStateException(
+                        "StorageESP reflective settings unavailable");
+            }
+
+            originalChests = chests.c();
+            originalFurnaces = furnaces.c();
+            originalDispensers = dispensers.c();
+            originalHoppers = hoppers.c();
+            originalEnderChests = enderChests.c();
+            originalFurnaceColor = furnaceColorSetting.Q();
+            originalDispenserColor = dispenserColorSetting.Q();
+            originalHopperColor = hopperColorSetting.Q();
             saved = true;
 
-            StorageESP.chests.v(true, 0L);
-            StorageESP.furnaces.v(true, 0L);
-            StorageESP.dispensers.v(true, 0L);
-            StorageESP.hoppers.v(true, 0L);
-            StorageESP.enderChests.v(true, 0L);
-            StorageESP.furnaceColor.e("123456");
-            StorageESP.dispenserColor.e("654321");
-            StorageESP.hopperColor.e("ABCDEF");
+            chests.v(true, 0L);
+            furnaces.v(true, 0L);
+            dispensers.v(true, 0L);
+            hoppers.v(true, 0L);
+            enderChests.v(true, 0L);
+            furnaceColorSetting.e("123456");
+            dispenserColorSetting.e("654321");
+            hopperColorSetting.e("ABCDEF");
 
             int chestColor = this.storageEspColorForProbe(
-                    probe, new TileEntityChest());
+                    storageClass, probe, new TileEntityChest());
             int brewingColor = this.storageEspColorForProbe(
-                    probe, new TileEntityBrewingStand());
+                    storageClass, probe, new TileEntityBrewingStand());
             int enderColor = this.storageEspColorForProbe(
-                    probe, new TileEntityEnderChest());
+                    storageClass, probe, new TileEntityEnderChest());
             int furnaceColor = this.storageEspColorForProbe(
-                    probe, new TileEntityFurnace());
+                    storageClass, probe, new TileEntityFurnace());
             int dispenserColor = this.storageEspColorForProbe(
-                    probe, new TileEntityDispenser());
+                    storageClass, probe, new TileEntityDispenser());
             int hopperColor = this.storageEspColorForProbe(
-                    probe, new TileEntityHopper());
+                    storageClass, probe, new TileEntityHopper());
 
             if (chestColor == 0 || brewingColor != chestColor) {
                 throw new IllegalStateException(
@@ -12675,23 +12723,34 @@ implements EventSubscriber {
                     "high-risk-functional-probe66-effect-pass:"
                             + "StorageESP:customColors=123456+654321+ABCDEF");
 
-            StorageESP.chests.v(false, 0L);
-            StorageESP.furnaces.v(false, 0L);
-            StorageESP.dispensers.v(false, 0L);
-            StorageESP.hoppers.v(false, 0L);
-            StorageESP.enderChests.v(false, 0L);
+            chests.v(false, 0L);
+            furnaces.v(false, 0L);
+            dispensers.v(false, 0L);
+            hoppers.v(false, 0L);
+            enderChests.v(false, 0L);
 
-            if (this.storageEspColorForProbe(probe, new TileEntityChest()) != 0
+            if (this.storageEspColorForProbe(
+                            storageClass, probe, new TileEntityChest()) != 0
                     || this.storageEspColorForProbe(
-                            probe, new TileEntityBrewingStand()) != 0
+                            storageClass,
+                            probe,
+                            new TileEntityBrewingStand()) != 0
                     || this.storageEspColorForProbe(
-                            probe, new TileEntityEnderChest()) != 0
+                            storageClass,
+                            probe,
+                            new TileEntityEnderChest()) != 0
                     || this.storageEspColorForProbe(
-                            probe, new TileEntityFurnace()) != 0
+                            storageClass,
+                            probe,
+                            new TileEntityFurnace()) != 0
                     || this.storageEspColorForProbe(
-                            probe, new TileEntityDispenser()) != 0
+                            storageClass,
+                            probe,
+                            new TileEntityDispenser()) != 0
                     || this.storageEspColorForProbe(
-                            probe, new TileEntityHopper()) != 0) {
+                            storageClass,
+                            probe,
+                            new TileEntityHopper()) != 0) {
                 throw new IllegalStateException(
                         "StorageESP disabled setting gate returned a color");
             }
@@ -12719,14 +12778,14 @@ implements EventSubscriber {
         finally {
             if (saved) {
                 try {
-                    StorageESP.chests.v(originalChests, 0L);
-                    StorageESP.furnaces.v(originalFurnaces, 0L);
-                    StorageESP.dispensers.v(originalDispensers, 0L);
-                    StorageESP.hoppers.v(originalHoppers, 0L);
-                    StorageESP.enderChests.v(originalEnderChests, 0L);
-                    StorageESP.furnaceColor.e(originalFurnaceColor);
-                    StorageESP.dispenserColor.e(originalDispenserColor);
-                    StorageESP.hopperColor.e(originalHopperColor);
+                    chests.v(originalChests, 0L);
+                    furnaces.v(originalFurnaces, 0L);
+                    dispensers.v(originalDispensers, 0L);
+                    hoppers.v(originalHoppers, 0L);
+                    enderChests.v(originalEnderChests, 0L);
+                    furnaceColorSetting.e(originalFurnaceColor);
+                    dispenserColorSetting.e(originalDispenserColor);
+                    hopperColorSetting.e(originalHopperColor);
                     runtimeMilestone(
                             "high-risk-functional-probe66-restore-pass:"
                                     + "StorageESP:settings=true:colors=true");
