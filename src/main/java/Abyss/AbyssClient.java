@@ -12434,26 +12434,12 @@ implements EventSubscriber {
 
             final InventoryBasic fixtureInventory =
                     new InventoryBasic(
-                            "OpenAbyssFastCraftProbe", false, 20);
+                            "OpenAbyssFastCraftProbe", false, 18);
             net.minecraft.inventory.Container fixtureContainer =
-                    new net.minecraft.inventory.Container() {
-                        {
-                            for (int slot = 0; slot < 20; ++slot) {
-                                this.addSlotToContainer(
-                                        new Slot(
-                                                fixtureInventory,
-                                                slot,
-                                                0,
-                                                0));
-                            }
-                        }
-
-                        @Override
-                        public boolean canInteractWith(
-                                net.minecraft.entity.player.EntityPlayer player) {
-                            return true;
-                        }
-                    };
+                    new net.minecraft.inventory.ContainerChest(
+                            this.c.thePlayer.inventory,
+                            fixtureInventory,
+                            this.c.thePlayer);
 
             this.c.thePlayer.openContainer = fixtureContainer;
 
