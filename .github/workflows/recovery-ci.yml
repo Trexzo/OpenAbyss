@@ -70,6 +70,26 @@ jobs:
             Write-Host "POWERSHELL_PARSE_PASS file=$relative tokens=$($tokens.Count)"
           }
 
+          $physicalSmokeText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-smoke.ps1'))
+          $physicalUsabilityText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-usability.ps1'))
+          $probeMatches = [regex]::Matches($physicalSmokeText, 'high-risk-functional-probe(\d+)-pass:')
+          if ($probeMatches.Count -eq 0) { throw 'Physical smoke exposes no high-risk functional probe pass markers.' }
+          $probeMax = ($probeMatches | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Maximum).Maximum
+          $chainName = "ExtendedHighRiskChain$probeMax"
+          $probePassMarker = "high-risk-functional-probe$probeMax-pass:"
+          $probeFailMarker = "high-risk-functional-probe$probeMax-fail:"
+          if (-not $physicalUsabilityText.Contains("$chainName =")) {
+            throw "Physical usability checker does not define $chainName for smoke probe max $probeMax."
+          }
+          if (-not $physicalUsabilityText.Contains('$checks.' + $chainName)) {
+            throw "Physical usability final verdict does not consume $chainName."
+          }
+          if (-not $physicalUsabilityText.Contains($probePassMarker) -or
+              -not $physicalUsabilityText.Contains($probeFailMarker)) {
+            throw "Physical usability checker does not gate probe $probeMax pass/fail markers."
+          }
+          Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
+
           & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\launcher\launch_abyss.ps1' -ResolverSelfTest
           if ($LASTEXITCODE -ne 0) { throw "Standalone launcher resolver self-test failed: $LASTEXITCODE" }
 
