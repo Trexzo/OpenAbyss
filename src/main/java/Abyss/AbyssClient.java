@@ -150,6 +150,7 @@ import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
+import Abyss.module.impl.visual_utility.BedPlates;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoTool;
@@ -737,6 +738,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe62Stage;
     private int highRiskFunctionalProbe63Stage;
     private int highRiskFunctionalProbe64Stage;
+    private int highRiskFunctionalProbe65Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12359,6 +12361,285 @@ implements EventSubscriber {
         }
     }
 
+    private Field bedPlatesFieldForProbe(
+            String name) throws Exception {
+        Field field = BedPlates.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.util.Map<BlockPos, java.util.Set<net.minecraft.block.Block>>
+            bedPlatesMapForProbe(BedPlates probe) throws Exception {
+        return (java.util.Map<BlockPos, java.util.Set<net.minecraft.block.Block>>)
+                this.bedPlatesFieldForProbe("a").get(probe);
+    }
+
+    private void pumpHighRiskFunctionalProbe65() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe65")
+                || this.highRiskFunctionalProbe65Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe64")
+                && this.highRiskFunctionalProbe64Stage < 1) {
+            return;
+        }
+
+        BedPlates probe = Modules.J(BedPlates.class);
+        BlockPos head = null;
+        BlockPos foot = null;
+        BlockPos woolPos = null;
+        BlockPos obsidianPos = null;
+        BlockPos glassPos = null;
+        IBlockState originalHead = null;
+        IBlockState originalFoot = null;
+        IBlockState originalWool = null;
+        IBlockState originalObsidian = null;
+        IBlockState originalGlass = null;
+        float originalRange = 0.0f;
+        java.util.Set<BlockPos> originalBeds = null;
+        java.util.Map<BlockPos, java.util.Set<net.minecraft.block.Block>>
+                originalCache = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BedPlates.class) != probe
+                    || ModuleManager.byName("BedPlates") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || AbyssClient.G == null
+                    || BedPlates.surroundingRange == null) {
+                throw new IllegalStateException(
+                        "BedPlates live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+
+            outer:
+            for (int rise = 4; rise <= 8; ++rise) {
+                for (int offset = 3; offset <= 7; ++offset) {
+                    BlockPos candidate =
+                            new BlockPos(
+                                    baseX + offset,
+                                    baseY + rise,
+                                    baseZ);
+                    boolean clear = true;
+                    for (int dx = -2; dx <= 2 && clear; ++dx) {
+                        for (int dy = 0; dy <= 2 && clear; ++dy) {
+                            for (int dz = -2; dz <= 2; ++dz) {
+                                if (dx * dx + dy * dy + dz * dz > 4) {
+                                    continue;
+                                }
+                                if (!this.c.theWorld.isAirBlock(
+                                        candidate.add(dx, dy, dz))) {
+                                    clear = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (clear) {
+                        head = candidate;
+                        break outer;
+                    }
+                }
+            }
+
+            if (head == null) {
+                throw new IllegalStateException(
+                        "BedPlates probe found no isolated air fixture");
+            }
+
+            foot = head.west();
+            woolPos = head.up();
+            obsidianPos = head.north();
+            glassPos = foot.south();
+
+            originalHead = this.c.theWorld.getBlockState(head);
+            originalFoot = this.c.theWorld.getBlockState(foot);
+            originalWool = this.c.theWorld.getBlockState(woolPos);
+            originalObsidian =
+                    this.c.theWorld.getBlockState(obsidianPos);
+            originalGlass = this.c.theWorld.getBlockState(glassPos);
+            originalRange = BedPlates.surroundingRange.L();
+            originalBeds =
+                    new java.util.LinkedHashSet<BlockPos>(AbyssClient.G);
+
+            java.util.Map<BlockPos, java.util.Set<net.minecraft.block.Block>>
+                    cache = this.bedPlatesMapForProbe(probe);
+            originalCache =
+                    new java.util.LinkedHashMap<
+                            BlockPos,
+                            java.util.Set<net.minecraft.block.Block>>();
+            for (java.util.Map.Entry<
+                            BlockPos,
+                            java.util.Set<net.minecraft.block.Block>>
+                    entry : cache.entrySet()) {
+                originalCache.put(
+                        entry.getKey(),
+                        new java.util.LinkedHashSet<
+                                net.minecraft.block.Block>(
+                                entry.getValue()));
+            }
+            saved = true;
+
+            BedPlates.surroundingRange.o((byte)0, 0L, 2.0f);
+            AbyssClient.G.clear();
+            cache.clear();
+
+            IBlockState headState =
+                    Blocks.bed.getDefaultState()
+                            .withProperty(
+                                    net.minecraft.block.BlockBed.PART,
+                                    net.minecraft.block.BlockBed
+                                            .EnumPartType.HEAD)
+                            .withProperty(
+                                    net.minecraft.block.BlockBed.FACING,
+                                    EnumFacing.EAST);
+            IBlockState footState =
+                    Blocks.bed.getDefaultState()
+                            .withProperty(
+                                    net.minecraft.block.BlockBed.PART,
+                                    net.minecraft.block.BlockBed
+                                            .EnumPartType.FOOT)
+                            .withProperty(
+                                    net.minecraft.block.BlockBed.FACING,
+                                    EnumFacing.EAST);
+
+            if (!this.c.theWorld.setBlockState(head, headState, 3)
+                    || !this.c.theWorld.setBlockState(
+                            foot, footState, 3)
+                    || !this.c.theWorld.setBlockState(
+                            woolPos,
+                            Blocks.wool.getDefaultState(),
+                            3)
+                    || !this.c.theWorld.setBlockState(
+                            obsidianPos,
+                            Blocks.obsidian.getDefaultState(),
+                            3)
+                    || !this.c.theWorld.setBlockState(
+                            glassPos,
+                            Blocks.stained_glass.getDefaultState(),
+                            3)) {
+                throw new IllegalStateException(
+                        "BedPlates probe could not place fixture");
+            }
+
+            AbyssClient.G.add(head);
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "BedPlates fixture EventBus binding inactive");
+            }
+            fixtureBus.e(new PreUpdateEvent(), 0L);
+
+            java.util.Set<net.minecraft.block.Block> materials =
+                    cache.get(head);
+            if (materials == null
+                    || materials.size() != 3
+                    || !materials.contains(Blocks.wool)
+                    || !materials.contains(Blocks.obsidian)
+                    || !materials.contains(Blocks.glass)
+                    || materials.contains(Blocks.bed)
+                    || materials.contains(Blocks.stained_glass)) {
+                throw new IllegalStateException(
+                        "BedPlates surrounding material cache mismatch: "
+                                + String.valueOf(materials));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe65-effect-pass:"
+                            + "BedPlates:materials=wool+obsidian+glass");
+
+            probe.A(0L);
+            if (!cache.isEmpty()) {
+                throw new IllegalStateException(
+                        "BedPlates reset did not clear cache");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe65-effect-pass:"
+                            + "BedPlates:resetClearsCache=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe65-module-pass:BedPlates");
+            runtimeMilestone(
+                    "high-risk-functional-probe65-pass:1");
+            this.highRiskFunctionalProbe65Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe65Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe65:BedPlates",
+                    "surrounding-material-cache",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe65-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved && probe != null) {
+                try {
+                    BedPlates.surroundingRange.o(
+                            (byte)0, 0L, originalRange);
+                    AbyssClient.G.clear();
+                    AbyssClient.G.addAll(originalBeds);
+
+                    java.util.Map<
+                                    BlockPos,
+                                    java.util.Set<net.minecraft.block.Block>>
+                            cache = this.bedPlatesMapForProbe(probe);
+                    cache.clear();
+                    for (java.util.Map.Entry<
+                                    BlockPos,
+                                    java.util.Set<net.minecraft.block.Block>>
+                            entry : originalCache.entrySet()) {
+                        cache.put(
+                                entry.getKey(),
+                                new java.util.LinkedHashSet<
+                                        net.minecraft.block.Block>(
+                                        entry.getValue()));
+                    }
+
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(
+                                head, originalHead, 3);
+                        this.c.theWorld.setBlockState(
+                                foot, originalFoot, 3);
+                        this.c.theWorld.setBlockState(
+                                woolPos, originalWool, 3);
+                        this.c.theWorld.setBlockState(
+                                obsidianPos, originalObsidian, 3);
+                        this.c.theWorld.setBlockState(
+                                glassPos, originalGlass, 3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe65-restore-pass:"
+                                    + "BedPlates:range=true:"
+                                    + "beds=true:cache=true:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe65:BedPlates",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe65Stage >= 0) {
+                        this.highRiskFunctionalProbe65Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe65-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field fireBallPredictFieldForProbe(
             String name) throws Exception {
         Field field = FireBallPredict.class.getDeclaredField(name);
@@ -17632,6 +17913,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe62();
         this.pumpHighRiskFunctionalProbe63();
         this.pumpHighRiskFunctionalProbe64();
+        this.pumpHighRiskFunctionalProbe65();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
