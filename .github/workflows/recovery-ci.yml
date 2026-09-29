@@ -191,12 +191,12 @@ jobs:
           python '.\tools\check_main_menu_state_contract.py'
           if ($LASTEXITCODE -ne 0) { throw "Main-menu state/persistence gate failed: $LASTEXITCODE" }
 
-      - name: Report production functional probe coverage
+      - name: Verify complete production functional probe coverage
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           python '.\tools\report_production_probe_coverage.py'
-          if ($LASTEXITCODE -ne 0) { throw "Production functional coverage report failed: $LASTEXITCODE" }
+          if ($LASTEXITCODE -ne 0) { throw "Production functional coverage gate failed: $LASTEXITCODE" }
 
       - name: Compile recovered source
         shell: powershell
