@@ -78,6 +78,10 @@ import Abyss.module.impl.combat.KillAura;
 import Abyss.module.impl.combat.Velocity;
 import Abyss.module.impl.combat.WTap;
 import Abyss.module.impl.macro.Macro1;
+import Abyss.module.impl.macro.Macro2;
+import Abyss.module.impl.macro.Macro3;
+import Abyss.module.impl.macro.Macro4;
+import Abyss.module.impl.macro.Macro5;
 import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.misc.AntiBot;
 import Abyss.module.impl.misc.CommandLine;
@@ -136,6 +140,8 @@ import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Scaffold;
 import Abyss.module.impl.world.SpeedMine;
+import Abyss.setting.settings.ModeSetting;
+import Abyss.setting.settings.TextSetting;
 import Abyss.ui.abyss.AbyssArrayListVisibility;
 import Abyss.ui.swing.ConfigManagerWindow;
 import Abyss.util.AttackTracker;
@@ -671,6 +677,23 @@ implements EventSubscriber {
     private double highRiskFunctionalProbe52OriginalProgress;
     private BlockPos highRiskFunctionalProbe52OriginalPos;
     private String highRiskFunctionalProbe52OriginalText;
+    private int highRiskFunctionalProbe53Stage;
+    private boolean highRiskFunctionalProbe53Saved;
+    private final boolean[] highRiskFunctionalProbe53OriginalEnabled =
+            new boolean[4];
+    private final String[] highRiskFunctionalProbe53OriginalMode =
+            new String[4];
+    private final String[] highRiskFunctionalProbe53OriginalMessage =
+            new String[4];
+    private static final String[] HIGH_RISK_FUNCTIONAL_PROBE53_NAMES =
+            new String[]{"Macro2", "Macro3", "Macro4", "Macro5"};
+    private static final String[] HIGH_RISK_FUNCTIONAL_PROBE53_SENTINELS =
+            new String[]{
+                    "OPENABYSS_MACRO2_PROBE53",
+                    "OPENABYSS_MACRO3_PROBE53",
+                    "OPENABYSS_MACRO4_PROBE53",
+                    "OPENABYSS_MACRO5_PROBE53"
+            };
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12062,6 +12085,237 @@ implements EventSubscriber {
         }
     }
 
+    private Module highRiskFunctionalProbe53Module(int index) {
+        switch (index) {
+            case 0:
+                return Modules.J(Macro2.class);
+            case 1:
+                return Modules.J(Macro3.class);
+            case 2:
+                return Modules.J(Macro4.class);
+            case 3:
+                return Modules.J(Macro5.class);
+            default:
+                throw new IllegalArgumentException(
+                        "Macro sibling index out of range: " + index);
+        }
+    }
+
+    private ModeSetting highRiskFunctionalProbe53Mode(int index) {
+        switch (index) {
+            case 0:
+                return Macro2.mode;
+            case 1:
+                return Macro3.mode;
+            case 2:
+                return Macro4.mode;
+            case 3:
+                return Macro5.mode;
+            default:
+                throw new IllegalArgumentException(
+                        "Macro sibling mode index out of range: " + index);
+        }
+    }
+
+    private TextSetting highRiskFunctionalProbe53Message(int index) {
+        switch (index) {
+            case 0:
+                return Macro2.chatMessage;
+            case 1:
+                return Macro3.chatMessage;
+            case 2:
+                return Macro4.chatMessage;
+            case 3:
+                return Macro5.chatMessage;
+            default:
+                throw new IllegalArgumentException(
+                        "Macro sibling message index out of range: " + index);
+        }
+    }
+
+    private void restoreHighRiskFunctionalProbe53() {
+        if (!this.highRiskFunctionalProbe53Saved) {
+            return;
+        }
+        for (int index = 0; index < HIGH_RISK_FUNCTIONAL_PROBE53_NAMES.length; ++index) {
+            try {
+                Module probe = this.highRiskFunctionalProbe53Module(index);
+                ModeSetting mode = this.highRiskFunctionalProbe53Mode(index);
+                TextSetting message = this.highRiskFunctionalProbe53Message(index);
+                if (mode != null && this.highRiskFunctionalProbe53OriginalMode[index] != null) {
+                    mode.i(this.highRiskFunctionalProbe53OriginalMode[index]);
+                }
+                if (message != null
+                        && this.highRiskFunctionalProbe53OriginalMessage[index] != null) {
+                    message.O(this.highRiskFunctionalProbe53OriginalMessage[index]);
+                }
+                if (probe != null) {
+                    probe.n(false);
+                    probe.E(false);
+                    this.setModuleEnabledRawForProbe(
+                            probe,
+                            this.highRiskFunctionalProbe53OriginalEnabled[index]);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                recordFeatureFailure(
+                        "HighRiskFunctionalProbe53:"
+                                + HIGH_RISK_FUNCTIONAL_PROBE53_NAMES[index],
+                        "restore-state",
+                        restoreFailure);
+            }
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe53() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe53")
+                || this.highRiskFunctionalProbe53Stage < 0
+                || this.highRiskFunctionalProbe53Stage >= 6) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe52")
+                && this.highRiskFunctionalProbe52Stage < 2) {
+            return;
+        }
+
+        try {
+            if (this.c.thePlayer == null
+                    || this.c.theWorld == null
+                    || this.c.getNetHandler() == null) {
+                throw new IllegalStateException(
+                        "Macro2-5 live-world authority unavailable");
+            }
+
+            if (this.highRiskFunctionalProbe53Stage == 0) {
+                for (int index = 0;
+                        index < HIGH_RISK_FUNCTIONAL_PROBE53_NAMES.length;
+                        ++index) {
+                    Module probe = this.highRiskFunctionalProbe53Module(index);
+                    ModeSetting mode = this.highRiskFunctionalProbe53Mode(index);
+                    TextSetting message =
+                            this.highRiskFunctionalProbe53Message(index);
+                    String name = HIGH_RISK_FUNCTIONAL_PROBE53_NAMES[index];
+                    if (probe == null
+                            || ModuleManager.byName(name) != probe
+                            || mode == null
+                            || message == null) {
+                        throw new IllegalStateException(
+                                name + " sibling authority unavailable");
+                    }
+                    if (probe.l() || probe.K()) {
+                        return;
+                    }
+                    this.highRiskFunctionalProbe53OriginalEnabled[index] =
+                            probe.o();
+                    this.highRiskFunctionalProbe53OriginalMode[index] =
+                            mode.Y();
+                    this.highRiskFunctionalProbe53OriginalMessage[index] =
+                            message.X();
+                }
+                this.highRiskFunctionalProbe53Saved = true;
+                this.highRiskFunctionalProbe53Stage = 1;
+                runtimeMilestone(
+                        "high-risk-functional-probe53-ready:"
+                                + "Macro2,Macro3,Macro4,Macro5");
+                return;
+            }
+
+            if (this.highRiskFunctionalProbe53Stage >= 1
+                    && this.highRiskFunctionalProbe53Stage <= 4) {
+                int index = this.highRiskFunctionalProbe53Stage - 1;
+                String name = HIGH_RISK_FUNCTIONAL_PROBE53_NAMES[index];
+                String sentinel =
+                        HIGH_RISK_FUNCTIONAL_PROBE53_SENTINELS[index];
+                Module probe = this.highRiskFunctionalProbe53Module(index);
+                ModeSetting mode = this.highRiskFunctionalProbe53Mode(index);
+                TextSetting message =
+                        this.highRiskFunctionalProbe53Message(index);
+
+                mode.i("CHAT");
+                message.O(sentinel);
+                probe.n(false);
+                probe.E(false);
+                this.setModuleEnabledRawForProbe(probe, true);
+
+                EventBus fixtureBus = new EventBus();
+                fixtureBus.s((EventSubscriber)probe, 0L);
+                if (!fixtureBus.isOwnerActive(probe)) {
+                    throw new IllegalStateException(
+                            name + " fixture EventBus binding inactive");
+                }
+
+                runtimeMilestone(
+                        "high-risk-functional-probe53-dispatch:"
+                                + name + ":CHAT:" + sentinel);
+                fixtureBus.e(new PreTickEvent(), 0L);
+
+                if (probe.o() || !probe.K()) {
+                    throw new IllegalStateException(
+                            name
+                                    + " CHAT handler did not request self-disable"
+                                    + " enabled=" + probe.o()
+                                    + " pendingDisable=" + probe.K());
+                }
+                runtimeMilestone(
+                        "high-risk-functional-probe53-effect-pass:"
+                                + name
+                                + ":clientSend=true:selfDisable=true:sentinel="
+                                + sentinel);
+
+                probe.E(false);
+                mode.i(this.highRiskFunctionalProbe53OriginalMode[index]);
+                message.O(
+                        this.highRiskFunctionalProbe53OriginalMessage[index]);
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe53OriginalEnabled[index]);
+
+                if (probe.o()
+                                != this.highRiskFunctionalProbe53OriginalEnabled[index]
+                        || probe.l()
+                        || probe.K()
+                        || !String.valueOf(
+                                        this.highRiskFunctionalProbe53OriginalMode[index])
+                                .equals(String.valueOf(mode.Y()))
+                        || !String.valueOf(
+                                        this.highRiskFunctionalProbe53OriginalMessage[index])
+                                .equals(String.valueOf(message.X()))) {
+                    throw new IllegalStateException(
+                            name + " sibling state did not restore exactly");
+                }
+
+                runtimeMilestone(
+                        "high-risk-functional-probe53-restore-pass:"
+                                + name
+                                + ":enabled="
+                                + this.highRiskFunctionalProbe53OriginalEnabled[index]);
+                runtimeMilestone(
+                        "high-risk-functional-probe53-module-pass:" + name);
+                ++this.highRiskFunctionalProbe53Stage;
+                return;
+            }
+
+            this.restoreHighRiskFunctionalProbe53();
+            runtimeMilestone(
+                    "high-risk-functional-probe53-pass:4");
+            this.highRiskFunctionalProbe53Saved = false;
+            this.highRiskFunctionalProbe53Stage = 6;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe53Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe53:Macro2-5",
+                    "chat-sibling-roundtrip",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe53-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe53();
+        }
+    }
+
     private Object[] breakProgressStateForProbe(BreakProgress probe) throws Exception {
         Field progressField = BreakProgress.class.getDeclaredField("B");
         Field posField = BreakProgress.class.getDeclaredField("p");
@@ -14839,6 +15093,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe50();
         this.pumpHighRiskFunctionalProbe51();
         this.pumpHighRiskFunctionalProbe52();
+        this.pumpHighRiskFunctionalProbe53();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
