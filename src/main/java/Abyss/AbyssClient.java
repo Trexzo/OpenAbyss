@@ -12687,7 +12687,7 @@ implements EventSubscriber {
         }
 
         if (ModuleManager.J != live
-                || !originalReplacement.equals(NameHider.name.X())) {
+                || !java.util.Objects.equals(originalReplacement, NameHider.name.X())) {
             this.highRiskFunctionalProbe80Stage = -1;
             IllegalStateException restoreFailure =
                     new IllegalStateException(
