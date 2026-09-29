@@ -107,6 +107,7 @@ import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
 import Abyss.module.impl.player.ChestAura;
 import Abyss.module.impl.player.ChestStealer;
+import Abyss.module.impl.player.FastCraft;
 import Abyss.module.impl.player.GhostHand;
 import Abyss.module.impl.player.InvClicker;
 import Abyss.module.impl.player.InvManager;
@@ -731,6 +732,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe59Stage;
     private int highRiskFunctionalProbe60Stage;
     private int highRiskFunctionalProbe61Stage;
+    private int highRiskFunctionalProbe62Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12353,6 +12355,218 @@ implements EventSubscriber {
         }
     }
 
+    private Field fastCraftFieldForProbe(String name) throws Exception {
+        Field field = FastCraft.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.util.List<String> fastCraftQueueForProbe(
+            FastCraft probe) throws Exception {
+        return (java.util.List<String>)
+                this.fastCraftFieldForProbe("k").get(probe);
+    }
+
+    private boolean fastCraftRecipeAvailableForProbe(
+            FastCraft probe,
+            int[] recipeSlots,
+            net.minecraft.item.Item ingredient) throws Exception {
+        Method method = FastCraft.class.getDeclaredMethod(
+                "U", int[].class, net.minecraft.item.Item.class);
+        method.setAccessible(true);
+        return ((Boolean)method.invoke(
+                probe, recipeSlots, ingredient)).booleanValue();
+    }
+
+    private void pumpHighRiskFunctionalProbe62() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe62")
+                || this.highRiskFunctionalProbe62Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe61")
+                && this.highRiskFunctionalProbe61Stage < 1) {
+            return;
+        }
+
+        FastCraft probe = Modules.J(FastCraft.class);
+        net.minecraft.inventory.Container originalContainer = null;
+        java.util.List<String> originalQueue = null;
+        boolean originalPending = false;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(FastCraft.class) != probe
+                    || ModuleManager.byName("FastCraft") != probe
+                    || this.c.thePlayer == null
+                    || this.c.theWorld == null) {
+                throw new IllegalStateException(
+                        "FastCraft live-world authority unavailable");
+            }
+
+            final int[] helmet =
+                    (int[])this.fastCraftFieldForProbe("J").get(probe);
+            final int[] chestplate =
+                    (int[])this.fastCraftFieldForProbe("s").get(probe);
+            final int[] leggings =
+                    (int[])this.fastCraftFieldForProbe("G").get(probe);
+            final int[] boots =
+                    (int[])this.fastCraftFieldForProbe("m").get(probe);
+            final int[] ladders =
+                    (int[])this.fastCraftFieldForProbe("t").get(probe);
+
+            if (helmet.length != 5
+                    || chestplate.length != 8
+                    || leggings.length != 7
+                    || boots.length != 4
+                    || ladders.length != 7) {
+                throw new IllegalStateException(
+                        "FastCraft recovered recipe shape mismatch");
+            }
+
+            originalContainer = this.c.thePlayer.openContainer;
+            originalQueue = new java.util.ArrayList<String>(
+                    this.fastCraftQueueForProbe(probe));
+            originalPending =
+                    this.fastCraftFieldForProbe("N").getBoolean(probe);
+            saved = true;
+
+            final InventoryBasic fixtureInventory =
+                    new InventoryBasic(
+                            "OpenAbyssFastCraftProbe", false, 20);
+            net.minecraft.inventory.Container fixtureContainer =
+                    new net.minecraft.inventory.Container() {
+                        {
+                            for (int slot = 0; slot < 20; ++slot) {
+                                this.addSlotToContainer(
+                                        new Slot(
+                                                fixtureInventory,
+                                                slot,
+                                                0,
+                                                0));
+                            }
+                        }
+
+                        @Override
+                        public boolean canInteractWith(
+                                net.minecraft.entity.player.EntityPlayer player) {
+                            return true;
+                        }
+                    };
+
+            this.c.thePlayer.openContainer = fixtureContainer;
+
+            fixtureInventory.setInventorySlotContents(
+                    10, new ItemStack(Items.iron_ingot, 8));
+            if (!this.fastCraftRecipeAvailableForProbe(
+                            probe, helmet, Items.iron_ingot)
+                    || !this.fastCraftRecipeAvailableForProbe(
+                            probe, chestplate, Items.iron_ingot)
+                    || this.fastCraftRecipeAvailableForProbe(
+                            probe, ladders, Items.stick)) {
+                throw new IllegalStateException(
+                        "FastCraft eight-iron eligibility mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe62-effect-pass:"
+                            + "FastCraft:iron8=helmet+chestplate");
+
+            fixtureInventory.setInventorySlotContents(
+                    10, new ItemStack(Items.iron_ingot, 4));
+            if (!this.fastCraftRecipeAvailableForProbe(
+                            probe, boots, Items.iron_ingot)
+                    || this.fastCraftRecipeAvailableForProbe(
+                            probe, helmet, Items.iron_ingot)
+                    || this.fastCraftRecipeAvailableForProbe(
+                            probe, leggings, Items.iron_ingot)) {
+                throw new IllegalStateException(
+                        "FastCraft four-iron eligibility mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe62-effect-pass:"
+                            + "FastCraft:iron4=boots-only");
+
+            fixtureInventory.setInventorySlotContents(
+                    10, new ItemStack(Items.stick, 7));
+            if (!this.fastCraftRecipeAvailableForProbe(
+                            probe, ladders, Items.stick)
+                    || this.fastCraftRecipeAvailableForProbe(
+                            probe, chestplate, Items.iron_ingot)) {
+                throw new IllegalStateException(
+                        "FastCraft seven-stick eligibility mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe62-effect-pass:"
+                            + "FastCraft:sticks7=ladders-only");
+
+            java.util.List<String> queue =
+                    this.fastCraftQueueForProbe(probe);
+            queue.clear();
+            queue.add("helmet");
+            this.fastCraftFieldForProbe("N").setBoolean(probe, true);
+            probe.A(0L);
+            if (!queue.isEmpty()
+                    || this.fastCraftFieldForProbe("N")
+                            .getBoolean(probe)) {
+                throw new IllegalStateException(
+                        "FastCraft reset did not clear queue/pending state");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe62-effect-pass:"
+                            + "FastCraft:resetQueue=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe62-module-pass:FastCraft");
+            runtimeMilestone(
+                    "high-risk-functional-probe62-pass:1");
+            this.highRiskFunctionalProbe62Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe62Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe62:FastCraft",
+                    "recipe-eligibility-reset",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe62-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved && probe != null) {
+                try {
+                    this.c.thePlayer.openContainer = originalContainer;
+                    java.util.List<String> queue =
+                            this.fastCraftQueueForProbe(probe);
+                    queue.clear();
+                    queue.addAll(originalQueue);
+                    this.fastCraftFieldForProbe("N")
+                            .setBoolean(probe, originalPending);
+                    runtimeMilestone(
+                            "high-risk-functional-probe62-restore-pass:"
+                                    + "FastCraft:container=true:"
+                                    + "queue=true:state=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe62:FastCraft",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe62Stage >= 0) {
+                        this.highRiskFunctionalProbe62Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe62-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field targetHudFieldForProbe(String name) throws Exception {
         Field field = TargetHUD.class.getDeclaredField(name);
         field.setAccessible(true);
@@ -16980,6 +17194,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe59();
         this.pumpHighRiskFunctionalProbe60();
         this.pumpHighRiskFunctionalProbe61();
+        this.pumpHighRiskFunctionalProbe62();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
