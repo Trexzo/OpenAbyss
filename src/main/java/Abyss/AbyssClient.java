@@ -789,6 +789,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe84Stage;
     private int highRiskFunctionalProbe85Stage;
     private int highRiskFunctionalProbe86Stage;
+    private int highRiskFunctionalProbe87Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12419,6 +12420,118 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe87() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe87")
+                || this.highRiskFunctionalProbe87Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe86")
+                && this.highRiskFunctionalProbe86Stage < 1) {
+            return;
+        }
+
+        Timer live = Modules.J(Timer.class);
+        float originalSetting = 0.0f;
+        float originalTimerSpeed = 0.0f;
+        boolean settingSaved = false;
+        boolean timerSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(Timer.class) != live
+                    || ModuleManager.byName("Timer") != live
+                    || Timer.speed == null
+                    || this.c.thePlayer == null
+                    || this.c.theWorld == null) {
+                throw new IllegalStateException(
+                        "Timer live/settings/world authority unavailable");
+            }
+
+            originalSetting = Timer.speed.L();
+            settingSaved = true;
+            originalTimerSpeed =
+                    MinecraftAccessor.o((net.minecraft.client.Minecraft)this.c)
+                            .timerSpeed;
+            timerSaved = true;
+
+            Timer scratch = new Timer(0L);
+            Timer.speed.o((byte)0, 0L, 1.75f);
+            scratch.I(0L, true);
+            scratch.onRender2D(0L, null);
+
+            float applied =
+                    MinecraftAccessor.o((net.minecraft.client.Minecraft)this.c)
+                            .timerSpeed;
+            if (Math.abs(applied - 1.75f) > 0.0001f) {
+                throw new IllegalStateException(
+                        "Timer speed application mismatch: " + applied);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe87-effect-pass:"
+                            + "Timer:applied=1.75");
+
+            scratch.I(0L, false);
+            scratch.onRender2D(0L, null);
+            float restored =
+                    MinecraftAccessor.o((net.minecraft.client.Minecraft)this.c)
+                            .timerSpeed;
+            if (Math.abs(restored - originalTimerSpeed) > 0.0001f) {
+                throw new IllegalStateException(
+                        "Timer disable restoration mismatch"
+                                + " expected=" + originalTimerSpeed
+                                + " actual=" + restored);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe87-effect-pass:"
+                            + "Timer:disableRestore=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (settingSaved) {
+                    Timer.speed.o((byte)0, 0L, originalSetting);
+                }
+                if (timerSaved) {
+                    MinecraftAccessor.o((net.minecraft.client.Minecraft)this.c)
+                            .timerSpeed = originalTimerSpeed;
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe87Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe87:Timer",
+                    "timer-speed-apply-restore-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe87-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe87-restore-pass:"
+                        + "Timer:settingAndTimerSpeed=true");
+        runtimeMilestone(
+                "high-risk-functional-probe87-module-pass:Timer");
+        runtimeMilestone("high-risk-functional-probe87-pass:1");
+        this.highRiskFunctionalProbe87Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe86() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe86")
                 || this.highRiskFunctionalProbe86Stage != 0) {
@@ -21895,6 +22008,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe84();
         this.pumpHighRiskFunctionalProbe85();
         this.pumpHighRiskFunctionalProbe86();
+        this.pumpHighRiskFunctionalProbe87();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
