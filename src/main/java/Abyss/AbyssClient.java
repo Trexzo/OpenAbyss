@@ -760,6 +760,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe68Stage;
     private int highRiskFunctionalProbe69Stage;
     private int highRiskFunctionalProbe70Stage;
+    private int highRiskFunctionalProbe71Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12382,6 +12383,72 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe71() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe71")
+                || this.highRiskFunctionalProbe71Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe70")
+                && this.highRiskFunctionalProbe70Stage < 1) {
+            return;
+        }
+
+        NoObfuscation probe = Modules.J(NoObfuscation.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(NoObfuscation.class) != probe
+                    || ModuleManager.byName("NoObfuscation") != probe) {
+                throw new IllegalStateException(
+                        "NoObfuscation live authority unavailable");
+            }
+
+            if (NoObfuscation.f(null) != null) {
+                throw new IllegalStateException(
+                        "NoObfuscation null contract mismatch");
+            }
+            String untouched = "plain text";
+            if (!untouched.equals(NoObfuscation.f(untouched))) {
+                throw new IllegalStateException(
+                        "NoObfuscation plain-text contract mismatch");
+            }
+            String formatted = "\u00a7kSecret\u00a7r tail";
+            String stripped = NoObfuscation.f(formatted);
+            if (!"Secret\u00a7r tail".equals(stripped)) {
+                throw new IllegalStateException(
+                        "NoObfuscation formatting strip mismatch: "
+                                + String.valueOf(stripped));
+            }
+            String repeated = NoObfuscation.f("\u00a7kA\u00a7kB");
+            if (!"AB".equals(repeated)) {
+                throw new IllegalStateException(
+                        "NoObfuscation repeated-code strip mismatch: "
+                                + String.valueOf(repeated));
+            }
+
+            runtimeMilestone(
+                    "high-risk-functional-probe71-effect-pass:"
+                            + "NoObfuscation:null+plain+format+repeated");
+            runtimeMilestone(
+                    "high-risk-functional-probe71-module-pass:"
+                            + "NoObfuscation");
+            runtimeMilestone(
+                    "high-risk-functional-probe71-pass:1");
+            this.highRiskFunctionalProbe71Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe71Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe71:NoObfuscation",
+                    "formatting-strip-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe71-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private Object nukerInvokeForProbe(
             Nuker probe,
             String name,
@@ -19255,6 +19322,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe68();
         this.pumpHighRiskFunctionalProbe69();
         this.pumpHighRiskFunctionalProbe70();
+        this.pumpHighRiskFunctionalProbe71();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
