@@ -150,6 +150,7 @@ import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
+import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
@@ -733,6 +734,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe60Stage;
     private int highRiskFunctionalProbe61Stage;
     private int highRiskFunctionalProbe62Stage;
+    private int highRiskFunctionalProbe63Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12355,6 +12357,228 @@ implements EventSubscriber {
         }
     }
 
+    private void pumpHighRiskFunctionalProbe63() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe63")
+                || this.highRiskFunctionalProbe63Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe62")
+                && this.highRiskFunctionalProbe62Stage < 1) {
+            return;
+        }
+
+        BlocksESP probe = Modules.J(BlocksESP.class);
+        BlockPos diamondPos = null;
+        BlockPos ironPos = null;
+        IBlockState originalDiamondState = null;
+        IBlockState originalIronState = null;
+        boolean originalDiamondSetting = false;
+        boolean originalIronSetting = false;
+        java.util.Set<BlockPos> originalScanned = null;
+        java.util.Set<BlockPos> originalPacket = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BlocksESP.class) != probe
+                    || ModuleManager.byName("BlocksESP") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || BlocksESP.diamond == null
+                    || BlocksESP.iron == null
+                    || BlocksESP.L == null
+                    || BlocksESP.x == null) {
+                throw new IllegalStateException(
+                        "BlocksESP live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            outer:
+            for (int dy = 0; dy <= 2; ++dy) {
+                for (int dz = -1; dz <= 1; ++dz) {
+                    for (int dx = 3; dx <= 8; ++dx) {
+                        BlockPos candidate =
+                                new BlockPos(
+                                        baseX + dx,
+                                        baseY + dy,
+                                        baseZ + dz);
+                        if (!this.c.theWorld.isAirBlock(candidate)) {
+                            continue;
+                        }
+                        if (diamondPos == null) {
+                            diamondPos = candidate;
+                        } else if (!candidate.equals(diamondPos)) {
+                            ironPos = candidate;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (diamondPos == null || ironPos == null) {
+                throw new IllegalStateException(
+                        "BlocksESP probe found no two-block air fixture");
+            }
+
+            originalDiamondState =
+                    this.c.theWorld.getBlockState(diamondPos);
+            originalIronState =
+                    this.c.theWorld.getBlockState(ironPos);
+            originalDiamondSetting = BlocksESP.diamond.c();
+            originalIronSetting = BlocksESP.iron.c();
+            originalScanned =
+                    new java.util.LinkedHashSet<BlockPos>(BlocksESP.L);
+            originalPacket =
+                    new java.util.LinkedHashSet<BlockPos>(BlocksESP.x);
+            saved = true;
+
+            BlocksESP.L.clear();
+            BlocksESP.x.clear();
+            BlocksESP.diamond.v(true, 0L);
+            BlocksESP.iron.v(false, 0L);
+
+            if (!this.c.theWorld.setBlockState(
+                    diamondPos,
+                    Blocks.diamond_ore.getDefaultState(),
+                    3)) {
+                throw new IllegalStateException(
+                        "BlocksESP probe could not place diamond fixture");
+            }
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "BlocksESP fixture EventBus binding inactive");
+            }
+
+            fixtureBus.e(
+                    new ReceivePacketEvent(
+                            new net.minecraft.network.play.server
+                                    .S23PacketBlockChange(
+                                            this.c.theWorld,
+                                            diamondPos)),
+                    0L);
+            if (!BlocksESP.x.contains(diamondPos)) {
+                throw new IllegalStateException(
+                        "BlocksESP selected diamond packet was not cached");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe63-effect-pass:"
+                            + "BlocksESP:diamondPacketCached=true");
+
+            if (!this.c.theWorld.setBlockState(
+                    ironPos,
+                    Blocks.iron_ore.getDefaultState(),
+                    3)) {
+                throw new IllegalStateException(
+                        "BlocksESP probe could not place iron fixture");
+            }
+            fixtureBus.e(
+                    new ReceivePacketEvent(
+                            new net.minecraft.network.play.server
+                                    .S23PacketBlockChange(
+                                            this.c.theWorld,
+                                            ironPos)),
+                    0L);
+            if (BlocksESP.x.contains(ironPos)) {
+                throw new IllegalStateException(
+                        "BlocksESP cached disabled iron ore");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe63-effect-pass:"
+                            + "BlocksESP:disabledIronIgnored=true");
+
+            BlocksESP.iron.v(true, 0L);
+            fixtureBus.e(
+                    new ReceivePacketEvent(
+                            new net.minecraft.network.play.server
+                                    .S23PacketBlockChange(
+                                            this.c.theWorld,
+                                            ironPos)),
+                    0L);
+            if (!BlocksESP.x.contains(ironPos)) {
+                throw new IllegalStateException(
+                        "BlocksESP selected iron packet was not cached");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe63-effect-pass:"
+                            + "BlocksESP:ironPacketCached=true");
+
+            BlocksESP.L.add(diamondPos);
+            fixtureBus.e(
+                    new EntityJoinWorldEvent(
+                            0, this.c.thePlayer, (byte)0, 0),
+                    0L);
+            if (!BlocksESP.L.isEmpty() || !BlocksESP.x.isEmpty()) {
+                throw new IllegalStateException(
+                        "BlocksESP player world-join did not clear caches");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe63-effect-pass:"
+                            + "BlocksESP:worldJoinClearsCaches=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe63-module-pass:BlocksESP");
+            runtimeMilestone(
+                    "high-risk-functional-probe63-pass:1");
+            this.highRiskFunctionalProbe63Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe63Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe63:BlocksESP",
+                    "packet-cache-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe63-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    BlocksESP.diamond.v(originalDiamondSetting, 0L);
+                    BlocksESP.iron.v(originalIronSetting, 0L);
+                    BlocksESP.L.clear();
+                    BlocksESP.L.addAll(originalScanned);
+                    BlocksESP.x.clear();
+                    BlocksESP.x.addAll(originalPacket);
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(
+                                diamondPos,
+                                originalDiamondState,
+                                3);
+                        this.c.theWorld.setBlockState(
+                                ironPos,
+                                originalIronState,
+                                3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe63-restore-pass:"
+                                    + "BlocksESP:settings=true:"
+                                    + "caches=true:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe63:BlocksESP",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe63Stage >= 0) {
+                        this.highRiskFunctionalProbe63Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe63-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field fastCraftFieldForProbe(String name) throws Exception {
         Field field = FastCraft.class.getDeclaredField(name);
         field.setAccessible(true);
@@ -17181,6 +17405,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe60();
         this.pumpHighRiskFunctionalProbe61();
         this.pumpHighRiskFunctionalProbe62();
+        this.pumpHighRiskFunctionalProbe63();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
