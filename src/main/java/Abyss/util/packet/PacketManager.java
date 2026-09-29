@@ -137,7 +137,9 @@ implements EventSubscriber {
                 OutgoingPacketState.D(0L, var3.B);
                 u.add(var3.B);
                 if (var3.B instanceof C01PacketChatMessage) {
-                    runtimeMarker("chat-buffered:PacketManager");
+                    runtimeMarker(
+                            "chat-buffered:PacketManager:"
+                                    + ((C01PacketChatMessage)var3.B).getMessage());
                 }
                 var3.I(21307, 3074332907L);
 }
