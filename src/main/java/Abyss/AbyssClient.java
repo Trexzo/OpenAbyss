@@ -791,6 +791,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe86Stage;
     private int highRiskFunctionalProbe87Stage;
     private int highRiskFunctionalProbe88Stage;
+    private int highRiskFunctionalProbe89Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12421,6 +12422,102 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe89() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe89")
+                || this.highRiskFunctionalProbe89Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe88")
+                && this.highRiskFunctionalProbe88Stage < 1) {
+            return;
+        }
+
+        ContainerKeeper live = Modules.J(ContainerKeeper.class);
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(ContainerKeeper.class) != live
+                    || ModuleManager.byName("ContainerKeeper") != live
+                    || ContainerKeeper.toggleKey == null
+                    || ContainerKeeper.requireShiftToSave == null) {
+                throw new IllegalStateException(
+                        "ContainerKeeper live/settings authority unavailable");
+            }
+
+            ContainerKeeper scratch = new ContainerKeeper(0L);
+            java.lang.reflect.Field v =
+                    ContainerKeeper.class.getDeclaredField("v");
+            java.lang.reflect.Field t =
+                    ContainerKeeper.class.getDeclaredField("t");
+            java.lang.reflect.Field T =
+                    ContainerKeeper.class.getDeclaredField("T");
+            java.lang.reflect.Field H =
+                    ContainerKeeper.class.getDeclaredField("H");
+            v.setAccessible(true);
+            t.setAccessible(true);
+            T.setAccessible(true);
+            H.setAccessible(true);
+
+            v.setBoolean(scratch, true);
+            t.setBoolean(scratch, true);
+            T.setBoolean(scratch, true);
+            H.set(scratch, this.c.currentScreen);
+
+            scratch.A(0L);
+
+            if (v.getBoolean(scratch)
+                    || t.getBoolean(scratch)
+                    || T.getBoolean(scratch)
+                    || H.get(scratch) != null) {
+                throw new IllegalStateException(
+                        "ContainerKeeper disable reset mismatch"
+                                + " v=" + v.getBoolean(scratch)
+                                + " t=" + t.getBoolean(scratch)
+                                + " T=" + T.getBoolean(scratch)
+                                + " H=" + String.valueOf(H.get(scratch)));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe89-effect-pass:"
+                            + "ContainerKeeper:disableReset=true");
+
+            String key = ContainerKeeper.toggleKey.X();
+            if (key == null
+                    || ContainerKeeper.requireShiftToSave == null) {
+                throw new IllegalStateException(
+                        "ContainerKeeper setting contract unavailable");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe89-effect-pass:"
+                            + "ContainerKeeper:settings=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe89Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe89:ContainerKeeper",
+                    "container-state-reset-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe89-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe89-restore-pass:"
+                        + "ContainerKeeper:scratchOnly=true");
+        runtimeMilestone(
+                "high-risk-functional-probe89-module-pass:ContainerKeeper");
+        runtimeMilestone("high-risk-functional-probe89-pass:1");
+        this.highRiskFunctionalProbe89Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe88() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe88")
                 || this.highRiskFunctionalProbe88Stage != 0) {
@@ -22096,6 +22193,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe86();
         this.pumpHighRiskFunctionalProbe87();
         this.pumpHighRiskFunctionalProbe88();
+        this.pumpHighRiskFunctionalProbe89();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
