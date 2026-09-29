@@ -163,6 +163,7 @@ import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoDigPlace;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
+import Abyss.module.impl.world.BridgeAssist;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Nuker;
 import Abyss.module.impl.world.NukerScanAxis;
@@ -764,6 +765,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe70Stage;
     private int highRiskFunctionalProbe71Stage;
     private int highRiskFunctionalProbe72Stage;
+    private int highRiskFunctionalProbe73Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12386,6 +12388,221 @@ implements EventSubscriber {
         }
     }
 
+    private Object bridgeAssistInvokeForProbe(
+            BridgeAssist probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = BridgeAssist.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe73() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe73")
+                || this.highRiskFunctionalProbe73Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe72")
+                && this.highRiskFunctionalProbe72Stage < 1) {
+            return;
+        }
+
+        BridgeAssist probe = Modules.J(BridgeAssist.class);
+        float originalEdgeOffset = 0.0f;
+        boolean originalSprinting = false;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BridgeAssist.class) != probe
+                    || ModuleManager.byName("BridgeAssist") != probe
+                    || BridgeAssist.edgeOffset == null
+                    || BridgeAssist.unsneakDelay == null
+                    || BridgeAssist.sneakOnJumpTime == null
+                    || BridgeAssist.requireSneak == null
+                    || BridgeAssist.requireHoldingBlocks == null
+                    || BridgeAssist.requireLookingDown == null
+                    || BridgeAssist.notMovingForward == null
+                    || BridgeAssist.silentRotation == null) {
+                throw new IllegalStateException(
+                        "BridgeAssist live authority unavailable");
+            }
+
+            originalEdgeOffset = BridgeAssist.edgeOffset.L();
+            originalSprinting = this.c.thePlayer.isSprinting();
+            saved = true;
+
+            BridgeAssist.edgeOffset.o((byte)0, 0L, 0.0f);
+            if (!"0".equals(probe.g(0L))) {
+                throw new IllegalStateException(
+                        "BridgeAssist integer tag mismatch: "
+                                + probe.g(0L));
+            }
+            BridgeAssist.edgeOffset.o((byte)0, 0L, 0.27f);
+            if (!"0.27".equals(probe.g(0L))) {
+                throw new IllegalStateException(
+                        "BridgeAssist decimal tag mismatch: "
+                                + probe.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe73-effect-pass:"
+                            + "BridgeAssist:tag=0+0.27");
+
+            float[] positiveWrap =
+                    (float[])this.bridgeAssistInvokeForProbe(
+                            probe,
+                            "Y",
+                            new Class<?>[]{
+                                    Float.TYPE, Float.TYPE, Float.TYPE,
+                                    Float.TYPE, Float.TYPE
+                            },
+                            new Object[]{
+                                    Float.valueOf(170.0f),
+                                    Float.valueOf(80.0f),
+                                    Float.valueOf(-170.0f),
+                                    Float.valueOf(120.0f),
+                                    Float.valueOf(15.0f)
+                            });
+            float[] negativeWrap =
+                    (float[])this.bridgeAssistInvokeForProbe(
+                            probe,
+                            "Y",
+                            new Class<?>[]{
+                                    Float.TYPE, Float.TYPE, Float.TYPE,
+                                    Float.TYPE, Float.TYPE
+                            },
+                            new Object[]{
+                                    Float.valueOf(-170.0f),
+                                    Float.valueOf(-80.0f),
+                                    Float.valueOf(170.0f),
+                                    Float.valueOf(-120.0f),
+                                    Float.valueOf(15.0f)
+                            });
+            if (positiveWrap == null
+                    || positiveWrap.length != 2
+                    || Math.abs(positiveWrap[0] - 185.0f) > 0.0001f
+                    || Math.abs(positiveWrap[1] - 90.0f) > 0.0001f
+                    || negativeWrap == null
+                    || negativeWrap.length != 2
+                    || Math.abs(negativeWrap[0] + 185.0f) > 0.0001f
+                    || Math.abs(negativeWrap[1] + 90.0f) > 0.0001f) {
+                throw new IllegalStateException(
+                        "BridgeAssist rotation clamp mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe73-effect-pass:"
+                            + "BridgeAssist:rotationWrapClamp=true");
+
+            this.c.thePlayer.setSprinting(false);
+            AxisAlignedBB base = this.c.thePlayer.getEntityBoundingBox();
+            float yaw = RotationManager.p();
+            AxisAlignedBB projected =
+                    (AxisAlignedBB)this.bridgeAssistInvokeForProbe(
+                            probe,
+                            "Y",
+                            new Class<?>[]{Float.TYPE, Float.TYPE},
+                            new Object[]{
+                                    Float.valueOf(1.0f),
+                                    Float.valueOf(0.0f)
+                            });
+            double radians = (double)yaw * Math.PI / 180.0;
+            double expectedDx = -Math.sin(radians) * 0.221;
+            double expectedDz = Math.cos(radians) * 0.221;
+            double actualDx = projected.minX - base.minX;
+            double actualDz = projected.minZ - base.minZ;
+            if (Math.abs(actualDx - expectedDx) > 0.0002
+                    || Math.abs(actualDz - expectedDz) > 0.0002
+                    || Math.abs(projected.minY - base.minY) > 0.00001) {
+                throw new IllegalStateException(
+                        "BridgeAssist movement projection mismatch"
+                                + " yaw=" + yaw
+                                + " dx=" + actualDx
+                                + " expectedDx=" + expectedDx
+                                + " dz=" + actualDz
+                                + " expectedDz=" + expectedDz);
+            }
+
+            AxisAlignedBB zeroInput =
+                    (AxisAlignedBB)this.bridgeAssistInvokeForProbe(
+                            probe,
+                            "Y",
+                            new Class<?>[]{Float.TYPE, Float.TYPE},
+                            new Object[]{
+                                    Float.valueOf(0.0f),
+                                    Float.valueOf(0.0f)
+                            });
+            if (Math.abs(
+                            (zeroInput.minX - base.minX)
+                                    - this.c.thePlayer.motionX)
+                            > 0.00001
+                    || Math.abs(
+                            (zeroInput.minZ - base.minZ)
+                                    - this.c.thePlayer.motionZ)
+                            > 0.00001) {
+                throw new IllegalStateException(
+                        "BridgeAssist zero-input motion projection mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe73-effect-pass:"
+                            + "BridgeAssist:movementProjection=true");
+
+            BridgeAssist.edgeOffset.o(
+                    (byte)0, 0L, originalEdgeOffset);
+            this.c.thePlayer.setSprinting(originalSprinting);
+            saved = false;
+
+            if (Math.abs(
+                            BridgeAssist.edgeOffset.L()
+                                    - originalEdgeOffset)
+                            > 0.00001f
+                    || this.c.thePlayer.isSprinting()
+                            != originalSprinting) {
+                throw new IllegalStateException(
+                        "BridgeAssist state restore mismatch");
+            }
+
+            runtimeMilestone(
+                    "high-risk-functional-probe73-restore-pass:"
+                            + "BridgeAssist:edgeOffset=true:sprint=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe73-module-pass:"
+                            + "BridgeAssist");
+            runtimeMilestone(
+                    "high-risk-functional-probe73-pass:1");
+            this.highRiskFunctionalProbe73Stage = 1;
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    BridgeAssist.edgeOffset.o(
+                            (byte)0, 0L, originalEdgeOffset);
+                    if (this.c.thePlayer != null) {
+                        this.c.thePlayer.setSprinting(
+                                originalSprinting);
+                    }
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe73:BridgeAssist",
+                            "restore-state",
+                            restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe73Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe73:BridgeAssist",
+                    "rotation-movement-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe73-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private Object tracersInvokeForProbe(
             Tracers probe,
             String name,
@@ -19652,6 +19869,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe70();
         this.pumpHighRiskFunctionalProbe71();
         this.pumpHighRiskFunctionalProbe72();
+        this.pumpHighRiskFunctionalProbe73();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
