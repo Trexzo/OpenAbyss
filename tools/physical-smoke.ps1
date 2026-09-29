@@ -147,7 +147,7 @@ try {
             '-Dabyss.visualUtilityFunctionalProbe=true'
             '-Dabyss.highRiskFunctionalProbe=true'
         )
-        foreach ($ProbeIndex in 2..92) {
+        foreach ($ProbeIndex in 2..93) {
             $ExtendedProbeArgs += "-Dabyss.highRiskFunctionalProbe${ProbeIndex}=true"
         }
         $ExtendedProbeArgs += '-Dabyss.commandRuntimeProbe=true'
@@ -172,7 +172,7 @@ try {
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "extended_probes=$ExtendedProbes"
-        "extended_probe_max=$(if ($ExtendedProbes) { 92 } else { 0 })"
+        "extended_probe_max=$(if ($ExtendedProbes) { 93 } else { 0 })"
         "reference_bootstrap=$UseReferenceBootstrap"
         "skip_chat_menu=$UseSkipChatMenu"
         "skip_cheater_detector=$UseSkipCheaterDetector"
@@ -496,6 +496,7 @@ try {
                 'high-risk-functional-probe90-pass:1',
                 'high-risk-functional-probe91-pass:1',
                 'high-risk-functional-probe92-pass:1',
+                'high-risk-functional-probe93-pass:1',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
