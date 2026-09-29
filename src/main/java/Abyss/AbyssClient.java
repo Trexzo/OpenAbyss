@@ -165,6 +165,7 @@ import Abyss.module.impl.world.AntiVoid;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.BridgeAssist;
+import Abyss.module.impl.world.BlockIn;
 import Abyss.module.impl.world.FastPlace;
 import Abyss.module.impl.world.Nuker;
 import Abyss.module.impl.world.NukerScanAxis;
@@ -768,6 +769,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe72Stage;
     private int highRiskFunctionalProbe73Stage;
     private int highRiskFunctionalProbe74Stage;
+    private int highRiskFunctionalProbe75Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12390,6 +12392,216 @@ implements EventSubscriber {
         }
     }
 
+    private Object blockInInvokeForProbe(
+            BlockIn probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = BlockIn.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe75() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe75")
+                || this.highRiskFunctionalProbe75Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe74")
+                && this.highRiskFunctionalProbe74Stage < 1) {
+            return;
+        }
+
+        BlockIn probe = Modules.J(BlockIn.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(BlockIn.class) != probe
+                    || ModuleManager.byName("BlockIn") != probe
+                    || BlockIn.swing == null
+                    || BlockIn.range == null
+                    || BlockIn.angleStep == null
+                    || BlockIn.rotationTolerance == null
+                    || BlockIn.moveFix == null) {
+                throw new IllegalStateException(
+                        "BlockIn live authority unavailable");
+            }
+
+            double clampLow =
+                    ((Double)this.blockInInvokeForProbe(
+                            probe,
+                            "B",
+                            new Class<?>[]{Double.TYPE},
+                            new Object[]{Double.valueOf(-0.5)}))
+                            .doubleValue();
+            double clampMid =
+                    ((Double)this.blockInInvokeForProbe(
+                            probe,
+                            "B",
+                            new Class<?>[]{Double.TYPE},
+                            new Object[]{Double.valueOf(0.25)}))
+                            .doubleValue();
+            double clampHigh =
+                    ((Double)this.blockInInvokeForProbe(
+                            probe,
+                            "B",
+                            new Class<?>[]{Double.TYPE},
+                            new Object[]{Double.valueOf(1.5)}))
+                            .doubleValue();
+            double square =
+                    ((Double)this.blockInInvokeForProbe(
+                            probe,
+                            "H",
+                            new Class<?>[]{Double.TYPE},
+                            new Object[]{Double.valueOf(-4.0)}))
+                            .doubleValue();
+            if (Math.abs(clampLow) > 0.0000001
+                    || Math.abs(clampMid - 0.25) > 0.0000001
+                    || Math.abs(clampHigh - 1.0) > 0.0000001
+                    || Math.abs(square - 16.0) > 0.0000001) {
+                throw new IllegalStateException(
+                        "BlockIn scalar helper mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe75-effect-pass:"
+                            + "BlockIn:scalarMath=true");
+
+            double distance =
+                    ((Double)this.blockInInvokeForProbe(
+                            probe,
+                            "e",
+                            new Class<?>[]{
+                                    Vec3.class, BlockPos.class
+                            },
+                            new Object[]{
+                                    new Vec3(2.0, 2.0, 2.0),
+                                    new BlockPos(0, 0, 0)
+                            }))
+                            .doubleValue();
+            if (Math.abs(distance - 3.0) > 0.0000001) {
+                throw new IllegalStateException(
+                        "BlockIn closest-point distance mismatch: "
+                                + distance);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe75-effect-pass:"
+                            + "BlockIn:closestPointDistance=3.0");
+
+            int playerX = MathHelper.floor_double(
+                    this.c.thePlayer.posX);
+            int playerY = MathHelper.floor_double(
+                    this.c.thePlayer.posY);
+            int playerZ = MathHelper.floor_double(
+                    this.c.thePlayer.posZ);
+            boolean above =
+                    ((Boolean)this.blockInInvokeForProbe(
+                            probe,
+                            "C",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{
+                                    new BlockPos(
+                                            playerX,
+                                            playerY + 2,
+                                            playerZ)
+                            }))
+                            .booleanValue();
+            boolean side =
+                    ((Boolean)this.blockInInvokeForProbe(
+                            probe,
+                            "C",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{
+                                    new BlockPos(
+                                            playerX + 1,
+                                            playerY,
+                                            playerZ)
+                            }))
+                            .booleanValue();
+            boolean diagonal =
+                    ((Boolean)this.blockInInvokeForProbe(
+                            probe,
+                            "C",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{
+                                    new BlockPos(
+                                            playerX + 1,
+                                            playerY,
+                                            playerZ + 1)
+                            }))
+                            .booleanValue();
+            boolean tooHighSide =
+                    ((Boolean)this.blockInInvokeForProbe(
+                            probe,
+                            "C",
+                            new Class<?>[]{BlockPos.class},
+                            new Object[]{
+                                    new BlockPos(
+                                            playerX + 1,
+                                            playerY + 2,
+                                            playerZ)
+                            }))
+                            .booleanValue();
+            if (!above || !side || diagonal || tooHighSide) {
+                throw new IllegalStateException(
+                        "BlockIn surround-position classifier mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe75-effect-pass:"
+                            + "BlockIn:relativeGeometry=true");
+
+            float[] rotation =
+                    (float[])this.blockInInvokeForProbe(
+                            probe,
+                            "a",
+                            new Class<?>[]{
+                                    Float.TYPE, Float.TYPE, Float.TYPE,
+                                    Float.TYPE, Double.TYPE
+                            },
+                            new Object[]{
+                                    Float.valueOf(170.0f),
+                                    Float.valueOf(80.0f),
+                                    Float.valueOf(-170.0f),
+                                    Float.valueOf(120.0f),
+                                    Double.valueOf(20.0)
+                            });
+            if (rotation == null
+                    || rotation.length != 2
+                    || Math.abs(rotation[0] - 190.0f) > 0.0001f
+                    || Math.abs(rotation[1] - 90.0f) > 0.0001f) {
+                throw new IllegalStateException(
+                        "BlockIn rotation-step mismatch");
+            }
+            if (!BlockIn.moveFix.S().contains("SILENT")
+                    || !BlockIn.moveFix.S().contains("STRICT")
+                    || !BlockIn.moveFix.S().contains("NONE")) {
+                throw new IllegalStateException(
+                        "BlockIn move-fix mode contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe75-effect-pass:"
+                            + "BlockIn:rotation+moveFix=true");
+
+            runtimeMilestone(
+                    "high-risk-functional-probe75-module-pass:"
+                            + "BlockIn");
+            runtimeMilestone(
+                    "high-risk-functional-probe75-pass:1");
+            this.highRiskFunctionalProbe75Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe75Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe75:BlockIn",
+                    "placement-geometry-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe75-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private Field antiVoidFieldForProbe(
             String name, Class<?> type) throws Exception {
         Field field = AntiVoid.class.getDeclaredField(name);
@@ -20013,6 +20225,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe72();
         this.pumpHighRiskFunctionalProbe73();
         this.pumpHighRiskFunctionalProbe74();
+        this.pumpHighRiskFunctionalProbe75();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
