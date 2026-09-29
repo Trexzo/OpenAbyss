@@ -133,6 +133,7 @@ import Abyss.module.impl.visual.Chams;
 import Abyss.module.impl.visual.CaveXray;
 import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
+import Abyss.module.impl.visual.HUD;
 import Abyss.module.impl.visual.ItemScale;
 import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.module.impl.visual.KillEffect;
@@ -781,6 +782,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe78Stage;
     private int highRiskFunctionalProbe79Stage;
     private int highRiskFunctionalProbe80Stage;
+    private int highRiskFunctionalProbe81Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12411,6 +12413,178 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe81() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe81")
+                || this.highRiskFunctionalProbe81Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe80")
+                && this.highRiskFunctionalProbe80Stage < 1) {
+            return;
+        }
+
+        HUD live = Modules.J(HUD.class);
+        boolean saved = false;
+        boolean originalFps = false;
+        boolean originalBps = false;
+        boolean originalVersion = false;
+        boolean originalUserInfo = false;
+        boolean originalCoordinate = false;
+        boolean originalTime = false;
+        boolean originalHealth = false;
+        boolean originalWatermark = false;
+        boolean originalUseCustomFont = false;
+        String originalInfoMode = null;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(HUD.class) != live
+                    || ModuleManager.byName("HUD") != live
+                    || HUD.fps == null
+                    || HUD.bps == null
+                    || HUD.version == null
+                    || HUD.userInfo == null
+                    || HUD.coordinate == null
+                    || HUD.time == null
+                    || HUD.health == null
+                    || HUD.watermark == null
+                    || HUD.useCustomFont == null
+                    || HUD.infoMode == null
+                    || HUD.theme == null
+                    || HUD.customTheme == null
+                    || HUD.themeOffset == null
+                    || HUD.themeSpeed == null
+                    || HUD.themeColor1 == null
+                    || HUD.themeColor2 == null
+                    || HUD.themeColor3 == null) {
+                throw new IllegalStateException(
+                        "HUD live/settings authority unavailable");
+            }
+
+            if (HUD.theme != Theme.theme
+                    || HUD.customTheme != Theme.customTheme
+                    || HUD.themeOffset != Theme.offset
+                    || HUD.themeSpeed != Theme.timerMultiplier
+                    || HUD.themeColor1 != Theme.customColor1
+                    || HUD.themeColor2 != Theme.customColor2
+                    || HUD.themeColor3 != Theme.customColor3) {
+                throw new IllegalStateException(
+                        "HUD Theme setting aliases diverged");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe81-effect-pass:"
+                            + "HUD:themeAliases=true");
+
+            if (!HUD.infoMode.S().contains("PLAIN_TEXT")
+                    || !HUD.infoMode.S().contains("INFO")
+                    || !HUD.infoMode.S().contains("LOGO")
+                    || !live.settings().contains(HUD.fps)
+                    || !live.settings().contains(HUD.bps)
+                    || !live.settings().contains(HUD.coordinate)
+                    || !live.settings().contains(HUD.health)
+                    || !live.settings().contains(HUD.watermark)
+                    || !live.settings().contains(HUD.infoMode)
+                    || !live.settings().contains(HUD.theme)) {
+                throw new IllegalStateException(
+                        "HUD recovered settings surface mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe81-effect-pass:"
+                            + "HUD:settingsSurface=true");
+
+            originalFps = HUD.fps.c();
+            originalBps = HUD.bps.c();
+            originalVersion = HUD.version.c();
+            originalUserInfo = HUD.userInfo.c();
+            originalCoordinate = HUD.coordinate.c();
+            originalTime = HUD.time.c();
+            originalHealth = HUD.health.c();
+            originalWatermark = HUD.watermark.c();
+            originalUseCustomFont = HUD.useCustomFont.c();
+            originalInfoMode = HUD.infoMode.Y();
+            saved = true;
+
+            HUD.fps.v(false, 0L);
+            HUD.bps.v(true, 0L);
+            HUD.version.v(false, 0L);
+            HUD.userInfo.v(false, 0L);
+            HUD.coordinate.v(true, 0L);
+            HUD.time.v(true, 0L);
+            HUD.health.v(true, 0L);
+            HUD.watermark.v(false, 0L);
+            HUD.useCustomFont.v(false, 0L);
+            HUD.infoMode.i("LOGO");
+
+            if (HUD.fps.c()
+                    || !HUD.bps.c()
+                    || HUD.version.c()
+                    || HUD.userInfo.c()
+                    || !HUD.coordinate.c()
+                    || !HUD.time.c()
+                    || !HUD.health.c()
+                    || HUD.watermark.c()
+                    || HUD.useCustomFont.c()
+                    || !HUD.infoMode.R("LOGO")) {
+                throw new IllegalStateException(
+                        "HUD setting round-trip mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe81-effect-pass:"
+                            + "HUD:settingsRoundTrip=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    HUD.fps.v(originalFps, 0L);
+                    HUD.bps.v(originalBps, 0L);
+                    HUD.version.v(originalVersion, 0L);
+                    HUD.userInfo.v(originalUserInfo, 0L);
+                    HUD.coordinate.v(originalCoordinate, 0L);
+                    HUD.time.v(originalTime, 0L);
+                    HUD.health.v(originalHealth, 0L);
+                    HUD.watermark.v(originalWatermark, 0L);
+                    HUD.useCustomFont.v(originalUseCustomFont, 0L);
+                    HUD.infoMode.i(originalInfoMode);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe81:HUD",
+                            "restore-settings",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe81Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe81:HUD",
+                    "settings-alias-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe81-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe81-restore-pass:"
+                        + "HUD:settings=true");
+        runtimeMilestone(
+                "high-risk-functional-probe81-module-pass:HUD");
+        runtimeMilestone("high-risk-functional-probe81-pass:1");
+        this.highRiskFunctionalProbe81Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe80() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe80")
                 || this.highRiskFunctionalProbe80Stage != 0) {
@@ -21028,6 +21202,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe78();
         this.pumpHighRiskFunctionalProbe79();
         this.pumpHighRiskFunctionalProbe80();
+        this.pumpHighRiskFunctionalProbe81();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
