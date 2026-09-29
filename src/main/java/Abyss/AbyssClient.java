@@ -152,6 +152,10 @@ import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BedPlates;
 import Abyss.module.impl.visual_utility.BedESP;
+import Abyss.module.impl.visual_utility.Trajectories;
+import Abyss.module.impl.visual_utility.TrajectoryProjectileSpec;
+import Abyss.module.impl.visual_utility.TrajectorySimulationResult;
+import Abyss.module.impl.visual_utility.TrajectoryStep;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoTool;
@@ -180,6 +184,7 @@ import Abyss.util.PlayerInfoCache;
 import Abyss.util.Sneaky;
 import Abyss.util.SmoothMouseHelper;
 import Abyss.util.TimerUtil;
+import Abyss.util.Vector3d;
 import Abyss.util.debug.StallWatchdog;
 import Abyss.util.packet.IncomingPacketHold;
 import Abyss.util.packet.OutgoingPacketState;
@@ -241,6 +246,7 @@ import net.minecraft.entity.projectile.EntityLargeFireball;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C10PacketCreativeInventoryAction;
 import net.minecraft.network.play.server.S02PacketChat;
@@ -747,6 +753,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe65Stage;
     private int highRiskFunctionalProbe66Stage;
     private int highRiskFunctionalProbe67Stage;
+    private int highRiskFunctionalProbe68Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12369,6 +12376,361 @@ implements EventSubscriber {
         }
     }
 
+    private Object trajectoriesInvokeForProbe(
+            Trajectories probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = Trajectories.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe68() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe68")
+                || this.highRiskFunctionalProbe68Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe67")
+                && this.highRiskFunctionalProbe67Stage < 1) {
+            return;
+        }
+
+        Trajectories probe = Modules.J(Trajectories.class);
+        BlockPos startPos = null;
+        BlockPos wallPos = null;
+        IBlockState originalWallState = null;
+        ItemStack originalHeld = null;
+        int hotbarSlot = -1;
+        int originalThirdPerson = 0;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Trajectories.class) != probe
+                    || ModuleManager.byName("Trajectories") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "Trajectories live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            int dirX = 0;
+            int dirZ = 0;
+            int[][] directions = new int[][]{
+                    {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+            };
+            outer:
+            for (int rise = 3; rise <= 7; ++rise) {
+                for (int[] direction : directions) {
+                    BlockPos candidateStart = new BlockPos(
+                            baseX + direction[0] * 3,
+                            baseY + rise,
+                            baseZ + direction[1] * 3);
+                    BlockPos candidateMiddle = new BlockPos(
+                            baseX + direction[0] * 4,
+                            baseY + rise,
+                            baseZ + direction[1] * 4);
+                    BlockPos candidateWall = new BlockPos(
+                            baseX + direction[0] * 5,
+                            baseY + rise,
+                            baseZ + direction[1] * 5);
+                    BlockPos candidateBeyond = new BlockPos(
+                            baseX + direction[0] * 6,
+                            baseY + rise,
+                            baseZ + direction[1] * 6);
+                    if (this.c.theWorld.isAirBlock(candidateStart)
+                            && this.c.theWorld.isAirBlock(candidateMiddle)
+                            && this.c.theWorld.isAirBlock(candidateWall)
+                            && this.c.theWorld.isAirBlock(candidateBeyond)) {
+                        startPos = candidateStart;
+                        wallPos = candidateWall;
+                        dirX = direction[0];
+                        dirZ = direction[1];
+                        break outer;
+                    }
+                }
+            }
+            if (startPos == null || wallPos == null) {
+                throw new IllegalStateException(
+                        "Trajectories probe found no clear ray fixture");
+            }
+
+            hotbarSlot = this.c.thePlayer.inventory.currentItem;
+            originalHeld =
+                    this.c.thePlayer.inventory.getStackInSlot(hotbarSlot);
+            originalThirdPerson = this.c.gameSettings.thirdPersonView;
+            originalWallState = this.c.theWorld.getBlockState(wallPos);
+            saved = true;
+
+            this.c.thePlayer.inventory.setInventorySlotContents(
+                    hotbarSlot, new ItemStack(Items.snowball));
+            this.c.gameSettings.thirdPersonView = 0;
+            boolean firstPersonHeld =
+                    ((Boolean)this.trajectoriesInvokeForProbe(
+                            probe,
+                            "f$r4",
+                            new Class<?>[0],
+                            new Object[0])).booleanValue();
+
+            this.c.gameSettings.thirdPersonView = 1;
+            boolean thirdPersonRejected =
+                    !((Boolean)this.trajectoriesInvokeForProbe(
+                            probe,
+                            "f$r4",
+                            new Class<?>[0],
+                            new Object[0])).booleanValue();
+
+            this.c.gameSettings.thirdPersonView = 0;
+            this.c.thePlayer.inventory.setInventorySlotContents(
+                    hotbarSlot, null);
+            boolean emptyHandRejected =
+                    !((Boolean)this.trajectoriesInvokeForProbe(
+                            probe,
+                            "f$r4",
+                            new Class<?>[0],
+                            new Object[0])).booleanValue();
+
+            if (!firstPersonHeld
+                    || !thirdPersonRejected
+                    || !emptyHandRejected) {
+                throw new IllegalStateException(
+                        "Trajectories activation gate mismatch held="
+                                + firstPersonHeld
+                                + " thirdPersonRejected="
+                                + thirdPersonRejected
+                                + " emptyHandRejected="
+                                + emptyHandRejected);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe68-effect-pass:"
+                            + "Trajectories:gates=first-person+held-item");
+
+            TrajectoryProjectileSpec snowball =
+                    (TrajectoryProjectileSpec)
+                            this.trajectoriesInvokeForProbe(
+                                    probe,
+                                    "W",
+                                    new Class<?>[]{Item.class, Float.TYPE},
+                                    new Object[]{
+                                            Items.snowball,
+                                            Float.valueOf(0.0f)
+                                    });
+            TrajectoryProjectileSpec egg =
+                    (TrajectoryProjectileSpec)
+                            this.trajectoriesInvokeForProbe(
+                                    probe,
+                                    "W",
+                                    new Class<?>[]{Item.class, Float.TYPE},
+                                    new Object[]{
+                                            Items.egg,
+                                            Float.valueOf(0.0f)
+                                    });
+            TrajectoryProjectileSpec pearl =
+                    (TrajectoryProjectileSpec)
+                            this.trajectoriesInvokeForProbe(
+                                    probe,
+                                    "W",
+                                    new Class<?>[]{Item.class, Float.TYPE},
+                                    new Object[]{
+                                            Items.ender_pearl,
+                                            Float.valueOf(0.0f)
+                                    });
+            TrajectoryProjectileSpec rod =
+                    (TrajectoryProjectileSpec)
+                            this.trajectoriesInvokeForProbe(
+                                    probe,
+                                    "W",
+                                    new Class<?>[]{Item.class, Float.TYPE},
+                                    new Object[]{
+                                            Items.fishing_rod,
+                                            Float.valueOf(0.0f)
+                                    });
+            Object unsupported = this.trajectoriesInvokeForProbe(
+                    probe,
+                    "W",
+                    new Class<?>[]{Item.class, Float.TYPE},
+                    new Object[]{Items.stick, Float.valueOf(0.0f)});
+
+            if (snowball == null
+                    || egg == null
+                    || pearl == null
+                    || rod == null
+                    || unsupported != null
+                    || TrajectoryProjectileSpec.A(snowball)
+                    || Math.abs(
+                            TrajectoryProjectileSpec.I(snowball) - 1.5f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.Z(snowball) - 0.99f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.T(snowball) - 0.03f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.b(snowball) - 0.25f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.I(egg) - 1.5f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.I(pearl) - 1.5f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.Z(rod) - 0.92f)
+                            > 0.00001f
+                    || Math.abs(
+                            TrajectoryProjectileSpec.T(rod) - 0.04f)
+                            > 0.00001f) {
+                throw new IllegalStateException(
+                        "Trajectories projectile-spec mapping mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe68-effect-pass:"
+                            + "Trajectories:specs=snowball+egg+pearl+rod");
+
+            Vector3d physics = new Vector3d(
+                    startPos.getX() + 0.5,
+                    startPos.getY() + 0.5,
+                    startPos.getZ() + 0.5,
+                    2.0,
+                    1.0,
+                    -3.0,
+                    null);
+            this.trajectoriesInvokeForProbe(
+                    probe,
+                    "z",
+                    new Class<?>[]{
+                            Vector3d.class, Float.TYPE, Float.TYPE
+                    },
+                    new Object[]{
+                            physics,
+                            Float.valueOf(
+                                    TrajectoryProjectileSpec.Z(snowball)),
+                            Float.valueOf(
+                                    TrajectoryProjectileSpec.T(snowball))
+                    });
+            if (Math.abs(Vector3d.O(physics) - 1.98) > 0.0001
+                    || Math.abs(Vector3d.f(physics) - 0.96) > 0.0001
+                    || Math.abs(Vector3d.l(physics) + 2.97) > 0.0001) {
+                throw new IllegalStateException(
+                        "Trajectories drag/gravity mismatch motion="
+                                + Vector3d.O(physics)
+                                + ","
+                                + Vector3d.f(physics)
+                                + ","
+                                + Vector3d.l(physics));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe68-effect-pass:"
+                            + "Trajectories:airPhysics=true");
+
+            if (!this.c.theWorld.setBlockState(
+                    wallPos, Blocks.stone.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "Trajectories probe could not place collision wall");
+            }
+
+            Vector3d collision = new Vector3d(
+                    startPos.getX() + 0.5,
+                    startPos.getY() + 0.5,
+                    startPos.getZ() + 0.5,
+                    dirX * 3.0,
+                    0.0,
+                    dirZ * 3.0,
+                    null);
+            TrajectoryStep step =
+                    (TrajectoryStep)this.trajectoriesInvokeForProbe(
+                            probe,
+                            "L",
+                            new Class<?>[]{Vector3d.class},
+                            new Object[]{collision});
+            TrajectorySimulationResult result =
+                    new TrajectorySimulationResult(null);
+            this.trajectoriesInvokeForProbe(
+                    probe,
+                    "N",
+                    new Class<?>[]{
+                            TrajectoryStep.class,
+                            TrajectorySimulationResult.class
+                    },
+                    new Object[]{step, result});
+            MovingObjectPosition hit =
+                    TrajectorySimulationResult.R$r1(result);
+            if (hit == null
+                    || !TrajectorySimulationResult.c(result)
+                    || hit.getBlockPos() == null
+                    || !wallPos.equals(hit.getBlockPos())) {
+                throw new IllegalStateException(
+                        "Trajectories block collision mismatch expected="
+                                + wallPos
+                                + " actual="
+                                + (hit == null
+                                        ? "<null>"
+                                        : String.valueOf(
+                                                hit.getBlockPos())));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe68-effect-pass:"
+                            + "Trajectories:blockCollision=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe68-module-pass:"
+                            + "Trajectories");
+            runtimeMilestone(
+                    "high-risk-functional-probe68-pass:1");
+            this.highRiskFunctionalProbe68Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe68Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe68:Trajectories",
+                    "projectile-physics-collision",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe68-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    this.c.gameSettings.thirdPersonView =
+                            originalThirdPerson;
+                    this.c.thePlayer.inventory.setInventorySlotContents(
+                            hotbarSlot, originalHeld);
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(
+                                wallPos, originalWallState, 3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe68-restore-pass:"
+                                    + "Trajectories:inventory=true:"
+                                    + "view=true:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe68:Trajectories",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe68Stage >= 0) {
+                        this.highRiskFunctionalProbe68Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe68-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Object bedEspInvokeForProbe(
             BedESP probe,
             String name,
@@ -18364,6 +18726,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe65();
         this.pumpHighRiskFunctionalProbe66();
         this.pumpHighRiskFunctionalProbe67();
+        this.pumpHighRiskFunctionalProbe68();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
