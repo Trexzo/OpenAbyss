@@ -793,6 +793,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe88Stage;
     private int highRiskFunctionalProbe89Stage;
     private int highRiskFunctionalProbe90Stage;
+    private int highRiskFunctionalProbe91Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12423,6 +12424,111 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe91() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe91")
+                || this.highRiskFunctionalProbe91Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe90")
+                && this.highRiskFunctionalProbe90Stage < 1) {
+            return;
+        }
+
+        AntiBot live = Modules.J(AntiBot.class);
+        boolean originalTablist = false;
+        boolean settingSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AntiBot.class) != live
+                    || ModuleManager.byName("AntiBot") != live
+                    || AntiBot.tablistCheck == null
+                    || this.c.thePlayer == null
+                    || this.c.theWorld == null
+                    || this.c.isSingleplayer()) {
+                throw new IllegalStateException(
+                        "AntiBot live/setting/multiplayer authority unavailable");
+            }
+
+            originalTablist = AntiBot.tablistCheck.c();
+            settingSaved = true;
+            AntiBot.tablistCheck.v(false, 0L);
+
+            boolean selfBot = AntiBot.T(
+                    (short)0,
+                    this.c.thePlayer);
+            if (selfBot) {
+                throw new IllegalStateException(
+                        "AntiBot classified local EntityPlayerSP as bot");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe91-effect-pass:"
+                            + "AntiBot:self=false");
+
+            com.mojang.authlib.GameProfile profile =
+                    new com.mojang.authlib.GameProfile(
+                            java.util.UUID.fromString(
+                                    "12345678-1234-4234-8234-1234567890ab"),
+                            "OpenAbyssProbeBot");
+            net.minecraft.client.entity.EntityOtherPlayerMP remote =
+                    new net.minecraft.client.entity.EntityOtherPlayerMP(
+                            this.c.theWorld,
+                            profile);
+
+            boolean absentRemoteBot = AntiBot.T(
+                    (short)0,
+                    remote);
+            if (!absentRemoteBot) {
+                throw new IllegalStateException(
+                        "AntiBot failed to classify absent remote profile");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe91-effect-pass:"
+                            + "AntiBot:absentRemote=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (settingSaved) {
+                    AntiBot.tablistCheck.v(originalTablist, 0L);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe91Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe91:AntiBot",
+                    "self-and-absent-remote-classifier-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe91-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe91-restore-pass:"
+                        + "AntiBot:tablistSetting=true");
+        runtimeMilestone(
+                "high-risk-functional-probe91-module-pass:AntiBot");
+        runtimeMilestone("high-risk-functional-probe91-pass:1");
+        this.highRiskFunctionalProbe91Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe90() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe90")
                 || this.highRiskFunctionalProbe90Stage != 0) {
@@ -22296,6 +22402,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe88();
         this.pumpHighRiskFunctionalProbe89();
         this.pumpHighRiskFunctionalProbe90();
+        this.pumpHighRiskFunctionalProbe91();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
