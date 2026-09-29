@@ -134,6 +134,8 @@ import Abyss.module.impl.visual.Freelook;
 import Abyss.module.impl.visual.FullBright;
 import Abyss.module.impl.visual.ItemScale;
 import Abyss.module.impl.visual.KeyStrokes;
+import Abyss.module.impl.visual.KillEffect;
+import Abyss.module.impl.visual.KillEffectDeathPos;
 import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.TabGUI;
@@ -770,6 +772,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe73Stage;
     private int highRiskFunctionalProbe74Stage;
     private int highRiskFunctionalProbe75Stage;
+    private int highRiskFunctionalProbe76Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12392,6 +12395,116 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, KillEffectDeathPos> killEffectCacheForProbe(
+            KillEffect probe) throws Exception {
+        Field field = KillEffect.class.getDeclaredField("F");
+        field.setAccessible(true);
+        return (Map<String, KillEffectDeathPos>)field.get(probe);
+    }
+
+    private void pumpHighRiskFunctionalProbe76() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe76")
+                || this.highRiskFunctionalProbe76Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe75")
+                && this.highRiskFunctionalProbe75Stage < 1) {
+            return;
+        }
+
+        KillEffect live = Modules.J(KillEffect.class);
+        try {
+            if (live == null
+                    || ModuleManager.byClass(KillEffect.class) != live
+                    || ModuleManager.byName("KillEffect") != live
+                    || KillEffect.mode == null
+                    || KillEffect.onlyKilledBySelf == null
+                    || !KillEffect.mode.S().contains("NONE")
+                    || !KillEffect.mode.S().contains("BLOOD")
+                    || !KillEffect.mode.S().contains("LIGHTNING")
+                    || !KillEffect.mode.S().contains("SOUL_BREAK")) {
+                throw new IllegalStateException(
+                        "KillEffect live authority unavailable");
+            }
+
+            KillEffect scratch = new KillEffect(0L);
+            Map<String, KillEffectDeathPos> cache =
+                    this.killEffectCacheForProbe(scratch);
+            if (cache == null || !cache.isEmpty()) {
+                throw new IllegalStateException(
+                        "KillEffect scratch cache not initially empty");
+            }
+
+            String fixtureName = "OpenAbyssKillEffectProbe";
+            EntityOtherPlayerMP fixture =
+                    new EntityOtherPlayerMP(
+                            this.c.theWorld,
+                            new GameProfile(
+                                    UUID.fromString(
+                                            "00000000-0000-4000-8000-000000000076"),
+                                    fixtureName));
+            fixture.setPosition(12.25, 64.5, -8.75);
+            scratch.onPostRender(new PostRenderEvent(fixture));
+
+            KillEffectDeathPos cached = cache.get(fixtureName);
+            if (cache.size() != 1
+                    || cached == null
+                    || Math.abs(cached.G - 12.25) > 0.000001
+                    || Math.abs(cached.L - 64.5) > 0.000001
+                    || Math.abs(cached.S + 8.75) > 0.000001
+                    || Math.abs(cached.w - fixture.getEyeHeight())
+                            > 0.000001) {
+                throw new IllegalStateException(
+                        "KillEffect post-render cache mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe76-effect-pass:"
+                            + "KillEffect:remoteCache=true");
+
+            scratch.onPostRender(
+                    new PostRenderEvent(this.c.thePlayer));
+            if (cache.size() != 1
+                    || cache.get(fixtureName) != cached) {
+                throw new IllegalStateException(
+                        "KillEffect local-player exclusion mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe76-effect-pass:"
+                            + "KillEffect:selfExcluded=true");
+
+            scratch.onEntityJoinWorld(
+                    new EntityJoinWorldEvent(
+                            0, this.c.thePlayer, (byte)0, 0));
+            if (!cache.isEmpty()) {
+                throw new IllegalStateException(
+                        "KillEffect world-join cache reset mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe76-effect-pass:"
+                            + "KillEffect:worldJoinReset=true");
+
+            runtimeMilestone(
+                    "high-risk-functional-probe76-module-pass:"
+                            + "KillEffect");
+            runtimeMilestone(
+                    "high-risk-functional-probe76-pass:1");
+            this.highRiskFunctionalProbe76Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe76Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe76:KillEffect",
+                    "target-cache-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe76-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private Object blockInInvokeForProbe(
             BlockIn probe,
             String name,
@@ -20226,6 +20339,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe73();
         this.pumpHighRiskFunctionalProbe74();
         this.pumpHighRiskFunctionalProbe75();
+        this.pumpHighRiskFunctionalProbe76();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
