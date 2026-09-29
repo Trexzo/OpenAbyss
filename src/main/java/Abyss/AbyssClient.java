@@ -608,8 +608,6 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe44OriginalCurrentItem;
     private net.minecraft.client.gui.GuiScreen highRiskFunctionalProbe44OriginalScreen;
     private net.minecraft.world.WorldSettings.GameType highRiskFunctionalProbe44OriginalGameType;
-    private int highRiskFunctionalProbe44HoveredSlot = -1;
-    private boolean highRiskFunctionalProbe44DirectOracleUsed;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -11755,9 +11753,6 @@ implements EventSubscriber {
                             break;
                         }
                     }
-                    this.highRiskFunctionalProbe44HoveredSlot =
-                            hoveredSlot == null ? -1 : hoveredSlot.slotNumber;
-                    this.highRiskFunctionalProbe44DirectOracleUsed = false;
                     runtimeMilestone(
                             "high-risk-functional-probe44-pointer:"
                                     + "raw="
@@ -11808,25 +11803,6 @@ implements EventSubscriber {
                                     && source == null;
                     if (!moved) {
                         ++this.highRiskFunctionalProbe44WaitTicks;
-                        if (this.highRiskFunctionalProbe44WaitTicks == 120
-                                && !this.highRiskFunctionalProbe44DirectOracleUsed
-                                && this.highRiskFunctionalProbe44HoveredSlot >= 0
-                                && this.c.currentScreen instanceof GuiContainer) {
-                            GuiContainer container =
-                                    (GuiContainer)this.c.currentScreen;
-                            this.c.playerController.windowClick(
-                                    container.inventorySlots.windowId,
-                                    this.highRiskFunctionalProbe44HoveredSlot,
-                                    0,
-                                    1,
-                                    this.c.thePlayer);
-                            this.highRiskFunctionalProbe44DirectOracleUsed = true;
-                            runtimeMilestone(
-                                    "high-risk-functional-probe44-direct-oracle-request:"
-                                            + "slot="
-                                            + this.highRiskFunctionalProbe44HoveredSlot);
-                            return;
-                        }
                         if (this.highRiskFunctionalProbe44WaitTicks > 240) {
                             throw new IllegalStateException(
                                     "InvClicker synthetic shift-click did not move fixture"
@@ -11851,28 +11827,6 @@ implements EventSubscriber {
                                                             + source.stackSize));
                         }
                         return;
-                    }
-                    if (this.highRiskFunctionalProbe44DirectOracleUsed) {
-                        runtimeMilestone(
-                                "high-risk-functional-probe44-direct-oracle-effect:"
-                                        + "slot="
-                                        + this.highRiskFunctionalProbe44HoveredSlot
-                                        + ":slot0="
-                                        + (hotbar == null
-                                                ? "<null>"
-                                                : hotbar.getDisplayName()
-                                                        + "*"
-                                                        + hotbar.stackSize)
-                                        + ":slot9="
-                                        + (source == null
-                                                ? "<null>"
-                                                : source.getDisplayName()
-                                                        + "*"
-                                                        + source.stackSize));
-                        throw new IllegalStateException(
-                                "InvClicker synthetic path failed but direct windowClick oracle moved fixture"
-                                        + " slot="
-                                        + this.highRiskFunctionalProbe44HoveredSlot);
                     }
                     if (!active) {
                         throw new IllegalStateException(
