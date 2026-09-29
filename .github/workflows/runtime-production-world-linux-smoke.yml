@@ -281,7 +281,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe67=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe68=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe69=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=85'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe70=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=86'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1071,6 +1072,18 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL69=PASS modules=AutoDigPlace'
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:levels=0+1+2+3+mineDown' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:axes=0+90+180+270:geometry=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:scanState=x+z' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-restore-pass:Nuker:mineDown=true:yaw=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-module-pass:Nuker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe70-fail:' "$STAGE"; then
+            echo 'Nuker scan-geometry semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe70-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL70=PASS modules=Nuker'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
