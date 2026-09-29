@@ -50,10 +50,17 @@ def main() -> int:
             continue
         loop_proven.update(match.group(1).split())
 
+    contract_proven: set[str] = set()
+    for match in re.finditer(r"PASS modules=([A-Za-z0-9_,.-]+)", ci):
+        contract_proven.update(
+            item for item in match.group(1).split(",")
+            if item and not item.isdigit()
+        )
+
     for name in registered:
         if (
             f"module-pass:{name}" in ci
-            or f"modules={name}" in ci
+            or name in contract_proven
             or name in loop_proven
         ):
             proven.append(name)
