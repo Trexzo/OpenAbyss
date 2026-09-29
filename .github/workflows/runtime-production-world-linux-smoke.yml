@@ -284,7 +284,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe70=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe71=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe72=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=88'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe73=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=89'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1110,6 +1111,18 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL72=PASS modules=Tracers'
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:tag=0+0.27' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:rotationWrapClamp=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:movementProjection=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-restore-pass:BridgeAssist:edgeOffset=true:sprint=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-module-pass:BridgeAssist' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe73-fail:' "$STAGE"; then
+            echo 'BridgeAssist semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe73-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL73=PASS modules=BridgeAssist'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
