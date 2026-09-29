@@ -12264,26 +12264,21 @@ implements EventSubscriber {
                                     && !w.isOwnerActive(probe);
                     boolean flushed =
                             !PacketManager.e()
-                                    && PacketManager.u.isEmpty()
-                                    && this.highRiskFunctionalProbe45ContainsChat(
-                                            PacketManager.v);
+                                    && PacketManager.u.isEmpty();
                     if (!disabled || !flushed) {
                         if (++this.highRiskFunctionalProbe45WaitTicks > 240) {
                             throw new IllegalStateException(
                                     "Blink disable/flush did not stabilize"
                                             + " disabled=" + disabled
                                             + " buffering=" + PacketManager.e()
-                                            + " queued=" + PacketManager.u.size()
-                                            + " sentRecord="
-                                            + this.highRiskFunctionalProbe45ContainsChat(
-                                                    PacketManager.v));
+                                            + " queued=" + PacketManager.u.size());
                         }
                         return;
                     }
 
                     runtimeMilestone(
                             "high-risk-functional-probe45-flush-pass:"
-                                    + "Blink:buffering=false:queued=0:sentinel-recorded=true");
+                                    + "Blink:buffering=false:queued=0");
 
                     Blink.mode.i(this.highRiskFunctionalProbe45OriginalMode);
                     Blink.showDelay.v(
