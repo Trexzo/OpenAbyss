@@ -1374,6 +1374,33 @@ DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$INVCLICKER_X" "$INVCLICKER_Y"
 DISPLAY=:99 xdotool keydown Shift_L
 DISPLAY=:99 xdotool mousedown 1
 
+# Minecraft centers the OS cursor when displayGuiScreen() releases in-game
+# mouse capture. Probe44 intentionally opens GuiInventory only after observing
+# the held physical Shift+LMB state, so the pre-GUI pointer placement above is
+# expected to be overwritten by that transition. Wait until the real
+# GuiInventory is live, then re-park the still-held pointer over slot 9.
+INVCLICKER_GUI_READY=0
+for _ in $(seq 1 120); do
+  if grep -Fq 'high-risk-functional-probe44-gui-pass:InvClicker:net.minecraft.client.gui.inventory.GuiInventory' "$STAGE"; then
+    INVCLICKER_GUI_READY=1
+    break
+  fi
+  if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
+    break
+  fi
+  sleep 0.10
+done
+if [ "$INVCLICKER_GUI_READY" -ne 1 ]; then
+  DISPLAY=:99 xdotool mouseup 1
+  DISPLAY=:99 xdotool keyup Shift_L
+  echo 'InvClicker did not open GuiInventory before post-open pointer placement.'
+  grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+  exit 1
+fi
+
+DISPLAY=:99 xdotool mousemove --window "$WINDOW" "$INVCLICKER_X" "$INVCLICKER_Y"
+echo 'PRODUCTION_WORLD_INVCLICKER_POST_GUI_TARGET=PASS cursor=repositioned-after-displayGuiScreen'
+
 INVCLICKER_EFFECT=0
 for _ in $(seq 1 240); do
   if grep -Fq 'high-risk-functional-probe44-effect-pass:InvClicker:shiftClick=9->0:item=apple*3:physicalLmb=true:physicalShift=true' "$STAGE" &&
