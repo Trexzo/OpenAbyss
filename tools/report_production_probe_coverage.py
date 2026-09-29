@@ -44,7 +44,7 @@ def main() -> int:
     unproven: list[str] = []
 
     loop_proven: set[str] = set()
-    for match in re.finditer(r"for module in ([^;\\n]+); do(?P<body>.*?)done", ci, re.S):
+    for match in re.finditer(r"for module in ([^;\n]+); do(?P<body>.*?)done", ci, re.S):
         body = match.group("body")
         if "module-pass:$module" not in body and "module-pass:${module}" not in body:
             continue
