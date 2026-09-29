@@ -298,7 +298,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe84=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe85=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe86=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=101'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe87=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=102'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1284,6 +1285,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL86=PASS modules=NameHider'
+          grep -Fq 'high-risk-functional-probe87-effect-pass:Timer:applied=1.75' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-effect-pass:Timer:disableRestore=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-restore-pass:Timer:settingAndTimerSpeed=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-module-pass:Timer' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe87-fail:' "$STAGE"; then
+            echo 'Timer speed apply/restore semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe87-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL87=PASS modules=Timer'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
