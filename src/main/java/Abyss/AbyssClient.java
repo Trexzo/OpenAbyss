@@ -151,6 +151,7 @@ import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BlocksESP;
+import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
@@ -735,6 +736,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe61Stage;
     private int highRiskFunctionalProbe62Stage;
     private int highRiskFunctionalProbe63Stage;
+    private int highRiskFunctionalProbe64Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12357,6 +12359,229 @@ implements EventSubscriber {
         }
     }
 
+    private Field fireBallPredictFieldForProbe(
+            String name) throws Exception {
+        Field field = FireBallPredict.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void pumpHighRiskFunctionalProbe64() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe64")
+                || this.highRiskFunctionalProbe64Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe63")
+                && this.highRiskFunctionalProbe63Stage < 1) {
+            return;
+        }
+
+        FireBallPredict probe = Modules.J(FireBallPredict.class);
+        BlockPos wallPos = null;
+        IBlockState originalWallState = null;
+        boolean originalRealFireballs = false;
+        boolean originalHeldFireCharges = false;
+        BlockPos originalImpact = null;
+        int originalColor = 0;
+        int fixtureId = -76401;
+        boolean fixtureAdded = false;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(FireBallPredict.class) != probe
+                    || ModuleManager.byName("FireBallPredict") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || FireBallPredict.realFireballs == null
+                    || FireBallPredict.heldFireCharges == null) {
+                throw new IllegalStateException(
+                        "FireBallPredict live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(
+                    this.c.thePlayer.posY + 1.0);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            int[][] directions = new int[][]{
+                    {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+            };
+            int dirX = 0;
+            int dirZ = 0;
+            BlockPos fireballCell = null;
+
+            for (int[] direction : directions) {
+                BlockPos candidateFireball =
+                        new BlockPos(
+                                baseX + direction[0],
+                                baseY,
+                                baseZ + direction[1]);
+                BlockPos candidateMiddle =
+                        new BlockPos(
+                                baseX + direction[0] * 2,
+                                baseY,
+                                baseZ + direction[1] * 2);
+                BlockPos candidateWall =
+                        new BlockPos(
+                                baseX + direction[0] * 3,
+                                baseY,
+                                baseZ + direction[1] * 3);
+                if (this.c.theWorld.isAirBlock(candidateFireball)
+                        && this.c.theWorld.isAirBlock(candidateMiddle)
+                        && this.c.theWorld.isAirBlock(candidateWall)) {
+                    fireballCell = candidateFireball;
+                    wallPos = candidateWall;
+                    dirX = direction[0];
+                    dirZ = direction[1];
+                    break;
+                }
+            }
+            if (fireballCell == null || wallPos == null) {
+                throw new IllegalStateException(
+                        "FireBallPredict probe found no clear ray fixture");
+            }
+
+            originalWallState = this.c.theWorld.getBlockState(wallPos);
+            originalRealFireballs =
+                    FireBallPredict.realFireballs.c();
+            originalHeldFireCharges =
+                    FireBallPredict.heldFireCharges.c();
+            originalImpact =
+                    (BlockPos)this.fireBallPredictFieldForProbe("o")
+                            .get(probe);
+            originalColor =
+                    this.fireBallPredictFieldForProbe("b")
+                            .getInt(probe);
+            saved = true;
+
+            FireBallPredict.realFireballs.v(true, 0L);
+            FireBallPredict.heldFireCharges.v(false, 0L);
+
+            if (!this.c.theWorld.setBlockState(
+                    wallPos,
+                    Blocks.stone.getDefaultState(),
+                    3)) {
+                throw new IllegalStateException(
+                        "FireBallPredict probe could not place impact wall");
+            }
+
+            EntityLargeFireball fixture =
+                    new EntityLargeFireball(this.c.theWorld);
+            fixture.setPosition(
+                    fireballCell.getX() + 0.5,
+                    fireballCell.getY() + 0.5,
+                    fireballCell.getZ() + 0.5);
+            fixture.motionX = dirX;
+            fixture.motionY = 0.0;
+            fixture.motionZ = dirZ;
+            this.c.theWorld.addEntityToWorld(fixtureId, fixture);
+            fixtureAdded = true;
+
+            probe.onPostTick(0L, new PostTickEvent());
+
+            BlockPos impact =
+                    (BlockPos)this.fireBallPredictFieldForProbe("o")
+                            .get(probe);
+            int color =
+                    this.fireBallPredictFieldForProbe("b")
+                            .getInt(probe);
+            if (!wallPos.equals(impact)) {
+                throw new IllegalStateException(
+                        "FireBallPredict impact mismatch"
+                                + " expected=" + wallPos
+                                + " actual=" + impact);
+            }
+            if (color != 0xFF0000) {
+                throw new IllegalStateException(
+                        "FireBallPredict close-impact color mismatch: "
+                                + Integer.toHexString(color));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe64-effect-pass:"
+                            + "FireBallPredict:impact=true:"
+                            + "color=FF0000");
+
+            FireBallPredict.realFireballs.v(false, 0L);
+            FireBallPredict.heldFireCharges.v(false, 0L);
+            probe.onPostTick(0L, new PostTickEvent());
+
+            if (this.fireBallPredictFieldForProbe("o").get(probe)
+                            != null
+                    || this.fireBallPredictFieldForProbe("b")
+                            .getInt(probe) != 0) {
+                throw new IllegalStateException(
+                        "FireBallPredict disabled sources did not clear state");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe64-effect-pass:"
+                            + "FireBallPredict:disabledClearsImpact=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe64-module-pass:"
+                            + "FireBallPredict");
+            runtimeMilestone(
+                    "high-risk-functional-probe64-pass:1");
+            this.highRiskFunctionalProbe64Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe64Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe64:FireBallPredict",
+                    "real-fireball-impact",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe64-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (fixtureAdded && this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(fixtureId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    FireBallPredict.realFireballs.v(
+                            originalRealFireballs, 0L);
+                    FireBallPredict.heldFireCharges.v(
+                            originalHeldFireCharges, 0L);
+                    this.fireBallPredictFieldForProbe("o")
+                            .set(probe, originalImpact);
+                    this.fireBallPredictFieldForProbe("b")
+                            .setInt(probe, originalColor);
+                    if (this.c.theWorld != null) {
+                        this.c.theWorld.setBlockState(
+                                wallPos,
+                                originalWallState,
+                                3);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe64-restore-pass:"
+                                    + "FireBallPredict:settings=true:"
+                                    + "impact=true:world=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe64:FireBallPredict",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe64Stage >= 0) {
+                        this.highRiskFunctionalProbe64Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe64-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe63() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe63")
                 || this.highRiskFunctionalProbe63Stage != 0) {
@@ -17406,6 +17631,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe61();
         this.pumpHighRiskFunctionalProbe62();
         this.pumpHighRiskFunctionalProbe63();
+        this.pumpHighRiskFunctionalProbe64();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
