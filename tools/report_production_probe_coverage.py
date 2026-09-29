@@ -57,10 +57,19 @@ def main() -> int:
             if item and not item.isdigit()
         )
 
+    marker_proven: set[str] = set()
+    for line in ci.splitlines():
+        if "grep -Fq" not in line or "pass:" not in line:
+            continue
+        for name in registered:
+            if f"pass:{name}:" in line or f"pass:{name}'" in line:
+                marker_proven.add(name)
+
     for name in registered:
         if (
             f"module-pass:{name}" in ci
             or name in contract_proven
+            or name in marker_proven
             or name in loop_proven
         ):
             proven.append(name)
