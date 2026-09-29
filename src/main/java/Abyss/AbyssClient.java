@@ -788,6 +788,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe83Stage;
     private int highRiskFunctionalProbe84Stage;
     private int highRiskFunctionalProbe85Stage;
+    private int highRiskFunctionalProbe86Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12418,6 +12419,117 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe86() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe86")
+                || this.highRiskFunctionalProbe86Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe85")
+                && this.highRiskFunctionalProbe85Stage < 1) {
+            return;
+        }
+
+        NameHider live = Modules.J(NameHider.class);
+        boolean originalEnabled = false;
+        String originalAlias = null;
+        boolean stateSaved = false;
+        boolean aliasSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(NameHider.class) != live
+                    || ModuleManager.byName("NameHider") != live
+                    || NameHider.name == null
+                    || this.c.thePlayer == null
+                    || this.c.thePlayer.getName() == null
+                    || this.c.thePlayer.getName().isEmpty()) {
+                throw new IllegalStateException(
+                        "NameHider live/settings/player authority unavailable");
+            }
+
+            originalEnabled = live.o();
+            stateSaved = true;
+            originalAlias = NameHider.name.X();
+            aliasSaved = true;
+
+            String self = this.c.thePlayer.getName();
+            String alias = "OpenAbyssProbeAlias";
+            String input = "prefix:" + self + ":middle:" + self + ":suffix";
+            String expected = "prefix:" + alias + ":middle:" + alias + ":suffix";
+
+            NameHider.name.O(alias);
+            live.I(0L, false);
+            String disabled = NameHider.U(input);
+            if (!input.equals(disabled)) {
+                throw new IllegalStateException(
+                        "NameHider disabled path mutated input: " + disabled);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe86-effect-pass:"
+                            + "NameHider:disabledPassthrough=true");
+
+            live.I(0L, true);
+            String enabled = NameHider.U(input);
+            if (!expected.equals(enabled)) {
+                throw new IllegalStateException(
+                        "NameHider enabled replacement mismatch"
+                                + " expected=" + expected
+                                + " actual=" + enabled);
+            }
+            if (NameHider.U(null) != null) {
+                throw new IllegalStateException(
+                        "NameHider null contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe86-effect-pass:"
+                            + "NameHider:exactReplacement=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (aliasSaved) {
+                    NameHider.name.O(originalAlias);
+                }
+                if (stateSaved) {
+                    live.I(0L, originalEnabled);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe86Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe86:NameHider",
+                    "exact-self-name-replacement-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe86-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe86-restore-pass:"
+                        + "NameHider:stateAndAlias=true");
+        runtimeMilestone(
+                "high-risk-functional-probe86-module-pass:NameHider");
+        runtimeMilestone("high-risk-functional-probe86-pass:1");
+        this.highRiskFunctionalProbe86Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe85() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe85")
                 || this.highRiskFunctionalProbe85Stage != 0) {
@@ -21782,6 +21894,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe83();
         this.pumpHighRiskFunctionalProbe84();
         this.pumpHighRiskFunctionalProbe85();
+        this.pumpHighRiskFunctionalProbe86();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
