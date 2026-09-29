@@ -135,6 +135,8 @@ import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.TabGUI;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.NameTags;
+import Abyss.module.impl.visual_utility.ESP;
 import Abyss.module.impl.visual_utility.ItemESP;
 import Abyss.module.impl.visual_utility.ItemESPEntry;
 import Abyss.module.impl.visual_utility.Indicators;
@@ -719,6 +721,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe55OriginalSelectedValue;
     private int highRiskFunctionalProbe56Stage;
     private int highRiskFunctionalProbe57Stage;
+    private int highRiskFunctionalProbe58Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12111,6 +12114,236 @@ implements EventSubscriber {
     }
 
     @SuppressWarnings("unchecked")
+    private List<net.minecraft.entity.EntityLivingBase>
+            nameTagsTargetsForProbe(NameTags probe) throws Exception {
+        Field field = NameTags.class.getDeclaredField("Y");
+        field.setAccessible(true);
+        return (List<net.minecraft.entity.EntityLivingBase>)field.get(probe);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<net.minecraft.entity.EntityLivingBase>
+            espTargetsForProbe(ESP probe) throws Exception {
+        Field field = ESP.class.getDeclaredField("L");
+        field.setAccessible(true);
+        return (List<net.minecraft.entity.EntityLivingBase>)field.get(probe);
+    }
+
+    private void pumpHighRiskFunctionalProbe58() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe58")
+                || this.highRiskFunctionalProbe58Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe57")
+                && this.highRiskFunctionalProbe57Stage < 1) {
+            return;
+        }
+
+        NameTags nameTags = Modules.J(NameTags.class);
+        ESP esp = Modules.J(ESP.class);
+        final int fixtureId = -73559;
+        net.minecraft.entity.monster.EntityZombie fixture = null;
+        boolean saved = false;
+        boolean ntPlayers = false;
+        boolean ntMobs = false;
+        boolean ntAnimals = false;
+        boolean ntBosses = false;
+        boolean espPlayers = false;
+        boolean espMobs = false;
+        boolean espAnimals = false;
+        boolean espBosses = false;
+        java.util.List<net.minecraft.entity.EntityLivingBase>
+                originalNameTags = null;
+        java.util.List<net.minecraft.entity.EntityLivingBase>
+                originalEsp = null;
+
+        try {
+            if (nameTags == null
+                    || esp == null
+                    || ModuleManager.byClass(NameTags.class) != nameTags
+                    || ModuleManager.byName("NameTags") != nameTags
+                    || ModuleManager.byClass(ESP.class) != esp
+                    || ModuleManager.byName("ESP") != esp
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || NameTags.players == null
+                    || NameTags.mobs == null
+                    || NameTags.animals == null
+                    || NameTags.bosses == null
+                    || ESP.players == null
+                    || ESP.mobs == null
+                    || ESP.animals == null
+                    || ESP.bosses == null) {
+                throw new IllegalStateException(
+                        "NameTags/ESP live-world authority unavailable");
+            }
+
+            List<net.minecraft.entity.EntityLivingBase> ntTargets =
+                    this.nameTagsTargetsForProbe(nameTags);
+            List<net.minecraft.entity.EntityLivingBase> espTargets =
+                    this.espTargetsForProbe(esp);
+
+            ntPlayers = NameTags.players.c();
+            ntMobs = NameTags.mobs.c();
+            ntAnimals = NameTags.animals.c();
+            ntBosses = NameTags.bosses.c();
+            espPlayers = ESP.players.c();
+            espMobs = ESP.mobs.c();
+            espAnimals = ESP.animals.c();
+            espBosses = ESP.bosses.c();
+            originalNameTags =
+                    new java.util.ArrayList<
+                            net.minecraft.entity.EntityLivingBase>(ntTargets);
+            originalEsp =
+                    new java.util.ArrayList<
+                            net.minecraft.entity.EntityLivingBase>(espTargets);
+            saved = true;
+
+            fixture = new net.minecraft.entity.monster.EntityZombie(
+                    this.c.theWorld);
+            fixture.setPosition(
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(fixtureId, fixture);
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(nameTags, 0L);
+            fixtureBus.s(esp, 0L);
+            if (!fixtureBus.isOwnerActive(nameTags)
+                    || !fixtureBus.isOwnerActive(esp)) {
+                throw new IllegalStateException(
+                        "NameTags/ESP fixture EventBus binding inactive");
+            }
+
+            NameTags.players.v(false, 0L);
+            NameTags.mobs.v(true, 0L);
+            NameTags.animals.v(false, 0L);
+            NameTags.bosses.v(false, 0L);
+            ESP.players.v(false, 0L);
+            ESP.mobs.v(true, 0L);
+            ESP.animals.v(false, 0L);
+            ESP.bosses.v(false, 0L);
+
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (!ntTargets.contains(fixture)
+                    || !espTargets.contains(fixture)) {
+                throw new IllegalStateException(
+                        "NameTags/ESP mob inclusion mismatch"
+                                + " nametags=" + ntTargets.contains(fixture)
+                                + " esp=" + espTargets.contains(fixture));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "NameTags:mobIncluded=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "ESP:mobIncluded=true");
+
+            NameTags.mobs.v(false, 0L);
+            ESP.mobs.v(false, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            if (ntTargets.contains(fixture)
+                    || espTargets.contains(fixture)) {
+                throw new IllegalStateException(
+                        "NameTags/ESP mob setting gate mismatch"
+                                + " nametags=" + ntTargets.contains(fixture)
+                                + " esp=" + espTargets.contains(fixture));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "NameTags:mobGate=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "ESP:mobGate=true");
+
+            NameTags.mobs.v(true, 0L);
+            ESP.mobs.v(true, 0L);
+            fixtureBus.e(new PostTickEvent(), 0L);
+            nameTags.A(0L);
+            esp.A(0L);
+            if (!ntTargets.isEmpty() || !espTargets.isEmpty()) {
+                throw new IllegalStateException(
+                        "NameTags/ESP reset did not clear target caches");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "NameTags:reset=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe58-effect-pass:"
+                            + "ESP:reset=true");
+
+            runtimeMilestone(
+                    "high-risk-functional-probe58-module-pass:NameTags");
+            runtimeMilestone(
+                    "high-risk-functional-probe58-module-pass:ESP");
+            runtimeMilestone(
+                    "high-risk-functional-probe58-pass:2");
+            this.highRiskFunctionalProbe58Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe58Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe58:NameTags+ESP",
+                    "mob-target-selection",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe58-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(fixtureId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved) {
+                try {
+                    NameTags.players.v(ntPlayers, 0L);
+                    NameTags.mobs.v(ntMobs, 0L);
+                    NameTags.animals.v(ntAnimals, 0L);
+                    NameTags.bosses.v(ntBosses, 0L);
+                    ESP.players.v(espPlayers, 0L);
+                    ESP.mobs.v(espMobs, 0L);
+                    ESP.animals.v(espAnimals, 0L);
+                    ESP.bosses.v(espBosses, 0L);
+
+                    List<net.minecraft.entity.EntityLivingBase> ntTargets =
+                            this.nameTagsTargetsForProbe(nameTags);
+                    List<net.minecraft.entity.EntityLivingBase> espTargets =
+                            this.espTargetsForProbe(esp);
+                    ntTargets.clear();
+                    ntTargets.addAll(originalNameTags);
+                    espTargets.clear();
+                    espTargets.addAll(originalEsp);
+                    runtimeMilestone(
+                            "high-risk-functional-probe58-restore-pass:"
+                                    + "NameTags,ESP:settings=true:caches=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe58:NameTags+ESP",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe58Stage >= 0) {
+                        this.highRiskFunctionalProbe58Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe58-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private List<ItemESPEntry> itemEspEntriesForProbe(
             ItemESP probe) throws Exception {
         Field field = ItemESP.class.getDeclaredField("t");
@@ -16026,6 +16259,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe55();
         this.pumpHighRiskFunctionalProbe56();
         this.pumpHighRiskFunctionalProbe57();
+        this.pumpHighRiskFunctionalProbe58();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
