@@ -222,7 +222,7 @@ jobs:
 
           test -f "$STAGE"
           test -f "$STDOUT"
-          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=79' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=80' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
@@ -275,7 +275,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe61=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe62=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe63=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=79'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe64=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=80'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -995,6 +996,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL63=PASS modules=BlocksESP'
+          grep -Fq 'high-risk-functional-probe64-effect-pass:FireBallPredict:impact=true:color=FF0000' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-effect-pass:FireBallPredict:disabledClearsImpact=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-restore-pass:FireBallPredict:settings=true:impact=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-module-pass:FireBallPredict' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe64-fail:' "$STAGE"; then
+            echo 'FireBallPredict real-impact probe reported a failure.'
+            grep -F 'high-risk-functional-probe64-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL64=PASS modules=FireBallPredict'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
