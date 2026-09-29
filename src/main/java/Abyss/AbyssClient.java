@@ -12535,7 +12535,7 @@ implements EventSubscriber {
                 throw new IllegalStateException(
                         "BedPlates fixture EventBus binding inactive");
             }
-            fixtureBus.e(new PreUpdateEvent(), 0L);
+            fixtureBus.e(new PreUpdateEvent(0, 0, 0), 0L);
 
             java.util.Set<net.minecraft.block.Block> materials =
                     cache.get(head);
