@@ -794,6 +794,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe89Stage;
     private int highRiskFunctionalProbe90Stage;
     private int highRiskFunctionalProbe91Stage;
+    private int highRiskFunctionalProbe92Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12424,6 +12425,116 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe92() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe92")
+                || this.highRiskFunctionalProbe92Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe91")
+                && this.highRiskFunctionalProbe91Stage < 1) {
+            return;
+        }
+
+        Theme live = Modules.J(Theme.class);
+        String originalTheme = null;
+        String originalColor1 = null;
+        String originalColor2 = null;
+        String originalColor3 = null;
+        boolean stateSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(Theme.class) != live
+                    || ModuleManager.byName("Theme") != live
+                    || Theme.theme == null
+                    || Theme.customColor1 == null
+                    || Theme.customColor2 == null
+                    || Theme.customColor3 == null) {
+                throw new IllegalStateException(
+                        "Theme live/settings authority unavailable");
+            }
+
+            originalTheme = Theme.theme.Y();
+            originalColor1 = Theme.customColor1.Q();
+            originalColor2 = Theme.customColor2.Q();
+            originalColor3 = Theme.customColor3.Q();
+            stateSaved = true;
+
+            Theme.theme.i("CUSTOM");
+            Theme.customColor1.e("112233");
+            Theme.customColor2.e("445566");
+            Theme.customColor3.e("778899");
+
+            java.util.List palette =
+                    Theme.w(0L, 2.0, 1.0, "CUSTOM");
+            if (palette == null || palette.size() != 3) {
+                throw new IllegalStateException(
+                        "Theme custom palette size mismatch: "
+                                + String.valueOf(palette));
+            }
+
+            int c1 = new java.awt.Color(0x11, 0x22, 0x33).getRGB();
+            int c2 = new java.awt.Color(0x44, 0x55, 0x66).getRGB();
+            if (((Integer)palette.get(0)).intValue() != c1
+                    || ((Integer)palette.get(1)).intValue() != c2
+                    || ((Integer)palette.get(2)).intValue() != c2) {
+                throw new IllegalStateException(
+                        "Theme CUSTOM palette contract mismatch: "
+                                + String.valueOf(palette));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe92-effect-pass:"
+                            + "Theme:customPalette=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe92-effect-pass:"
+                            + "Theme:thirdUsesColor2=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (stateSaved) {
+                    Theme.theme.i(originalTheme);
+                    Theme.customColor1.e(originalColor1);
+                    Theme.customColor2.e(originalColor2);
+                    Theme.customColor3.e(originalColor3);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe92Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe92:Theme",
+                    "custom-palette-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe92-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe92-restore-pass:"
+                        + "Theme:settings=true");
+        runtimeMilestone(
+                "high-risk-functional-probe92-module-pass:Theme");
+        runtimeMilestone("high-risk-functional-probe92-pass:1");
+        this.highRiskFunctionalProbe92Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe91() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe91")
                 || this.highRiskFunctionalProbe91Stage != 0) {
@@ -22403,6 +22514,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe89();
         this.pumpHighRiskFunctionalProbe90();
         this.pumpHighRiskFunctionalProbe91();
+        this.pumpHighRiskFunctionalProbe92();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
