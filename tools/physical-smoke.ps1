@@ -132,12 +132,35 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
+    $ExtendedProbeOptions = ''
+    if ($ExtendedProbes) {
+        $ExtendedProbeArgs = @(
+            '-Dabyss.worldFunctionalProbe=true'
+            '-Dabyss.categoryLifecycleProbe=true'
+            '-Dabyss.promotedRegistryProbe=true'
+            '-Dabyss.eventFunctionalProbe=true'
+            '-Dabyss.movementFunctionalProbe=true'
+            '-Dabyss.playerFunctionalProbe=true'
+            '-Dabyss.combatFunctionalProbe=true'
+            '-Dabyss.packetFunctionalProbe=true'
+            '-Dabyss.macroFunctionalProbe=true'
+            '-Dabyss.visualUtilityFunctionalProbe=true'
+            '-Dabyss.highRiskFunctionalProbe=true'
+        )
+        foreach ($ProbeIndex in 2..55) {
+            $ExtendedProbeArgs += "-Dabyss.highRiskFunctionalProbe${ProbeIndex}=true"
+        }
+        $ExtendedProbeArgs += '-Dabyss.commandRuntimeProbe=true'
+        $ExtendedProbeOptions = ' ' + ($ExtendedProbeArgs -join ' ')
+    }
+
     $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $(if ($ExtendedProbes) { ' -Dabyss.worldFunctionalProbe=true -Dabyss.categoryLifecycleProbe=true -Dabyss.promotedRegistryProbe=true -Dabyss.eventFunctionalProbe=true -Dabyss.movementFunctionalProbe=true -Dabyss.playerFunctionalProbe=true -Dabyss.combatFunctionalProbe=true -Dabyss.packetFunctionalProbe=true -Dabyss.macroFunctionalProbe=true -Dabyss.visualUtilityFunctionalProbe=true -Dabyss.highRiskFunctionalProbe=true -Dabyss.highRiskFunctionalProbe2=true -Dabyss.highRiskFunctionalProbe3=true -Dabyss.highRiskFunctionalProbe4=true -Dabyss.highRiskFunctionalProbe5=true -Dabyss.highRiskFunctionalProbe6=true -Dabyss.highRiskFunctionalProbe7=true -Dabyss.highRiskFunctionalProbe8=true -Dabyss.highRiskFunctionalProbe9=true -Dabyss.highRiskFunctionalProbe10=true -Dabyss.highRiskFunctionalProbe11=true -Dabyss.highRiskFunctionalProbe12=true -Dabyss.commandRuntimeProbe=true' } else { '' }) +
+        $ExtendedProbeOptions +
         $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
         $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
         $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
         $(if ($RegistryTarget -ne 112) { " -Dabyss.referenceRegistryCount=$RegistryTarget" } else { '' })
+
 
     $Meta = @(
         "timestamp=$(Get-Date -Format o)"
@@ -149,6 +172,7 @@ try {
         "run_seconds=$RunSeconds"
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "extended_probes=$ExtendedProbes"
+        "extended_probe_max=$(if ($ExtendedProbes) { 55 } else { 0 })"
         "reference_bootstrap=$UseReferenceBootstrap"
         "skip_chat_menu=$UseSkipChatMenu"
         "skip_cheater_detector=$UseSkipCheaterDetector"
@@ -434,6 +458,7 @@ try {
                 'high-risk-functional-probe12-effect-pass:Freelook:disabled:view=0:active=false:yaw=37.25:pitch=-18.5',
                 'high-risk-functional-probe12-restore-pass:Freelook:',
                 'high-risk-functional-probe12-pass:1',
+                'high-risk-functional-probe55-pass:1',
                 'command-runtime-probe-pass:commands=7:'
             )) {
                 if (-not $RuntimeEvidenceText.Contains($Needle)) {
@@ -582,6 +607,7 @@ try {
         "JAR_SHA256=$JarHash"
         "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "EXTENDED_PROBES=$ExtendedProbes"
+        "EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 55 } else { 0 })"
         "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
         "SKIP_CHAT_MENU=$UseSkipChatMenu"
         "SKIP_CHEATER_DETECTOR=$UseSkipCheaterDetector"
