@@ -161,6 +161,7 @@ import Abyss.module.impl.visual_utility.TrajectoryStep;
 import Abyss.module.impl.visual_utility.BlocksESP;
 import Abyss.module.impl.visual_utility.FireBallPredict;
 import Abyss.module.impl.world.AutoDigPlace;
+import Abyss.module.impl.world.AntiVoid;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.BridgeAssist;
@@ -766,6 +767,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe71Stage;
     private int highRiskFunctionalProbe72Stage;
     private int highRiskFunctionalProbe73Stage;
+    private int highRiskFunctionalProbe74Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12388,6 +12390,146 @@ implements EventSubscriber {
         }
     }
 
+    private Field antiVoidFieldForProbe(
+            String name, Class<?> type) throws Exception {
+        Field field = AntiVoid.class.getDeclaredField(name);
+        if (field.getType() != type) {
+            throw new IllegalStateException(
+                    "AntiVoid field type mismatch "
+                            + name
+                            + " actual="
+                            + field.getType().getName()
+                            + " expected="
+                            + type.getName());
+        }
+        field.setAccessible(true);
+        return field;
+    }
+
+    private void pumpHighRiskFunctionalProbe74() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe74")
+                || this.highRiskFunctionalProbe74Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe73")
+                && this.highRiskFunctionalProbe73Stage < 1) {
+            return;
+        }
+
+        AntiVoid live = Modules.J(AntiVoid.class);
+        float originalBlinkDistance = 0.0f;
+        boolean settingSaved = false;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AntiVoid.class) != live
+                    || ModuleManager.byName("AntiVoid") != live
+                    || AntiVoid.mode == null
+                    || AntiVoid.blinkFallDistance == null) {
+                throw new IllegalStateException(
+                        "AntiVoid live authority unavailable");
+            }
+
+            if (!AntiVoid.mode.S().contains("TOGGLE_STUCK")
+                    || !AntiVoid.mode.S().contains("TOGGLE_SCAFFOLD")
+                    || !AntiVoid.mode.S().contains("BLINK")) {
+                throw new IllegalStateException(
+                        "AntiVoid mode contract mismatch: "
+                                + AntiVoid.mode.S());
+            }
+
+            originalBlinkDistance = AntiVoid.blinkFallDistance.L();
+            settingSaved = true;
+            AntiVoid.blinkFallDistance.o((byte)0, 0L, 3.5f);
+            if (!"3.5".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "AntiVoid blink-distance tag mismatch: "
+                                + live.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe74-effect-pass:"
+                            + "AntiVoid:modes+tag=true");
+
+            AntiVoid scratch = new AntiVoid(0L);
+            Field dangerField =
+                    this.antiVoidFieldForProbe("D", Boolean.TYPE);
+            Field priorDangerField =
+                    this.antiVoidFieldForProbe("k", Boolean.TYPE);
+            Field toggledField =
+                    this.antiVoidFieldForProbe("t", Boolean.TYPE);
+            Field bufferingField =
+                    this.antiVoidFieldForProbe("U", Boolean.TYPE);
+            Field positionField =
+                    this.antiVoidFieldForProbe("s", double[].class);
+
+            dangerField.setBoolean(scratch, true);
+            priorDangerField.setBoolean(scratch, true);
+            toggledField.setBoolean(scratch, true);
+            bufferingField.setBoolean(scratch, false);
+            positionField.set(
+                    scratch, new double[]{11.0, 22.0, 33.0});
+
+            scratch.A(0L);
+
+            if (dangerField.getBoolean(scratch)
+                    || priorDangerField.getBoolean(scratch)
+                    || toggledField.getBoolean(scratch)
+                    || bufferingField.getBoolean(scratch)
+                    || positionField.get(scratch) != null) {
+                throw new IllegalStateException(
+                        "AntiVoid disable cleanup contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe74-effect-pass:"
+                            + "AntiVoid:disableCleanup=true");
+
+            AntiVoid.blinkFallDistance.o(
+                    (byte)0, 0L, originalBlinkDistance);
+            settingSaved = false;
+            if (Math.abs(
+                            AntiVoid.blinkFallDistance.L()
+                                    - originalBlinkDistance)
+                            > 0.00001f) {
+                throw new IllegalStateException(
+                        "AntiVoid blink-distance restore mismatch");
+            }
+
+            runtimeMilestone(
+                    "high-risk-functional-probe74-restore-pass:"
+                            + "AntiVoid:blinkDistance=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe74-module-pass:"
+                            + "AntiVoid");
+            runtimeMilestone(
+                    "high-risk-functional-probe74-pass:1");
+            this.highRiskFunctionalProbe74Stage = 1;
+        }
+        catch (Throwable failure) {
+            if (settingSaved) {
+                try {
+                    AntiVoid.blinkFallDistance.o(
+                            (byte)0, 0L, originalBlinkDistance);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe74:AntiVoid",
+                            "restore-setting",
+                            restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe74Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe74:AntiVoid",
+                    "disable-cleanup-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe74-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private Object bridgeAssistInvokeForProbe(
             BridgeAssist probe,
             String name,
@@ -19870,6 +20012,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe71();
         this.pumpHighRiskFunctionalProbe72();
         this.pumpHighRiskFunctionalProbe73();
+        this.pumpHighRiskFunctionalProbe74();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
