@@ -222,7 +222,7 @@ jobs:
 
           test -f "$STAGE"
           test -f "$STDOUT"
-          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=71' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=72' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
@@ -267,7 +267,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe53=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe54=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe55=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=71'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe56=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=72'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -881,6 +882,18 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL55=PASS modules=TabGUI'
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:snowballTracked=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:settingGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:approachFilter=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-restore-pass:Indicators:settings=true:caches=true:counter=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-module-pass:Indicators' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe56-fail:' "$STAGE"; then
+            echo 'Indicators projectile-filter probe reported a failure.'
+            grep -F 'high-risk-functional-probe56-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL56=PASS modules=Indicators'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
