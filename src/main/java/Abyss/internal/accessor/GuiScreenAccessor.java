@@ -18,9 +18,6 @@ public final class GuiScreenAccessor {
     public static void c(GuiScreen var0, int var1, int var2, int var3) {
         Accessor.v(V, new Object[]{var0, var1, var2, var3});
 }
-    public static boolean mouseClickResolved() {
-        return V != null;
-}
     public static void J(GuiScreen var0, char var1, int var2) throws IOException {
         try {
             Accessor.v(e, new Object[]{var0, Character.valueOf(var1), var2});
