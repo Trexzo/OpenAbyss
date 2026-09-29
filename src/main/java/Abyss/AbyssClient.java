@@ -153,6 +153,8 @@ import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.visual_utility.BedPlates;
 import Abyss.module.impl.visual_utility.BedESP;
 import Abyss.module.impl.visual_utility.Trajectories;
+import Abyss.module.impl.visual_utility.Tracers;
+import Abyss.module.impl.visual_utility.TracersFilterFlags;
 import Abyss.module.impl.visual_utility.TrajectoryProjectileSpec;
 import Abyss.module.impl.visual_utility.TrajectorySimulationResult;
 import Abyss.module.impl.visual_utility.TrajectoryStep;
@@ -761,6 +763,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe69Stage;
     private int highRiskFunctionalProbe70Stage;
     private int highRiskFunctionalProbe71Stage;
+    private int highRiskFunctionalProbe72Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12383,6 +12386,269 @@ implements EventSubscriber {
         }
     }
 
+    private Object tracersInvokeForProbe(
+            Tracers probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = Tracers.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe72() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe72")
+                || this.highRiskFunctionalProbe72Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe71")
+                && this.highRiskFunctionalProbe71Stage < 1) {
+            return;
+        }
+
+        Tracers probe = Modules.J(Tracers.class);
+        boolean originalPlayers = false;
+        boolean originalMobs = false;
+        boolean originalAnimals = false;
+        boolean originalBosses = false;
+        boolean originalFriends = false;
+        boolean originalEnemies = false;
+        boolean originalTeammates = false;
+        boolean originalBots = false;
+        int originalThirdPerson = 0;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Tracers.class) != probe
+                    || ModuleManager.byName("Tracers") != probe
+                    || Tracers.players == null
+                    || Tracers.mobs == null
+                    || Tracers.animals == null
+                    || Tracers.bosses == null
+                    || Tracers.friends == null
+                    || Tracers.enemies == null
+                    || Tracers.teammates == null
+                    || Tracers.bots == null
+                    || Tracers.mode == null
+                    || Tracers.colorMode == null) {
+                throw new IllegalStateException(
+                        "Tracers live authority unavailable");
+            }
+
+            originalPlayers = Tracers.players.c();
+            originalMobs = Tracers.mobs.c();
+            originalAnimals = Tracers.animals.c();
+            originalBosses = Tracers.bosses.c();
+            originalFriends = Tracers.friends.c();
+            originalEnemies = Tracers.enemies.c();
+            originalTeammates = Tracers.teammates.c();
+            originalBots = Tracers.bots.c();
+            originalThirdPerson = this.c.gameSettings.thirdPersonView;
+            saved = true;
+
+            if (!Tracers.mode.S().contains("LINE")
+                    || !Tracers.mode.S().contains("ARROW")
+                    || !Tracers.colorMode.S().contains("TEAM")
+                    || !Tracers.colorMode.S().contains("CUSTOM")) {
+                throw new IllegalStateException(
+                        "Tracers recovered mode contract mismatch");
+            }
+
+            Tracers.players.v(true, 0L);
+            Tracers.mobs.v(false, 0L);
+            Tracers.animals.v(false, 0L);
+            Tracers.bosses.v(false, 0L);
+            Tracers.friends.v(false, 0L);
+            Tracers.enemies.v(false, 0L);
+            Tracers.teammates.v(false, 0L);
+            Tracers.bots.v(false, 0L);
+
+            TracersFilterFlags playersOnly =
+                    (TracersFilterFlags)this.tracersInvokeForProbe(
+                            probe,
+                            "s",
+                            new Class<?>[0],
+                            new Object[0]);
+            boolean optimizedPlayersOnly =
+                    ((Boolean)this.tracersInvokeForProbe(
+                            probe,
+                            "M",
+                            new Class<?>[]{TracersFilterFlags.class},
+                            new Object[]{playersOnly}))
+                            .booleanValue();
+            if (!optimizedPlayersOnly
+                    || !TracersFilterFlags.g(playersOnly)
+                    || TracersFilterFlags.I(playersOnly)
+                    || TracersFilterFlags.c(playersOnly)
+                    || TracersFilterFlags.E(playersOnly)) {
+                throw new IllegalStateException(
+                        "Tracers players-only filter optimization mismatch");
+            }
+
+            Tracers.mobs.v(true, 0L);
+            TracersFilterFlags playersAndMobs =
+                    (TracersFilterFlags)this.tracersInvokeForProbe(
+                            probe,
+                            "s",
+                            new Class<?>[0],
+                            new Object[0]);
+            boolean optimizedMixed =
+                    ((Boolean)this.tracersInvokeForProbe(
+                            probe,
+                            "M",
+                            new Class<?>[]{TracersFilterFlags.class},
+                            new Object[]{playersAndMobs}))
+                            .booleanValue();
+            if (optimizedMixed
+                    || !TracersFilterFlags.g(playersAndMobs)
+                    || !TracersFilterFlags.I(playersAndMobs)) {
+                throw new IllegalStateException(
+                        "Tracers mixed filter optimization mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe72-effect-pass:"
+                            + "Tracers:filters=players-only+mixed");
+
+            float lerpFloat =
+                    ((Float)this.tracersInvokeForProbe(
+                            probe,
+                            "g",
+                            new Class<?>[]{
+                                    Float.TYPE, Float.TYPE, Float.TYPE
+                            },
+                            new Object[]{
+                                    Float.valueOf(10.0f),
+                                    Float.valueOf(20.0f),
+                                    Float.valueOf(0.25f)
+                            }))
+                            .floatValue();
+            double lerpDouble =
+                    ((Double)this.tracersInvokeForProbe(
+                            probe,
+                            "D",
+                            new Class<?>[]{
+                                    Double.TYPE, Double.TYPE, Float.TYPE
+                            },
+                            new Object[]{
+                                    Double.valueOf(10.0),
+                                    Double.valueOf(20.0),
+                                    Float.valueOf(0.25f)
+                            }))
+                            .doubleValue();
+            if (Math.abs(lerpFloat - 12.5f) > 0.00001f
+                    || Math.abs(lerpDouble - 12.5) > 0.00001) {
+                throw new IllegalStateException(
+                        "Tracers interpolation contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe72-effect-pass:"
+                            + "Tracers:interpolation=12.5");
+
+            this.c.gameSettings.thirdPersonView = 0;
+            net.minecraft.util.Vec3 firstOrigin =
+                    (net.minecraft.util.Vec3)this.tracersInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[0],
+                            new Object[0]);
+            this.c.gameSettings.thirdPersonView = 1;
+            net.minecraft.util.Vec3 thirdOrigin =
+                    (net.minecraft.util.Vec3)this.tracersInvokeForProbe(
+                            probe,
+                            "q",
+                            new Class<?>[0],
+                            new Object[0]);
+            if (Math.abs(firstOrigin.xCoord) > 0.00001
+                    || Math.abs(firstOrigin.yCoord) > 0.00001
+                    || Math.abs(firstOrigin.zCoord - 1.0) > 0.00001
+                    || Math.abs(thirdOrigin.xCoord) > 0.00001
+                    || Math.abs(thirdOrigin.yCoord) > 0.00001
+                    || Math.abs(thirdOrigin.zCoord) > 0.00001) {
+                throw new IllegalStateException(
+                        "Tracers camera-origin contract mismatch");
+            }
+
+            boolean playerClassified =
+                    ((Boolean)this.tracersInvokeForProbe(
+                            probe,
+                            "A",
+                            new Class<?>[]{
+                                    net.minecraft.entity.EntityLivingBase.class
+                            },
+                            new Object[]{this.c.thePlayer}))
+                            .booleanValue();
+            boolean selfRejected =
+                    ((Boolean)this.tracersInvokeForProbe(
+                            probe,
+                            "B",
+                            new Class<?>[]{
+                                    net.minecraft.entity.EntityLivingBase.class
+                            },
+                            new Object[]{this.c.thePlayer}))
+                            .booleanValue();
+            if (!playerClassified || !selfRejected) {
+                throw new IllegalStateException(
+                        "Tracers player/self classification mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe72-effect-pass:"
+                            + "Tracers:origin+classification=true");
+
+            Tracers.players.v(originalPlayers, 0L);
+            Tracers.mobs.v(originalMobs, 0L);
+            Tracers.animals.v(originalAnimals, 0L);
+            Tracers.bosses.v(originalBosses, 0L);
+            Tracers.friends.v(originalFriends, 0L);
+            Tracers.enemies.v(originalEnemies, 0L);
+            Tracers.teammates.v(originalTeammates, 0L);
+            Tracers.bots.v(originalBots, 0L);
+            this.c.gameSettings.thirdPersonView = originalThirdPerson;
+            saved = false;
+
+            runtimeMilestone(
+                    "high-risk-functional-probe72-restore-pass:"
+                            + "Tracers:filters=true:view=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe72-module-pass:Tracers");
+            runtimeMilestone("high-risk-functional-probe72-pass:1");
+            this.highRiskFunctionalProbe72Stage = 1;
+        }
+        catch (Throwable failure) {
+            if (saved) {
+                try {
+                    Tracers.players.v(originalPlayers, 0L);
+                    Tracers.mobs.v(originalMobs, 0L);
+                    Tracers.animals.v(originalAnimals, 0L);
+                    Tracers.bosses.v(originalBosses, 0L);
+                    Tracers.friends.v(originalFriends, 0L);
+                    Tracers.enemies.v(originalEnemies, 0L);
+                    Tracers.teammates.v(originalTeammates, 0L);
+                    Tracers.bots.v(originalBots, 0L);
+                    this.c.gameSettings.thirdPersonView =
+                            originalThirdPerson;
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe72:Tracers",
+                            "restore-state",
+                            restoreFailure);
+                }
+            }
+            this.highRiskFunctionalProbe72Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe72:Tracers",
+                    "filter-geometry-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe72-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+    }
+
     private void pumpHighRiskFunctionalProbe71() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe71")
                 || this.highRiskFunctionalProbe71Stage != 0) {
@@ -19385,6 +19651,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe69();
         this.pumpHighRiskFunctionalProbe70();
         this.pumpHighRiskFunctionalProbe71();
+        this.pumpHighRiskFunctionalProbe72();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
