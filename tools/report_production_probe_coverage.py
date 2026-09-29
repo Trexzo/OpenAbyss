@@ -43,11 +43,18 @@ def main() -> int:
     explicit_disabled: list[str] = []
     unproven: list[str] = []
 
+    loop_proven: set[str] = set()
+    for match in re.finditer(r"for module in ([^;\\n]+); do(?P<body>.*?)done", ci, re.S):
+        body = match.group("body")
+        if "module-pass:$module" not in body and "module-pass:${module}" not in body:
+            continue
+        loop_proven.update(match.group(1).split())
+
     for name in registered:
         if (
             f"module-pass:{name}" in ci
             or f"modules={name}" in ci
-            or f":{name}:" in ci and "probe" in ci
+            or name in loop_proven
         ):
             proven.append(name)
             continue
