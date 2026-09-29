@@ -640,6 +640,11 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe48Saved;
     private boolean highRiskFunctionalProbe48OriginalEnabled;
     private boolean highRiskFunctionalProbe48OriginalTablistCheck;
+    private int highRiskFunctionalProbe49Stage;
+    private boolean highRiskFunctionalProbe49Saved;
+    private boolean highRiskFunctionalProbe49OriginalEnabled;
+    private java.util.Set<String> highRiskFunctionalProbe49OriginalFriends;
+    private java.util.Set<String> highRiskFunctionalProbe49OriginalEnemies;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12031,6 +12036,189 @@ implements EventSubscriber {
         }
     }
 
+    private void restoreHighRiskFunctionalProbe49() {
+        if (!this.highRiskFunctionalProbe49Saved) {
+            return;
+        }
+        try {
+            Teams probe = Modules.J(Teams.class);
+            Teams.r$r1();
+            Teams.W();
+            if (this.highRiskFunctionalProbe49OriginalFriends != null) {
+                Teams.a().addAll(this.highRiskFunctionalProbe49OriginalFriends);
+            }
+            if (this.highRiskFunctionalProbe49OriginalEnemies != null) {
+                Teams.B().addAll(this.highRiskFunctionalProbe49OriginalEnemies);
+            }
+            if (probe != null) {
+                this.setModuleEnabledRawForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe49OriginalEnabled);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe49:Teams",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe49() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe49")
+                || this.highRiskFunctionalProbe49Stage < 0
+                || this.highRiskFunctionalProbe49Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe48")
+                && this.highRiskFunctionalProbe48Stage < 2) {
+            return;
+        }
+
+        Teams probe = Modules.J(Teams.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Teams.class) != probe
+                    || ModuleManager.byName("Teams") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null) {
+                throw new IllegalStateException(
+                        "Teams live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe49Stage) {
+                case 0: {
+                    this.highRiskFunctionalProbe49OriginalEnabled = probe.o();
+                    this.highRiskFunctionalProbe49OriginalFriends =
+                            new java.util.LinkedHashSet<String>(Teams.a());
+                    this.highRiskFunctionalProbe49OriginalEnemies =
+                            new java.util.LinkedHashSet<String>(Teams.B());
+                    this.highRiskFunctionalProbe49Saved = true;
+
+                    Teams.r$r1();
+                    Teams.W();
+
+                    EntityOtherPlayerMP friend =
+                            new EntityOtherPlayerMP(
+                                    this.c.theWorld,
+                                    new GameProfile(
+                                            UUID.fromString(
+                                                    "00000000-0000-4000-8000-000000000049"),
+                                            "OpenAbyssFriend49"));
+                    EntityOtherPlayerMP enemy =
+                            new EntityOtherPlayerMP(
+                                    this.c.theWorld,
+                                    new GameProfile(
+                                            UUID.fromString(
+                                                    "00000000-0000-4000-8000-000000000149"),
+                                            "OpenAbyssEnemy49"));
+
+                    Teams.E(friend.getName());
+                    Teams.C(enemy.getName());
+
+                    if (!Teams.l(friend)
+                            || Teams.Y(friend)
+                            || Teams.l(enemy)
+                            || !Teams.Y(enemy)
+                            || !Teams.a().contains(friend.getName())
+                            || !Teams.B().contains(enemy.getName())) {
+                        throw new IllegalStateException(
+                                "Teams friend/enemy classification mismatch"
+                                        + " friendSet=" + Teams.a()
+                                        + " enemySet=" + Teams.B());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-effect-pass:"
+                                    + "Teams:friend=true:enemy=true");
+
+                    Teams.C(friend.getName());
+                    Teams.E(enemy.getName());
+                    if (Teams.B().contains(friend.getName())
+                            || Teams.a().contains(enemy.getName())
+                            || Teams.a().size() != 1
+                            || Teams.B().size() != 1) {
+                        throw new IllegalStateException(
+                                "Teams mutual exclusion mismatch"
+                                        + " friendSet=" + Teams.a()
+                                        + " enemySet=" + Teams.B());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-effect-pass:"
+                                    + "Teams:mutualExclusion=true");
+
+                    Teams.W();
+                    if (!Teams.B().isEmpty() || Teams.a().isEmpty()) {
+                        throw new IllegalStateException(
+                                "Teams enemy clear mismatch"
+                                        + " friendSet=" + Teams.a()
+                                        + " enemySet=" + Teams.B());
+                    }
+                    Teams.r$r1();
+                    if (!Teams.a().isEmpty() || !Teams.B().isEmpty()) {
+                        throw new IllegalStateException(
+                                "Teams friend clear mismatch"
+                                        + " friendSet=" + Teams.a()
+                                        + " enemySet=" + Teams.B());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-effect-pass:"
+                                    + "Teams:clearApis=true");
+
+                    this.highRiskFunctionalProbe49Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe49();
+                    Teams restored = Modules.J(Teams.class);
+                    if (restored == null
+                            || restored.o()
+                                    != this.highRiskFunctionalProbe49OriginalEnabled
+                            || !Teams.a().equals(
+                                    this.highRiskFunctionalProbe49OriginalFriends)
+                            || !Teams.B().equals(
+                                    this.highRiskFunctionalProbe49OriginalEnemies)) {
+                        throw new IllegalStateException(
+                                "Teams probe state did not restore exactly"
+                                        + " enabled="
+                                        + (restored != null && restored.o())
+                                        + " friends=" + Teams.a()
+                                        + " enemies=" + Teams.B());
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-restore-pass:"
+                                    + "Teams:enabled="
+                                    + this.highRiskFunctionalProbe49OriginalEnabled
+                                    + ":sets=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-module-pass:Teams");
+                    runtimeMilestone(
+                            "high-risk-functional-probe49-pass:1");
+                    this.highRiskFunctionalProbe49Saved = false;
+                    this.highRiskFunctionalProbe49Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe49Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe49:Teams",
+                    "manual-classification",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe49-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe49();
+        }
+    }
+
     private void restoreHighRiskFunctionalProbe48() {
         if (!this.highRiskFunctionalProbe48Saved) {
             return;
@@ -14013,6 +14201,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe46();
         this.pumpHighRiskFunctionalProbe47();
         this.pumpHighRiskFunctionalProbe48();
+        this.pumpHighRiskFunctionalProbe49();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
