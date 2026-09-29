@@ -783,6 +783,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe79Stage;
     private int highRiskFunctionalProbe80Stage;
     private int highRiskFunctionalProbe81Stage;
+    private int highRiskFunctionalProbe82Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12413,6 +12414,138 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe82() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe82")
+                || this.highRiskFunctionalProbe82Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe81")
+                && this.highRiskFunctionalProbe81Stage < 1) {
+            return;
+        }
+
+        AutoClicker live = Modules.J(AutoClicker.class);
+        float originalMin = 0.0f;
+        float originalMax = 0.0f;
+        boolean saved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AutoClicker.class) != live
+                    || ModuleManager.byName("AutoClicker") != live
+                    || AutoClicker.mincps == null
+                    || AutoClicker.maxcps == null
+                    || AutoClicker.breakBlocks == null
+                    || AutoClicker.sag == null
+                    || AutoClicker.sagBlockingTicks == null
+                    || AutoClicker.sagUnblockDuration == null) {
+                throw new IllegalStateException(
+                        "AutoClicker live/settings authority unavailable");
+            }
+
+            originalMin = AutoClicker.mincps.L();
+            originalMax = AutoClicker.maxcps.L();
+            saved = true;
+
+            AutoClicker.mincps.o((byte)0, 0L, 13.0f);
+            AutoClicker.maxcps.o((byte)0, 0L, 15.0f);
+            if (!"13-15".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "AutoClicker integer range tag mismatch: "
+                                + live.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe82-effect-pass:"
+                            + "AutoClicker:integerRange=13-15");
+
+            AutoClicker.mincps.o((byte)0, 0L, 13.5f);
+            AutoClicker.maxcps.o((byte)0, 0L, 15.5f);
+            if (!"13.5-15.5".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "AutoClicker decimal range tag mismatch: "
+                                + live.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe82-effect-pass:"
+                            + "AutoClicker:decimalRange=13.5-15.5");
+
+            AutoClicker.mincps.o((byte)0, 0L, 14.0f);
+            AutoClicker.maxcps.o((byte)0, 0L, 14.0f);
+            if (!"14".equals(live.g(0L))) {
+                throw new IllegalStateException(
+                        "AutoClicker equal CPS tag mismatch: "
+                                + live.g(0L));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe82-effect-pass:"
+                            + "AutoClicker:equalCps=14");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    AutoClicker.mincps.o(
+                            (byte)0, 0L, originalMin);
+                    AutoClicker.maxcps.o(
+                            (byte)0, 0L, originalMax);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe82:AutoClicker",
+                            "restore-settings",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe82Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe82:AutoClicker",
+                    "cps-tag-format",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe82-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        if (Math.abs(AutoClicker.mincps.L() - originalMin) > 0.001f
+                || Math.abs(AutoClicker.maxcps.L() - originalMax)
+                        > 0.001f) {
+            this.highRiskFunctionalProbe82Stage = -1;
+            IllegalStateException restoreFailure =
+                    new IllegalStateException(
+                            "AutoClicker CPS setting restore mismatch");
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe82:AutoClicker",
+                    "restore-verify",
+                    restoreFailure);
+            runtimeMilestone(
+                    "high-risk-functional-probe82-fail:"
+                            + restoreFailure.getClass().getName()
+                            + ":"
+                            + restoreFailure.getMessage());
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe82-restore-pass:"
+                        + "AutoClicker:minmax=true");
+        runtimeMilestone(
+                "high-risk-functional-probe82-module-pass:AutoClicker");
+        runtimeMilestone("high-risk-functional-probe82-pass:1");
+        this.highRiskFunctionalProbe82Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe81() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe81")
                 || this.highRiskFunctionalProbe81Stage != 0) {
@@ -21203,6 +21336,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe79();
         this.pumpHighRiskFunctionalProbe80();
         this.pumpHighRiskFunctionalProbe81();
+        this.pumpHighRiskFunctionalProbe82();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();

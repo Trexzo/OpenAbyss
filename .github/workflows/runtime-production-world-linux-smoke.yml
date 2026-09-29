@@ -293,7 +293,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe79=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe80=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe81=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=96'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe82=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=97'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1222,6 +1223,18 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL81=PASS modules=HUD'
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:integerRange=13-15' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:decimalRange=13.5-15.5' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:equalCps=14' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-restore-pass:AutoClicker:minmax=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-module-pass:AutoClicker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe82-fail:' "$STAGE"; then
+            echo 'AutoClicker CPS tag-format semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe82-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL82=PASS modules=AutoClicker'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20
