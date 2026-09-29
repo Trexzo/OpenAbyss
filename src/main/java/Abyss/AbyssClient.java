@@ -792,6 +792,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe87Stage;
     private int highRiskFunctionalProbe88Stage;
     private int highRiskFunctionalProbe89Stage;
+    private int highRiskFunctionalProbe90Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12422,6 +12423,106 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe90() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe90")
+                || this.highRiskFunctionalProbe90Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe89")
+                && this.highRiskFunctionalProbe89Stage < 1) {
+            return;
+        }
+
+        Denick live = Modules.J(Denick.class);
+        float originalRefresh = 0.0f;
+        boolean refreshSaved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(Denick.class) != live
+                    || ModuleManager.byName("Denick") != live
+                    || Denick.refreshRate == null
+                    || Denick.mode == null) {
+                throw new IllegalStateException(
+                        "Denick live/settings authority unavailable");
+            }
+
+            if (!"DUPLICATE".equalsIgnoreCase(live.g(0L))
+                    || !Denick.mode.R("DUPLICATE")) {
+                throw new IllegalStateException(
+                        "Denick mode/tag contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe90-effect-pass:"
+                            + "Denick:mode=DUPLICATE");
+
+            originalRefresh = Denick.refreshRate.L();
+            refreshSaved = true;
+
+            java.lang.reflect.Method refreshDelay =
+                    Denick.class.getDeclaredMethod("p");
+            refreshDelay.setAccessible(true);
+
+            Denick.refreshRate.o((byte)0, 0L, 500.0f);
+            long minimum = ((Long)refreshDelay.invoke(live)).longValue();
+
+            Denick.refreshRate.o((byte)0, 0L, 15000.0f);
+            long maximum = ((Long)refreshDelay.invoke(live)).longValue();
+
+            if (minimum != 500L || maximum != 15000L) {
+                throw new IllegalStateException(
+                        "Denick refresh-delay contract mismatch"
+                                + " min=" + minimum
+                                + " max=" + maximum);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe90-effect-pass:"
+                            + "Denick:refreshDelay=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (refreshSaved) {
+                    Denick.refreshRate.o(
+                            (byte)0, 0L, originalRefresh);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe90Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe90:Denick",
+                    "mode-refresh-delay-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe90-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe90-restore-pass:"
+                        + "Denick:refreshRate=true");
+        runtimeMilestone(
+                "high-risk-functional-probe90-module-pass:Denick");
+        runtimeMilestone("high-risk-functional-probe90-pass:1");
+        this.highRiskFunctionalProbe90Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe89() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe89")
                 || this.highRiskFunctionalProbe89Stage != 0) {
@@ -22194,6 +22295,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe87();
         this.pumpHighRiskFunctionalProbe88();
         this.pumpHighRiskFunctionalProbe89();
+        this.pumpHighRiskFunctionalProbe90();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
