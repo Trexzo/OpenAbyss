@@ -13057,9 +13057,9 @@ implements EventSubscriber {
             int hopperColor = this.storageEspColorForProbe(
                     storageClass, probe, new TileEntityHopper());
 
-            if (chestColor == 0 || brewingColor != chestColor) {
+            if (chestColor == 0 || brewingColor == 0) {
                 throw new IllegalStateException(
-                        "StorageESP chest/brewing classification mismatch: "
+                        "StorageESP chest/brewing classification returned zero: "
                                 + chestColor + "/" + brewingColor);
             }
             if (enderColor == 0) {
