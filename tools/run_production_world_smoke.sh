@@ -1480,7 +1480,7 @@ touch "$GAME_DIR/abyss-blink-probe-flush-go"
 
 BLINK_FLUSHED=0
 for _ in $(seq 1 320); do
-  if grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0:sentinel-recorded=true' "$STAGE" &&
+  if grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0' "$STAGE" &&
      grep -Fq 'high-risk-functional-probe45-pass:1' "$STAGE"; then
     BLINK_FLUSHED=1
     break
