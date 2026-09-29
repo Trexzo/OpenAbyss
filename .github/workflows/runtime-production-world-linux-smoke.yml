@@ -296,7 +296,8 @@ jobs:
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe82=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe83=true' "$STDOUT"
           grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe84=true' "$STDOUT"
-          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=99'
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe85=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=100'
           grep -Fq 'menu-no-world-tick' "$STAGE"
           grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
           echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
@@ -1260,6 +1261,17 @@ jobs:
             exit 1
           fi
           echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL84=PASS modules=InvMove'
+          grep -Fq 'high-risk-functional-probe85-effect-pass:AutoGG:emptyPatternAuthority=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-effect-pass:AutoGG:delayTicks=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-restore-pass:AutoGG:readOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-module-pass:AutoGG' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe85-fail:' "$STAGE"; then
+            echo 'AutoGG binary-empty-pattern/delay semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe85-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL85=PASS modules=AutoGG'
           grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
           PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
           test "$PROMOTED_MODULE_PASSES" -eq 20

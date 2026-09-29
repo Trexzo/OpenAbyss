@@ -86,6 +86,7 @@ import Abyss.module.impl.macro.Macro3;
 import Abyss.module.impl.macro.Macro4;
 import Abyss.module.impl.macro.Macro5;
 import Abyss.module.impl.misc.AntiNick;
+import Abyss.module.impl.misc.AutoGG;
 import Abyss.module.impl.misc.AntiBot;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.module.impl.misc.Denick;
@@ -786,6 +787,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe82Stage;
     private int highRiskFunctionalProbe83Stage;
     private int highRiskFunctionalProbe84Stage;
+    private int highRiskFunctionalProbe85Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12416,6 +12418,112 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe85() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe85")
+                || this.highRiskFunctionalProbe85Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe84")
+                && this.highRiskFunctionalProbe84Stage < 1) {
+            return;
+        }
+
+        AutoGG live = Modules.J(AutoGG.class);
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(AutoGG.class) != live
+                    || ModuleManager.byName("AutoGG") != live
+                    || AutoGG.delay == null
+                    || AutoGG.message == null) {
+                throw new IllegalStateException(
+                        "AutoGG live/settings authority unavailable");
+            }
+
+            java.lang.reflect.Field patternsField =
+                    AutoGG.class.getDeclaredField("H");
+            patternsField.setAccessible(true);
+            Object rawPatterns = patternsField.get(null);
+            if (!(rawPatterns instanceof java.util.List)
+                    || !((java.util.List<?>)rawPatterns).isEmpty()) {
+                throw new IllegalStateException(
+                        "AutoGG trigger-pattern authority diverged: "
+                                + String.valueOf(rawPatterns));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe85-effect-pass:"
+                            + "AutoGG:emptyPatternAuthority=true");
+
+            java.lang.reflect.Method delayTicks =
+                    AutoGG.class.getDeclaredMethod(
+                            "t", Short.TYPE, Integer.TYPE);
+            delayTicks.setAccessible(true);
+            int zero = ((Integer)delayTicks.invoke(
+                    null,
+                    Short.valueOf((short)0),
+                    Integer.valueOf(0))).intValue();
+            int fortyNine = ((Integer)delayTicks.invoke(
+                    null,
+                    Short.valueOf((short)0),
+                    Integer.valueOf(49))).intValue();
+            int fifty = ((Integer)delayTicks.invoke(
+                    null,
+                    Short.valueOf((short)0),
+                    Integer.valueOf(50))).intValue();
+            int nineNinetyNine = ((Integer)delayTicks.invoke(
+                    null,
+                    Short.valueOf((short)0),
+                    Integer.valueOf(999))).intValue();
+            int thousand = ((Integer)delayTicks.invoke(
+                    null,
+                    Short.valueOf((short)0),
+                    Integer.valueOf(1000))).intValue();
+
+            if (zero != 1
+                    || fortyNine != 1
+                    || fifty != 1
+                    || nineNinetyNine != 19
+                    || thousand != 20) {
+                throw new IllegalStateException(
+                        "AutoGG delay-to-tick mapping mismatch"
+                                + " zero=" + zero
+                                + " 49=" + fortyNine
+                                + " 50=" + fifty
+                                + " 999=" + nineNinetyNine
+                                + " 1000=" + thousand);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe85-effect-pass:"
+                            + "AutoGG:delayTicks=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe85Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe85:AutoGG",
+                    "binary-empty-pattern-delay-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe85-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe85-restore-pass:"
+                        + "AutoGG:readOnly=true");
+        runtimeMilestone(
+                "high-risk-functional-probe85-module-pass:AutoGG");
+        runtimeMilestone("high-risk-functional-probe85-pass:1");
+        this.highRiskFunctionalProbe85Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe84() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe84")
                 || this.highRiskFunctionalProbe84Stage != 0) {
@@ -21673,6 +21781,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe82();
         this.pumpHighRiskFunctionalProbe83();
         this.pumpHighRiskFunctionalProbe84();
+        this.pumpHighRiskFunctionalProbe85();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
