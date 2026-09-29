@@ -133,6 +133,7 @@ import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.TeamInvisible;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
+import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
 import Abyss.module.impl.visual_utility.ChestESP;
 import Abyss.module.impl.world.AutoTool;
@@ -694,6 +695,14 @@ implements EventSubscriber {
                     "OPENABYSS_MACRO4_PROBE53",
                     "OPENABYSS_MACRO5_PROBE53"
             };
+    private int highRiskFunctionalProbe54Stage;
+    private boolean highRiskFunctionalProbe54Saved;
+    private boolean highRiskFunctionalProbe54OriginalPhoenixIcons;
+    private boolean highRiskFunctionalProbe54OriginalPotionCounts;
+    private boolean highRiskFunctionalProbe54HadPhoenix;
+    private boolean highRiskFunctionalProbe54HadPotionCount;
+    private Integer highRiskFunctionalProbe54OriginalPotionCount;
+    private String highRiskFunctionalProbe54FixtureName;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12085,6 +12094,229 @@ implements EventSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Set<String> megaWallsPhoenixSetForProbe(
+            MegaWallsDetector probe) throws Exception {
+        Field field = MegaWallsDetector.class.getDeclaredField("Y");
+        field.setAccessible(true);
+        return (Set<String>)field.get(probe);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Integer> megaWallsPotionCountMapForProbe(
+            MegaWallsDetector probe) throws Exception {
+        Field field = MegaWallsDetector.class.getDeclaredField("o");
+        field.setAccessible(true);
+        return (Map<String, Integer>)field.get(probe);
+    }
+
+    private void restoreHighRiskFunctionalProbe54() {
+        if (!this.highRiskFunctionalProbe54Saved) {
+            return;
+        }
+        try {
+            MegaWallsDetector probe = Modules.J(MegaWallsDetector.class);
+            if (MegaWallsDetector.phoenixIconsInTab != null) {
+                MegaWallsDetector.phoenixIconsInTab.v(
+                        this.highRiskFunctionalProbe54OriginalPhoenixIcons,
+                        0L);
+            }
+            if (MegaWallsDetector.potionCountsInTab != null) {
+                MegaWallsDetector.potionCountsInTab.v(
+                        this.highRiskFunctionalProbe54OriginalPotionCounts,
+                        0L);
+            }
+            if (probe != null && this.highRiskFunctionalProbe54FixtureName != null) {
+                Set<String> phoenix =
+                        this.megaWallsPhoenixSetForProbe(probe);
+                Map<String, Integer> potions =
+                        this.megaWallsPotionCountMapForProbe(probe);
+                if (this.highRiskFunctionalProbe54HadPhoenix) {
+                    phoenix.add(this.highRiskFunctionalProbe54FixtureName);
+                } else {
+                    phoenix.remove(this.highRiskFunctionalProbe54FixtureName);
+                }
+                if (this.highRiskFunctionalProbe54HadPotionCount) {
+                    potions.put(
+                            this.highRiskFunctionalProbe54FixtureName,
+                            this.highRiskFunctionalProbe54OriginalPotionCount);
+                } else {
+                    potions.remove(this.highRiskFunctionalProbe54FixtureName);
+                }
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe54:MegaWallsDetector",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe54() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe54")
+                || this.highRiskFunctionalProbe54Stage < 0
+                || this.highRiskFunctionalProbe54Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe53")
+                && this.highRiskFunctionalProbe53Stage < 6) {
+            return;
+        }
+
+        MegaWallsDetector probe = Modules.J(MegaWallsDetector.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(MegaWallsDetector.class) != probe
+                    || ModuleManager.byName("MegaWallsDetector") != probe
+                    || MegaWallsDetector.phoenixIconsInTab == null
+                    || MegaWallsDetector.potionCountsInTab == null
+                    || this.c.thePlayer == null
+                    || this.c.getNetHandler() == null) {
+                throw new IllegalStateException(
+                        "MegaWallsDetector live-world authority unavailable");
+            }
+
+            NetworkPlayerInfo info = this.c.getNetHandler()
+                    .getPlayerInfo(this.c.thePlayer.getUniqueID());
+            if (info == null
+                    || info.getGameProfile() == null
+                    || info.getGameProfile().getName() == null) {
+                throw new IllegalStateException(
+                        "MegaWallsDetector local player info unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe54Stage) {
+                case 0: {
+                    String name = info.getGameProfile().getName();
+                    Set<String> phoenix =
+                            this.megaWallsPhoenixSetForProbe(probe);
+                    Map<String, Integer> potions =
+                            this.megaWallsPotionCountMapForProbe(probe);
+
+                    this.highRiskFunctionalProbe54FixtureName = name;
+                    this.highRiskFunctionalProbe54OriginalPhoenixIcons =
+                            MegaWallsDetector.phoenixIconsInTab.c();
+                    this.highRiskFunctionalProbe54OriginalPotionCounts =
+                            MegaWallsDetector.potionCountsInTab.c();
+                    this.highRiskFunctionalProbe54HadPhoenix =
+                            phoenix.contains(name);
+                    this.highRiskFunctionalProbe54HadPotionCount =
+                            potions.containsKey(name);
+                    this.highRiskFunctionalProbe54OriginalPotionCount =
+                            potions.get(name);
+                    this.highRiskFunctionalProbe54Saved = true;
+
+                    MegaWallsDetector.phoenixIconsInTab.v(true, 0L);
+                    MegaWallsDetector.potionCountsInTab.v(true, 0L);
+                    phoenix.add(name);
+                    potions.put(name, Integer.valueOf(3));
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "MegaWallsDetector fixture EventBus binding inactive");
+                    }
+
+                    PlayerGetNameEvent decorated =
+                            new PlayerGetNameEvent(info, name);
+                    fixtureBus.e(decorated, 0L);
+                    String expected =
+                            "\u00a7b\u00a7l\u2726\u00a7r"
+                                    + name
+                                    + " \u00a77(\u00a7d3\u00a77)";
+                    if (!expected.equals(decorated.d())) {
+                        throw new IllegalStateException(
+                                "MegaWallsDetector tab decoration mismatch"
+                                        + " expected=" + expected
+                                        + " actual=" + decorated.d());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe54-effect-pass:"
+                                    + "MegaWallsDetector:phoenixPrefix=true:"
+                                    + "potionCount=3");
+
+                    MegaWallsDetector.phoenixIconsInTab.v(false, 0L);
+                    MegaWallsDetector.potionCountsInTab.v(false, 0L);
+                    PlayerGetNameEvent plain =
+                            new PlayerGetNameEvent(info, name);
+                    fixtureBus.e(plain, 0L);
+                    if (!name.equals(plain.d())) {
+                        throw new IllegalStateException(
+                                "MegaWallsDetector setting gate failed: "
+                                        + plain.d());
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe54-effect-pass:"
+                                    + "MegaWallsDetector:settingGate=true");
+
+                    this.highRiskFunctionalProbe54Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe54();
+                    Set<String> phoenix =
+                            this.megaWallsPhoenixSetForProbe(probe);
+                    Map<String, Integer> potions =
+                            this.megaWallsPotionCountMapForProbe(probe);
+                    boolean phoenixRestored =
+                            this.highRiskFunctionalProbe54HadPhoenix
+                                    ? phoenix.contains(
+                                            this.highRiskFunctionalProbe54FixtureName)
+                                    : !phoenix.contains(
+                                            this.highRiskFunctionalProbe54FixtureName);
+                    boolean potionRestored =
+                            this.highRiskFunctionalProbe54HadPotionCount
+                                    ? this.highRiskFunctionalProbe54OriginalPotionCount
+                                            .equals(
+                                                    potions.get(
+                                                            this.highRiskFunctionalProbe54FixtureName))
+                                    : !potions.containsKey(
+                                            this.highRiskFunctionalProbe54FixtureName);
+                    if (MegaWallsDetector.phoenixIconsInTab.c()
+                                    != this.highRiskFunctionalProbe54OriginalPhoenixIcons
+                            || MegaWallsDetector.potionCountsInTab.c()
+                                    != this.highRiskFunctionalProbe54OriginalPotionCounts
+                            || !phoenixRestored
+                            || !potionRestored) {
+                        throw new IllegalStateException(
+                                "MegaWallsDetector probe state did not restore exactly");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe54-restore-pass:"
+                                    + "MegaWallsDetector:settings=true:caches=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe54-module-pass:"
+                                    + "MegaWallsDetector");
+                    runtimeMilestone(
+                            "high-risk-functional-probe54-pass:1");
+                    this.highRiskFunctionalProbe54Saved = false;
+                    this.highRiskFunctionalProbe54Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe54Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe54:MegaWallsDetector",
+                    "tab-decoration",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe54-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe54();
+        }
+    }
+
     private Module highRiskFunctionalProbe53Module(int index) {
         switch (index) {
             case 0:
@@ -15094,6 +15326,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe51();
         this.pumpHighRiskFunctionalProbe52();
         this.pumpHighRiskFunctionalProbe53();
+        this.pumpHighRiskFunctionalProbe54();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
