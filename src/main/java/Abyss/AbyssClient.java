@@ -28,6 +28,7 @@ import Abyss.event.EventBus;
 import Abyss.event.EventSubscriber;
 import Abyss.event.binder.AbyssClientBinder;
 import Abyss.event.events.AttackEntityEvent;
+import Abyss.event.events.AttackTargetEntityEvent;
 import Abyss.event.events.KnockbackEvent;
 import Abyss.event.events.MoveEntityEvent;
 import Abyss.event.events.MoveEntityWithHeadingEvent;
@@ -141,6 +142,7 @@ import Abyss.module.impl.visual_utility.ItemESP;
 import Abyss.module.impl.visual_utility.ItemESPEntry;
 import Abyss.module.impl.visual_utility.ItemTags;
 import Abyss.module.impl.visual_utility.ItemTagsEntry;
+import Abyss.module.impl.visual_utility.TargetHUD;
 import Abyss.module.impl.visual_utility.Indicators;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
 import Abyss.module.impl.visual_utility.LeapModeHUD;
@@ -725,6 +727,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe57Stage;
     private int highRiskFunctionalProbe58Stage;
     private int highRiskFunctionalProbe59Stage;
+    private int highRiskFunctionalProbe60Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12116,6 +12119,236 @@ implements EventSubscriber {
         }
     }
 
+    private Field targetHudFieldForProbe(String name) throws Exception {
+        Field field = TargetHUD.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private net.minecraft.entity.EntityLivingBase targetHudEntityForProbe(
+            TargetHUD probe, String name) throws Exception {
+        return (net.minecraft.entity.EntityLivingBase)
+                this.targetHudFieldForProbe(name).get(probe);
+    }
+
+    private void setTargetHudEntityForProbe(
+            TargetHUD probe,
+            String name,
+            net.minecraft.entity.EntityLivingBase value) throws Exception {
+        this.targetHudFieldForProbe(name).set(probe, value);
+    }
+
+    private void pumpHighRiskFunctionalProbe60() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe60")
+                || this.highRiskFunctionalProbe60Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe59")
+                && this.highRiskFunctionalProbe59Stage < 1) {
+            return;
+        }
+
+        TargetHUD probe = Modules.J(TargetHUD.class);
+        final int fixtureAId = -73563;
+        final int fixtureBId = -73564;
+        net.minecraft.entity.monster.EntityZombie fixtureA = null;
+        net.minecraft.entity.monster.EntityZombie fixtureB = null;
+        boolean saved = false;
+        String originalTargetMode = null;
+        boolean originalPlayers = false;
+        boolean originalMobs = false;
+        boolean originalAnimals = false;
+        boolean originalBosses = false;
+        boolean originalFriends = false;
+        boolean originalEnemies = false;
+        boolean originalTeammates = false;
+        boolean originalBots = false;
+        net.minecraft.entity.EntityLivingBase originalCurrent = null;
+        net.minecraft.entity.EntityLivingBase originalPrevious = null;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(TargetHUD.class) != probe
+                    || ModuleManager.byName("TargetHUD") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || TargetHUD.targetMode == null
+                    || TargetHUD.players == null
+                    || TargetHUD.mobs == null
+                    || TargetHUD.animals == null
+                    || TargetHUD.bosses == null
+                    || TargetHUD.friends == null
+                    || TargetHUD.enemies == null
+                    || TargetHUD.teammates == null
+                    || TargetHUD.bots == null) {
+                throw new IllegalStateException(
+                        "TargetHUD live-world authority unavailable");
+            }
+
+            originalTargetMode = TargetHUD.targetMode.Y();
+            originalPlayers = TargetHUD.players.c();
+            originalMobs = TargetHUD.mobs.c();
+            originalAnimals = TargetHUD.animals.c();
+            originalBosses = TargetHUD.bosses.c();
+            originalFriends = TargetHUD.friends.c();
+            originalEnemies = TargetHUD.enemies.c();
+            originalTeammates = TargetHUD.teammates.c();
+            originalBots = TargetHUD.bots.c();
+            originalCurrent = this.targetHudEntityForProbe(probe, "K");
+            originalPrevious = this.targetHudEntityForProbe(probe, "E");
+            saved = true;
+
+            fixtureA = new net.minecraft.entity.monster.EntityZombie(
+                    this.c.theWorld);
+            fixtureA.setPosition(
+                    this.c.thePlayer.posX + 3.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            fixtureB = new net.minecraft.entity.monster.EntityZombie(
+                    this.c.theWorld);
+            fixtureB.setPosition(
+                    this.c.thePlayer.posX + 4.0,
+                    this.c.thePlayer.posY,
+                    this.c.thePlayer.posZ);
+            this.c.theWorld.addEntityToWorld(fixtureAId, fixtureA);
+            this.c.theWorld.addEntityToWorld(fixtureBId, fixtureB);
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "TargetHUD fixture EventBus binding inactive");
+            }
+
+            TargetHUD.targetMode.i("HIT");
+            TargetHUD.players.v(false, 0L);
+            TargetHUD.mobs.v(true, 0L);
+            TargetHUD.animals.v(false, 0L);
+            TargetHUD.bosses.v(false, 0L);
+            TargetHUD.friends.v(false, 0L);
+            TargetHUD.enemies.v(true, 0L);
+            TargetHUD.teammates.v(false, 0L);
+            TargetHUD.bots.v(false, 0L);
+            this.setTargetHudEntityForProbe(probe, "K", null);
+            this.setTargetHudEntityForProbe(probe, "E", null);
+
+            fixtureBus.e(new AttackTargetEntityEvent(fixtureA), 0L);
+            if (this.targetHudEntityForProbe(probe, "K") != fixtureA
+                    || this.targetHudEntityForProbe(probe, "E") != null) {
+                throw new IllegalStateException(
+                        "TargetHUD first HIT target mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe60-effect-pass:"
+                            + "TargetHUD:firstHit=true");
+
+            fixtureBus.e(new AttackTargetEntityEvent(fixtureB), 0L);
+            if (this.targetHudEntityForProbe(probe, "K") != fixtureB
+                    || this.targetHudEntityForProbe(probe, "E") != fixtureA) {
+                throw new IllegalStateException(
+                        "TargetHUD target rollover mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe60-effect-pass:"
+                            + "TargetHUD:rollover=true");
+
+            TargetHUD.mobs.v(false, 0L);
+            fixtureBus.e(new AttackTargetEntityEvent(fixtureA), 0L);
+            if (this.targetHudEntityForProbe(probe, "K") != fixtureB
+                    || this.targetHudEntityForProbe(probe, "E") != fixtureA) {
+                throw new IllegalStateException(
+                        "TargetHUD mob setting gate failed");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe60-effect-pass:"
+                            + "TargetHUD:mobGate=true");
+
+            TargetHUD.mobs.v(true, 0L);
+            TargetHUD.targetMode.i("AIM");
+            fixtureBus.e(new AttackTargetEntityEvent(fixtureA), 0L);
+            if (this.targetHudEntityForProbe(probe, "K") != fixtureB
+                    || this.targetHudEntityForProbe(probe, "E") != fixtureA) {
+                throw new IllegalStateException(
+                        "TargetHUD target-mode gate failed");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe60-effect-pass:"
+                            + "TargetHUD:modeGate=true");
+
+            probe.A(0L);
+            if (this.targetHudEntityForProbe(probe, "K") != null
+                    || this.targetHudEntityForProbe(probe, "E") != null) {
+                throw new IllegalStateException(
+                        "TargetHUD reset did not clear target history");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe60-effect-pass:"
+                            + "TargetHUD:reset=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe60-module-pass:TargetHUD");
+            runtimeMilestone(
+                    "high-risk-functional-probe60-pass:1");
+            this.highRiskFunctionalProbe60Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe60Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe60:TargetHUD",
+                    "hit-target-selection",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe60-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (this.c.theWorld != null) {
+                try {
+                    this.c.theWorld.removeEntityFromWorld(fixtureAId);
+                    this.c.theWorld.removeEntityFromWorld(fixtureBId);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved && probe != null) {
+                try {
+                    TargetHUD.targetMode.i(originalTargetMode);
+                    TargetHUD.players.v(originalPlayers, 0L);
+                    TargetHUD.mobs.v(originalMobs, 0L);
+                    TargetHUD.animals.v(originalAnimals, 0L);
+                    TargetHUD.bosses.v(originalBosses, 0L);
+                    TargetHUD.friends.v(originalFriends, 0L);
+                    TargetHUD.enemies.v(originalEnemies, 0L);
+                    TargetHUD.teammates.v(originalTeammates, 0L);
+                    TargetHUD.bots.v(originalBots, 0L);
+                    this.setTargetHudEntityForProbe(
+                            probe, "K", originalCurrent);
+                    this.setTargetHudEntityForProbe(
+                            probe, "E", originalPrevious);
+                    runtimeMilestone(
+                            "high-risk-functional-probe60-restore-pass:"
+                                    + "TargetHUD:settings=true:targets=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe60:TargetHUD",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe60Stage >= 0) {
+                        this.highRiskFunctionalProbe60Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe60-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private List<ItemTagsEntry> itemTagsEntriesForProbe(
             ItemTags probe) throws Exception {
@@ -16511,6 +16744,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe57();
         this.pumpHighRiskFunctionalProbe58();
         this.pumpHighRiskFunctionalProbe59();
+        this.pumpHighRiskFunctionalProbe60();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
