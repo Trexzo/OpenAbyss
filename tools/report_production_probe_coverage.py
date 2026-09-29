@@ -65,11 +65,28 @@ def main() -> int:
             if f"pass:{name}:" in line or f"pass:{name}'" in line:
                 marker_proven.add(name)
 
+    subsystem_contracts = {
+        "ClickGUI": (
+            "clickgui-mode-probe-pass:3:restored=",
+            "clickgui-open-success:",
+        ),
+        "InvMove": (
+            "invmove-physical-probe-pass:1",
+            "invmove-physical-probe-effect-pass:forwardBinding=true:",
+        ),
+    }
+    subsystem_proven = {
+        name
+        for name, markers in subsystem_contracts.items()
+        if all(marker in ci for marker in markers)
+    }
+
     for name in registered:
         if (
             f"module-pass:{name}" in ci
             or name in contract_proven
             or name in marker_proven
+            or name in subsystem_proven
             or name in loop_proven
         ):
             proven.append(name)
