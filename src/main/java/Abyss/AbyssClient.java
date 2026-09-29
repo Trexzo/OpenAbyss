@@ -36,6 +36,7 @@ import Abyss.event.events.MoveInputEvent;
 import Abyss.event.events.MoveFlyingEvent;
 import Abyss.event.events.WorldLoadEvent;
 import Abyss.event.events.ClickMouseEvent;
+import Abyss.event.events.CloseScreenEvent;
 import Abyss.event.events.EntityJoinWorldEvent;
 import Abyss.event.events.PostTickEvent;
 import Abyss.event.events.PostRenderEvent;
@@ -104,6 +105,7 @@ import Abyss.module.impl.movement.Sprint;
 import Abyss.module.impl.movement.Stuck;
 import Abyss.module.impl.player.AutoWeapon;
 import Abyss.module.impl.player.Blink;
+import Abyss.module.impl.player.ChestAura;
 import Abyss.module.impl.player.ChestStealer;
 import Abyss.module.impl.player.GhostHand;
 import Abyss.module.impl.player.InvClicker;
@@ -728,6 +730,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe58Stage;
     private int highRiskFunctionalProbe59Stage;
     private int highRiskFunctionalProbe60Stage;
+    private int highRiskFunctionalProbe61Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12119,6 +12122,237 @@ implements EventSubscriber {
         }
     }
 
+    private Object chestAuraFieldForProbe(
+            ChestAura probe, String name) throws Exception {
+        Field field = ChestAura.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(probe);
+    }
+
+    private void pumpHighRiskFunctionalProbe61() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe61")
+                || this.highRiskFunctionalProbe61Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe60")
+                && this.highRiskFunctionalProbe60Stage < 1) {
+            return;
+        }
+
+        ChestAura probe = Modules.J(ChestAura.class);
+        BlockPos primary = null;
+        BlockPos adjacent = null;
+        IBlockState originalPrimary = null;
+        IBlockState originalAdjacent = null;
+        TileEntity originalPrimaryTile = null;
+        TileEntity originalAdjacentTile = null;
+        java.util.List<BlockPos> originalHandled = null;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(ChestAura.class) != probe
+                    || ModuleManager.byName("ChestAura") != probe
+                    || this.c.theWorld == null
+                    || this.c.thePlayer == null
+                    || ChestAura.H == null) {
+                throw new IllegalStateException(
+                        "ChestAura live-world authority unavailable");
+            }
+
+            int baseX = MathHelper.floor_double(this.c.thePlayer.posX);
+            int baseY = MathHelper.floor_double(this.c.thePlayer.posY);
+            int baseZ = MathHelper.floor_double(this.c.thePlayer.posZ);
+            outer:
+            for (int dy = 0; dy <= 2; ++dy) {
+                for (int dx = 3; dx <= 7; ++dx) {
+                    BlockPos candidate =
+                            new BlockPos(baseX + dx, baseY + dy, baseZ);
+                    BlockPos east = candidate.east();
+                    if (this.c.theWorld.isAirBlock(candidate)
+                            && this.c.theWorld.isAirBlock(east)) {
+                        primary = candidate;
+                        adjacent = east;
+                        break outer;
+                    }
+                }
+            }
+            if (primary == null || adjacent == null) {
+                throw new IllegalStateException(
+                        "ChestAura probe found no two-block air fixture");
+            }
+
+            originalPrimary = this.c.theWorld.getBlockState(primary);
+            originalAdjacent = this.c.theWorld.getBlockState(adjacent);
+            originalPrimaryTile = this.c.theWorld.getTileEntity(primary);
+            originalAdjacentTile = this.c.theWorld.getTileEntity(adjacent);
+            originalHandled =
+                    new java.util.ArrayList<BlockPos>(ChestAura.H);
+            saved = true;
+
+            ChestAura.H.clear();
+            probe.A(0L);
+
+            if (!this.c.theWorld.setBlockState(
+                            primary, Blocks.chest.getDefaultState(), 3)
+                    || !this.c.theWorld.setBlockState(
+                            adjacent, Blocks.chest.getDefaultState(), 3)) {
+                throw new IllegalStateException(
+                        "ChestAura probe could not place temporary double chest");
+            }
+            if (!(this.c.theWorld.getTileEntity(primary)
+                    instanceof TileEntityChest)) {
+                this.c.theWorld.setTileEntity(
+                        primary, new TileEntityChest());
+            }
+            if (!(this.c.theWorld.getTileEntity(adjacent)
+                    instanceof TileEntityChest)) {
+                this.c.theWorld.setTileEntity(
+                        adjacent, new TileEntityChest());
+            }
+
+            EventBus fixtureBus = new EventBus();
+            fixtureBus.s(probe, 0L);
+            if (!fixtureBus.isOwnerActive(probe)) {
+                throw new IllegalStateException(
+                        "ChestAura fixture EventBus binding inactive");
+            }
+
+            PlayerRightClickEvent click =
+                    new PlayerRightClickEvent(
+                            this.c.theWorld,
+                            this.c.thePlayer.getHeldItem(),
+                            primary,
+                            EnumFacing.UP,
+                            new Vec3(primary).addVector(0.5, 1.0, 0.5));
+            fixtureBus.e(click, 0L);
+
+            Object pending = this.chestAuraFieldForProbe(probe, "N");
+            Object awaiting = this.chestAuraFieldForProbe(probe, "p");
+            if (!primary.equals(pending)
+                    || !(awaiting instanceof Boolean)
+                    || !((Boolean)awaiting).booleanValue()) {
+                throw new IllegalStateException(
+                        "ChestAura right-click pending state mismatch"
+                                + " pending=" + pending
+                                + " awaiting=" + awaiting);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe61-effect-pass:"
+                            + "ChestAura:rightClickPending=true");
+
+            fixtureBus.e(new CloseScreenEvent(), 0L);
+            if (!ChestAura.H.contains(primary)
+                    || !ChestAura.H.contains(adjacent)) {
+                throw new IllegalStateException(
+                        "ChestAura close-screen double-chest bookkeeping mismatch"
+                                + " primary=" + ChestAura.H.contains(primary)
+                                + " adjacent=" + ChestAura.H.contains(adjacent));
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe61-effect-pass:"
+                            + "ChestAura:doubleChestHandled=true");
+
+            if (this.chestAuraFieldForProbe(probe, "N") != null
+                    || ((Boolean)this.chestAuraFieldForProbe(probe, "p"))
+                            .booleanValue()) {
+                throw new IllegalStateException(
+                        "ChestAura close-screen state did not clear");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe61-effect-pass:"
+                            + "ChestAura:closeClearsPending=true");
+
+            fixtureBus.e(
+                    new EntityJoinWorldEvent(
+                            0, this.c.thePlayer, (byte)0, 0),
+                    0L);
+            if (!ChestAura.H.isEmpty()) {
+                throw new IllegalStateException(
+                        "ChestAura world-join did not clear handled chest cache");
+            }
+            if (this.chestAuraFieldForProbe(probe, "N") != null
+                    || this.chestAuraFieldForProbe(probe, "E") != null
+                    || ((Boolean)this.chestAuraFieldForProbe(probe, "p"))
+                            .booleanValue()
+                    || ((Boolean)this.chestAuraFieldForProbe(probe, "s"))
+                            .booleanValue()) {
+                throw new IllegalStateException(
+                        "ChestAura world-join did not clear state machine");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe61-effect-pass:"
+                            + "ChestAura:worldJoinReset=true");
+            runtimeMilestone(
+                    "high-risk-functional-probe61-module-pass:ChestAura");
+            runtimeMilestone(
+                    "high-risk-functional-probe61-pass:1");
+            this.highRiskFunctionalProbe61Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe61Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe61:ChestAura",
+                    "interaction-bookkeeping",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe61-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (probe != null) {
+                try {
+                    probe.A(0L);
+                }
+                catch (Throwable ignored) {
+                }
+            }
+            if (saved) {
+                try {
+                    ChestAura.H.clear();
+                    ChestAura.H.addAll(originalHandled);
+                    this.c.theWorld.setBlockState(
+                            primary, originalPrimary, 3);
+                    this.c.theWorld.setBlockState(
+                            adjacent, originalAdjacent, 3);
+                    if (originalPrimaryTile != null) {
+                        this.c.theWorld.setTileEntity(
+                                primary, originalPrimaryTile);
+                    } else {
+                        this.c.theWorld.removeTileEntity(primary);
+                    }
+                    if (originalAdjacentTile != null) {
+                        this.c.theWorld.setTileEntity(
+                                adjacent, originalAdjacentTile);
+                    } else {
+                        this.c.theWorld.removeTileEntity(adjacent);
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe61-restore-pass:"
+                                    + "ChestAura:cache=true:world=true:"
+                                    + "state=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe61:ChestAura",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe61Stage >= 0) {
+                        this.highRiskFunctionalProbe61Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe61-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Field targetHudFieldForProbe(String name) throws Exception {
         Field field = TargetHUD.class.getDeclaredField(name);
         field.setAccessible(true);
@@ -16745,6 +16979,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe58();
         this.pumpHighRiskFunctionalProbe59();
         this.pumpHighRiskFunctionalProbe60();
+        this.pumpHighRiskFunctionalProbe61();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
