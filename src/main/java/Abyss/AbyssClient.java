@@ -779,6 +779,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe76Stage;
     private int highRiskFunctionalProbe77Stage;
     private int highRiskFunctionalProbe78Stage;
+    private int highRiskFunctionalProbe79Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12409,6 +12410,145 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe79() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe79")
+                || this.highRiskFunctionalProbe79Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe78")
+                && this.highRiskFunctionalProbe78Stage < 1) {
+            return;
+        }
+
+        Language live = Modules.J(Language.class);
+        boolean saved = false;
+        String originalLanguage = null;
+        boolean originalApplyForArraylist = false;
+        boolean originalApplyForCategory = false;
+        boolean originalApplyForDescriptions = false;
+        boolean originalApplyForName = false;
+        boolean originalApplyForSettings = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(Language.class) != live
+                    || ModuleManager.byName("Language") != live
+                    || Language.language == null
+                    || Language.applyForArraylist == null
+                    || Language.applyForCategory == null
+                    || Language.applyForDescriptions == null
+                    || Language.applyForName == null
+                    || Language.applyForSettings == null
+                    || !Language.language.S().contains("ENGLISH")) {
+                throw new IllegalStateException(
+                        "Language live authority unavailable");
+            }
+
+            originalLanguage = Language.language.Y();
+            originalApplyForArraylist = Language.applyForArraylist.c();
+            originalApplyForCategory = Language.applyForCategory.c();
+            originalApplyForDescriptions =
+                    Language.applyForDescriptions.c();
+            originalApplyForName = Language.applyForName.c();
+            originalApplyForSettings = Language.applyForSettings.c();
+            saved = true;
+
+            String known = Language.z("clickgui.bind.press", 0L);
+            String missingKey = "openabyss.probe.missing";
+            String missing = Language.z(missingKey, 0L);
+            if (!"Press a key...".equals(known)
+                    || !missingKey.equals(missing)) {
+                throw new IllegalStateException(
+                        "Language dictionary/fallback mismatch"
+                                + " known=" + known
+                                + " missing=" + missing);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe79-effect-pass:"
+                            + "Language:dictionary+fallback=true");
+
+            Language.G("english");
+            Language.applyForArraylist.v(true, 0L);
+            Language.applyForCategory.v(false, 0L);
+            Language.applyForDescriptions.v(false, 0L);
+            Language.applyForName.v(true, 0L);
+            Language.applyForSettings.v(true, 0L);
+
+            if (!Language.language.R("ENGLISH")
+                    || !"Combat".equals(Language.Y("Combat"))
+                    || !"Probe description".equals(
+                            Language.o("Probe description"))
+                    || !"Macro3".equals(Language.Z(0L, "Macro3"))) {
+                throw new IllegalStateException(
+                        "Language English/bypass gate mismatch");
+            }
+
+            Language.applyForCategory.v(true, 0L);
+            Language.applyForDescriptions.v(true, 0L);
+            if (!"Combat".equals(Language.Y("Combat"))
+                    || !"Probe description".equals(
+                            Language.o("Probe description"))) {
+                throw new IllegalStateException(
+                        "Language English fallback mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe79-effect-pass:"
+                            + "Language:englishGates=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            if (saved) {
+                try {
+                    Language.language.i(originalLanguage);
+                    Language.applyForArraylist.v(
+                            originalApplyForArraylist, 0L);
+                    Language.applyForCategory.v(
+                            originalApplyForCategory, 0L);
+                    Language.applyForDescriptions.v(
+                            originalApplyForDescriptions, 0L);
+                    Language.applyForName.v(
+                            originalApplyForName, 0L);
+                    Language.applyForSettings.v(
+                            originalApplyForSettings, 0L);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe79:Language",
+                            "restore-settings",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe79Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe79:Language",
+                    "translation-fallback",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe79-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe79-restore-pass:"
+                        + "Language:settings=true");
+        runtimeMilestone(
+                "high-risk-functional-probe79-module-pass:Language");
+        runtimeMilestone("high-risk-functional-probe79-pass:1");
+        this.highRiskFunctionalProbe79Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe78() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe78")
                 || this.highRiskFunctionalProbe78Stage != 0) {
@@ -20757,6 +20897,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe76();
         this.pumpHighRiskFunctionalProbe77();
         this.pumpHighRiskFunctionalProbe78();
+        this.pumpHighRiskFunctionalProbe79();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
