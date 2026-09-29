@@ -12393,53 +12393,115 @@ implements EventSubscriber {
             return;
         }
 
-        NoObfuscation probe = Modules.J(NoObfuscation.class);
+        Notifications probe = Modules.J(Notifications.class);
+        float originalLeaveTime = 0.0f;
+        boolean saved = false;
         try {
             if (probe == null
-                    || ModuleManager.byClass(NoObfuscation.class) != probe
-                    || ModuleManager.byName("NoObfuscation") != probe) {
+                    || ModuleManager.byClass(Notifications.class) != probe
+                    || ModuleManager.byName("Notifications") != probe
+                    || Notifications.leaveTime == null
+                    || Notifications.stayTime == null
+                    || Notifications.graphic == null
+                    || Notifications.sound == null
+                    || Notifications.stripColor == null
+                    || Notifications.customstripColor == null
+                    || Notifications.customBackgroundColor == null
+                    || Notifications.offsetX == null
+                    || Notifications.offsetY == null
+                    || Notifications.textShadow == null) {
                 throw new IllegalStateException(
-                        "NoObfuscation live authority unavailable");
+                        "Notifications live authority unavailable");
             }
 
-            if (NoObfuscation.f(null) != null) {
+            if (Math.abs(Notifications.u(0.0f) - 0.0f) > 0.00001f
+                    || Math.abs(Notifications.u(0.5f) - 0.875f) > 0.00001f
+                    || Math.abs(Notifications.u(1.0f) - 1.0f) > 0.00001f
+                    || Math.abs(Notifications.u(-1.0f) - 0.0f) > 0.00001f
+                    || Math.abs(Notifications.u(2.0f) - 1.0f) > 0.00001f
+                    || Math.abs(Notifications.R(0.0f) - 0.0f) > 0.00001f
+                    || Math.abs(Notifications.R(0.5f) - 0.125f) > 0.00001f
+                    || Math.abs(Notifications.R(1.0f) - 1.0f) > 0.00001f
+                    || Math.abs(Notifications.R(-1.0f) - 0.0f) > 0.00001f
+                    || Math.abs(Notifications.R(2.0f) - 1.0f) > 0.00001f) {
                 throw new IllegalStateException(
-                        "NoObfuscation null contract mismatch");
+                        "Notifications easing contract mismatch");
             }
-            String untouched = "plain text";
-            if (!untouched.equals(NoObfuscation.f(untouched))) {
-                throw new IllegalStateException(
-                        "NoObfuscation plain-text contract mismatch");
-            }
-            String formatted = "\u00a7kSecret\u00a7r tail";
-            String stripped = NoObfuscation.f(formatted);
-            if (!"Secret\u00a7r tail".equals(stripped)) {
-                throw new IllegalStateException(
-                        "NoObfuscation formatting strip mismatch: "
-                                + String.valueOf(stripped));
-            }
-            String repeated = NoObfuscation.f("\u00a7kA\u00a7kB");
-            if (!"AB".equals(repeated)) {
-                throw new IllegalStateException(
-                        "NoObfuscation repeated-code strip mismatch: "
-                                + String.valueOf(repeated));
-            }
-
             runtimeMilestone(
                     "high-risk-functional-probe71-effect-pass:"
-                            + "NoObfuscation:null+plain+format+repeated");
+                            + "Notifications:easing=true");
+
+            originalLeaveTime = Notifications.leaveTime.L();
+            saved = true;
+
+            Notifications.leaveTime.o((byte)0, 0L, 200.0f);
+            if (Math.abs(Notifications.Z() - 180.0f) > 0.00001f) {
+                throw new IllegalStateException(
+                        "Notifications lower leave clamp mismatch: "
+                                + Notifications.Z());
+            }
+            Notifications.leaveTime.o((byte)0, 0L, 300.0f);
+            if (Math.abs(Notifications.Z() - 225.0f) > 0.00001f) {
+                throw new IllegalStateException(
+                        "Notifications middle leave mapping mismatch: "
+                                + Notifications.Z());
+            }
+            Notifications.leaveTime.o((byte)0, 0L, 600.0f);
+            if (Math.abs(Notifications.Z() - 320.0f) > 0.00001f) {
+                throw new IllegalStateException(
+                        "Notifications upper leave clamp mismatch: "
+                                + Notifications.Z());
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe71-effect-pass:"
+                            + "Notifications:leaveClamp=180+225+320");
+
+            if (!Notifications.graphic.S().contains("CHAT")
+                    || !Notifications.graphic.S().contains("LEFT")
+                    || !Notifications.graphic.S().contains("RIGHT")
+                    || !Notifications.graphic.S().contains("DISABLE")
+                    || !Notifications.sound.S().contains("DISABLE")) {
+                throw new IllegalStateException(
+                        "Notifications recovered mode contract mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe71-effect-pass:"
+                            + "Notifications:modes=true");
+
+            Notifications.leaveTime.o((byte)0, 0L, originalLeaveTime);
+            if (Math.abs(Notifications.leaveTime.L() - originalLeaveTime)
+                    > 0.00001f) {
+                throw new IllegalStateException(
+                        "Notifications leave-time restore mismatch");
+            }
+            saved = false;
+            runtimeMilestone(
+                    "high-risk-functional-probe71-restore-pass:"
+                            + "Notifications:leaveTime=true");
             runtimeMilestone(
                     "high-risk-functional-probe71-module-pass:"
-                            + "NoObfuscation");
+                            + "Notifications");
             runtimeMilestone(
                     "high-risk-functional-probe71-pass:1");
             this.highRiskFunctionalProbe71Stage = 1;
         }
         catch (Throwable failure) {
+            if (saved) {
+                try {
+                    Notifications.leaveTime.o(
+                            (byte)0, 0L, originalLeaveTime);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe71:Notifications",
+                            "restore-state",
+                            restoreFailure);
+                }
+            }
             this.highRiskFunctionalProbe71Stage = -1;
             recordFeatureFailure(
-                    "HighRiskFunctionalProbe71:NoObfuscation",
-                    "formatting-strip-semantics",
+                    "HighRiskFunctionalProbe71:Notifications",
+                    "notification-semantics",
                     failure);
             runtimeMilestone(
                     "high-risk-functional-probe71-fail:"
