@@ -162,6 +162,9 @@ import Abyss.module.impl.world.AutoDigPlace;
 import Abyss.module.impl.world.AutoTool;
 import Abyss.module.impl.world.BedNuker;
 import Abyss.module.impl.world.FastPlace;
+import Abyss.module.impl.world.Nuker;
+import Abyss.module.impl.world.NukerScanAxis;
+import Abyss.module.impl.world.NukerScanState;
 import Abyss.module.impl.world.Scaffold;
 import Abyss.module.impl.world.SpeedMine;
 import Abyss.setting.settings.ModeSetting;
@@ -756,6 +759,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe67Stage;
     private int highRiskFunctionalProbe68Stage;
     private int highRiskFunctionalProbe69Stage;
+    private int highRiskFunctionalProbe70Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12378,6 +12382,270 @@ implements EventSubscriber {
         }
     }
 
+    private Object nukerInvokeForProbe(
+            Nuker probe,
+            String name,
+            Class<?>[] parameterTypes,
+            Object[] arguments) throws Exception {
+        Method method = Nuker.class.getDeclaredMethod(
+                name, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(probe, arguments);
+    }
+
+    private void pumpHighRiskFunctionalProbe70() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe70")
+                || this.highRiskFunctionalProbe70Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe69")
+                && this.highRiskFunctionalProbe69Stage < 1) {
+            return;
+        }
+
+        Nuker probe = Modules.J(Nuker.class);
+        boolean originalMineDown = false;
+        float originalYaw = 0.0f;
+        boolean saved = false;
+
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(Nuker.class) != probe
+                    || ModuleManager.byName("Nuker") != probe) {
+                throw new IllegalStateException(
+                        "Nuker live authority unavailable");
+            }
+
+            originalMineDown = Nuker.mineDown.c();
+            originalYaw = RotationManager.r;
+            saved = true;
+
+            Nuker.mineDown.v(false, 0L);
+            @SuppressWarnings("unchecked")
+            List<Integer> flatLevels =
+                    (List<Integer>)this.nukerInvokeForProbe(
+                            probe,
+                            "x",
+                            new Class<?>[]{Integer.TYPE},
+                            new Object[]{Integer.valueOf(3)});
+            if (!flatLevels.equals(
+                    java.util.Arrays.asList(
+                            Integer.valueOf(0),
+                            Integer.valueOf(1),
+                            Integer.valueOf(2),
+                            Integer.valueOf(3)))) {
+                throw new IllegalStateException(
+                        "Nuker flat scan levels mismatch: "
+                                + flatLevels);
+            }
+
+            Nuker.mineDown.v(true, 0L);
+            @SuppressWarnings("unchecked")
+            List<Integer> downLevels =
+                    (List<Integer>)this.nukerInvokeForProbe(
+                            probe,
+                            "x",
+                            new Class<?>[]{Integer.TYPE},
+                            new Object[]{Integer.valueOf(3)});
+            if (!downLevels.equals(
+                    java.util.Arrays.asList(
+                            Integer.valueOf(0),
+                            Integer.valueOf(1),
+                            Integer.valueOf(2),
+                            Integer.valueOf(3),
+                            Integer.valueOf(-1)))) {
+                throw new IllegalStateException(
+                        "Nuker mine-down scan levels mismatch: "
+                                + downLevels);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe70-effect-pass:"
+                            + "Nuker:levels=0+1+2+3+mineDown");
+
+            float[] yaws = new float[]{0.0f, 90.0f, 180.0f, 270.0f};
+            int[][] expectedAxis = new int[][]{
+                    {0, 1, 1, 0},
+                    {-1, 0, 0, -1},
+                    {0, -1, -1, 0},
+                    {1, 0, 0, 1}
+            };
+            int[][] expectedPos = new int[][]{
+                    {7, 64, 22},
+                    {8, 64, 23},
+                    {13, 64, 18},
+                    {12, 64, 17}
+            };
+            NukerScanAxis[] axes = new NukerScanAxis[yaws.length];
+
+            for (int i = 0; i < yaws.length; ++i) {
+                RotationManager.r = yaws[i];
+                NukerScanAxis axis =
+                        (NukerScanAxis)this.nukerInvokeForProbe(
+                                probe,
+                                "f$r1",
+                                new Class<?>[0],
+                                new Object[0]);
+                axes[i] = axis;
+                int[] actualAxis = new int[]{
+                        NukerScanAxis.T(axis),
+                        NukerScanAxis.Y(axis),
+                        NukerScanAxis.a(axis),
+                        NukerScanAxis.y(axis)
+                };
+                for (int j = 0; j < actualAxis.length; ++j) {
+                    if (actualAxis[j] != expectedAxis[i][j]) {
+                        throw new IllegalStateException(
+                                "Nuker yaw axis mismatch yaw="
+                                        + yaws[i]
+                                        + " index="
+                                        + j
+                                        + " actual="
+                                        + actualAxis[j]
+                                        + " expected="
+                                        + expectedAxis[i][j]);
+                    }
+                }
+
+                BlockPos pos =
+                        (BlockPos)this.nukerInvokeForProbe(
+                                probe,
+                                "Y",
+                                new Class<?>[]{
+                                        NukerScanAxis.class,
+                                        Integer.TYPE,
+                                        Integer.TYPE,
+                                        Integer.TYPE,
+                                        Integer.TYPE,
+                                        Integer.TYPE
+                                },
+                                new Object[]{
+                                        axis,
+                                        Integer.valueOf(10),
+                                        Integer.valueOf(64),
+                                        Integer.valueOf(20),
+                                        Integer.valueOf(2),
+                                        Integer.valueOf(-3)
+                                });
+                BlockPos expectedPosValue = new BlockPos(
+                        expectedPos[i][0],
+                        expectedPos[i][1],
+                        expectedPos[i][2]);
+                if (!expectedPosValue.equals(pos)) {
+                    throw new IllegalStateException(
+                            "Nuker scan coordinate mismatch yaw="
+                                    + yaws[i]
+                                    + " actual="
+                                    + pos
+                                    + " expected="
+                                    + expectedPosValue);
+                }
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe70-effect-pass:"
+                            + "Nuker:axes=0+90+180+270:geometry=true");
+
+            NukerScanState xDirected =
+                    (NukerScanState)this.nukerInvokeForProbe(
+                            probe,
+                            "Z",
+                            new Class<?>[]{
+                                    NukerScanAxis.class,
+                                    Integer.TYPE,
+                                    Integer.TYPE,
+                                    Integer.TYPE,
+                                    Integer.TYPE
+                            },
+                            new Object[]{
+                                    axes[1],
+                                    Integer.valueOf(10),
+                                    Integer.valueOf(64),
+                                    Integer.valueOf(20),
+                                    Integer.valueOf(5)
+                            });
+            if (!NukerScanState.w(xDirected)
+                    || NukerScanState.n(xDirected) != 15
+                    || NukerScanState.x(xDirected) != 64
+                    || NukerScanState.m(xDirected) != 10
+                    || NukerScanState.Y(xDirected) != -1) {
+                throw new IllegalStateException(
+                        "Nuker x-directed scan state mismatch");
+            }
+
+            NukerScanState zDirected =
+                    (NukerScanState)this.nukerInvokeForProbe(
+                            probe,
+                            "Z",
+                            new Class<?>[]{
+                                    NukerScanAxis.class,
+                                    Integer.TYPE,
+                                    Integer.TYPE,
+                                    Integer.TYPE,
+                                    Integer.TYPE
+                            },
+                            new Object[]{
+                                    axes[0],
+                                    Integer.valueOf(10),
+                                    Integer.valueOf(64),
+                                    Integer.valueOf(20),
+                                    Integer.valueOf(5)
+                            });
+            if (NukerScanState.w(zDirected)
+                    || NukerScanState.n(zDirected) != 15
+                    || NukerScanState.x(zDirected) != 64
+                    || NukerScanState.m(zDirected) != 20
+                    || NukerScanState.Y(zDirected) != 1) {
+                throw new IllegalStateException(
+                        "Nuker z-directed scan state mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe70-effect-pass:"
+                            + "Nuker:scanState=x+z");
+            runtimeMilestone(
+                    "high-risk-functional-probe70-module-pass:Nuker");
+            runtimeMilestone(
+                    "high-risk-functional-probe70-pass:1");
+            this.highRiskFunctionalProbe70Stage = 1;
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe70Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe70:Nuker",
+                    "scan-geometry-semantics",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe70-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+        }
+        finally {
+            if (saved) {
+                try {
+                    Nuker.mineDown.v(originalMineDown, 0L);
+                    RotationManager.r = originalYaw;
+                    runtimeMilestone(
+                            "high-risk-functional-probe70-restore-pass:"
+                                    + "Nuker:mineDown=true:yaw=true");
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe70:Nuker",
+                            "restore-state",
+                            restoreFailure);
+                    if (this.highRiskFunctionalProbe70Stage >= 0) {
+                        this.highRiskFunctionalProbe70Stage = -1;
+                        runtimeMilestone(
+                                "high-risk-functional-probe70-fail:"
+                                        + restoreFailure.getClass().getName()
+                                        + ":restore:"
+                                        + String.valueOf(
+                                                restoreFailure.getMessage()));
+                    }
+                }
+            }
+        }
+    }
+
     private Object autoDigPlaceInvokeForProbe(
             AutoDigPlace probe,
             String name,
@@ -18986,6 +19254,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe67();
         this.pumpHighRiskFunctionalProbe68();
         this.pumpHighRiskFunctionalProbe69();
+        this.pumpHighRiskFunctionalProbe70();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
