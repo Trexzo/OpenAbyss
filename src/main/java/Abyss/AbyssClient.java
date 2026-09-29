@@ -13373,28 +13373,46 @@ implements EventSubscriber {
                         "InvMove live/settings/player authority unavailable");
             }
 
-            final net.minecraft.inventory.InventoryCraftResult craftResult =
-                    new net.minecraft.inventory.InventoryCraftResult();
-            final net.minecraft.inventory.InventoryBasic ordinary =
-                    new net.minecraft.inventory.InventoryBasic(
-                            "openabyss-probe", false, 1);
             net.minecraft.inventory.Container fixture =
-                    new net.minecraft.inventory.Container() {
-                        {
-                            this.addSlotToContainer(
-                                    new net.minecraft.inventory.Slot(
-                                            craftResult, 0, 0, 0));
-                            this.addSlotToContainer(
-                                    new net.minecraft.inventory.Slot(
-                                            ordinary, 0, 0, 0));
-                        }
+                    this.c.thePlayer.inventoryContainer;
+            if (fixture == null || fixture.inventorySlots.isEmpty()) {
+                throw new IllegalStateException(
+                        "InvMove inventory container fixture unavailable");
+            }
 
-                        @Override
-                        public boolean canInteractWith(
-                                net.minecraft.entity.player.EntityPlayer player) {
-                            return true;
-                        }
-                    };
+            int craftingIndex = -1;
+            int ordinaryIndex = -1;
+            for (int index = 0;
+                    index < fixture.inventorySlots.size();
+                    ++index) {
+                net.minecraft.inventory.Slot slot =
+                        (net.minecraft.inventory.Slot)
+                                fixture.inventorySlots.get(index);
+                if (slot == null) {
+                    continue;
+                }
+                net.minecraft.inventory.IInventory inventory = slot.inventory;
+                if (craftingIndex < 0
+                        && (inventory
+                                instanceof net.minecraft.inventory.InventoryCrafting
+                            || inventory
+                                instanceof net.minecraft.inventory.InventoryCraftResult)) {
+                    craftingIndex = index;
+                }
+                else if (ordinaryIndex < 0
+                        && !(inventory
+                                instanceof net.minecraft.inventory.InventoryCrafting)
+                        && !(inventory
+                                instanceof net.minecraft.inventory.InventoryCraftResult)) {
+                    ordinaryIndex = index;
+                }
+            }
+            if (craftingIndex < 0 || ordinaryIndex < 0) {
+                throw new IllegalStateException(
+                        "InvMove inventory container lacks classifier fixtures"
+                                + " craftingIndex=" + craftingIndex
+                                + " ordinaryIndex=" + ordinaryIndex);
+            }
 
             originalContainer = this.c.thePlayer.openContainer;
             containerSaved = true;
@@ -13405,9 +13423,9 @@ implements EventSubscriber {
                             "Z", Integer.TYPE);
             slotClassifier.setAccessible(true);
             boolean crafting = ((Boolean)slotClassifier.invoke(
-                    live, Integer.valueOf(0))).booleanValue();
+                    live, Integer.valueOf(craftingIndex))).booleanValue();
             boolean ordinarySlot = ((Boolean)slotClassifier.invoke(
-                    live, Integer.valueOf(1))).booleanValue();
+                    live, Integer.valueOf(ordinaryIndex))).booleanValue();
             boolean negative = ((Boolean)slotClassifier.invoke(
                     live, Integer.valueOf(-1))).booleanValue();
             boolean outOfRange = ((Boolean)slotClassifier.invoke(
