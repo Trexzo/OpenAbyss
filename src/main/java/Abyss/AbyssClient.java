@@ -795,6 +795,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe90Stage;
     private int highRiskFunctionalProbe91Stage;
     private int highRiskFunctionalProbe92Stage;
+    private int highRiskFunctionalProbe93Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12425,6 +12426,99 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe93() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe93")
+                || this.highRiskFunctionalProbe93Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe92")
+                && this.highRiskFunctionalProbe92Stage < 1) {
+            return;
+        }
+
+        VisualSpoof live = Modules.J(VisualSpoof.class);
+        String originalKey = null;
+        boolean saved = false;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(VisualSpoof.class) != live
+                    || ModuleManager.byName("VisualSpoof") != live
+                    || VisualSpoof.keybindToggleRenderVisual == null) {
+                throw new IllegalStateException(
+                        "VisualSpoof live/keybind authority unavailable");
+            }
+
+            originalKey = VisualSpoof.keybindToggleRenderVisual.X();
+            saved = true;
+
+            VisualSpoof.keybindToggleRenderVisual.O("NONE");
+            boolean noneValid = VisualSpoof.A((short)0, 130018228, 5179);
+            boolean nonePressed = VisualSpoof.n(118536638251483L);
+            if (!noneValid || nonePressed) {
+                throw new IllegalStateException(
+                        "VisualSpoof NONE contract mismatch"
+                                + " valid=" + noneValid
+                                + " pressed=" + nonePressed);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe93-effect-pass:"
+                            + "VisualSpoof:noneValidNotPressed=true");
+
+            VisualSpoof.keybindToggleRenderVisual.O("__OPENABYSS_INVALID__");
+            boolean invalidValid = VisualSpoof.A(
+                    (short)0, 130018228, 5179);
+            if (invalidValid) {
+                throw new IllegalStateException(
+                        "VisualSpoof invalid key accepted");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe93-effect-pass:"
+                            + "VisualSpoof:invalidRejected=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            try {
+                if (saved) {
+                    VisualSpoof.keybindToggleRenderVisual.O(originalKey);
+                }
+            }
+            catch (Throwable restoreFailure) {
+                if (failure == null) {
+                    failure = restoreFailure;
+                }
+                else {
+                    failure.addSuppressed(restoreFailure);
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe93Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe93:VisualSpoof",
+                    "keybind-validity-contract",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe93-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe93-restore-pass:"
+                        + "VisualSpoof:keybind=true");
+        runtimeMilestone(
+                "high-risk-functional-probe93-module-pass:VisualSpoof");
+        runtimeMilestone("high-risk-functional-probe93-pass:1");
+        this.highRiskFunctionalProbe93Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe92() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe92")
                 || this.highRiskFunctionalProbe92Stage != 0) {
@@ -22515,6 +22609,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe90();
         this.pumpHighRiskFunctionalProbe91();
         this.pumpHighRiskFunctionalProbe92();
+        this.pumpHighRiskFunctionalProbe93();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
