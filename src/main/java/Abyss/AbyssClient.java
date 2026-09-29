@@ -59,6 +59,7 @@ import Abyss.internal.accessor.MinecraftAccessor;
 import Abyss.internal.accessor.PlayerControllerStateAccessor;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssNameMap;
+import Abyss.module.Category;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
@@ -131,6 +132,7 @@ import Abyss.module.impl.visual.ItemScale;
 import Abyss.module.impl.visual.KeyStrokes;
 import Abyss.module.impl.visual.NoHurtCam;
 import Abyss.module.impl.visual.TeamInvisible;
+import Abyss.module.impl.visual.TabGUI;
 import Abyss.module.impl.visual.ViewClip;
 import Abyss.module.impl.visual_utility.InventoryHUD;
 import Abyss.module.impl.visual_utility.MegaWallsDetector;
@@ -703,6 +705,15 @@ implements EventSubscriber {
     private boolean highRiskFunctionalProbe54HadPotionCount;
     private Integer highRiskFunctionalProbe54OriginalPotionCount;
     private String highRiskFunctionalProbe54FixtureName;
+    private int highRiskFunctionalProbe55Stage;
+    private boolean highRiskFunctionalProbe55Saved;
+    private boolean highRiskFunctionalProbe55OriginalDisableTabKey;
+    private int highRiskFunctionalProbe55OriginalCategoryIndex;
+    private Category highRiskFunctionalProbe55OriginalCategory;
+    private int highRiskFunctionalProbe55OriginalLevel;
+    private int highRiskFunctionalProbe55OriginalSelectedModule;
+    private int highRiskFunctionalProbe55OriginalSelectedProperty;
+    private int highRiskFunctionalProbe55OriginalSelectedValue;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12094,6 +12105,259 @@ implements EventSubscriber {
         }
     }
 
+    private Field tabGuiFieldForProbe(String name) throws Exception {
+        Field field = TabGUI.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return field;
+    }
+
+    private int tabGuiIntForProbe(TabGUI probe, String name) throws Exception {
+        return this.tabGuiFieldForProbe(name).getInt(probe);
+    }
+
+    private void setTabGuiIntForProbe(
+            TabGUI probe, String name, int value) throws Exception {
+        this.tabGuiFieldForProbe(name).setInt(probe, value);
+    }
+
+    private Category tabGuiCategoryForProbe(TabGUI probe) throws Exception {
+        return (Category)this.tabGuiFieldForProbe("M").get(probe);
+    }
+
+    private void setTabGuiCategoryForProbe(
+            TabGUI probe, Category category) throws Exception {
+        this.tabGuiFieldForProbe("M").set(probe, category);
+    }
+
+    private void restoreHighRiskFunctionalProbe55() {
+        if (!this.highRiskFunctionalProbe55Saved) {
+            return;
+        }
+        try {
+            TabGUI probe = Modules.J(TabGUI.class);
+            if (TabGUI.disableTabKey != null) {
+                TabGUI.disableTabKey.v(
+                        this.highRiskFunctionalProbe55OriginalDisableTabKey,
+                        0L);
+            }
+            if (probe != null) {
+                this.setTabGuiIntForProbe(
+                        probe,
+                        "a",
+                        this.highRiskFunctionalProbe55OriginalCategoryIndex);
+                this.setTabGuiCategoryForProbe(
+                        probe,
+                        this.highRiskFunctionalProbe55OriginalCategory);
+                this.setTabGuiIntForProbe(
+                        probe,
+                        "level",
+                        this.highRiskFunctionalProbe55OriginalLevel);
+                this.setTabGuiIntForProbe(
+                        probe,
+                        "selectedModule",
+                        this.highRiskFunctionalProbe55OriginalSelectedModule);
+                this.setTabGuiIntForProbe(
+                        probe,
+                        "selectedProperty",
+                        this.highRiskFunctionalProbe55OriginalSelectedProperty);
+                this.setTabGuiIntForProbe(
+                        probe,
+                        "selectedValue",
+                        this.highRiskFunctionalProbe55OriginalSelectedValue);
+            }
+        }
+        catch (Throwable restoreFailure) {
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe55:TabGUI",
+                    "restore-state",
+                    restoreFailure);
+        }
+    }
+
+    private void pumpHighRiskFunctionalProbe55() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe55")
+                || this.highRiskFunctionalProbe55Stage < 0
+                || this.highRiskFunctionalProbe55Stage >= 2) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe54")
+                && this.highRiskFunctionalProbe54Stage < 2) {
+            return;
+        }
+        if (this.c.currentScreen != null) {
+            return;
+        }
+
+        TabGUI probe = Modules.J(TabGUI.class);
+        try {
+            if (probe == null
+                    || ModuleManager.byClass(TabGUI.class) != probe
+                    || ModuleManager.byName("TabGUI") != probe
+                    || TabGUI.disableTabKey == null) {
+                throw new IllegalStateException(
+                        "TabGUI live-world authority unavailable");
+            }
+
+            switch (this.highRiskFunctionalProbe55Stage) {
+                case 0: {
+                    List<Category> categories = Category.j();
+                    int visualIndex = categories.indexOf(Category.Visual);
+                    if (visualIndex < 0) {
+                        throw new IllegalStateException(
+                                "TabGUI Visual category unavailable");
+                    }
+
+                    java.util.ArrayList<Module> visualModules =
+                            new java.util.ArrayList<Module>();
+                    for (Module module : ModuleManager.S) {
+                        if (module.f() == Category.Visual) {
+                            visualModules.add(module);
+                        }
+                    }
+                    int tabIndex = visualModules.indexOf(probe);
+                    int propertyIndex =
+                            probe.settings().indexOf(TabGUI.disableTabKey);
+                    if (tabIndex < 0 || propertyIndex < 0) {
+                        throw new IllegalStateException(
+                                "TabGUI navigation target unavailable"
+                                        + " tabIndex=" + tabIndex
+                                        + " propertyIndex=" + propertyIndex);
+                    }
+
+                    this.highRiskFunctionalProbe55OriginalDisableTabKey =
+                            TabGUI.disableTabKey.c();
+                    this.highRiskFunctionalProbe55OriginalCategoryIndex =
+                            this.tabGuiIntForProbe(probe, "a");
+                    this.highRiskFunctionalProbe55OriginalCategory =
+                            this.tabGuiCategoryForProbe(probe);
+                    this.highRiskFunctionalProbe55OriginalLevel =
+                            this.tabGuiIntForProbe(probe, "level");
+                    this.highRiskFunctionalProbe55OriginalSelectedModule =
+                            this.tabGuiIntForProbe(probe, "selectedModule");
+                    this.highRiskFunctionalProbe55OriginalSelectedProperty =
+                            this.tabGuiIntForProbe(probe, "selectedProperty");
+                    this.highRiskFunctionalProbe55OriginalSelectedValue =
+                            this.tabGuiIntForProbe(probe, "selectedValue");
+                    this.highRiskFunctionalProbe55Saved = true;
+
+                    this.setTabGuiIntForProbe(probe, "a", visualIndex);
+                    this.setTabGuiCategoryForProbe(probe, Category.Visual);
+                    this.setTabGuiIntForProbe(probe, "level", 1);
+                    this.setTabGuiIntForProbe(
+                            probe, "selectedModule", tabIndex);
+                    this.setTabGuiIntForProbe(
+                            probe, "selectedProperty", 0);
+                    this.setTabGuiIntForProbe(
+                            probe, "selectedValue", 0);
+
+                    EventBus fixtureBus = new EventBus();
+                    fixtureBus.s(probe, 0L);
+                    if (!fixtureBus.isOwnerActive(probe)) {
+                        throw new IllegalStateException(
+                                "TabGUI fixture EventBus binding inactive");
+                    }
+
+                    fixtureBus.e(new SetKeyBindStateEvent(205), 0L);
+                    if (this.tabGuiIntForProbe(probe, "level") != 2) {
+                        throw new IllegalStateException(
+                                "TabGUI module-to-setting navigation failed");
+                    }
+
+                    this.setTabGuiIntForProbe(
+                            probe, "selectedProperty", propertyIndex);
+                    fixtureBus.e(new SetKeyBindStateEvent(205), 0L);
+                    if (this.tabGuiIntForProbe(probe, "level") != 3) {
+                        throw new IllegalStateException(
+                                "TabGUI setting-to-value navigation failed");
+                    }
+
+                    fixtureBus.e(new SetKeyBindStateEvent(205), 0L);
+                    boolean toggled = TabGUI.disableTabKey.c();
+                    if (toggled
+                            == this.highRiskFunctionalProbe55OriginalDisableTabKey) {
+                        throw new IllegalStateException(
+                                "TabGUI boolean activation did not toggle");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe55-effect-pass:"
+                                    + "TabGUI:booleanToggle=true");
+
+                    fixtureBus.e(new SetKeyBindStateEvent(203), 0L);
+                    fixtureBus.e(new SetKeyBindStateEvent(203), 0L);
+                    fixtureBus.e(new SetKeyBindStateEvent(203), 0L);
+                    if (this.tabGuiIntForProbe(probe, "level") != 0) {
+                        throw new IllegalStateException(
+                                "TabGUI left-navigation unwind failed");
+                    }
+
+                    int lastCategory = categories.size() - 1;
+                    this.setTabGuiIntForProbe(probe, "a", lastCategory);
+                    this.setTabGuiCategoryForProbe(
+                            probe, categories.get(lastCategory));
+                    fixtureBus.e(new SetKeyBindStateEvent(208), 0L);
+                    if (this.tabGuiIntForProbe(probe, "a") != 0) {
+                        throw new IllegalStateException(
+                                "TabGUI category wrap failed");
+                    }
+                    runtimeMilestone(
+                            "high-risk-functional-probe55-effect-pass:"
+                                    + "TabGUI:navigation=true:wrap=true");
+
+                    this.highRiskFunctionalProbe55Stage = 1;
+                    return;
+                }
+
+                case 1: {
+                    this.restoreHighRiskFunctionalProbe55();
+                    if (TabGUI.disableTabKey.c()
+                                    != this.highRiskFunctionalProbe55OriginalDisableTabKey
+                            || this.tabGuiIntForProbe(probe, "a")
+                                    != this.highRiskFunctionalProbe55OriginalCategoryIndex
+                            || this.tabGuiCategoryForProbe(probe)
+                                    != this.highRiskFunctionalProbe55OriginalCategory
+                            || this.tabGuiIntForProbe(probe, "level")
+                                    != this.highRiskFunctionalProbe55OriginalLevel
+                            || this.tabGuiIntForProbe(probe, "selectedModule")
+                                    != this.highRiskFunctionalProbe55OriginalSelectedModule
+                            || this.tabGuiIntForProbe(probe, "selectedProperty")
+                                    != this.highRiskFunctionalProbe55OriginalSelectedProperty
+                            || this.tabGuiIntForProbe(probe, "selectedValue")
+                                    != this.highRiskFunctionalProbe55OriginalSelectedValue) {
+                        throw new IllegalStateException(
+                                "TabGUI probe state did not restore exactly");
+                    }
+
+                    runtimeMilestone(
+                            "high-risk-functional-probe55-restore-pass:"
+                                    + "TabGUI:setting=true:navigationState=true");
+                    runtimeMilestone(
+                            "high-risk-functional-probe55-module-pass:TabGUI");
+                    runtimeMilestone(
+                            "high-risk-functional-probe55-pass:1");
+                    this.highRiskFunctionalProbe55Saved = false;
+                    this.highRiskFunctionalProbe55Stage = 2;
+                    return;
+                }
+
+                default:
+                    return;
+            }
+        }
+        catch (Throwable failure) {
+            this.highRiskFunctionalProbe55Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe55:TabGUI",
+                    "key-navigation-setting-activation",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe55-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            this.restoreHighRiskFunctionalProbe55();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Set<String> megaWallsPhoenixSetForProbe(
             MegaWallsDetector probe) throws Exception {
@@ -15327,6 +15591,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe52();
         this.pumpHighRiskFunctionalProbe53();
         this.pumpHighRiskFunctionalProbe54();
+        this.pumpHighRiskFunctionalProbe55();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();
