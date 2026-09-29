@@ -780,6 +780,7 @@ implements EventSubscriber {
     private int highRiskFunctionalProbe77Stage;
     private int highRiskFunctionalProbe78Stage;
     private int highRiskFunctionalProbe79Stage;
+    private int highRiskFunctionalProbe80Stage;
     private boolean highRiskFunctionalProbe29Saved;
     private boolean highRiskFunctionalProbe29OriginalEnabled;
     private int highRiskFunctionalProbe25WaitTicks;
@@ -12410,6 +12411,134 @@ implements EventSubscriber {
         return (Map<String, KillEffectDeathPos>)field.get(probe);
     }
 
+    private void pumpHighRiskFunctionalProbe80() {
+        if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe80")
+                || this.highRiskFunctionalProbe80Stage != 0) {
+            return;
+        }
+        if (Boolean.getBoolean("abyss.highRiskFunctionalProbe79")
+                && this.highRiskFunctionalProbe79Stage < 1) {
+            return;
+        }
+
+        NameHider live = Modules.J(NameHider.class);
+        NameHider originalOwner = ModuleManager.J;
+        String originalReplacement =
+                NameHider.name == null ? null : NameHider.name.X();
+        boolean replacementSaved = NameHider.name != null;
+        Throwable failure = null;
+
+        try {
+            if (live == null
+                    || ModuleManager.byClass(NameHider.class) != live
+                    || ModuleManager.byName("NameHider") != live
+                    || originalOwner != live
+                    || NameHider.name == null
+                    || this.c.thePlayer == null
+                    || this.c.thePlayer.getName() == null
+                    || this.c.thePlayer.getName().isEmpty()) {
+                throw new IllegalStateException(
+                        "NameHider live authority/player unavailable");
+            }
+
+            String self = this.c.thePlayer.getName();
+            NameHider scratch = new NameHider(0L);
+            scratch.I(0L, true);
+            if (!scratch.o()) {
+                throw new IllegalStateException(
+                        "NameHider scratch enable state did not set");
+            }
+
+            ModuleManager.J = scratch;
+            NameHider.name.O("[SELF]");
+
+            String input = "prefix " + self
+                    + " middle " + self + " suffix";
+            String expected =
+                    "prefix [SELF] middle [SELF] suffix";
+            String replaced = NameHider.U(input);
+            if (!expected.equals(replaced)
+                    || NameHider.U(null) != null) {
+                throw new IllegalStateException(
+                        "NameHider enabled replacement mismatch"
+                                + " actual=" + replaced);
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe80-effect-pass:"
+                            + "NameHider:replaceAll=true");
+
+            scratch.I(0L, false);
+            if (scratch.o()
+                    || !input.equals(NameHider.U(input))) {
+                throw new IllegalStateException(
+                        "NameHider disabled bypass mismatch");
+            }
+            runtimeMilestone(
+                    "high-risk-functional-probe80-effect-pass:"
+                            + "NameHider:disabledBypass=true");
+        }
+        catch (Throwable probeFailure) {
+            failure = probeFailure;
+        }
+        finally {
+            ModuleManager.J = originalOwner;
+            if (replacementSaved) {
+                try {
+                    NameHider.name.O(originalReplacement);
+                }
+                catch (Throwable restoreFailure) {
+                    recordFeatureFailure(
+                            "HighRiskFunctionalProbe80:NameHider",
+                            "restore-setting",
+                            restoreFailure);
+                    if (failure == null) {
+                        failure = restoreFailure;
+                    }
+                }
+            }
+        }
+
+        if (failure != null) {
+            this.highRiskFunctionalProbe80Stage = -1;
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe80:NameHider",
+                    "string-replacement",
+                    failure);
+            runtimeMilestone(
+                    "high-risk-functional-probe80-fail:"
+                            + failure.getClass().getName()
+                            + ":"
+                            + String.valueOf(failure.getMessage()));
+            return;
+        }
+
+        if (ModuleManager.J != live
+                || !originalReplacement.equals(NameHider.name.X())) {
+            this.highRiskFunctionalProbe80Stage = -1;
+            IllegalStateException restoreFailure =
+                    new IllegalStateException(
+                            "NameHider authority/setting restore mismatch");
+            recordFeatureFailure(
+                    "HighRiskFunctionalProbe80:NameHider",
+                    "restore-verify",
+                    restoreFailure);
+            runtimeMilestone(
+                    "high-risk-functional-probe80-fail:"
+                            + restoreFailure.getClass().getName()
+                            + ":"
+                            + restoreFailure.getMessage());
+            return;
+        }
+
+        runtimeMilestone(
+                "high-risk-functional-probe80-restore-pass:"
+                        + "NameHider:owner+setting=true");
+        runtimeMilestone(
+                "high-risk-functional-probe80-module-pass:NameHider");
+        runtimeMilestone("high-risk-functional-probe80-pass:1");
+        this.highRiskFunctionalProbe80Stage = 1;
+    }
+
     private void pumpHighRiskFunctionalProbe79() {
         if (!Boolean.getBoolean("abyss.highRiskFunctionalProbe79")
                 || this.highRiskFunctionalProbe79Stage != 0) {
@@ -20898,6 +21027,7 @@ implements EventSubscriber {
         this.pumpHighRiskFunctionalProbe77();
         this.pumpHighRiskFunctionalProbe78();
         this.pumpHighRiskFunctionalProbe79();
+        this.pumpHighRiskFunctionalProbe80();
             this.pumpCommandRuntimeProbe();
             this.pumpNetworkCommandProbe();
             this.pumpReconnectSubscriptionHealth();

@@ -195,6 +195,7 @@ PROBE_JVM_ARGS=(
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe77=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe78=true"
   "--jvm-arg=-Dabyss.highRiskFunctionalProbe79=true"
+  "--jvm-arg=-Dabyss.highRiskFunctionalProbe80=true"
   "--jvm-arg=-Dabyss.commandRuntimeProbe=true"
   "--jvm-arg=-Dabyss.networkCommandProbe=true"
   "--jvm-arg=-Dabyss.clickGuiModeProbe=true"
