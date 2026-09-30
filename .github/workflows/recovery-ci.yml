@@ -109,10 +109,13 @@ jobs:
           ) | Set-Content -LiteralPath $jvmArgFixture -Encoding ascii
           $env:OPENABYSS_RUNCLIENT_JVM_ARG_FILE = $jvmArgFixture
           try {
-            $jvmArgOutput = (& $env:OPENABYSS_GRADLE --offline --no-daemon help 2>&1 | Out-String)
-            if ($LASTEXITCODE -ne 0) {
+            $jvmArgStdout = Join-Path $env:RUNNER_TEMP 'openabyss-jvm-arg-fixture.stdout.log'
+            $jvmArgStderr = Join-Path $env:RUNNER_TEMP 'openabyss-jvm-arg-fixture.stderr.log'
+            $jvmArgProcess = Start-Process -FilePath $env:OPENABYSS_GRADLE -ArgumentList @('--offline','--no-daemon','--stacktrace','help') -WorkingDirectory $env:GITHUB_WORKSPACE -RedirectStandardOutput $jvmArgStdout -RedirectStandardError $jvmArgStderr -Wait -PassThru
+            $jvmArgOutput = ((Get-Content -LiteralPath $jvmArgStdout -Raw -ErrorAction SilentlyContinue) + [Environment]::NewLine + (Get-Content -LiteralPath $jvmArgStderr -Raw -ErrorAction SilentlyContinue))
+            if ($jvmArgProcess.ExitCode -ne 0) {
               Write-Host $jvmArgOutput
-              throw "Explicit runClient JVM argument Gradle fixture failed: $LASTEXITCODE"
+              throw "Explicit runClient JVM argument Gradle fixture failed: $($jvmArgProcess.ExitCode)"
             }
             if (-not $jvmArgOutput.Contains('ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=3')) {
               Write-Host $jvmArgOutput
