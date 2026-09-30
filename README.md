@@ -46,7 +46,16 @@ From the repository root, for an automated bootstrap evidence window:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1
 ```
 
-For an actual interactive real-GPU test, keep Minecraft open until you close it normally:
+For an actual interactive real-GPU test, use the certification wrapper. Pin it to the exact 40-character commit you intend to certify so a stale checkout or tracked local edit cannot produce authoritative evidence:
+
+```powershell
+$Head = (git rev-parse HEAD).Trim()
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-usability.ps1 -ExtendedProbes -ExpectedHead $Head
+```
+
+With `-ExpectedHead`, the wrapper refuses a different source HEAD or a dirty tracked working tree, and verifies the HEAD remains unchanged until the run finishes. The final verdict is written to `physical-smoke-evidence/PHYSICAL-USABILITY-RESULT.txt`.
+
+For a lower-level interactive smoke without exact-head certification:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-smoke.ps1 -KeepOpen

@@ -90,6 +90,28 @@ jobs:
           }
           Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
 
+          $currentHead = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $currentHead) { throw 'Could not resolve CI checkout HEAD.' }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $currentHead -SourceGuardOnly
+          if ($LASTEXITCODE -ne 0) { throw "Physical source guard rejected the exact clean CI HEAD: $LASTEXITCODE" }
+
+          $wrongHead = '0000000000000000000000000000000000000000'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $wrongHead -SourceGuardOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Physical source guard accepted an intentionally wrong HEAD.' }
+          Write-Host 'PHYSICAL_SOURCE_GUARD_WRONG_HEAD_REJECT=PASS'
+
+          Add-Content -LiteralPath '.\README.md' -Value '<!-- physical-source-guard-dirty-fixture -->'
+          try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $currentHead -SourceGuardOnly
+            if ($LASTEXITCODE -eq 0) { throw 'Physical source guard accepted an intentionally dirty tracked tree.' }
+            Write-Host 'PHYSICAL_SOURCE_GUARD_DIRTY_REJECT=PASS'
+          }
+          finally {
+            & git checkout -- '.\README.md'
+            if ($LASTEXITCODE -ne 0) { throw 'Could not restore README.md after dirty-tree source-guard fixture.' }
+          }
+
           & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\launcher\launch_abyss.ps1' -ResolverSelfTest
           if ($LASTEXITCODE -ne 0) { throw "Standalone launcher resolver self-test failed: $LASTEXITCODE" }
 

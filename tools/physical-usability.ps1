@@ -1,6 +1,7 @@
 param(
     [string]$Jdk8,
     [string]$ExpectedHead,
+    [switch]$SourceGuardOnly,
     [switch]$ExtendedProbes,
     [switch]$ReferenceBootstrap,
     [switch]$ReferenceRegistry,
@@ -43,6 +44,11 @@ if ($ExpectedHead) {
     if ($preflightTracked.Count -ne 0) {
         throw 'Physical certification requires a clean tracked working tree when -ExpectedHead is supplied.'
     }
+}
+
+if ($SourceGuardOnly) {
+    Write-Host "OPENABYSS_PHYSICAL_SOURCE_GUARD=PASS head=$preflightHead clean=$($preflightTracked.Count -eq 0)" -ForegroundColor Green
+    exit 0
 }
 
 Write-Host ''
