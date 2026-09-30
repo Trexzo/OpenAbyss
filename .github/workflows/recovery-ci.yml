@@ -62,12 +62,28 @@ jobs:
             $path = (Resolve-Path $relative).Path
             $tokens = $null
             $errors = $null
-            [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
             if ($errors.Count -ne 0) {
               $errors | ForEach-Object { Write-Error $_.Message }
               throw "$relative has $($errors.Count) PowerShell parse error(s)."
             }
+
+            # $HOME is a read-only automatic variable in Windows PowerShell.
+            # Parameter names are case-insensitive, so param($Home) fails at
+            # runtime even though the script parses successfully.
+            $homeParameterCollisions = @(
+              $ast.FindAll({
+                param($node)
+                $node -is [System.Management.Automation.Language.ParameterAst] -and
+                $node.Name.VariablePath.UserPath -ieq 'Home'
+              }, $true)
+            )
+            if ($homeParameterCollisions.Count -ne 0) {
+              throw "$relative declares a parameter named Home, which collides with the read-only PowerShell HOME automatic variable."
+            }
+
             Write-Host "POWERSHELL_PARSE_PASS file=$relative tokens=$($tokens.Count)"
+            Write-Host "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION_PASS file=$relative"
           }
 
           $physicalSmokeText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-smoke.ps1'))

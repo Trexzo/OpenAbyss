@@ -69,9 +69,9 @@ try {
         Write-Warning 'Tracked working-tree changes are present. Physical-smoke evidence will record dirty=true and is not release-authoritative.'
     }
 
-    function Get-Java8Version([string]$Home) {
-        if (-not $Home) { return $null }
-        $Exe = Join-Path $Home 'bin\java.exe'
+    function Get-Java8Version([string]$JavaHome) {
+        if (-not $JavaHome) { return $null }
+        $Exe = Join-Path $JavaHome 'bin\java.exe'
         if (-not (Test-Path -LiteralPath $Exe -PathType Leaf)) { return $null }
         try {
             $Version = (& $Exe -version 2>&1 | Out-String)
