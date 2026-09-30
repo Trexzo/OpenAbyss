@@ -13,7 +13,7 @@ import Abyss.event.invoker.BlinkRender2DInvoker;
 import Abyss.module.impl.player.Blink;
 
 public final class BlinkBinder {
-    private static final long private BlinkBinder() {
+    private BlinkBinder() {
 }
     public static void o(short var0, EventBus var2, Blink var4) {
         var2.R(var4, PostUpdateWalkingPlayerEvent.class, 3, new BlinkPostUpdateWalkingPlayerInvoker(var4));

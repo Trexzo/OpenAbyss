@@ -50,8 +50,15 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class RavenCategoryPanel {
+    private static Map h;
+
     private boolean x;
     private static long b = 7843458566225L;
     private static int a;
@@ -198,7 +205,7 @@ public class RavenCategoryPanel {
         this.z = 0.0f;
         this.x = false;
         this.V = false;
-        this.l = new ScaledResolution(Minecraft.func_71410_x()).func_78325_e();
+        this.l = new ScaledResolution(Minecraft.getMinecraft()).getScaleFactor();
         this.H = new Animator(Easing.EASE_OUT_QUART, i);
 }
     public int ravenWidth() {
@@ -228,7 +235,7 @@ public class RavenCategoryPanel {
         this.x = false;
         this.V = false;
         int var10 = this.q + 3;
-        this.l = new ScaledResolution(MinecraftRef.c((byte)0, 0L)).func_78325_e();
+        this.l = new ScaledResolution(MinecraftRef.c((byte)0, 0L)).getScaleFactor();
         this.H = new Animator(Easing.EASE_OUT_QUART, i);
         ArrayList var11 = new ArrayList();
         if (var3 == Category.Macro) {
@@ -253,8 +260,8 @@ public class RavenCategoryPanel {
 }
             var11.addAll(var18);
 }
-        for (Module var21 : var11) {
-            RavenModuleRow var23 = new RavenModuleRow(29128, var21, this, 19320, 30520, var10);
+        for (Module var21 : (Iterable<Module>)(var11)) {
+            RavenModuleRow var23 = new RavenModuleRow(29128, var21, this, 19320, (short)30520, var10);
             this.R.add(var23);
             var10 += 16;
 }
@@ -265,43 +272,43 @@ public class RavenCategoryPanel {
     private void O(int var1, int var2, Category var3, byte var4, int var5, int var6, boolean var7) {
         long var8 = ((long)var1 << 32 | (long)var2 << 40 >>> 32 | (long)var4 << 56 >>> 56) ^ b;
         int var10 = (int)((var8 ^ 0x8C55D7511CBL) >>> 56);
-        RenderItem var13 = MinecraftRef.c((byte)var10, 0L).func_175599_af();
+        RenderItem var13 = MinecraftRef.c((byte)var10, 0L).getRenderItem();
         double var14 = 0.55;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179139_a((double)var14, (double)var14, (double)var14);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((double)var14, (double)var14, (double)var14);
         ItemStack var16 = null;
         if (var3.equals((Object)Category.Combat)) {
-            var16 = new ItemStack(Items.field_151048_u);
+            var16 = new ItemStack(Items.diamond_sword);
         } else if (var3.equals((Object)Category.Movement)) {
-            var16 = new ItemStack(Items.field_151008_G);
+            var16 = new ItemStack(Items.feather);
         } else if (var3.equals((Object)Category.Player)) {
-            var16 = new ItemStack(Items.field_151144_bL, 1, 3);
+            var16 = new ItemStack(Items.skull, 1, 3);
         } else if (var3.equals((Object)Category.World)) {
-            var16 = new ItemStack(Item.func_150898_a((Block)Blocks.field_150349_c));
+            var16 = new ItemStack(Item.getItemFromBlock((Block)Blocks.grass));
         } else if (var3.equals((Object)Category.Visual)) {
-            var16 = new ItemStack(Items.field_151079_bi);
+            var16 = new ItemStack(Items.ender_pearl);
         } else if (var3.equals((Object)Category.Misc)) {
-            var16 = new ItemStack(Items.field_151016_H);
+            var16 = new ItemStack(Items.gunpowder);
         } else if (var3.equals((Object)Category.Configuration)) {
-            var16 = new ItemStack(Items.field_151042_j);
+            var16 = new ItemStack(Items.iron_ingot);
         } else if (var3.equals((Object)Category.Macro)) {
-            var16 = new ItemStack(Item.func_150898_a((Block)Blocks.field_150367_z));
+            var16 = new ItemStack(Item.getItemFromBlock((Block)Blocks.dispenser));
         } else if (var3.equals((Object)Category.Visual_utility)) {
-            var16 = new ItemStack(Items.field_151061_bv);
+            var16 = new ItemStack(Items.ender_eye);
 }
         if (var16 != null) {
             if (var7 && var3 != Category.Player) {
-                var16.func_77966_a(Enchantment.field_77347_r, 2);
+                var16.addEnchantment(Enchantment.unbreaking, 2);
 }
-            RenderHelper.func_74520_c();
-            GlStateManager.func_179084_k();
-            var13.func_180450_b(var16, (int)((double)var5 / var14), (int)((double)var6 / var14));
-            GlStateManager.func_179147_l();
-            RenderHelper.func_74518_a();
+            RenderHelper.enableGUIStandardItemLighting();
+            GlStateManager.disableBlend();
+            var13.renderItemAndEffectIntoGUI(var16, (int)((double)var5 / var14), (int)((double)var6 / var14));
+            GlStateManager.enableBlend();
+            RenderHelper.disableStandardItemLighting();
 }
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179152_a((float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.disableBlend();
+        GlStateManager.scale((float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.popMatrix();
 }
     public boolean j(int var1, int var2) {
         return var1 >= this.e - 2 && var1 <= this.e + this.U + 2 && (float)var2 >= (float)this.P + 2.0f && var2 <= this.P + this.q + 1;

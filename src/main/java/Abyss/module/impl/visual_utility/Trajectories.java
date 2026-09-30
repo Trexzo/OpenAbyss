@@ -70,10 +70,19 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Trajectories
 extends Module
 implements EventSubscriber {
+    private static Map d;
+
+    private static long a = 44890774506870L;
+
     public static ColorSetting teammatesColor;
     public static ColorSetting baseColor;
             public static ColorSetting friendColor;
@@ -93,16 +102,16 @@ implements EventSubscriber {
         long var5 = ((long)var1 << 32 | (long)var3 << 40 >>> 32 | (long)var4 << 56 >>> 56) ^ a;
         long var10 = var5 ^ 0x7F6F133C4FA5L;
         if (TrajectorySimulationResult.R$r1(var2) != null) {
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179137_b((double)TrajectorySimulationResult.l(var2), (double)TrajectorySimulationResult.R(var2), (double)TrajectorySimulationResult.B(var2));
+            GlStateManager.pushMatrix();
+            GlStateManager.translate((double)TrajectorySimulationResult.l(var2), (double)TrajectorySimulationResult.R(var2), (double)TrajectorySimulationResult.B(var2));
             this.t(TrajectorySimulationResult.R$r1(var2));
             RenderUtil.I(-0.35f, -0.35f, 0.35f, 0.35f, TrajectorySimulationResult.K(var2), 60);
             RenderUtil.m(-0.35f, -0.35f, var10, 0.35f, 0.35f, 1.0f, TrajectorySimulationResult.K(var2));
-            GlStateManager.func_179121_F();
+            GlStateManager.popMatrix();
 }
 }
     private double J(TrajectoryStep var1) {
-        return TrajectoryStep.x(var1) - TrajectoryStep.P((TrajectoryStep)var1).field_72448_b;
+        return TrajectoryStep.x(var1) - TrajectoryStep.P((TrajectoryStep)var1).yCoord;
 }
     private int s(Entity var1, long var2) {
         var2 = a ^ var2;
@@ -132,15 +141,15 @@ implements EventSubscriber {
         TrajectoryEntityHit var16 = this.L(var15, TrajectoryStep.P(var1), TrajectoryStep.g(var1), TrajectoryProjectileSpec.b(var2));
         if (var16 != null) {
             TrajectorySimulationResult.g(var5, this.s(TrajectoryEntityHit.d(var16), var10));
-            RenderUtil.A(TrajectoryEntityHit.d(var16), var12, TrajectorySimulationResult.K(var5), 1.5f, TrajectoryEntityHit.d(var16).func_70111_Y());
+            RenderUtil.A(TrajectoryEntityHit.d(var16), var12, TrajectorySimulationResult.K(var5), 1.5f, TrajectoryEntityHit.d(var16).getCollisionBorderSize());
             TrajectorySimulationResult.Q(var5, true);
             TrajectorySimulationResult.T(var5, true);
             TrajectorySimulationResult.E(var5, TrajectoryEntityHit.r(var16));
-            this.W(TrajectoryEntityHit.r((TrajectoryEntityHit)var16).field_72307_f, var4, var5);
+            this.W(TrajectoryEntityHit.r((TrajectoryEntityHit)var16).hitVec, var4, var5);
 }
 }
     private float getItemInUseDuration(float var1) {
-        float var2 = (float)Trajectories.f.field_71439_g.func_71057_bx() + var1;
+        float var2 = (float)Trajectories.f.thePlayer.getItemInUseDuration() + var1;
         float var3 = var2 / 20.0f;
         if ((var3 = (var3 * var3 + var3 * 2.0f) / 3.0f) > 1.0f) {
             var3 = 1.0f;
@@ -148,37 +157,37 @@ implements EventSubscriber {
         return var3;
 }
     private AxisAlignedBB p(TrajectoryStep var1, float var2, double var3, double var5, double var7) {
-        return new AxisAlignedBB(TrajectoryStep.P((TrajectoryStep)var1).field_72450_a - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).field_72448_b - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).field_72449_c - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).field_72450_a + (double)var2, TrajectoryStep.P((TrajectoryStep)var1).field_72448_b + (double)var2, TrajectoryStep.P((TrajectoryStep)var1).field_72449_c + (double)var2).func_72321_a(var3, var5, var7).func_72314_b(1.0, 1.0, 1.0);
+        return new AxisAlignedBB(TrajectoryStep.P((TrajectoryStep)var1).xCoord - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).yCoord - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).zCoord - (double)var2, TrajectoryStep.P((TrajectoryStep)var1).xCoord + (double)var2, TrajectoryStep.P((TrajectoryStep)var1).yCoord + (double)var2, TrajectoryStep.P((TrajectoryStep)var1).zCoord + (double)var2).addCoord(var3, var5, var7).expand(1.0, 1.0, 1.0);
 }
     private TrajectoryEntityHit L(ArrayList<Entity> var1, Vec3 var2, Vec3 var3, float var4) {
         for (int var5 = 0; var5 < var1.size(); ++var5) {
             AxisAlignedBB var7;
             MovingObjectPosition var8;
             Entity var6 = var1.get(var5);
-            if (!this.canBeCollidedWith(var6) || (var8 = (var7 = var6.func_174813_aQ().func_72314_b((double)var4, (double)var4, (double)var4)).func_72327_a(var2, var3)) == null) continue;
+            if (!this.canBeCollidedWith(var6) || (var8 = (var7 = var6.getEntityBoundingBox().expand((double)var4, (double)var4, (double)var4)).calculateIntercept(var2, var3)) == null) continue;
             return new TrajectoryEntityHit(var6, var8, null);
 }
         return null;
 }
     private boolean canBeCollidedWith(Entity var1) {
-        return var1.func_70067_L() && var1 != Trajectories.f.field_71439_g;
+        return var1.canBeCollidedWith() && var1 != Trajectories.f.thePlayer;
 }
     private void N(TrajectoryStep var1, TrajectorySimulationResult var2) {
-        TrajectorySimulationResult.E(var2, Trajectories.f.field_71441_e.func_147447_a(TrajectoryStep.P(var1), TrajectoryStep.g(var1), false, true, false));
+        TrajectorySimulationResult.E(var2, Trajectories.f.theWorld.rayTraceBlocks(TrajectoryStep.P(var1), TrajectoryStep.g(var1), false, true, false));
         if (TrajectorySimulationResult.R$r1(var2) != null) {
             TrajectorySimulationResult.T(var2, true);
-            TrajectoryStep.y(var1, TrajectorySimulationResult.R$r1((TrajectorySimulationResult)var2).field_72307_f);
+            TrajectoryStep.y(var1, TrajectorySimulationResult.R$r1((TrajectorySimulationResult)var2).hitVec);
 }
 }
     private void t(MovingObjectPosition var1) {
-        if (var1.field_178784_b != null) {
-            switch (TrajectoriesSwitchMapAxis.t[var1.field_178784_b.func_176740_k().ordinal()]) {
+        if (var1.sideHit != null) {
+            switch (TrajectoriesSwitchMapAxis.t[var1.sideHit.getAxis().ordinal()]) {
                 case 1: {
-                    GlStateManager.func_179114_b((float)90.0f, (float)0.0f, (float)1.0f, (float)0.0f);
+                    GlStateManager.rotate((float)90.0f, (float)0.0f, (float)1.0f, (float)0.0f);
                     break;
 }
                 case 2: {
-                    GlStateManager.func_179114_b((float)90.0f, (float)1.0f, (float)0.0f, (float)0.0f);
+                    GlStateManager.rotate((float)90.0f, (float)1.0f, (float)0.0f, (float)0.0f);
 }
 }
 }
@@ -193,18 +202,18 @@ implements EventSubscriber {
         var1 = a ^ var1;
 }
     private boolean f$r4() {
-        return Trajectories.f.field_71439_g != null && Trajectories.f.field_71441_e != null && Trajectories.f.field_71439_g.func_70694_bm() != null && Trajectories.f.field_71474_y.field_74320_O == 0;
+        return Trajectories.f.thePlayer != null && Trajectories.f.theWorld != null && Trajectories.f.thePlayer.getHeldItem() != null && Trajectories.f.gameSettings.thirdPersonView == 0;
 }
     private double Q(TrajectoryStep var1) {
-        return TrajectoryStep.L(var1) - TrajectoryStep.P((TrajectoryStep)var1).field_72450_a;
+        return TrajectoryStep.L(var1) - TrajectoryStep.P((TrajectoryStep)var1).xCoord;
 }
     private TrajectoriesViewerOffset P$r1(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        RenderManager var10 = f.func_175598_ae();
+        RenderManager var10 = f.getRenderManager();
         return new TrajectoriesViewerOffset(RenderManagerAccessor.k(0L, var10), RenderManagerAccessor.y(13236, var10), RenderManagerAccessor.W(0L, var10), null);
 }
     private void A(TrajectoryStep var1, TrajectoriesViewerOffset var2, TrajectorySimulationResult var3) {
         if (!TrajectorySimulationResult.L(var3) && TrajectorySimulationResult.R$r1(var3) != null) {
-            this.W(TrajectorySimulationResult.R$r1((TrajectorySimulationResult)var3).field_72307_f, var2, var3);
+            this.W(TrajectorySimulationResult.R$r1((TrajectorySimulationResult)var3).hitVec, var2, var3);
 }
 }
     private TrajectoryProjectileSpec W(Item var1, float var2) {
@@ -249,12 +258,12 @@ implements EventSubscriber {
         float var6 = RotationManager.s();
         float var7 = this.Q(var5);
         float var8 = this.Q(var6);
-        float var9 = MathHelper.func_76126_a((float)var7);
-        float var10 = MathHelper.func_76134_b((float)var7);
-        float var11 = MathHelper.func_76126_a((float)var8);
-        float var12 = MathHelper.func_76134_b((float)var8);
+        float var9 = MathHelper.sin((float)var7);
+        float var10 = MathHelper.cos((float)var7);
+        float var11 = MathHelper.sin((float)var8);
+        float var12 = MathHelper.cos((float)var8);
         double var13 = TrajectoriesViewerOffset.q(var2) - (double)var10 * 0.16;
-        double var15 = TrajectoriesViewerOffset.L(var2) + (double)Trajectories.f.field_71439_g.func_70047_e() - 0.1;
+        double var15 = TrajectoriesViewerOffset.L(var2) + (double)Trajectories.f.thePlayer.getEyeHeight() - 0.1;
         double var17 = TrajectoriesViewerOffset.p(var2) - (double)var9 * 0.16;
         double var19 = TrajectoryProjectileSpec.A(var1) ? 1.0 : 0.4;
         double var21 = (double)(-var9 * var12) * var19;
@@ -268,31 +277,31 @@ implements EventSubscriber {
         return new Vector3d(var13, var15, var17, var21, var23, var25, null);
 }
     private void N(long var1, TrajectorySimulationResult var3) {
-        WorldRenderer var11 = Tessellator.func_178181_a().func_178180_c();
+        WorldRenderer var11 = Tessellator.getInstance().getWorldRenderer();
         RenderUtil.L();
         RenderUtil.l(TrajectorySimulationResult.K(var3), 73372009905513L);
         GL11.glLineWidth((float)1.5f);
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
-        var11.func_181668_a(3, DefaultVertexFormats.field_181705_e);
+        var11.begin(3, DefaultVertexFormats.POSITION);
         for (int var12 = 0; var12 < TrajectorySimulationResult.b(var3).size(); ++var12) {
             Vec3 var13 = (Vec3)TrajectorySimulationResult.b(var3).get(var12);
-            var11.func_181662_b(var13.field_72450_a, var13.field_72448_b, var13.field_72449_c).func_181675_d();
+            var11.pos(var13.xCoord, var13.yCoord, var13.zCoord).endVertex();
 }
-        Tessellator.func_178181_a().func_78381_a();
+        Tessellator.getInstance().draw();
         this.x(1175, var3, 8184540, (byte)-8);
         GL11.glDisable((int)2848);
         GL11.glLineWidth((float)2.0f);
-        GlStateManager.func_179117_G();
+        GlStateManager.resetColor();
         RenderUtil.w();
 }
     private double d(TrajectoryStep var1) {
-        return TrajectoryStep.n(var1) - TrajectoryStep.P((TrajectoryStep)var1).field_72449_c;
+        return TrajectoryStep.n(var1) - TrajectoryStep.P((TrajectoryStep)var1).zCoord;
 }
     private void W(Vec3 var1, TrajectoriesViewerOffset var2, TrajectorySimulationResult var3) {
-        TrajectorySimulationResult.M(var3, var1.field_72450_a - TrajectoriesViewerOffset.q(var2));
-        TrajectorySimulationResult.N(var3, var1.field_72448_b - TrajectoriesViewerOffset.L(var2));
-        TrajectorySimulationResult.B(var3, var1.field_72449_c - TrajectoriesViewerOffset.p(var2));
+        TrajectorySimulationResult.M(var3, var1.xCoord - TrajectoriesViewerOffset.q(var2));
+        TrajectorySimulationResult.N(var3, var1.yCoord - TrajectoriesViewerOffset.L(var2));
+        TrajectorySimulationResult.B(var3, var1.zCoord - TrajectoriesViewerOffset.p(var2));
 }
     private void A(Vector3d var1, TrajectoriesViewerOffset var2, TrajectorySimulationResult var3) {
         TrajectorySimulationResult.b(var3).add(new Vec3(Vector3d.i(var1) - TrajectoriesViewerOffset.q(var2), Vector3d.I(var1) - TrajectoriesViewerOffset.L(var2), Vector3d.A(var1) - TrajectoriesViewerOffset.p(var2)));
@@ -317,20 +326,20 @@ implements EventSubscriber {
         Vector3d.P(var10, Vector3d.f(var10) - (double)var3);
 }
     private ArrayList<Entity> n(AxisAlignedBB var1) {
-        int var2 = MathHelper.func_76128_c((double)((var1.field_72340_a - 2.0) / 16.0));
-        int var3 = MathHelper.func_76128_c((double)((var1.field_72336_d + 2.0) / 16.0));
-        int var4 = MathHelper.func_76128_c((double)((var1.field_72339_c - 2.0) / 16.0));
-        int var5 = MathHelper.func_76128_c((double)((var1.field_72334_f + 2.0) / 16.0));
+        int var2 = MathHelper.floor_double((double)((var1.minX - 2.0) / 16.0));
+        int var3 = MathHelper.floor_double((double)((var1.maxX + 2.0) / 16.0));
+        int var4 = MathHelper.floor_double((double)((var1.minZ - 2.0) / 16.0));
+        int var5 = MathHelper.floor_double((double)((var1.maxZ + 2.0) / 16.0));
         ArrayList<Entity> var6 = new ArrayList<Entity>();
         for (int var7 = var2; var7 <= var3; ++var7) {
             for (int var8 = var4; var8 <= var5; ++var8) {
-                Trajectories.f.field_71441_e.func_72964_e(var7, var8).func_177414_a((Entity)Trajectories.f.field_71439_g, var1, var6, null);
+                Trajectories.f.theWorld.getChunkFromChunkCoords(var7, var8).getEntitiesWithinAABBForEntity((Entity)Trajectories.f.thePlayer, var1, var6, null);
 }
 }
         return var6;
 }
     private boolean R(Vector3d var1) {
-        return Trajectories.f.field_71441_e.func_180495_p(new BlockPos(Vector3d.i(var1), Vector3d.I(var1), Vector3d.A(var1))).func_177230_c().func_149688_o() == Material.field_151586_h;
+        return Trajectories.f.theWorld.getBlockState(new BlockPos(Vector3d.i(var1), Vector3d.I(var1), Vector3d.A(var1))).getBlock().getMaterial() == Material.water;
 }
     public void onRender3D(Render3DEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         TrajectorySimulationResult var16;
@@ -338,7 +347,7 @@ implements EventSubscriber {
         Vector3d var15;
         Item var12;
         TrajectoryProjectileSpec var13;
-        if (this.f$r4() && (var13 = this.W(var12 = Trajectories.f.field_71439_g.func_70694_bm().func_77973_b(), var1.j)) != null && (var15 = this.t(var13, var14 = this.P$r1(53469978203973L))) != null && TrajectorySimulationResult.b(var16 = this.getRGB(78770923882103L, var15, var13, var14)).size() > 1) {
+        if (this.f$r4() && (var13 = this.W(var12 = Trajectories.f.thePlayer.getHeldItem().getItem(), var1.j)) != null && (var15 = this.t(var13, var14 = this.P$r1(53469978203973L))) != null && TrajectorySimulationResult.b(var16 = this.getRGB(78770923882103L, var15, var13, var14)).size() > 1) {
             this.N(12020114583032L, var16);
 }
 }

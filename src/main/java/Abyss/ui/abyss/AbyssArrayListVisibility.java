@@ -9,6 +9,7 @@
  */
 package Abyss.ui.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.Module;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -34,7 +35,11 @@ public final class AbyssArrayListVisibility {
     private static final String FILE = "abyss-arraylist.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Object LOCK = new Object();
-    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor();
+    private static final ExecutorService SAVE_THREAD = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "Abyss-ArrayList-save");
+        thread.setDaemon(true);
+        return thread;
+    });
     private static volatile Set<String> hidden;
 
     private AbyssArrayListVisibility() {
@@ -62,7 +67,7 @@ public final class AbyssArrayListVisibility {
     private static File file() {
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable throwable) {
             // empty catch block
@@ -76,9 +81,6 @@ public final class AbyssArrayListVisibility {
 }
         return new File(d, FILE);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static Set<String> data() {
         Set<String> local = hidden;
         if (local != null) {
@@ -100,6 +102,7 @@ public final class AbyssArrayListVisibility {
 }
 }
             catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "load", throwable);
 }
             finally {
                 if (r2 != null) {
@@ -127,6 +130,7 @@ public final class AbyssArrayListVisibility {
                     w2.flush();
 }
                 catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "save", throwable);
 }
                 finally {
                     if (w2 != null) {
@@ -151,15 +155,13 @@ public final class AbyssArrayListVisibility {
             return !AbyssArrayListVisibility.data().contains(k);
 }
         catch (Throwable ignored) {
+            AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "is-shown", ignored);
             return true;
 }
 }
     public static void toggle(Module m2) {
         AbyssArrayListVisibility.setShown(m2, !AbyssArrayListVisibility.isShown(m2));
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static void setShown(Module m2, boolean shown) {
         String k = AbyssArrayListVisibility.key(m2);
         if (k == null) {
@@ -177,7 +179,7 @@ public final class AbyssArrayListVisibility {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssArrayListVisibility", "set-shown", throwable);
 }
 }
 }

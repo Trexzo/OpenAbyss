@@ -13,7 +13,7 @@ import Abyss.event.invoker.BrokenBlockTrackerTryHarvestBlockHeadInvoker;
 import Abyss.internal.BrokenBlockTracker;
 
 public final class BrokenBlockTrackerBinder {
-    private static final long private BrokenBlockTrackerBinder() {
+    private BrokenBlockTrackerBinder() {
 }
     public static void z(EventBus var0, BrokenBlockTracker var1) {
         var0.R(var1, ClickBlockReturnEvent.class, 3, new BrokenBlockTrackerClickBlockReturnInvoker(var1));

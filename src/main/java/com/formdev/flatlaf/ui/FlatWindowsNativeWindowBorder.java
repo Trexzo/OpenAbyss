@@ -103,7 +103,7 @@ implements FlatNativeWindowBorder.Provider {
             return;
 }
         wndProc.titleBarHeight = titleBarHeight;
-        WndProc.access$202(wndProc, hitTestSpots.toArray(new Rectangle[hitTestSpots.size()]));
+        wndProc.hitTestSpots = hitTestSpots.toArray(new Rectangle[hitTestSpots.size()]);
         wndProc.appIconBounds = FlatWindowsNativeWindowBorder.cloneRectange(appIconBounds);
         wndProc.minimizeButtonBounds = FlatWindowsNativeWindowBorder.cloneRectange(minimizeButtonBounds);
         wndProc.maximizeButtonBounds = FlatWindowsNativeWindowBorder.cloneRectange(maximizeButtonBounds);
@@ -294,10 +294,6 @@ implements FlatNativeWindowBorder.Provider {
 }
         private void fireStateChangedLaterOnce() {
             FlatWindowsNativeWindowBorder.this.fireStateChangedLaterOnce();
-}
-        static /* synthetic */ Rectangle[] access$202(WndProc x0, Rectangle[] x1) {
-            x0.hitTestSpots = x1;
-            return x1;
 }
 }
 }

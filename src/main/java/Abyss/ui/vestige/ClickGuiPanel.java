@@ -6,6 +6,8 @@ package Abyss.ui.vestige;
 import Abyss.internal.synthetic.VestigeClickGuiScreenCtorMarker;
 
 public class ClickGuiPanel {
+    private static long a = 117470247942599L;
+
     private boolean S;
     private static long b;
     private int e;

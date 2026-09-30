@@ -22,6 +22,11 @@ import java.util.regex.Pattern;
 public class AutoGG
 extends Module
 implements EventSubscriber {
+    private static Map d;
+    private static long a = 58515000138946L;
+    private static Map h;
+    private static String[] b;
+    private static String[] c;
     
     private static long[] e;
     
@@ -44,7 +49,7 @@ implements EventSubscriber {
 }
     public void onPostTick(short var1, PostTickEvent var2, char var3, int var4) {
         if (this.n >= 0 && --this.n <= 0) {
-            AutoGG.f.field_71439_g.func_71165_d("/ac " + message.X());
+            AutoGG.f.thePlayer.sendChatMessage("/ac " + message.X());
             this.n = -1;
 }
 }
@@ -56,7 +61,7 @@ implements EventSubscriber {
         AutoGGBinder.X(var3, this);
 }
     public void onHandleChat(long var1, HandleChatEvent var3) {
-        String var6 = var3.A.func_150260_c();
+        String var6 = var3.A.getUnformattedText();
         for (Pattern var8 : H) {
             if (!var8.matcher(var6).matches()) continue;
             this.t(101896778740626L);

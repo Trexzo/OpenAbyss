@@ -41,28 +41,87 @@ extends Command {
     
     
 
+    private static String[] b;
+
+    private static String a(int var0, long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        int var3 = var0 ^ (int)(var1 & 32767L) ^ 22492;
+        if (b[var3] == null) {
+            Object[] var5;
+            try {
+                Long var4 = Thread.currentThread().getId();
+                var5 = (Object[])c.get(var4);
+                if (var5 == null) {
+                    var5 = new Object[]{Cipher.getInstance("DES/CBC/PKCS5Padding"), SecretKeyFactory.getInstance("DES"), new IvParameterSpec(new byte[8])};
+                    c.put(var4, var5);
+                }
+            } catch (Exception var10) {
+                throw new RuntimeException("Abyss/command/impl/StockCommandCheaters", var10);
+            }
+
+            byte[] var7 = new byte[8];
+            var7[0] = (byte)(var1 >>> 56);
+            for (int var8 = 1; var8 < 8; var8++) {
+                var7[var8] = (byte)(var1 << var8 * 8 >>> 56);
+            }
+
+            DESKeySpec var11 = new DESKeySpec(var7);
+            SecretKey var9 = ((SecretKeyFactory)var5[1]).generateSecret(var11);
+            ((Cipher)var5[0]).init(2, var9, (IvParameterSpec)var5[2]);
+            byte[] var6 = a[var3].getBytes("ISO-8859-1");
+            b[var3] = a(((Cipher)var5[0]).doFinal(var6));
+        }
+
+        return b[var3];
+    }
+
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+
+        for (int var4 = 0; var4 < var2; var4++) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                byte var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << '\f');
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+
+        return new String(var3, 0, var1);
+    }
     @Override
     public void j(String[] var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var4 = var2 ^ 0x3A45CD136DBDL;
         LinkedHashMap<UUID, CheaterRegistry> var6 = new LinkedHashMap<UUID, CheaterRegistry>();
         for (Map.Entry<UUID, EntityPlayer> entry : CheaterDetector.c.entrySet()) {
             CheaterRegistry var9;
-            if (StockCommandCheaters.p.field_71441_e.func_152378_a(entry.getKey()) == null || (var9 = CheaterDetector.R.get(entry.getKey())) == null || !var9.M()) continue;
+            if (StockCommandCheaters.p.theWorld.getPlayerEntityByUUID(entry.getKey()) == null || (var9 = CheaterDetector.R.get(entry.getKey())) == null || !var9.M()) continue;
             var6.put(entry.getKey(), var9);
 }
         if (var6.isEmpty()) {
             ClientUtil.t(var4, StockCommandCheaters.a(30577, 0x3A7D4509A5BBB00L ^ var2));
         } else {
             ClientUtil.t(var4, StockCommandCheaters.a(14757, 0x5340CFDB5ABF5D6L ^ var2));
-            for (Map.Entry<UUID, Object> entry : var6.entrySet()) {
-                EntityPlayer var16 = StockCommandCheaters.p.field_71441_e.func_152378_a(entry.getKey());
+            for (Map.Entry<UUID, CheaterRegistry> entry : var6.entrySet()) {
+                EntityPlayer var16 = StockCommandCheaters.p.theWorld.getPlayerEntityByUUID(entry.getKey());
                 ArrayList<String> var10 = new ArrayList<String>();
                 for (Map.Entry<DetectedCheat, Boolean> var12 : ((CheaterRegistry)entry.getValue()).e.entrySet()) {
                     if (!var12.getValue().booleanValue()) continue;
                     DetectedCheat var13 = var12.getKey();
                     var10.add(var13.colorFormatCode + var13.name());
 }
-                ClientUtil.t(var4, StockCommandCheaters.a(1313, 0x5A62CA97ECC0C95CL ^ var2) + var16.func_145748_c_().func_150254_d() + StockCommandCheaters.a(397, 0x103EFF62D041CDF3L ^ var2) + String.join((CharSequence)StockCommandCheaters.a(10075, 0x4B9C8B3905A16B2BL ^ var2), var10));
+                ClientUtil.t(var4, StockCommandCheaters.a(1313, 0x5A62CA97ECC0C95CL ^ var2) + var16.getDisplayName().getFormattedText() + StockCommandCheaters.a(397, 0x103EFF62D041CDF3L ^ var2) + String.join((CharSequence)StockCommandCheaters.a(10075, 0x4B9C8B3905A16B2BL ^ var2), var10));
 }
 }
 }

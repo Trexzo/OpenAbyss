@@ -11,7 +11,7 @@ import net.minecraft.network.Packet;
 
 public class SendPacketEvent
 extends Event {
-    private static final long public final Packet<?> B;
+    public final Packet<?> B;
 
     public SendPacketEvent(Packet var1) {
         this.B = var1;

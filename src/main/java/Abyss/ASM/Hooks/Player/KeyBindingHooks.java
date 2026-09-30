@@ -30,7 +30,7 @@ public class KeyBindingHooks {
             var0.setReturnValue(false);
         } else if (var0.getReturnValue().booleanValue()) {
             for (int var14 = 0; var14 < (int)b; ++var14) {
-                if (!KeyBindingHooks.T.field_71474_y.field_151456_ac[var14].func_151464_g().equals(var1)) continue;
+                if (!KeyBindingHooks.T.gameSettings.keyBindsHotbar[var14].getKeyDescription().equals(var1)) continue;
                 HeldItemChangeEvent var15 = new HeldItemChangeEvent(var14, 0);
                 AbyssClient.w.e(var15, 18670087776179L);
                 if (!var15.a()) continue;
@@ -39,7 +39,7 @@ public class KeyBindingHooks {
 }
 }
     public static void onSetKeyBindState(int var0, boolean var1) {
-        if (var1 && KeyBindingHooks.T.field_71462_r == null) {
+        if (var1 && KeyBindingHooks.T.currentScreen == null) {
             AbyssClient.w.e(new SetKeyBindStateEvent(var0), 18670087776179L);
 }
 }

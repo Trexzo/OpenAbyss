@@ -25,7 +25,8 @@ extends AbstractSettingComponent<TextSetting> {
     private final Animation s;
     private boolean m;
     private String K;
-    private static long @Override
+    private static long a;
+    @Override
     public boolean V(long var1, float var3, float var4, int var5) {
         long var6 = var1 ^ 0x2855EFBD8476L;
         float var8 = this.n + 7.0f;
@@ -57,12 +58,12 @@ extends AbstractSettingComponent<TextSetting> {
                 if (!this.K.isEmpty()) {
                     this.K = this.K.substring(0, this.K.length() - 1);
 }
-            } else if (GuiScreen.func_146271_m() && var3 == 47) {
-                String var12 = GuiScreen.func_146277_j();
+            } else if (GuiScreen.isCtrlKeyDown() && var3 == 47) {
+                String var12 = GuiScreen.getClipboardString();
                 if (var12 != null) {
                     this.K = this.K + var12;
 }
-            } else if (ChatAllowedCharacters.func_71566_a((char)var2)) {
+            } else if (ChatAllowedCharacters.isAllowedCharacter((char)var2)) {
                 this.K = this.K + var2;
 }
 }
@@ -141,4 +142,7 @@ extends AbstractSettingComponent<TextSetting> {
         var31 = var10006;
         FontUtil.N(var32, var14, var10002, var10003, var10004, 0.66f, FontUtil.a(var27, var28, var31, var30));
 }
+    static {
+        a = 106220699075492L;
+    }
 }

@@ -12,7 +12,7 @@ import net.minecraft.entity.Entity;
 public class EntityRenderStateEvent
 extends StoppableEvent {
     public final Entity k;
-    private static final long public EntityRenderStateEvent(short var1, char var2, int var3, Entity var4) {
+    public EntityRenderStateEvent(short var1, char var2, int var3, Entity var4) {
         this.k = var4;
 }
 }

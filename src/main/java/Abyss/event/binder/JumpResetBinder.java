@@ -15,7 +15,7 @@ import Abyss.event.invoker.JumpResetWorldLoadInvoker;
 import Abyss.module.impl.combat.JumpReset;
 
 public final class JumpResetBinder {
-    private static final long public static void K(EventBus var2, JumpReset var3) {
+    public static void K(EventBus var2, JumpReset var3) {
         var2.R(var3, KnockbackEvent.class, 3, new JumpResetKnockbackInvoker(var3));
         var2.R(var3, MoveInputEvent.class, 3, new JumpResetMoveInputInvoker(var3));
         var2.R(var3, PostUpdateEvent.class, 3, new JumpResetPostUpdateInvoker(var3));

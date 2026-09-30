@@ -8,6 +8,7 @@
  */
 package Abyss.ui.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.impl.visual.HUD;
 import Abyss.util.render.abyss.FontManager;
 import Abyss.util.render.abyss.FontRenderer;
@@ -39,7 +40,7 @@ public final class AbyssUserInfoRenderer {
 }
 }
             catch (Throwable throwable) {
-                // empty catch block
+                AbyssClient.recordFeatureFailure("AbyssUserInfoRenderer", "setting-read", throwable);
 }
             if (!showUser && !showVersion) {
                 return;
@@ -64,10 +65,10 @@ public final class AbyssUserInfoRenderer {
 }
                 plain.append(user).append(" [").append(uid).append("]");
 }
-            int screenX = resolution.func_78326_a();
-            int screenY = resolution.func_78328_b();
+            int screenX = resolution.getScaledWidth();
+            int screenY = resolution.getScaledHeight();
             float startX = (float)screenX - font.getWidth(plain.toString()) - 2.0f;
-            boolean chatOpen = Minecraft.func_71410_x().field_71462_r instanceof GuiChat;
+            boolean chatOpen = Minecraft.getMinecraft().currentScreen instanceof GuiChat;
             float buildY = screenY - (chatOpen ? 24 : 11);
             float x = startX;
             if (showVersion) {
@@ -83,7 +84,7 @@ public final class AbyssUserInfoRenderer {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssUserInfoRenderer", "render", throwable);
 }
 }
     private static float drawSeg(FontRenderer font, String text, float x, float y, int color) {

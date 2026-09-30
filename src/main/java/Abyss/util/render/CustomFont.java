@@ -19,14 +19,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 
 public class CustomFont {
+    private static long a;
+    static {
+        a = 123238688271397L;
+    }
     public final boolean b;
     private final Minecraft H;
-    private static long private final FontGlyphPage G;
+    private final FontGlyphPage G;
     private final FontRenderer abyssRenderer;
 
     private static Font a(ResourceLocation var0, long var1) {
         try {
-            InputStream var6 = MinecraftRef.c((byte)0, 0L).func_110442_L().func_110536_a(var0).func_110527_b();
+            InputStream var6 = MinecraftRef.c((byte)0, 0L).getResourceManager().getResource(var0).getInputStream();
             return Font.createFont(0, var6).deriveFont(20.0f);
 }
         catch (Exception var7) {
@@ -98,7 +102,7 @@ public class CustomFont {
         float offset = 0.0f;
         Integer formattingColor = null;
         for (int i = 0; i < var1.length(); ++i) {
-            int color;
+
             char ch = var1.charAt(i);
             if (ch == '\u00a7' && i + 1 < var1.length()) {
                 Integer parsed = this.G(0L, var1.charAt(i + 1));
@@ -112,7 +116,7 @@ public class CustomFont {
 }
             String glyph = String.valueOf(ch);
             float width = this.abyssRenderer.getWidth(glyph);
-            int n2 = var8 == null ? (formattingColor == null ? var4 : formattingColor) : (color = var8.s(ch, offset, (int)Math.ceil(width), formattingColor));
+            int color = var8 == null ? (formattingColor == null ? var4 : formattingColor) : var8.s(ch, offset, (int)Math.ceil(width), formattingColor);
             if (var5) {
                 this.abyssRenderer.drawStringWithShadow(glyph, x, var3, color);
             } else {

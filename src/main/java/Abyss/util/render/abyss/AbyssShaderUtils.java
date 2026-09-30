@@ -27,16 +27,16 @@ public final class AbyssShaderUtils {
         return gradientRoundedShader;
 }
     public static void drawGradientRound(float x, float y, float w2, float h, float radius, Color bottomLeft, Color topLeft, Color bottomRight, Color topRight) {
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179112_b((int)770, (int)771);
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179092_a((int)516, (float)0.0f);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc((int)770, (int)771);
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc((int)516, (float)0.0f);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
         ShaderProgram shader = AbyssShaderUtils.getShader();
         shader.r();
-        ScaledResolution sr = new ScaledResolution(Minecraft.func_71410_x());
-        int factor = sr.func_78325_e();
-        shader.O("location", x * (float)factor, (float)Minecraft.func_71410_x().field_71440_d - h * (float)factor - y * (float)factor);
+        ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
+        int factor = sr.getScaleFactor();
+        shader.O("location", x * (float)factor, (float)Minecraft.getMinecraft().displayHeight - h * (float)factor - y * (float)factor);
         shader.O("rectSize", w2 * (float)factor, h * (float)factor);
         shader.O("radius", radius * (float)factor);
         shader.O("color1", (float)topLeft.getRed() / 255.0f, (float)topLeft.getGreen() / 255.0f, (float)topLeft.getBlue() / 255.0f, (float)topLeft.getAlpha() / 255.0f);
@@ -45,7 +45,7 @@ public final class AbyssShaderUtils {
         shader.O("color4", (float)bottomRight.getRed() / 255.0f, (float)bottomRight.getGreen() / 255.0f, (float)bottomRight.getBlue() / 255.0f, (float)bottomRight.getAlpha() / 255.0f);
         ShaderProgram.p(x - 1.0f, y - 1.0f, w2 + 2.0f, h + 2.0f);
         shader.P();
-        GlStateManager.func_179084_k();
+        GlStateManager.disableBlend();
 }
     public static void drawGradientHorizontal(float x, float y, float w2, float h, float radius, Color left, Color right) {
         AbyssShaderUtils.drawGradientRound(x, y, w2, h, radius, left, left, right, right);

@@ -15,6 +15,11 @@ import Abyss.util.KeyBindUtil;
 import Abyss.util.RotationManager;
 import Abyss.util.TunnelEngine;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class AutoTunnel
 extends Module {
@@ -23,7 +28,7 @@ extends Module {
     public static BooleanSetting autoBack;
     public static BooleanSetting autoTurn;
     public static BooleanSetting sideOffsetScan;
-    private static final long public static ModeSetting mode;
+    public static ModeSetting mode;
     public static NumberSetting chestScanRadius;
     public static BooleanSetting ownedChestsOnly;
     public static PercentageSetting unsneakChance;
@@ -48,11 +53,11 @@ extends Module {
         long var8 = var1 ^ 0xF9FDC7ACA5AL;
         MiningEngine.uq.B(var5, var7);
         RotationManager.O(var3);
-        KeyBindUtil.o(var8, AutoTunnel.f.field_71474_y.field_74351_w.func_151463_i());
-        KeyBindUtil.o(var8, AutoTunnel.f.field_71474_y.field_74368_y.func_151463_i());
-        KeyBindUtil.o(var8, AutoTunnel.f.field_71474_y.field_74312_F.func_151463_i());
-        KeyBindUtil.o(var8, AutoTunnel.f.field_71474_y.field_74314_A.func_151463_i());
-        KeyBindUtil.o(var8, AutoTunnel.f.field_71474_y.field_74311_E.func_151463_i());
+        KeyBindUtil.o(var8, AutoTunnel.f.gameSettings.keyBindForward.getKeyCode());
+        KeyBindUtil.o(var8, AutoTunnel.f.gameSettings.keyBindBack.getKeyCode());
+        KeyBindUtil.o(var8, AutoTunnel.f.gameSettings.keyBindAttack.getKeyCode());
+        KeyBindUtil.o(var8, AutoTunnel.f.gameSettings.keyBindJump.getKeyCode());
+        KeyBindUtil.o(var8, AutoTunnel.f.gameSettings.keyBindSneak.getKeyCode());
 }
     private static void a() {
 }

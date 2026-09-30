@@ -23,7 +23,7 @@ import Abyss.event.invoker.BedNukerSendPacketInvoker;
 import Abyss.module.impl.world.BedNuker;
 
 public final class BedNukerBinder {
-    private static final long public static void d(EventBus var2, BedNuker var3) {
+    public static void d(EventBus var2, BedNuker var3) {
         var2.R(var3, ClickMouseEvent.class, 3, new BedNukerClickMouseInvoker(var3));
         var2.R(var3, IsPressedEvent.class, 3, new BedNukerIsPressedInvoker(var3));
         var2.R(var3, PreMouseInputEvent.class, 4, new BedNukerPreMouseInputInvoker(var3));

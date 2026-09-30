@@ -7,5 +7,5 @@ import Abyss.event.Event;
 
 public class PostRightClickEvent
 extends Event {
-    private static final long }
+}
 

@@ -4,14 +4,21 @@
 package Abyss.module;
 
 import Abyss.internal.jnic.StockConfigStore;
+import Abyss.internal.restore.AbyssConfig;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Modules {
+    private static Map e;
+
         
     private static String b;
     private static long[] c;
@@ -20,6 +27,7 @@ public class Modules {
     private static volatile long pendingSaveAt;
     private static final long SAVE_DEBOUNCE_MS = 1000L;
     private static final ExecutorService SAVE_EXEC;
+    private static volatile String lastConfigFailureSignature;
 
     public static <T extends Module> T J(Class<T> var0) {
         return (T)ModuleManager.o.get(var0);
@@ -50,10 +58,19 @@ public class Modules {
             G = true;
             SAVE_EXEC.execute(() -> {
                 try {
-                    StockConfigStore.o(b);
+                    boolean ok = StockConfigStore.o(b);
+                    gatesweep$configSaveUnavailable = !ok;
+                    if (!ok) {
+                        Modules.recordConfigFailure("save-returned-false " + String.valueOf(AbyssConfig.lastSaveNote), null);
+}
 }
                 catch (UnsatisfiedLinkError var5x) {
                     gatesweep$configSaveUnavailable = true;
+                    Modules.recordConfigFailure("unsatisfied-link", var5x);
+}
+                catch (Throwable throwable) {
+                    gatesweep$configSaveUnavailable = true;
+                    Modules.recordConfigFailure("save-threw", throwable);
 }
                 finally {
                     G = false;
@@ -61,6 +78,25 @@ public class Modules {
             });
 }
 }
+    private static void recordConfigFailure(String kind, Throwable failure) {
+        String detail = failure == null
+                ? kind
+                : kind + " " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage()).replace('\r', ' ').replace('\n', ' ');
+        if (detail.equals(lastConfigFailureSignature)) {
+            return;
+}
+        lastConfigFailureSignature = detail;
+        String line = System.currentTimeMillis() + "\t" + detail;
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-config-failure.txt"), true), "UTF-8");){
+                out.write(line + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+        System.err.println("[ABYSSDIAG] config save failure " + line);
+}
+
     static {
         SAVE_EXEC = Executors.newSingleThreadExecutor(r2 -> {
             Thread t2 = new Thread(r2, "Abyss-ConfigSave");

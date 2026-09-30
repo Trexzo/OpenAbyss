@@ -13,7 +13,7 @@ import Abyss.event.invoker.ReconnectHandlerServerJoinInvoker;
 import Abyss.ui.screen.ReconnectHandler;
 
 public final class ReconnectHandlerBinder {
-    private static final long public static void v(EventBus var0, ReconnectHandler var3) {
+    public static void v(EventBus var0, ReconnectHandler var3) {
         var0.R(var3, PreDrawScreenEvent.class, 3, new ReconnectHandlerPreDrawScreenInvoker(var3));
         var0.R(var3, DisconnectedInitEvent.class, 3, new ReconnectHandlerDisconnectedInitInvoker(var3));
         var0.R(var3, ServerJoinEvent.class, 3, new ReconnectHandlerServerJoinInvoker(var3));

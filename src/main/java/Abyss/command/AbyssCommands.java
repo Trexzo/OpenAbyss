@@ -8,6 +8,7 @@
  */
 package Abyss.command;
 
+import Abyss.AbyssClient;
 import Abyss.command.Command;
 import Abyss.command.impl.AbyssCommandBind;
 import Abyss.command.impl.AbyssCommandBindChat;
@@ -27,7 +28,9 @@ import Abyss.command.impl.AbyssCommandStub;
 import Abyss.command.impl.AbyssCommandSuffix;
 import Abyss.command.impl.AbyssCommandToggle;
 import Abyss.command.impl.AbyssCommandVisible;
+import Abyss.command.impl.StockCommandModuleSetting;
 import Abyss.internal.jnic.StockCommandRegistry;
+import Abyss.internal.restore.AbyssCommandSelect;
 import Abyss.internal.restore.AbyssCommandData;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -54,6 +57,7 @@ public final class AbyssCommands {
         if (StockCommandRegistry.L == null) {
             StockCommandRegistry.L = new LinkedHashSet<Command>();
 }
+        StockCommandRegistry.J = new StockCommandModuleSetting();
         StockCommandRegistry.L.add(new AbyssCommandBind());
         StockCommandRegistry.L.add(new AbyssCommandBindChat());
         StockCommandRegistry.L.add(new AbyssCommandChangelog());
@@ -77,7 +81,7 @@ public final class AbyssCommands {
             AbyssCommandData.load();
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "command-data-load", throwable);
 }
         int var10 = 0;
         int var11 = 0;
@@ -93,7 +97,7 @@ public final class AbyssCommands {
             AbyssCommands.note(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "registry-note", throwable);
 }
         if (var0 != null) {
             // empty if block
@@ -122,8 +126,17 @@ public final class AbyssCommands {
                 return false;
 }
             Command var4 = AbyssCommands.find(var3[0]);
+            boolean moduleSetting = false;
+            if (var4 == null && AbyssCommands.module(var3[0]) != null && StockCommandRegistry.J != null) {
+                var4 = StockCommandRegistry.J;
+                moduleSetting = true;
+}
             if (var4 == null) {
                 AbyssCommands.chat("\u00a7cUnknown command \u00a7f" + var3[0] + "\u00a7c. Known: " + AbyssCommands.names());
+                return true;
+}
+            if (moduleSetting) {
+                var4.j(var3, 0L);
                 return true;
 }
             String[] var5 = new String[var3.length - 1];
@@ -154,10 +167,97 @@ public final class AbyssCommands {
 }
 }
             catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommands", "alias-resolve", throwable);
 }
 }
         return null;
 }
+    public static String selfTest() {
+        try {
+            if (StockCommandRegistry.L == null) {
+                return "FAIL registry-null";
+}
+            int count = 0;
+            int primaryResolved = 0;
+            for (Command command : StockCommandRegistry.L) {
+                if (command == null) {
+                    return "FAIL null-command";
+}
+                String[] aliases = command.e(0L);
+                if (aliases == null || aliases.length == 0 || aliases[0] == null || aliases[0].trim().isEmpty()) {
+                    return "FAIL aliases " + command.getClass().getName();
+}
+                String fallback = AbyssCommands.nativeBaseFallback(command);
+                if (fallback != null) {
+                    return "FAIL native-base-fallback " + command.getClass().getName() + "." + fallback;
+}
+                ++count;
+                if (AbyssCommands.find(aliases[0]) != command) {
+                    return "FAIL resolve " + aliases[0] + " -> " + command.getClass().getName();
+}
+                ++primaryResolved;
+}
+            if (count != 19) {
+                return "FAIL count " + count + "/19";
+}
+            if (StockCommandRegistry.J == null) {
+                return "FAIL module-setting-null";
+}
+            String moduleSettingTest = StockCommandModuleSetting.selfTest();
+            if (!moduleSettingTest.startsWith("PASS")) {
+                return "FAIL module-setting " + moduleSettingTest;
+}
+            int placeholders = AbyssCommands.placeholderCount();
+            if (placeholders != 0) {
+                return "FAIL module-placeholders " + placeholders;
+}
+            String bindTest = AbyssCommandBind.selfTest();
+            if (!bindTest.startsWith("PASS")) {
+                return "FAIL keybind " + bindTest;
+}
+            String configTest = AbyssCommandConfig.selfTest();
+            if (!configTest.startsWith("PASS")) {
+                return "FAIL config-metadata " + configTest;
+}
+            String resetTest = AbyssCommandReset.selfTest();
+            if (!resetTest.startsWith("PASS")) {
+                return "FAIL reset " + resetTest;
+}
+            String selectTest = AbyssCommandSelect.selfTest();
+            if (!selectTest.startsWith("PASS")) {
+                return "FAIL selector " + selectTest;
+}
+            return "PASS commands=" + count + " primaryAliases=" + primaryResolved
+                    + " moduleSetting=PASS keybind=PASS config=PASS reset=PASS selector=PASS";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+}
+    private static String nativeBaseFallback(Command command) {
+        try {
+            if (command.getClass().getMethod("J").getDeclaringClass() == Command.class) {
+                return "J";
+}
+            if (command.getClass().getMethod("e", Long.TYPE).getDeclaringClass() == Command.class) {
+                return "e";
+}
+            if (command.getClass().getMethod("g", String[].class, Integer.TYPE, Long.TYPE).getDeclaringClass() == Command.class) {
+                return "g";
+}
+            if (command.getClass().getMethod("h", Long.TYPE).getDeclaringClass() == Command.class) {
+                return "h";
+}
+            if (command.getClass().getMethod("j", String[].class, Long.TYPE).getDeclaringClass() == Command.class) {
+                return "j";
+}
+            return null;
+}
+        catch (Throwable failure) {
+            return "reflection:" + failure.getClass().getName();
+}
+}
+
     private static String names() {
         StringBuilder var0 = new StringBuilder();
         if (StockCommandRegistry.L != null) {
@@ -170,7 +270,9 @@ public final class AbyssCommands {
 }
                     var0.append('.').append(var3[0]);
 }
-                catch (Throwable throwable) {}
+                catch (Throwable throwable) {
+                    AbyssClient.recordFeatureFailure("AbyssCommands", "command-name-list", throwable);
+}
 }
 }
         return var0.toString();
@@ -181,13 +283,13 @@ public final class AbyssCommands {
             if (ConfigManagerWindow.D == null) {
                 ConfigManagerWindow.D = new ArrayList<String>();
 }
-            if ((var1 = Minecraft.func_71410_x()) != null && var1.field_71456_v != null) {
-                var1.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText(var0));
+            if ((var1 = Minecraft.getMinecraft()) != null && var1.ingameGUI != null) {
+                var1.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText(var0));
 }
             ConfigManagerWindow.D.add(var0);
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssCommands", "chat-output", throwable);
 }
 }
     public static Module module(String var0) {

@@ -15,7 +15,7 @@ import net.minecraft.util.IChatComponent;
 
 public class GetDisplayNameEvent
 extends Event {
-    private static final long public final EntityPlayer u;
+    public final EntityPlayer u;
     private String K = "";
     private String T = "";
     private IChatComponent R;
@@ -36,7 +36,7 @@ extends Event {
     public IChatComponent c() {
         ChatComponentText var1 = new ChatComponentText(this.K);
         ChatComponentText var2 = new ChatComponentText(this.T);
-        return var1.func_150257_a(this.R).func_150257_a((IChatComponent)var2);
+        return var1.appendSibling(this.R).appendSibling((IChatComponent)var2);
 }
     public void Q(String var1) {
         this.K = var1 + this.K;

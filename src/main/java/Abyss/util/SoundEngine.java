@@ -3,6 +3,7 @@
  */
 package Abyss.util;
 
+import Abyss.AbyssClient;
 import Abyss.util.OggStreamPlayer;
 import Abyss.util.SoundCallback;
 import java.io.IOException;
@@ -11,7 +12,9 @@ import java.net.URL;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SoundEngine {
-    private static long private SoundCallback e;
+    private static long a;
+
+    private SoundCallback e;
     private static CopyOnWriteArrayList<OggStreamPlayer> V = new CopyOnWriteArrayList();
 
     public static void d(InputStream var0, long var1, char var3, float var4) {
@@ -76,7 +79,7 @@ public class SoundEngine {
             SoundEngine.D(var7, var3, var4);
 }
         catch (IOException iOException) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("SoundEngine", "resource-playback", iOException);
 }
 }
     public static void E(long var0, InputStream var2) {
@@ -85,4 +88,7 @@ public class SoundEngine {
         int var5 = (int)((var0 ^ 0x6DE77C61E6B2L) << 48 >>> 48);
         SoundEngine.d(var2, var3, (char)var5, 0.0f);
 }
+    static {
+        a = 19188549812115L;
+    }
 }

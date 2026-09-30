@@ -9,7 +9,7 @@ import Abyss.module.Modules;
 import Abyss.module.impl.misc.CommandLine;
 
 public class GuiChatHooks {
-    private static long public static String modifyAutoCompleteMessage(String var0) {
+    public static String modifyAutoCompleteMessage(String var0) {
         return !var0.isEmpty() && Modules.J(CommandLine.class).o() && var0.startsWith(".") ? GuiChatHooks.getLastArgAfterDot(var0) : var0;
 }
     public static void onAutocompletePlayerNames(CallbackInfo var0) {

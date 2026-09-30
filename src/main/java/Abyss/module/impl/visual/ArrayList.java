@@ -54,6 +54,9 @@ import net.minecraft.client.renderer.GlStateManager;
 public class ArrayList
 extends Module
 implements EventSubscriber {
+    private static long a;
+    private static Map h;
+    private static String[] b;
     public static BooleanSetting abyssCustomFont;
     public static BooleanSetting abyssBackground;
     public static BooleanSetting abyssLine;
@@ -260,12 +263,12 @@ implements EventSubscriber {
         long var10 = ((long)var0 << 32 | (long)var3 << 40 >>> 32 | (long)var8 << 56 >>> 56) ^ a;
         long var12 = var10 ^ 0x3C6AD371467BL;
         var9 = MathUtil.q(var9, 0.0f, 1.0f);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)var9);
+        GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)var9);
         var1.v(var2, var4, var5, var6, var12, var7);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.popMatrix();
 }
     private void N(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var10001 = 59909721217249L;
@@ -401,10 +404,10 @@ implements EventSubscriber {
         int var22 = (int)(var10001 << 56 >>> 56);
         var10001 = 116568669000716L;
         CustomFont var38 = Font.Q(73094284682035L);
-        GlStateManager.func_179094_E();
+        GlStateManager.pushMatrix();
         ScaledResolution var39 = var1.C;
         float var40 = scale.L();
-        GlStateManager.func_179152_a((float)var40, (float)var40, (float)var40);
+        GlStateManager.scale((float)var40, (float)var40, (float)var40);
         String var41 = mode.Y();
         boolean var42 = var41.contains("RIGHT");
         boolean var43 = var41.contains("CURVE");
@@ -425,7 +428,7 @@ implements EventSubscriber {
         float var58 = var44 ? var55 + var57 : 0.0f;
         float var59 = (1.0f + offsetY.L()) * var40;
         float var60 = barWidth.L() * var40;
-        float f2 = var61 = var42 ? (float)var39.func_78326_a() - offsetX.L() * var40 : offsetX.L() * var40;
+        float f2 = var61 = var42 ? (float)var39.getScaledWidth() - offsetX.L() * var40 : offsetX.L() * var40;
         float var62 = var42 ? var61 + (var43 ? 2.0f * var40 : 0.0f) : offsetX.L() * var40 - var60;
         String var63 = customText.X();
         if (!var63.isEmpty()) {
@@ -475,12 +478,12 @@ implements EventSubscriber {
                 float var101 = var42 ? var62 + var88 : var62 - var88;
                 float var102 = var101 + var60 * var40 * 0.5f;
                 float var103 = (var95 + var96 + var53) * 0.5f + var89 * 0.5f;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179109_b((float)(var102 / var40), (float)(var103 / var40), (float)0.0f);
-                GlStateManager.func_179152_a((float)var90, (float)var90, (float)1.0f);
-                GlStateManager.func_179109_b((float)(-var102 / var40), (float)(-var103 / var40), (float)0.0f);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate((float)(var102 / var40), (float)(var103 / var40), (float)0.0f);
+                GlStateManager.scale((float)var90, (float)var90, (float)1.0f);
+                GlStateManager.translate((float)(-var102 / var40), (float)(-var103 / var40), (float)0.0f);
                 RenderUtil.c(125644905353792L, var101 / var40, (var95 + var89 * 0.5f) / var40, (var101 + var60 * var40) / var40, (var96 + var53 + var89 * 0.5f) / var40, var92);
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
 }
             float var112 = (var95 + var55 - var52 - var54 + var89) / var40;
             float var113 = (var95 + 2.0f * var40 + var89) / var40;
@@ -489,10 +492,10 @@ implements EventSubscriber {
                 float var104 = var61 - var58 + var88;
                 float var105 = (var114 + var104) * 0.5f;
                 float var106 = (var95 + var96) * 0.5f + var89 * 0.5f;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179109_b((float)(var105 / var40), (float)(var106 / var40), (float)0.0f);
-                GlStateManager.func_179152_a((float)var90, (float)var90, (float)1.0f);
-                GlStateManager.func_179109_b((float)(-var105 / var40), (float)(-var106 / var40), (float)0.0f);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate((float)(var105 / var40), (float)(var106 / var40), (float)0.0f);
+                GlStateManager.scale((float)var90, (float)var90, (float)1.0f);
+                GlStateManager.translate((float)(-var105 / var40), (float)(-var106 / var40), (float)0.0f);
                 this.f(ArrayListRect.H(var99), ArrayListRect.e(var99), 49215341321510L, ArrayListRect.N(var99), ArrayListRect.J(var99), var91, var41, var68, var100);
                 if (var44) {
                     float var107 = var61 - var58 + var57 + var88;
@@ -504,16 +507,16 @@ implements EventSubscriber {
                 if (var75) {
                     ArrayList.g(28962, var38, var81, 16056385, (var61 - var58 - var84 + var82 + ArrayListEntry.c(var70) + var49 + var88) / var40, var112, var94, var45, (byte)var22, var74);
 }
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
             } else {
                 float var115 = var61 + var58 - var88;
                 float var116 = var61 + var58 + var84 - var88;
                 float var117 = (var115 + var116) * 0.5f;
                 float var118 = (var95 + var96) * 0.5f + var89 * 0.5f;
-                GlStateManager.func_179094_E();
-                GlStateManager.func_179109_b((float)(var117 / var40), (float)(var118 / var40), (float)0.0f);
-                GlStateManager.func_179152_a((float)var90, (float)var90, (float)1.0f);
-                GlStateManager.func_179109_b((float)(-var117 / var40), (float)(-var118 / var40), (float)0.0f);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate((float)(var117 / var40), (float)(var118 / var40), (float)0.0f);
+                GlStateManager.scale((float)var90, (float)var90, (float)1.0f);
+                GlStateManager.translate((float)(-var117 / var40), (float)(-var118 / var40), (float)0.0f);
                 this.f(ArrayListRect.H(var99), ArrayListRect.e(var99), 49215341321510L, ArrayListRect.N(var99), ArrayListRect.J(var99), var91, var41, var68, var100);
                 if (var44) {
                     float var119 = var61 - var88;
@@ -525,12 +528,12 @@ implements EventSubscriber {
                 if (var75) {
                     ArrayList.g(28962, var38, var81, 16056385, (var61 + var58 + var82 + ArrayListEntry.c(var70) + var49 - var88) / var40, var112, var94, var45, (byte)var22, var74);
 }
-                GlStateManager.func_179121_F();
+                GlStateManager.popMatrix();
 }
             var68 = var99;
             var59 = var98;
 }
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private static float B(float var0) {
         var0 = MathUtil.q(var0, 0.0f, 1.0f);
@@ -552,23 +555,30 @@ implements EventSubscriber {
         float var11 = var1 ? var2 - var3 + var5 : var2 + var3 + var4 - var5;
         return new ArrayListRect(var10 / var9, (var6 + var8) / var9, var11 / var9, (var7 + var8) / var9, null);
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void z(float var1, float var2, long var3, float var5, float var6, int var7, float var8, ArrayListRect var9, ArrayListRect var10, float var11) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var12 = var3 ^ 0x1F5A5E837417L;
         this.m(var1, var2, var5, var12, var6, var7, var8, var9, var10, var11, false);
@@ -584,7 +594,12 @@ implements EventSubscriber {
     public void A(long var1) {
         this.U.clear();
 }
-                Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            C = new Object[7]; E = new String[7]; a(); h = new HashMap(13); long var11 = a ^ 106054434392260L;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var14 = 1; var14 < 8; ++var14) { var10003[var14] = (byte)(var11 << var14 * 8 >>> 56); }
+            Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var13.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var20 = new String[11];
             int var18 = 0;
@@ -649,7 +664,6 @@ implements EventSubscriber {
                                         var41 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                         var44 = 0;
 }
-                                    break;
 }
 }
                             var16 = var17.charAt(var25);
@@ -668,9 +682,8 @@ implements EventSubscriber {
 }
 }
                     var26 = var17.substring(++var25, var25 + var16);
-                    var10001 = 0;
+var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var22) {
@@ -678,6 +691,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 32443898390876L;
+        zkm$clinit();
         abyssCustomFont = new BooleanSetting("CFont", true);
         abyssBackground = new BooleanSetting("Background", true);
         abyssLine = new BooleanSetting("Line", true);

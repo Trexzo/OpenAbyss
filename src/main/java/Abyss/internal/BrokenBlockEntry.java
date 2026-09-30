@@ -11,10 +11,11 @@ import Abyss.util.MiningConstants;
 import net.minecraft.block.Block;
 
 public final class BrokenBlockEntry {
+    private static long a = 23034907783007L;
     Block l;
     public long H;
     public int Q;
-    private static long long[] Z;
+    private long[] Z;
 
     public boolean q() {
         int var1 = (int)MiningConstants.K;

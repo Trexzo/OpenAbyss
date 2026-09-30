@@ -20,6 +20,10 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class PercentageSetting
 extends Setting {
+    private static long a;
+    static {
+        a = 49645478270159L;
+    }
     private int n;
         private static long f;
 

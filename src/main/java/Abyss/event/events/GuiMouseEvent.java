@@ -12,7 +12,7 @@ import net.minecraft.client.gui.GuiScreen;
 public class GuiMouseEvent
 extends Event {
     public final GuiScreen j;
-    private static final long public final boolean y;
+    public final boolean y;
     public final int A;
     public final int I;
 

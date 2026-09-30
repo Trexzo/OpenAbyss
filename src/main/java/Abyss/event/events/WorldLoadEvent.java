@@ -7,5 +7,5 @@ import Abyss.event.Event;
 
 public class WorldLoadEvent
 extends Event {
-    private static final long }
+}
 

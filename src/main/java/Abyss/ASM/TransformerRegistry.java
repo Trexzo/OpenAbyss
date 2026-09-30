@@ -79,30 +79,28 @@ public class TransformerRegistry {
         TransformerRegistry.H();
         return stage1$all;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static Map<String, ClassTransform> H() {
         Map<String, ClassTransform> var0 = stage1$registry;
         if (var0 != null) {
             return var0;
-}
-        Class<TransformerRegistry> clazz = TransformerRegistry.class;
+        }
+
         synchronized (TransformerRegistry.class) {
             var0 = stage1$registry;
             if (var0 != null) {
-                // ** MonitorExit[var1_1] (shouldn't be in output)
                 return var0;
-}
-            LinkedHashMap<String, ClassTransform> var1 = new LinkedHashMap<String, ClassTransform>();
-            ArrayList<ClassTransform> var2 = new ArrayList<ClassTransform>();
+            }
+
+            Map<String, ClassTransform> var1 = new LinkedHashMap<String, ClassTransform>();
+            List<ClassTransform> var2 = new ArrayList<ClassTransform>();
             TransformerRegistry.stage1$build(var1, var2);
             stage1$all = Collections.unmodifiableList(var2);
-            stage1$registry = var0 = Collections.unmodifiableMap(var1);
-            // ** MonitorExit[var1_1] (shouldn't be in output)
+            var0 = Collections.unmodifiableMap(var1);
+            stage1$registry = var0;
             return var0;
-}
-}
+        }
+    }
+
     private TransformerRegistry() {
 }
     public static List<ClassTransform> R() {

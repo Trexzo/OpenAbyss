@@ -33,9 +33,16 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ChatInputHandler
 implements EventSubscriber {
+    private static Map e;
+    private static long a = 133875353228107L;
         private static boolean k;
     private static long[] c;
     
@@ -74,7 +81,7 @@ implements EventSubscriber {
                     String var26 = this.s(3260, (short)-4852, (short)var6);
                     String var27 = var26.substring(1);
                     String[] var28 = var27.split(" ");
-                    ArrayList var29 = new ArrayList();
+                    ArrayList<String> var29 = new ArrayList<String>();
                     Collections.addAll(var29, var28);
                     int var30 = this.S(var27);
                     Command command = var31 = var28.length > 0 ? this.V(116613762984180L, var28[0]) : null;
@@ -122,10 +129,10 @@ implements EventSubscriber {
 }
 }
     private boolean v(long var1) {
-        return ChatInputHandler.F.field_71462_r instanceof GuiChat && this.s(3260, (short)-4852, (short)-30712).startsWith(".") && Modules.J(CommandLine.class).o() && CommandLine.autoFill.c();
+        return ChatInputHandler.F.currentScreen instanceof GuiChat && this.s(3260, (short)-4852, (short)-30712).startsWith(".") && Modules.J(CommandLine.class).o() && CommandLine.autoFill.c();
 }
     private void X(long var1, String var3) {
-        GuiChatAccessor.z('\u0000', '\u2876', 245891786, (GuiChat)ChatInputHandler.F.field_71462_r).func_146180_a(var3);
+        GuiChatAccessor.z('\u0000', '\u2876', 245891786, (GuiChat)ChatInputHandler.F.currentScreen).setText(var3);
 }
     public static String y(String var0, String var1) {
         int var2 = var0.lastIndexOf(" ");
@@ -166,7 +173,7 @@ implements EventSubscriber {
         int var6 = (int)((var4 ^ 0x5D08AB7B1989L) >>> 48);
         int var7 = (int)((var4 ^ 0x5D08AB7B1989L) << 16 >>> 48);
         int var8 = (int)((var4 ^ 0x5D08AB7B1989L) << 32 >>> 32);
-        return GuiChatAccessor.z((char)var6, (char)var7, var8, (GuiChat)ChatInputHandler.F.field_71462_r).func_146179_b();
+        return GuiChatAccessor.z((char)var6, (char)var7, var8, (GuiChat)ChatInputHandler.F.currentScreen).getText();
 }
     static {
         E = new ArrayList<String>();

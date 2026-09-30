@@ -33,6 +33,10 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.lwjgl.opengl.GL11;
 
 public class FontGlyphPage {
+    private static long a;
+    static {
+        a = 39575492712087L;
+    }
     private FontGlyphPage h;
     private final GlyphTexture x;
     private static String[] f;
@@ -103,11 +107,11 @@ public class FontGlyphPage {
         } else {
             var23 = var10 == null ? var8 : this.C(var10, var8);
 }
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)2.0f, (float)2.0f, (float)1.0f);
-        this.X.field_71466_p.func_175065_a(var21, (float)(var2 * 0.5 + 1.0), (float)(var4 * 0.5 + 3.0), var23, false);
-        GlStateManager.func_179121_F();
-        GlStateManager.func_179144_i((int)GlyphTexture.x(var12).func_110552_b());
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)2.0f, (float)2.0f, (float)1.0f);
+        this.X.fontRendererObj.drawString(var21, (float)(var2 * 0.5 + 1.0), (float)(var4 * 0.5 + 3.0), var23, false);
+        GlStateManager.popMatrix();
+        GlStateManager.bindTexture((int)GlyphTexture.x(var12).getGlTextureId());
         if (var11 == null) {
             RenderUtil.R(var23, var19);
 }
@@ -170,7 +174,7 @@ public class FontGlyphPage {
         this.V(var1, var2, var6, var7, false, (short)0, 8.2f, true, 1908211717, '\u86b7', var9);
 }
     private void v(long var1, GlyphTexture var3, Font var4, Graphics2D var5, boolean var6) {
-        int var12;
+        int var12 = 0;
         int var9 = 0;
         int var10 = 0;
         int var11 = 1;
@@ -236,13 +240,13 @@ public class FontGlyphPage {
         if (var7) {
             var24 = (var24 & 0xFCFCFC) >> 2 | var24 & 0xFF000000;
 }
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179139_a((double)0.5, (double)0.5, (double)0.5);
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((double)0.5, (double)0.5, (double)0.5);
         RenderUtil.U(0L);
         RenderUtil.X();
         RenderUtil.R(var24, var22);
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179144_i((int)GlyphTexture.x(this.q).func_110552_b());
+        GlStateManager.enableTexture2D();
+        GlStateManager.bindTexture((int)GlyphTexture.x(this.q).getGlTextureId());
         if (var10) {
             GL11.glTexParameteri((int)3553, (int)10241, (int)9729);
             GL11.glTexParameteri((int)3553, (int)10240, (int)9729);
@@ -252,10 +256,10 @@ public class FontGlyphPage {
 }
         float var25 = this.F(var1, var2, var4, var24, var7, var13, var20);
         GL11.glHint((int)3155, (int)4352);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
         RenderUtil.X();
         RenderUtil.G();
-        GlStateManager.func_179144_i((int)0);
+        GlStateManager.bindTexture((int)0);
         return var25;
 }
     public String G(String var1, int var2, boolean var3, byte var4, long var5) {
@@ -358,7 +362,7 @@ public class FontGlyphPage {
                     var34 = false;
                     var36 = false;
                     var35 = false;
-                    GlStateManager.func_179144_i((int)GlyphTexture.x(this.q).func_110552_b());
+                    GlStateManager.bindTexture((int)GlyphTexture.x(this.q).getGlTextureId());
                     var29 = this.q;
                     if (var8) {
                         var39 += 16;
@@ -372,11 +376,11 @@ public class FontGlyphPage {
                             if (!this.F()) break;
                             var33 = true;
                             if (var34) {
-                                GlStateManager.func_179144_i((int)GlyphTexture.x(this.h.x).func_110552_b());
+                                GlStateManager.bindTexture((int)GlyphTexture.x(this.h.x).getGlTextureId());
                                 var29 = this.h.x;
                                 break;
 }
-                            GlStateManager.func_179144_i((int)GlyphTexture.x(this.h.q).func_110552_b());
+                            GlStateManager.bindTexture((int)GlyphTexture.x(this.h.q).getGlTextureId());
                             var29 = this.h.q;
                             break;
 }
@@ -390,11 +394,11 @@ public class FontGlyphPage {
 }
                         case 20: {
                             if (var33 && this.F()) {
-                                GlStateManager.func_179144_i((int)GlyphTexture.x(this.h.x).func_110552_b());
+                                GlStateManager.bindTexture((int)GlyphTexture.x(this.h.x).getGlTextureId());
                                 var29 = this.h.x;
                                 break;
 }
-                            GlStateManager.func_179144_i((int)GlyphTexture.x(this.x).func_110552_b());
+                            GlStateManager.bindTexture((int)GlyphTexture.x(this.x).getGlTextureId());
                             var29 = this.x;
                             break;
 }
@@ -403,7 +407,7 @@ public class FontGlyphPage {
                             var35 = false;
                             var32 = null;
                             RenderUtil.R(this.r(var7, 0L), var25);
-                            GlStateManager.func_179144_i((int)GlyphTexture.x(this.q).func_110552_b());
+                            GlStateManager.bindTexture((int)GlyphTexture.x(this.q).getGlTextureId());
                             var29 = this.q;
 }
 }
@@ -420,7 +424,7 @@ public class FontGlyphPage {
                 float var47 = (float)(MathUtil.x(Glyph.l(GlyphTexture.t(var29)[var38]) - 8.2f) / 2.0);
                 int var41 = var9.s(var38, var46, var47, var32);
                 RenderUtil.R(var8 ? (var41 & 0xFCFCFC) >> 2 | var41 & 0xFF000000 : var41, var25);
-                GlStateManager.func_179144_i((int)GlyphTexture.x(var29).func_110552_b());
+                GlStateManager.bindTexture((int)GlyphTexture.x(var29).getGlTextureId());
 }
             this.O(var2, var4, var29, var35, var36, var38);
             var2 += MathUtil.x(Glyph.l(GlyphTexture.t(var29)[var38]) - 8.2f);
@@ -578,7 +582,7 @@ public class FontGlyphPage {
         return var4 == '\u00a7' ? false : var4 >= '\u007f' || var4 >= var3.length || var3[var4] == null || Glyph.l(var3[var4]) <= 0.0f;
 }
     private int getStringWidth(char var1, long var2) {
-        return var1 == '\u00a7' ? 0 : this.X.field_71466_p.func_78256_a(String.valueOf(var1));
+        return var1 == '\u00a7' ? 0 : this.X.fontRendererObj.getStringWidth(String.valueOf(var1));
 }
     protected void z(float var1, float var2, float var3, float var4, float var5, float var6, float var7, float var8) {
         float var9 = var5 / var7;

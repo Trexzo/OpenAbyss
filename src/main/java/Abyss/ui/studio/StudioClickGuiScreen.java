@@ -50,6 +50,18 @@ import org.lwjgl.opengl.GL11;
 
 public class StudioClickGuiScreen
 extends GuiScreen {
+    private static Integer[] g;
+
+    private static long[] f;
+
+    private static Map h;
+
+    private static String[] d;
+
+    private static String[] c;
+
+    private static Map e;
+
     private float y;
     private String K;
     private static Map<Category, StudioFrameState> a;
@@ -162,7 +174,6 @@ extends GuiScreen {
                                     var40 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                     var43 = 0;
 }
-                                break;
 }
 }
                         var16 = var17.charAt(var24);
@@ -183,7 +194,6 @@ extends GuiScreen {
                 var25 = var17.substring(++var24, var24 + var16);
                 var10001 = 0;
 }
-            break;
 }
 }
     public float y() {
@@ -212,8 +222,8 @@ extends GuiScreen {
         this.k.remove(var1);
         this.k.add(var1);
 }
-    public void func_73866_w_() {
-        super.func_73866_w_();
+    public void initGui() {
+        super.initGui();
         StudioClickGuiScreen.Z();
         AbyssClickGui.beginDisplaySort();
         try {
@@ -227,8 +237,8 @@ extends GuiScreen {
         this.A.d(1.0f);
         this.W.U(this.Q);
 }
-    protected void func_146286_b(int var1, int var2, int var3) {
-        super.func_146286_b(var1, var2, var3);
+    protected void mouseReleased(int var1, int var2, int var3) {
+        super.mouseReleased(var1, var2, var3);
         float var8 = ClickGUI.scale.L() * 0.94f;
         float var9 = (float)var1 / var8;
         float var10 = (float)var2 / var8;
@@ -256,10 +266,10 @@ extends GuiScreen {
 }
         var0.add("Studio", (JsonElement)var3);
 }
-    public boolean func_73868_f() {
+    public boolean doesGuiPauseGame() {
         return false;
 }
-    public void func_73863_a(int var1, int var2, float var3) {
+    public void drawScreen(int var1, int var2, float var3) {
         try {
             long var4 = 65742445683630L;
             this.W();
@@ -297,10 +307,10 @@ extends GuiScreen {
         this.y = MathUtil.q((float)(var1 - this.V) / 16.0f, 0.5f, 4.0f);
         this.V = var1;
 }
-    protected void func_73864_a(int var1, int var2, int var3) {
+    protected void mouseClicked(int var1, int var2, int var3) {
         try {
             long var4 = 21258311689151L;
-            super.func_73864_a(var1, var2, var3);
+            super.mouseClicked(var1, var2, var3);
             if (this.i != null && var3 > 1) {
                 this.i.E().z(118276941480361L, KeyBindUtil.w('\u0000', var3, 132797583844084L));
                 this.i = null;
@@ -345,15 +355,15 @@ extends GuiScreen {
             var2 = Math.max(var2, var4.m(1.0f));
 }
         float var7 = 24.0f;
-        float var8 = (float)this.field_146295_m - 20.0f;
+        float var8 = (float)this.height - 20.0f;
         float var9 = Math.min(var7 - var1, var8 - var2);
         float var6 = var7 - var1;
-        if (var2 - var1 <= (float)this.field_146295_m - 44.0f) {
+        if (var2 - var1 <= (float)this.height - 44.0f) {
             var9 = var6;
 }
         this.Q = MathUtil.q(this.Q, var9, var6);
 }
-    protected void func_73869_a(char var1, int var2) {
+    protected void keyTyped(char var1, int var2) {
         if (this.i != null) {
             this.i.E().z(118276941480361L, var2 != 211 && var2 != 1 ? var2 : 0);
             this.i = null;
@@ -361,9 +371,9 @@ extends GuiScreen {
         } else if (this.P != null && this.P.V()) {
             this.P.h(13426, var1, var2, '\ua023', (short)4065);
         } else if (var2 == 1) {
-            this.field_146297_k.func_147108_a(null);
-            if (this.field_146297_k.field_71462_r == null) {
-                this.field_146297_k.func_71381_h();
+            this.mc.displayGuiScreen(null);
+            if (this.mc.currentScreen == null) {
+                this.mc.setIngameFocus();
 }
             Modules.c(0L);
         } else {
@@ -372,6 +382,32 @@ extends GuiScreen {
 }
 }
 }
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+
+        for (int var4 = 0; var4 < var2; var4++) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                byte var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << '\f');
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+
+        return new String(var3, 0, var1);
+    }
     private void l(float var1) {
 }
     private void z(long var1) {
@@ -466,15 +502,15 @@ extends GuiScreen {
         StudioClickGuiScreen.Z();
         this.z(var3);
 }
-    public void func_146274_d() {
-        super.func_146274_d();
+    public void handleMouseInput() throws java.io.IOException {
+        super.handleMouseInput();
         int var1 = Mouse.getDWheel();
         if (var1 != 0) {
             this.Q += var1 > 0 ? 34.0f : -34.0f;
 }
 }
-    public void func_146281_b() {
-        super.func_146281_b();
+    public void onGuiClosed() {
+        super.onGuiClosed();
         if (this.P != null) {
             this.n(this.P, 89965113873812L);
 }

@@ -52,8 +52,23 @@ public enum ChatFormatting {
     private static Map f;
     
     
+    // R16_UTIL_RECOVERY_MARKER
+    // Exact outputs recovered from the sibling zkm$pre bootstrap.
+    private static long zkm$g22() {
+        return 261699583L;
+    }
+
+    private static int zkm$g24() {
+        return 32594;
+    }
+    private static long zkm$ga() {
+        return 13249631676262L;
+    }
+
+    // R17_CORE_UTIL_RECOVERY_MARKER
     private ChatFormatting(int var3, char var4, int var5, char var6) {
-        long var8 = (ChatFormatting.zkm$g22() << 16 | (long)var6 << 48 >>> 48) ^ this.b = var5;
+        long var8 = (ChatFormatting.zkm$g22() << 16 | (long)var6 << 48 >>> 48) ^ ChatFormatting.zkm$ga();
+        this.b = var5;
         this.e = new String(new char[]{'\u00a7', var4});
 }
     public int r() {

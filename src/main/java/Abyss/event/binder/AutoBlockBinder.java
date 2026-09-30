@@ -21,7 +21,7 @@ import Abyss.event.invoker.AutoBlockUpdateCameraAndRenderInvoker;
 import Abyss.module.impl.combat.AutoBlock;
 
 public final class AutoBlockBinder {
-    private static final long public static void Z(int var0, EventBus var1, byte var2, AutoBlock var3) {
+    public static void Z(int var0, EventBus var1, byte var2, AutoBlock var3) {
         var1.R(var3, RedirectIsUsingItemEvent.class, 3, new AutoBlockRedirectIsUsingItemInvoker(var3));
         var1.R(var3, ModuleTagEvent.class, 3, new AutoBlockModuleTagInvoker(var3));
         var1.R(var3, PreMouseInputEvent.class, 3, new AutoBlockPreMouseInputInvoker(var3));

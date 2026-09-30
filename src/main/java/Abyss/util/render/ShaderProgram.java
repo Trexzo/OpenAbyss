@@ -11,7 +11,9 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 public class ShaderProgram {
-    private static long public final int S;
+    private static long a;
+
+    public final int S;
 
     public void P() {
         GL20.glUseProgram((int)0);
@@ -75,4 +77,7 @@ public class ShaderProgram {
     public void r() {
         GL20.glUseProgram((int)this.S);
 }
+    static {
+        a = 13990146093428L;
+    }
 }

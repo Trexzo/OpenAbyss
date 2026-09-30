@@ -21,7 +21,7 @@ extends Gui {
     private final int q;
     private boolean s;
     private int F = 0;
-    private static long private final int b;
+    private final int b;
     private final int x;
     private int o;
     private int M = 0;
@@ -36,14 +36,14 @@ extends Gui {
 }
     public void W(long var1, char var3, int var4) {
         if (this.s) {
-            if (GuiScreen.func_175277_d((int)var4)) {
+            if (GuiScreen.isKeyComboCtrlX((int)var4)) {
                 this.F = this.E.length();
-            } else if (GuiScreen.func_175280_f((int)var4)) {
-                GuiScreen.func_146275_d((String)this.E);
-            } else if (GuiScreen.func_175279_e((int)var4)) {
-                this.J(GuiScreen.func_146277_j());
-            } else if (GuiScreen.func_175278_g((int)var4)) {
-                GuiScreen.func_146275_d((String)this.E);
+            } else if (GuiScreen.isKeyComboCtrlC((int)var4)) {
+                GuiScreen.setClipboardString((String)this.E);
+            } else if (GuiScreen.isKeyComboCtrlV((int)var4)) {
+                this.J(GuiScreen.getClipboardString());
+            } else if (GuiScreen.isKeyComboCtrlA((int)var4)) {
+                GuiScreen.setClipboardString((String)this.E);
                 this.E = "";
                 this.F = 0;
             } else {
@@ -83,7 +83,7 @@ extends Gui {
 }
                     case 208: {
                         String[] var9 = this.E.split("\\r?\\n", -1);
-                        int var10 = this.B.field_78288_b + 2;
+                        int var10 = this.B.FONT_HEIGHT + 2;
                         int var11 = (this.b - 4) / var10;
                         if (this.M >= Math.max(0, var9.length - var11)) break;
                         ++this.M;
@@ -117,26 +117,26 @@ extends Gui {
         return this.E;
 }
     public void h() {
-        GuiTextWidget.func_73734_a((int)(this.S - 1), (int)(this.q - 1), (int)(this.S + this.x + 1), (int)(this.q + this.b + 1), (int)-6250336);
-        GuiTextWidget.func_73734_a((int)this.S, (int)this.q, (int)(this.S + this.x), (int)(this.q + this.b), (int)-16777216);
+        GuiTextWidget.drawRect((int)(this.S - 1), (int)(this.q - 1), (int)(this.S + this.x + 1), (int)(this.q + this.b + 1), (int)-6250336);
+        GuiTextWidget.drawRect((int)this.S, (int)this.q, (int)(this.S + this.x), (int)(this.q + this.b), (int)-16777216);
         String[] var3 = this.E.split("\\r?\\n", -1);
-        int var4 = this.B.field_78288_b + 2;
+        int var4 = this.B.FONT_HEIGHT + 2;
         int var5 = (this.b - 4) / var4;
         int var6 = var3.length;
         if (this.M > Math.max(0, var6 - var5)) {
             this.M = Math.max(0, var6 - var5);
 }
-        int var7 = (this.x - 8) / (this.B.field_78288_b / 2);
+        int var7 = (this.x - 8) / (this.B.FONT_HEIGHT / 2);
         int var8 = 0;
         for (int var9 = this.M; var9 < var3.length && var8 < var5; ++var9) {
             String var10 = var3[var9];
             while (0 < var10.length() && var8 < var5) {
                 int var12 = Math.min(0 + var7, var10.length());
                 String var13 = var10.substring(0, var12);
-                while (this.B.func_78256_a(var13) > this.x - 8 && var13.length() > 0) {
+                while (this.B.getStringWidth(var13) > this.x - 8 && var13.length() > 0) {
                     var13 = var13.substring(0, var13.length() - 1);
 }
-                this.B.func_78276_b(var13, this.S + 4, this.q + 4 + var8 * var4, 0xE0E0E0);
+                this.B.drawString(var13, this.S + 4, this.q + 4 + var8 * var4, 0xE0E0E0);
                 ++var8;
 }
             if (!var10.isEmpty()) continue;
@@ -147,10 +147,10 @@ extends Gui {
             String[] var17 = var16.split("\\r?\\n", -1);
             int var18 = var17.length - 1;
             String var19 = var17[var17.length - 1];
-            int var20 = this.S + 4 + this.B.func_78256_a(var19);
+            int var20 = this.S + 4 + this.B.getStringWidth(var19);
             int var14 = this.q + 4 + (var18 - this.M) * var4;
             if (var18 >= this.M && var18 < this.M + var5) {
-                GuiTextWidget.func_73734_a((int)var20, (int)(var14 - 1), (int)(var20 + 1), (int)(var14 + this.B.field_78288_b), (int)-3092272);
+                GuiTextWidget.drawRect((int)var20, (int)(var14 - 1), (int)(var20 + 1), (int)(var14 + this.B.FONT_HEIGHT), (int)-3092272);
 }
 }
 }

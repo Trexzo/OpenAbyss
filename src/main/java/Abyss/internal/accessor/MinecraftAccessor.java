@@ -16,6 +16,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.MusicTicker;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.util.Timer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public final class MinecraftAccessor {
     private static TypedValueStore X;

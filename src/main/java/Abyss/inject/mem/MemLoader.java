@@ -70,9 +70,6 @@ public final class MemLoader {
             return false;
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static Map<String, byte[]> index(byte[] jarBytes) throws IOException {
         HashMap<String, byte[]> entries = new HashMap<String, byte[]>();
         ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(jarBytes));

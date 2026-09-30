@@ -17,15 +17,49 @@ import Abyss.module.Modules;
 import Abyss.module.impl.misc.CommandLine;
 import Abyss.util.packet.OutgoingPacketState;
 import Abyss.util.packet.PacketManager;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.C01PacketChatMessage;
 
 public class NetworkManagerHooks {
-    private static final long public static void onSendPacket(Packet<?> var0, CallbackInfo var1) {
+    private static final Set<String> RUNTIME_MARKERS =
+            Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private static synchronized void runtimeMarker(String marker) {
+        if (marker == null || !RUNTIME_MARKERS.add(marker)) {
+            return;
+}
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-network-stage.txt"), true), "UTF-8")) {
+                out.write(System.currentTimeMillis() + "\t" + marker + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+}
+
+    public static void onSendPacket(Packet<?> var0, CallbackInfo var1) {
+        if (var0 != null) {
+            runtimeMarker("send-hook:" + var0.getClass().getName());
+            if (var0 instanceof C01PacketChatMessage) {
+                String message = ((C01PacketChatMessage)var0).getMessage();
+                if (message != null && message.startsWith("OPENABYSS_MACRO_PROBE_")) {
+                    runtimeMarker("chat-send-probe-payload:true");
+                }
+            }
+}
         if (var0 != null && NetworkManagerHooks.isKnownPacket(PacketAccessor.U, var0)) {
-            if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).func_149439_c().startsWith(".")) {
-                StockCommandRegistry.E(27284, '\u313f', '\u9352', ((C01PacketChatMessage)var0).func_149439_c());
+            if (var0 instanceof C01PacketChatMessage && Modules.J(CommandLine.class).o() && ((C01PacketChatMessage)var0).getMessage().startsWith(".")) {
+                String commandMessage = ((C01PacketChatMessage)var0).getMessage();
+                runtimeMarker("command-intercept:" + commandMessage);
+                boolean handled = StockCommandRegistry.E(27284, '\u313f', '\u9352', commandMessage);
+                runtimeMarker("command-intercept-dispatch:" + handled + ":" + commandMessage);
                 var1.cancel();
 }
             if (PacketManager.v.contains(var0)) {
@@ -34,14 +68,23 @@ public class NetworkManagerHooks {
                 SendPacketEvent var13 = new SendPacketEvent(var0);
                 AbyssClient.w.e(var13, 18670087776179L);
                 if (var13.a()) {
+                    if (var0 instanceof C01PacketChatMessage) {
+                        runtimeMarker("chat-send-decision:cancelled");
+                    }
                     var1.cancel();
                 } else {
+                    if (var0 instanceof C01PacketChatMessage) {
+                        runtimeMarker("chat-send-decision:accepted");
+                    }
                     OutgoingPacketState.D(0L, var0);
 }
 }
 }
 }
     public static void onReceivePacket(Packet<?> var0, CallbackInfo var1) {
+        if (var0 != null) {
+            runtimeMarker("receive-hook:" + var0.getClass().getName());
+}
         if (var0 != null && NetworkManagerHooks.isKnownPacket(PacketAccessor.m, var0)) {
             if (PacketManager.a.contains(var0)) {
                 PacketManager.a.remove(var0);

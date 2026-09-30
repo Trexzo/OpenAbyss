@@ -12,7 +12,7 @@ import net.minecraft.entity.Entity;
 public class PostRenderModelBipedEvent
 extends StoppableEvent {
     public final Entity v;
-    private static final long public PostRenderModelBipedEvent(Entity var3) {
+    public PostRenderModelBipedEvent(Entity var3) {
         this.v = var3;
 }
 }

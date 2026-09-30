@@ -7,7 +7,7 @@ import Abyss.setting.Setting;
 
 public class BooleanSetting
 extends Setting {
-    private static final long private boolean h;
+    private boolean h;
 
     private boolean Z() {
         return this.h;

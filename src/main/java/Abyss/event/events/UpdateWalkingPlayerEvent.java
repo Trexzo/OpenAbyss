@@ -12,7 +12,7 @@ extends Event {
     private boolean g;
     private boolean t;
     private float o;
-    private static final long private double G;
+    private double G;
     private double J;
     private boolean z;
     private float V;

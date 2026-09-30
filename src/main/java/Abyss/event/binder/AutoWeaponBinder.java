@@ -9,7 +9,7 @@ import Abyss.event.invoker.AutoWeaponPreUpdateInvoker;
 import Abyss.module.impl.player.AutoWeapon;
 
 public final class AutoWeaponBinder {
-    private static final long private AutoWeaponBinder() {
+    private AutoWeaponBinder() {
 }
     public static void N(EventBus var0, AutoWeapon var1) {
         var0.R(var1, PreUpdateEvent.class, 3, new AutoWeaponPreUpdateInvoker(var1));

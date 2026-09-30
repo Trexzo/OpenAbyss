@@ -7,6 +7,6 @@ import Abyss.event.Event;
 
 public class PostKnockbackEvent
 extends Event {
-    private static final long public PostKnockbackEvent(char var1, int var2, int var3) {
+    public PostKnockbackEvent(char var1, int var2, int var3) {
 }
 }

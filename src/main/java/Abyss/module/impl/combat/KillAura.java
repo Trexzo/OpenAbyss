@@ -140,7 +140,7 @@ implements EventSubscriber {
         int var12 = 11654630;
         int var15 = 54127;
         if (showReachRing.c()) {
-            RenderUtil.s((EntityLivingBase)KillAura.e.field_71439_g, attackRange.L(), 45, 1.5f, -1, 24156, '\u05bd', (char)var15);
+            RenderUtil.s((EntityLivingBase)KillAura.e.thePlayer, attackRange.L(), 45, 1.5f, -1, 24156, '\u05bd', (char)var15);
 }
         if (H6 != null) {
             int var20;
@@ -163,7 +163,7 @@ implements EventSubscriber {
                     break;
 }
                 case "BOX_WITH_DAMAGE": {
-                    if (KillAura.H6.field_70737_aN > 5) {
+                    if (KillAura.H6.hurtTime > 5) {
                         var20 = showTargetDamageColor.x((int)((float)showTargetOpacity.k() / 100.0f * 255.0f));
 }
                     RenderUtil.N(H6, 138251344894190L, var20);
@@ -174,7 +174,7 @@ implements EventSubscriber {
                     break;
 }
                 case "HEAD_BOX_WITH_DAMAGE": {
-                    if (KillAura.H6.field_70737_aN > 5) {
+                    if (KillAura.H6.hurtTime > 5) {
                         var20 = showTargetDamageColor.x((int)((float)showTargetOpacity.k() / 100.0f * 255.0f));
 }
                     RenderUtil.R((Entity)H6, 47843098999105L, var20, var1.j);
@@ -259,13 +259,13 @@ implements EventSubscriber {
         if (requireSword.c() && !ItemUtil.d()) {
             return false;
 }
-        if (requireClick.c() && !KeyBindUtil.V(KillAura.e.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) {
+        if (requireClick.c() && !KeyBindUtil.V(KillAura.e.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) {
             return false;
 }
-        if (screenCheck.c() && KillAura.e.field_71462_r != null) {
+        if (screenCheck.c() && KillAura.e.currentScreen != null) {
             return false;
 }
-        if (KillAura.e.field_71439_g.field_70128_L) {
+        if (KillAura.e.thePlayer.isDead) {
             return false;
 }
         H6 = var7 = this.b(14517823015178L);
@@ -282,13 +282,13 @@ implements EventSubscriber {
         int var14 = (int)((var6 ^ 0x708503894E86L) >>> 32);
         long var15 = (var6 ^ 0x708503894E86L) << 32 >>> 32;
         if (legit.c()) {
-            KeyBindUtil.T(var11, (short)var12, KillAura.e.field_71474_y.field_74312_F.func_151463_i(), (short)var13);
+            KeyBindUtil.T(var11, (short)var12, KillAura.e.gameSettings.keyBindAttack.getKeyCode(), (short)var13);
             return true;
 }
         if (OutgoingPacketState.E) {
             return true;
 }
-        if (!(!this.U || var5 && (KillAura.e.field_71439_g.func_71039_bw() || OutgoingPacketState.h || OutgoingPacketState.P))) {
+        if (!(!this.U || var5 && (KillAura.e.thePlayer.isUsingItem() || OutgoingPacketState.h || OutgoingPacketState.P))) {
             this.b(false, (byte)var8, var9, var10);
             return CombatUtil.I((Entity)var4, var14, var15);
 }
@@ -306,14 +306,14 @@ implements EventSubscriber {
         double var7 = attackRange.L();
         double var12 = this.w$r1();
         HashSet var9 = new HashSet();
-        List<Object> var13 = null;
+        List<EntityLivingBase> var13 = null;
         if (rotation.R("MANUAL")) {
             var10 = RaytraceUtil.j(var7);
         } else {
             var13 = new ArrayList<EntityLivingBase>();
             var10 = EntityUtil.F2(var12, 84864282554303L, fov.L(), var7, var13);
 }
-        List<Object> var11 = EntityUtil.x(var10, players.c(), mobs.c(), animals.c(), bosses.c(), 50993518959776L, friends.c(), enemies.c(), teammates.c(), bots.c(), silverfishes.c(), golems.c());
+        List<EntityLivingBase> var11 = EntityUtil.x(var10, players.c(), mobs.c(), animals.c(), bosses.c(), 50993518959776L, friends.c(), enemies.c(), teammates.c(), bots.c(), silverfishes.c(), golems.c());
         if (var13 != null) {
             var13 = EntityUtil.x(var13, players.c(), mobs.c(), animals.c(), bosses.c(), 50993518959776L, friends.c(), enemies.c(), teammates.c(), bots.c(), silverfishes.c(), golems.c());
 }
@@ -435,11 +435,11 @@ implements EventSubscriber {
         int var8 = (int)((var5 ^ 0xBD8809976F6L) << 32 >>> 48);
         int var9 = (int)((var5 ^ 0xBD8809976F6L) << 48 >>> 48);
         if (!OutgoingPacketState.E && !OutgoingPacketState.T) {
-            if (!var1 || !KillAura.e.field_71439_g.func_71039_bw() && !OutgoingPacketState.h && !OutgoingPacketState.P) {
+            if (!var1 || !KillAura.e.thePlayer.isUsingItem() && !OutgoingPacketState.h && !OutgoingPacketState.P) {
                 if (!legit.c()) {
-                    KillAura.e.field_71439_g.func_71038_i();
+                    KillAura.e.thePlayer.swingItem();
 }
-                KeyBindUtil.T(var7, (short)var8, KillAura.e.field_71474_y.field_74312_F.func_151463_i(), (short)var9);
+                KeyBindUtil.T(var7, (short)var8, KillAura.e.gameSettings.keyBindAttack.getKeyCode(), (short)var9);
                 return true;
 }
             return false;
@@ -453,14 +453,14 @@ implements EventSubscriber {
         int var18 = (int)((var7 ^ 0x293C0A2490C6L) >>> 32);
         double var21 = this.O;
         this.O += 0.8 * (double)ClientUtil.H(var9) * 0.05;
-        float var23 = (float)(var4.func_174813_aQ().field_72337_e - var4.func_174813_aQ().field_72338_b);
+        float var23 = (float)(var4.getEntityBoundingBox().maxY - var4.getEntityBoundingBox().minY);
         double var24 = var21 + (this.O - var21) * (double)var6;
         double var26 = Math.abs(1.0 + Math.sin(var24 - 0.5)) / 2.0;
         double var28 = Math.abs(1.0 + Math.sin(var24)) / 2.0;
-        double var30 = var4.field_70142_S + (var4.field_70165_t - var4.field_70142_S) * (double)var6 - RenderManagerAccessor.k(0L, e.func_175598_ae());
-        double var32 = var4.field_70137_T + (var4.field_70163_u - var4.field_70137_T) * (double)var6 - RenderManagerAccessor.y(var15, e.func_175598_ae()) + var26 * (double)var23;
-        double var34 = var4.field_70136_U + (var4.field_70161_v - var4.field_70136_U) * (double)var6 - RenderManagerAccessor.W(0L, e.func_175598_ae());
-        double var36 = var4.field_70137_T + (var4.field_70163_u - var4.field_70137_T) * (double)var6 - RenderManagerAccessor.y(var15, e.func_175598_ae()) + var28 * (double)var23;
+        double var30 = var4.lastTickPosX + (var4.posX - var4.lastTickPosX) * (double)var6 - RenderManagerAccessor.k(0L, e.getRenderManager());
+        double var32 = var4.lastTickPosY + (var4.posY - var4.lastTickPosY) * (double)var6 - RenderManagerAccessor.y(var15, e.getRenderManager()) + var26 * (double)var23;
+        double var34 = var4.lastTickPosZ + (var4.posZ - var4.lastTickPosZ) * (double)var6 - RenderManagerAccessor.W(0L, e.getRenderManager());
+        double var36 = var4.lastTickPosY + (var4.posY - var4.lastTickPosY) * (double)var6 - RenderManagerAccessor.y(var15, e.getRenderManager()) + var28 * (double)var23;
         GL11.glPushMatrix();
         GL11.glDisable((int)2884);
         GL11.glDisable((int)3553);
@@ -473,9 +473,9 @@ implements EventSubscriber {
         for (int var38 = 0; var38 <= 360; ++var38) {
             float var40 = this.k(var4, var18);
             GL11.glColor4f((float)((float)var39.getRed() / 255.0f), (float)((float)var39.getGreen() / 255.0f), (float)((float)var39.getBlue() / 255.0f), (float)(0.6f * var40));
-            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var38)) * (double)var4.field_70130_N * 0.8), (double)var36, (double)(var34 + Math.sin(Math.toRadians(var38)) * (double)var4.field_70130_N * 0.8));
+            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var38)) * (double)var4.width * 0.8), (double)var36, (double)(var34 + Math.sin(Math.toRadians(var38)) * (double)var4.width * 0.8));
             GL11.glColor4f((float)((float)var39.getRed() / 255.0f), (float)((float)var39.getGreen() / 255.0f), (float)((float)var39.getBlue() / 255.0f), (float)(0.01f * var40));
-            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var38)) * (double)var4.field_70130_N * 0.8), (double)var32, (double)(var34 + Math.sin(Math.toRadians(var38)) * (double)var4.field_70130_N * 0.8));
+            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var38)) * (double)var4.width * 0.8), (double)var32, (double)(var34 + Math.sin(Math.toRadians(var38)) * (double)var4.width * 0.8));
 }
         GL11.glEnd();
         GL11.glEnable((int)2848);
@@ -483,7 +483,7 @@ implements EventSubscriber {
         for (int var41 = 0; var41 <= 360; ++var41) {
             float var42 = this.k(var4, var18);
             GL11.glColor4f((float)((float)var39.getRed() / 255.0f), (float)((float)var39.getGreen() / 255.0f), (float)((float)var39.getBlue() / 255.0f), (float)(0.8f * var42));
-            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var41)) * (double)var4.field_70130_N * 0.8), (double)var36, (double)(var34 + Math.sin(Math.toRadians(var41)) * (double)var4.field_70130_N * 0.8));
+            GL11.glVertex3d((double)(var30 + Math.cos(Math.toRadians(var41)) * (double)var4.width * 0.8), (double)var36, (double)(var34 + Math.sin(Math.toRadians(var41)) * (double)var4.width * 0.8));
 }
         GL11.glEnd();
         GL11.glDisable((int)2848);
@@ -494,7 +494,7 @@ implements EventSubscriber {
         GL11.glDisable((int)3042);
         GL11.glEnable((int)2884);
         GL11.glPopMatrix();
-        GlStateManager.func_179117_G();
+        GlStateManager.resetColor();
 }
     public void onSetAngles(long var1, SetAnglesEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (!a || !rotation.R("LOCK")) {
@@ -531,23 +531,30 @@ implements EventSubscriber {
 }
         return hb[var5];
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void K(int var1, int var2) {
         if (b > 0L) {
             b -= 50L;
@@ -601,13 +608,13 @@ implements EventSubscriber {
                 return RotationUtil.g((Entity)var0);
 }
             case "HEALTH": {
-                return var0.func_110143_aJ() + var0.func_110139_bj();
+                return var0.getHealth() + var0.getAbsorptionAmount();
 }
             case "HURT_TIME": {
-                return var0.field_70172_ad;
+                return var0.hurtResistantTime;
 }
             case "ARMOR": {
-                return var0.func_70658_aO();
+                return var0.getTotalArmorValue();
 }
 }
         return RaytraceUtil.i((Entity)var0);

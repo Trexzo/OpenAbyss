@@ -11,7 +11,9 @@ import java.util.List;
 import net.minecraft.util.BlockPos;
 
 public final class MiningAxisScanResult {
-    private static long public List<BlockPos> z;
+    private static long a = 55070367350149L;
+
+    public List<BlockPos> z;
     public int S;
     public int Z;
     public int c;

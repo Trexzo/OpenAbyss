@@ -16,7 +16,9 @@ import java.awt.Color;
 
 public class BooleanSettingComponent
 extends AbstractSettingComponent<BooleanSetting> {
-    private static long private final Animation c;
+    private static long a;
+
+    private final Animation c;
     private final Animation L;
 
     @Override
@@ -87,4 +89,7 @@ extends AbstractSettingComponent<BooleanSetting> {
 }
         return false;
 }
+    static {
+        a = 79963295163333L;
+    }
 }

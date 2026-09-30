@@ -94,6 +94,11 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class BedNuker
 extends PriorityModule
@@ -151,19 +156,19 @@ implements EventSubscriber {
     private List<Pair<BlockPos, EnumFacing>> Y;
 
     private BlockPos f(long var1, BlockPos var3) {
-        IBlockState var6 = BedNuker.f.field_71441_e.func_180495_p(var3);
-        if (var6.func_177230_c() instanceof BlockBed) {
+        IBlockState var6 = BedNuker.f.theWorld.getBlockState(var3);
+        if (var6.getBlock() instanceof BlockBed) {
             ArrayList<BlockPos> var7 = new ArrayList<BlockPos>();
-            BlockBed.EnumPartType var8 = (BlockBed.EnumPartType)var6.func_177229_b((IProperty)BlockBed.field_176472_a);
-            EnumFacing var9 = (EnumFacing)var6.func_177229_b((IProperty)BlockBed.field_176387_N);
-            for (BlockPos var11 : Arrays.asList(var3, var3.func_177972_a(var8 == BlockBed.EnumPartType.HEAD ? var9.func_176734_d() : var9))) {
+            BlockBed.EnumPartType var8 = (BlockBed.EnumPartType)var6.getValue((IProperty)BlockBed.PART);
+            EnumFacing var9 = (EnumFacing)var6.getValue((IProperty)BlockBed.FACING);
+            for (BlockPos var11 : Arrays.asList(var3, var3.offset(var8 == BlockBed.EnumPartType.HEAD ? var9.getOpposite() : var9))) {
                 for (EnumFacing var13 : Arrays.asList(EnumFacing.UP, EnumFacing.NORTH, EnumFacing.EAST, EnumFacing.SOUTH, EnumFacing.WEST)) {
-                    Block var14 = BedNuker.f.field_71441_e.func_180495_p(var11.func_177972_a(var13)).func_177230_c();
+                    Block var14 = BedNuker.f.theWorld.getBlockState(var11.offset(var13)).getBlock();
                     if (BlockUtil.f(var14)) {
                         return null;
 }
-                    if (var14 instanceof BlockBed || !RaytraceUtil.Y(var11.func_177972_a(var13), range.L(), 119767551018300L)) continue;
-                    var7.add(var11.func_177972_a(var13));
+                    if (var14 instanceof BlockBed || !RaytraceUtil.Y(var11.offset(var13), range.L(), 119767551018300L)) continue;
+                    var7.add(var11.offset(var13));
 }
 }
             if (!var7.isEmpty()) {
@@ -193,7 +198,7 @@ implements EventSubscriber {
         this.Dy = null;
         this.Y.clear();
         if (DJ) {
-            BedNuker.f.field_71442_b.func_78767_c();
+            BedNuker.f.playerController.resetBlockRemoving();
             DJ = false;
 }
         if (this.C && !var1) {
@@ -208,7 +213,7 @@ implements EventSubscriber {
             this.e = false;
 }
         if (this.O) {
-            KeyBindUtil.o(var15, BedNuker.f.field_71474_y.field_74312_F.func_151463_i());
+            KeyBindUtil.o(var15, BedNuker.f.gameSettings.keyBindAttack.getKeyCode());
             this.O = false;
 }
 }
@@ -227,9 +232,9 @@ implements EventSubscriber {
     private float w(BlockPos var1, long var2) {
         long var6 = 79882628846095L;
         int var10 = ItemUtil.e(0L, BlockUtil.a(var1));
-        IBlockState var11 = BedNuker.f.field_71441_e.func_180495_p(var1);
-        int var12 = this.Y(var10 != -1 ? var10 : BedNuker.f.field_71439_g.field_71071_by.field_70461_c, var11.func_177230_c());
-        return BedNuker.w(var11, var1, var12, BedNuker.f.field_71439_g.field_70122_E, var6);
+        IBlockState var11 = BedNuker.f.theWorld.getBlockState(var1);
+        int var12 = this.Y(var10 != -1 ? var10 : BedNuker.f.thePlayer.inventory.currentItem, var11.getBlock());
+        return BedNuker.w(var11, var1, var12, BedNuker.f.thePlayer.onGround, var6);
 }
     public void onRender3D(long var1, Render3DEvent var3) {
         if (this.Do != null) {
@@ -253,16 +258,16 @@ implements EventSubscriber {
     private static float U(IBlockState var0, int var1, boolean var2) {
         int var5;
         float var4;
-        ItemStack var3 = BedNuker.f.field_71439_g.field_71071_by.func_70301_a(var1);
-        float f = var4 = var3 != null ? 1.0f : ItemUtil.l(var3, var0.func_177230_c());
-        if (var4 > 1.0f && (var5 = EnchantmentHelper.func_77506_a((int)Enchantment.field_77349_p.field_77352_x, (ItemStack)var3)) > 0) {
+        ItemStack var3 = BedNuker.f.thePlayer.inventory.getStackInSlot(var1);
+        float f = var4 = var3 != null ? 1.0f : ItemUtil.l(var3, var0.getBlock());
+        if (var4 > 1.0f && (var5 = EnchantmentHelper.getEnchantmentLevel((int)Enchantment.efficiency.effectId, (ItemStack)var3)) > 0) {
             var4 += (float)(var5 * var5 + 1);
 }
-        if (BedNuker.f.field_71439_g.func_70644_a(Potion.field_76422_e)) {
-            var4 *= 1.0f + (float)(BedNuker.f.field_71439_g.func_70660_b(Potion.field_76422_e).func_76458_c() + 1) * 0.2f;
+        if (BedNuker.f.thePlayer.isPotionActive(Potion.digSpeed)) {
+            var4 *= 1.0f + (float)(BedNuker.f.thePlayer.getActivePotionEffect(Potion.digSpeed).getAmplifier() + 1) * 0.2f;
 }
-        if (BedNuker.f.field_71439_g.func_70644_a(Potion.field_76419_f)) {
-            switch (BedNuker.f.field_71439_g.func_70660_b(Potion.field_76419_f).func_76458_c()) {
+        if (BedNuker.f.thePlayer.isPotionActive(Potion.digSlowdown)) {
+            switch (BedNuker.f.thePlayer.getActivePotionEffect(Potion.digSlowdown).getAmplifier()) {
                 case 0: {
                     var4 *= 0.3f;
                     break;
@@ -280,7 +285,7 @@ implements EventSubscriber {
 }
 }
 }
-        if (BedNuker.f.field_71439_g.func_70055_a(Material.field_151586_h) && !EnchantmentHelper.func_77510_g((EntityLivingBase)BedNuker.f.field_71439_g)) {
+        if (BedNuker.f.thePlayer.isInsideOfMaterial(Material.water) && !EnchantmentHelper.getAquaAffinityModifier((EntityLivingBase)BedNuker.f.thePlayer)) {
             var4 /= 5.0f;
 }
         if (!var2) {
@@ -306,23 +311,30 @@ implements EventSubscriber {
 }
         this.K = -1;
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void x$r2() {
         if (this.c) {
             PacketManager.j();
@@ -336,7 +348,7 @@ implements EventSubscriber {
         int var10;
         if (!this.Y.isEmpty() && (var10 = ItemUtil.e(0L, BlockUtil.a(this.Y.get(0).a()))) != -1 && autoItem.c()) {
             if (!this.C) {
-                this.L = BedNuker.f.field_71439_g.field_71071_by.field_70461_c;
+                this.L = BedNuker.f.thePlayer.inventory.currentItem;
 }
             D6 = var10;
             ItemUtil.P(var10);
@@ -344,7 +356,7 @@ implements EventSubscriber {
 }
 }
     private BlockPos e(double var1, long var3) {
-        BlockPos var7 = BlockUtil.F(new float[]{0.0f, 90.0f}, 1.5).func_178782_a();
+        BlockPos var7 = BlockUtil.F(new float[]{0.0f, 90.0f}, 1.5).getBlockPos();
         BlockPos var8 = null;
         double var10 = 0.0;
         int var12 = (int)Math.floor(-var1);
@@ -352,8 +364,8 @@ implements EventSubscriber {
         for (int var15 = var12; var15 <= var13; ++var15) {
             for (int var16 = var12; var16 <= var13; ++var16) {
                 for (int var17 = var12; var17 <= var13; ++var17) {
-                    BlockPos var18 = var7.func_177982_a(var15, var16, var17);
-                    if (!(BedNuker.f.field_71441_e.func_180495_p(var18).func_177230_c() instanceof BlockBed)) continue;
+                    BlockPos var18 = var7.add(var15, var16, var17);
+                    if (!(BedNuker.f.theWorld.getBlockState(var18).getBlock() instanceof BlockBed)) continue;
                     double var19 = RaytraceUtil.p(var18, 12489541448578L);
                     if (var8 != null && !(var19 < var10) || !this.p(var18)) continue;
                     var8 = var18;
@@ -384,11 +396,11 @@ implements EventSubscriber {
         double var12 = Double.MAX_VALUE;
         int var14 = (int)Math.min(var4, 8.0);
         BlockPos var15 = ClientUtil.p();
-        for (int var16 = var3.func_177958_n() - var14; var16 <= var3.func_177958_n() + var14; ++var16) {
-            for (int var17 = var3.func_177956_o(); var17 <= var3.func_177956_o() + var14; ++var17) {
-                for (int var18 = var3.func_177952_p() - var14; var18 <= var3.func_177952_p() + var14; ++var18) {
+        for (int var16 = var3.getX() - var14; var16 <= var3.getX() + var14; ++var16) {
+            for (int var17 = var3.getY(); var17 <= var3.getY() + var14; ++var17) {
+                for (int var18 = var3.getZ() - var14; var18 <= var3.getZ() + var14; ++var18) {
                     BlockPos var19 = new BlockPos(var16, var17, var18);
-                    if (!BlockUtil.a$r1(var19) || BlockUtil.a(var19) == Blocks.field_150324_C) continue;
+                    if (!BlockUtil.a$r1(var19) || BlockUtil.a(var19) == Blocks.bed) continue;
                     double var20 = BlockUtil.g(var19, var3);
                     double var22 = BlockUtil.g(var19, var15);
                     double var24 = var20 + var22 * 0.1;
@@ -402,12 +414,12 @@ implements EventSubscriber {
             return new ArrayList();
 }
         ArrayList<Pair> var32 = new ArrayList<Pair>();
-        int var33 = var11.func_177958_n();
-        int var34 = var11.func_177956_o();
-        int var35 = var11.func_177952_p();
-        int var36 = var3.func_177958_n();
-        int var21 = var3.func_177956_o();
-        int var37 = var3.func_177952_p();
+        int var33 = var11.getX();
+        int var34 = var11.getY();
+        int var35 = var11.getZ();
+        int var36 = var3.getX();
+        int var21 = var3.getY();
+        int var37 = var3.getZ();
         ArrayList<BlockPos> var23 = new ArrayList<BlockPos>();
         int var38 = (int)(var4 * 3.0);
         int var25 = 0;
@@ -484,7 +496,7 @@ implements EventSubscriber {
         int var16 = 61657;
         if (!this.Y()) {
             this.S(false, 13386, '\ub4f0', var16);
-        } else if (requireClick.c() && !KeyBindUtil.V(BedNuker.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) {
+        } else if (requireClick.c() && !KeyBindUtil.V(BedNuker.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) {
             this.S(false, 13386, '\ub4f0', var16);
         } else if (this.Dy != null && !RotationUtil.B('\u0000', 219718502, this.Dy, (short)var6, BlockUtil.D(this.Dy), fov.L())) {
             this.S(false, 13386, '\ub4f0', var16);
@@ -548,7 +560,7 @@ implements EventSubscriber {
             CustomFont var30 = Font.s(0L);
             if (showTargetBar.c()) {
                 ScaledResolution var31 = var3.C;
-                float var25 = PlayerControllerStateAccessor.s(0L, BedNuker.f.field_71442_b);
+                float var25 = PlayerControllerStateAccessor.s(0L, BedNuker.f.playerController);
                 if (!this.Y.isEmpty() && var25 == 0.0f && BlockUtil.a$r1(this.Y.get(0).a())) {
                     var25 = 1.0f;
 }
@@ -556,13 +568,13 @@ implements EventSubscriber {
                 if (this.Dy != null && var25 == 0.0f && BlockUtil.a$r1(this.Dy)) {
                     var26 = 1.0f;
 }
-                int var27 = (int)((float)var31.func_78326_a() / 2.0f - 50.0f + 100.0f * var26);
-                int var28 = var31.func_78328_b() / 2 + 63;
-                RenderUtil.c(125644905353792L, (float)var31.func_78326_a() / 2.0f - 50.0f - 2.0f, var28, var27 + 2, (float)var28 + var30.o(60714858652844L) + 2.0f, var22);
+                int var27 = (int)((float)var31.getScaledWidth() / 2.0f - 50.0f + 100.0f * var26);
+                int var28 = var31.getScaledHeight() / 2 + 63;
+                RenderUtil.c(125644905353792L, (float)var31.getScaledWidth() / 2.0f - 50.0f - 2.0f, var28, var27 + 2, (float)var28 + var30.o(60714858652844L) + 2.0f, var22);
 }
             if (showTargetPercentage.c()) {
                 ScaledResolution var32 = var3.C;
-                float var33 = PlayerControllerStateAccessor.s(0L, BedNuker.f.field_71442_b);
+                float var33 = PlayerControllerStateAccessor.s(0L, BedNuker.f.playerController);
                 if (!this.Y.isEmpty() && var33 == 0.0f && BlockUtil.a$r1(this.Y.get(0).a())) {
                     var33 = 1.0f;
 }
@@ -571,13 +583,13 @@ implements EventSubscriber {
                     var34 = 100;
 }
                 String var35 = var34 + "%";
-                var30.T(37697014677608L, var35, (float)var32.func_78326_a() / 2.0f - var30.R(var35, 52019766876817L) / 2.0f, (float)var32.func_78328_b() / 2.0f + 65.0f, 0xFFFFFF);
+                var30.T(37697014677608L, var35, (float)var32.getScaledWidth() / 2.0f - var30.R(var35, 52019766876817L) / 2.0f, (float)var32.getScaledHeight() / 2.0f + 65.0f, 0xFFFFFF);
 }
 }
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) {
         S12PacketEntityVelocity var8;
-        if (this.Do != null && var1.d instanceof S12PacketEntityVelocity && (var8 = (S12PacketEntityVelocity)var1.d).func_149412_c() == BedNuker.f.field_71439_g.func_145782_y() && delayVelocityRange.L() != -1.0f && RaytraceUtil.Y(this.Do, delayVelocityRange.L(), 119767551018300L)) {
+        if (this.Do != null && var1.d instanceof S12PacketEntityVelocity && (var8 = (S12PacketEntityVelocity)var1.d).getEntityID() == BedNuker.f.thePlayer.getEntityId() && delayVelocityRange.L() != -1.0f && RaytraceUtil.Y(this.Do, delayVelocityRange.L(), 119767551018300L)) {
             this.Y(var1, 66084869442411L);
 }
 }
@@ -608,12 +620,12 @@ implements EventSubscriber {
 }
 }
     private int Y(int var1, Block var2) {
-        ItemStack var5 = BedNuker.f.field_71439_g.field_71071_by.func_70301_a(var1);
+        ItemStack var5 = BedNuker.f.thePlayer.inventory.getStackInSlot(var1);
         int var6 = var1;
         float var7 = this.t(var5, var2);
         for (int var8 = 0; var8 < 9; ++var8) {
             float var10;
-            ItemStack var9 = BedNuker.f.field_71439_g.field_71071_by.func_70301_a(var8);
+            ItemStack var9 = BedNuker.f.thePlayer.inventory.getStackInSlot(var8);
             if (var9 == null || !((var10 = this.t(var9, var2)) > var7)) continue;
             var6 = var8;
 }
@@ -622,11 +634,11 @@ implements EventSubscriber {
     private static boolean b(Block var0, int var1, long var2) {
         var2 = bb ^ var2;
         int var4 = (int)((var2 ^ 0x16483BCA34C5L) >>> 56);
-        if (var0.func_149688_o().func_76229_l()) {
+        if (var0.getMaterial().isToolNotRequired()) {
             return true;
 }
-        ItemStack var7 = MinecraftRef.c((byte)((byte)var4), (long)0L).field_71439_g.field_71071_by.func_70301_a(var1);
-        return var7 != null && var7.func_150998_b(var0);
+        ItemStack var7 = MinecraftRef.c((byte)((byte)var4), (long)0L).thePlayer.inventory.getStackInSlot(var1);
+        return var7 != null && var7.canHarvestBlock(var0);
 }
     private void a(int var1, BlockPos var2, int var3, EnumFacing var4, char var5) {
         long var6 = ((long)var1 << 32 | (long)var3 << 48 >>> 32 | (long)var5 << 48 >>> 48) ^ bb;
@@ -656,7 +668,7 @@ implements EventSubscriber {
                 this.p = false;
 }
             this.e(var8, var9, (short)var10);
-            if (!BedNuker.f.field_71439_g.func_71039_bw()) {
+            if (!BedNuker.f.thePlayer.isUsingItem()) {
                 this.o$r3();
                 DJ = true;
                 CombatUtil.G(var11, var2, var4);
@@ -666,11 +678,11 @@ implements EventSubscriber {
 }
 }
     private boolean p(BlockPos var1) {
-        return var1 != null && (BedNuker.f.field_71441_e.func_180495_p(var1.func_177982_a(1, 0, 0)).func_177230_c() instanceof BlockBed || BedNuker.f.field_71441_e.func_180495_p(var1.func_177982_a(-1, 0, 0)).func_177230_c() instanceof BlockBed || BedNuker.f.field_71441_e.func_180495_p(var1.func_177982_a(0, 0, 1)).func_177230_c() instanceof BlockBed || BedNuker.f.field_71441_e.func_180495_p(var1.func_177982_a(0, 0, -1)).func_177230_c() instanceof BlockBed);
+        return var1 != null && (BedNuker.f.theWorld.getBlockState(var1.add(1, 0, 0)).getBlock() instanceof BlockBed || BedNuker.f.theWorld.getBlockState(var1.add(-1, 0, 0)).getBlock() instanceof BlockBed || BedNuker.f.theWorld.getBlockState(var1.add(0, 0, 1)).getBlock() instanceof BlockBed || BedNuker.f.theWorld.getBlockState(var1.add(0, 0, -1)).getBlock() instanceof BlockBed);
 }
     private void o$r3() {
         if (swing.c()) {
-            BedNuker.f.field_71439_g.func_71038_i();
+            BedNuker.f.thePlayer.swingItem();
         } else {
             PacketManager.b(new C0APacketAnimation());
 }
@@ -679,8 +691,8 @@ implements EventSubscriber {
         float var3 = 1.0f;
         if (var1 != null) {
             int var4;
-            float f = var3 = !var1.func_150998_b(var2) && var1.func_77973_b() instanceof ItemPickaxe ? 1.0f : var1.func_150997_a(var2);
-            if (var1.func_77973_b() instanceof ItemTool && var3 > 1.0f && (var4 = EnchantmentHelper.func_77506_a((int)Enchantment.field_77349_p.field_77352_x, (ItemStack)var1)) > 0) {
+            float f = var3 = !var1.canHarvestBlock(var2) && var1.getItem() instanceof ItemPickaxe ? 1.0f : var1.getStrVsBlock(var2);
+            if (var1.getItem() instanceof ItemTool && var3 > 1.0f && (var4 = EnchantmentHelper.getEnchantmentLevel((int)Enchantment.efficiency.effectId, (ItemStack)var1)) > 0) {
                 var3 += (float)(var4 * var4 + 1);
 }
 }
@@ -690,18 +702,18 @@ implements EventSubscriber {
         var4 = bb ^ var4;
         long var6 = var4 ^ 0x179E87BE2F06L;
         int var8 = (int)((var4 ^ 0x6176F746496EL) >>> 56);
-        Block var11 = var0.func_177230_c();
-        float var12 = var11.func_176195_g((World)MinecraftRef.c((byte)((byte)var8), (long)0L).field_71441_e, var1);
+        Block var11 = var0.getBlock();
+        float var12 = var11.getBlockHardness((World)MinecraftRef.c((byte)((byte)var8), (long)0L).theWorld, var1);
         float var13 = BedNuker.b(var11, var2, var6) ? 30.0f : 100.0f;
         return var12 < 0.0f ? 0.0f : BedNuker.U(var0, var2, var3) / var12 / var13;
 }
     public void onSendPacket(SendPacketEvent var1, long var2) {
-        if (DJ && var1.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var1.B).func_180762_c() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
+        if (DJ && var1.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var1.B).getStatus() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
             var1.I(21307, 3074332907L);
 }
 }
     public void onIsPressed(long var1, IsPressedEvent var3) {
-        if (DJ && var3.o == BedNuker.f.field_71474_y.field_74312_F.func_151463_i()) {
+        if (DJ && var3.o == BedNuker.f.gameSettings.keyBindAttack.getKeyCode()) {
             var3.I(21307, 3074332907L);
 }
 }

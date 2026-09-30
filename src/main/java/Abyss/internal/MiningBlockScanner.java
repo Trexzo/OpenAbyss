@@ -42,6 +42,14 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.world.World;
 
 public class MiningBlockScanner {
+    private static long[] f;
+
+    private static Map h;
+
+    private static Map d;
+
+    private static long a;
+
     private static int o;
     private static List<BlockPos> v;
         private static List<BlockPos> e;
@@ -65,13 +73,13 @@ public class MiningBlockScanner {
 
     public static MiningRegionScanResult b(long var0, int var2) {
         long var3 = var0 ^ 0x60A53E97005EL;
-        EntityPlayerSP var5 = MiningBlockScanner.R.field_71439_g;
+        EntityPlayerSP var5 = MiningBlockScanner.R.thePlayer;
         MiningRegionScanResult var6 = new MiningRegionScanResult();
         double var7 = MiningBlockScanner.E(MiningBlockScanner.A(var5));
         int var9 = var7 >= 45.0 && var7 < 135.0 ? 3 : (var7 >= 135.0 && var7 < 225.0 ? 2 : (var7 >= 225.0 && var7 < 315.0 ? 1 : 0));
-        int var10 = (int)Math.floor(var5.field_70165_t);
-        int var11 = (int)Math.floor(var5.field_70163_u);
-        int var12 = (int)Math.floor(var5.field_70161_v);
+        int var10 = (int)Math.floor(var5.posX);
+        int var11 = (int)Math.floor(var5.posY);
+        int var12 = (int)Math.floor(var5.posZ);
         int[][] var13 = new int[var2][2];
         int[][] var14 = new int[var2][2];
         int[][] var15 = new int[var2][2];
@@ -129,43 +137,43 @@ public class MiningBlockScanner {
         for (int var33 = 0; var33 < var2; ++var33) {
             for (int var34 = 0; var34 < 2; ++var34) {
                 BlockPos var35 = new BlockPos(var10 + var13[var33][0], var11 + var34, var12 + var13[var33][1]);
-                Block var36 = MiningBlockScanner.R.field_71441_e.func_180495_p(var35).func_177230_c();
+                Block var36 = MiningBlockScanner.R.theWorld.getBlockState(var35).getBlock();
                 var6.D.add(var35);
                 ++var23;
-                if (var36 == Blocks.field_150350_a) {
+                if (var36 == Blocks.air) {
                     ++var44;
 }
-                if (var36.func_176195_g((World)MiningBlockScanner.R.field_71441_e, var35) < 0.0f || BrokenBlockTracker.m.k(var35)) {
+                if (var36.getBlockHardness((World)MiningBlockScanner.R.theWorld, var35) < 0.0f || BrokenBlockTracker.m.k(var35)) {
                     ++var22;
 }
                 BlockPos var37 = new BlockPos(var10 + var14[var33][0], var11 + var34, var12 + var14[var33][1]);
-                Block var38 = MiningBlockScanner.R.field_71441_e.func_180495_p(var37).func_177230_c();
+                Block var38 = MiningBlockScanner.R.theWorld.getBlockState(var37).getBlock();
                 var6.b.add(var37);
                 ++var26;
-                if (var38 == Blocks.field_150350_a) {
+                if (var38 == Blocks.air) {
                     ++var24;
 }
-                if (var38.func_176195_g((World)MiningBlockScanner.R.field_71441_e, var37) < 0.0f || BrokenBlockTracker.m.k(var37)) {
+                if (var38.getBlockHardness((World)MiningBlockScanner.R.theWorld, var37) < 0.0f || BrokenBlockTracker.m.k(var37)) {
                     ++var25;
 }
                 BlockPos var39 = new BlockPos(var10 + var15[var33][0], var11 + var34, var12 + var15[var33][1]);
-                Block var40 = MiningBlockScanner.R.field_71441_e.func_180495_p(var39).func_177230_c();
+                Block var40 = MiningBlockScanner.R.theWorld.getBlockState(var39).getBlock();
                 var6.P.add(var39);
                 ++var29;
-                if (var40 == Blocks.field_150350_a) {
+                if (var40 == Blocks.air) {
                     ++var27;
 }
-                if (var40.func_176195_g((World)MiningBlockScanner.R.field_71441_e, var39) < 0.0f || BrokenBlockTracker.m.k(var39)) {
+                if (var40.getBlockHardness((World)MiningBlockScanner.R.theWorld, var39) < 0.0f || BrokenBlockTracker.m.k(var39)) {
                     ++var28;
 }
                 BlockPos var41 = new BlockPos(var10 + var16[var33][0], var11 + var34, var12 + var16[var33][1]);
-                Block var42 = MiningBlockScanner.R.field_71441_e.func_180495_p(var41).func_177230_c();
+                Block var42 = MiningBlockScanner.R.theWorld.getBlockState(var41).getBlock();
                 var6.O.add(var41);
                 ++var32;
-                if (var42 == Blocks.field_150350_a) {
+                if (var42 == Blocks.air) {
                     ++var30;
 }
-                if (!(var42.func_176195_g((World)MiningBlockScanner.R.field_71441_e, var41) < 0.0f) && !BrokenBlockTracker.m.k(var41)) continue;
+                if (!(var42.getBlockHardness((World)MiningBlockScanner.R.theWorld, var41) < 0.0f) && !BrokenBlockTracker.m.k(var41)) continue;
                 ++var31;
 }
 }
@@ -197,19 +205,19 @@ public class MiningBlockScanner {
         return var6;
 }
     private static double N(double var0, double var2, double var4, BlockPos var6) {
-        double var7 = (double)var6.func_177958_n() + 0.5 - var0;
-        double var9 = (double)var6.func_177952_p() + 0.5 - var2;
+        double var7 = (double)var6.getX() + 0.5 - var0;
+        double var9 = (double)var6.getZ() + 0.5 - var2;
         double var11 = Math.toDegrees(Math.atan2(var9, var7)) - 90.0;
         return Math.abs(MiningBlockScanner.U(var11 - var4));
 }
     private static boolean j(Block var0) {
-        return var0 == Blocks.field_150366_p || var0 == Blocks.field_150365_q;
+        return var0 == Blocks.iron_ore || var0 == Blocks.coal_ore;
 }
     private static boolean B(Block var0, BlockPos var1, Set<BlockPos> var2, boolean var3) {
         if (BrokenBlockTracker.m.k(var1)) {
             return false;
 }
-        if (var0 == Blocks.field_150348_b) {
+        if (var0 == Blocks.stone) {
             return true;
 }
         if (var3 && MiningBlockScanner.j(var0)) {
@@ -251,7 +259,7 @@ public class MiningBlockScanner {
         if (var0 == null) {
             return 0.0f;
 }
-        return MiningEngine.uq.h() ? RotationManager.r : var0.field_70177_z;
+        return MiningEngine.uq.h() ? RotationManager.r : var0.rotationYaw;
 }
     private static MiningRegionState A(int var0, int var1, int var2) {
         if (var1 > 0) {
@@ -269,11 +277,11 @@ public class MiningBlockScanner {
 }
     public static void r(Set var2, boolean var3, boolean var4) {
         Y.clear();
-        EntityPlayerSP var5 = MiningBlockScanner.R.field_71439_g;
-        WorldClient var6 = MiningBlockScanner.R.field_71441_e;
-        double var7 = var5.field_70165_t;
-        double var9 = var5.field_70163_u;
-        double var11 = var5.field_70161_v;
+        EntityPlayerSP var5 = MiningBlockScanner.R.thePlayer;
+        WorldClient var6 = MiningBlockScanner.R.theWorld;
+        double var7 = var5.posX;
+        double var9 = var5.posY;
+        double var11 = var5.posZ;
         double var13 = MiningBlockScanner.E(MiningBlockScanner.A(var5));
         int var15 = (int)Math.floor(var7);
         int var16 = (int)Math.floor(var9);
@@ -283,7 +291,7 @@ public class MiningBlockScanner {
             for (int var20 = -8; var20 <= 8; ++var20) {
                 for (int var21 = 0; var21 <= 1; ++var21) {
                     BlockPos var22 = new BlockPos(var15 + var19, var16 + var21, var17 + var20);
-                    Block var23 = var6.func_180495_p(var22).func_177230_c();
+                    Block var23 = var6.getBlockState(var22).getBlock();
                     if (!MiningBlockScanner.B(var23, var22, var2, var3)) continue;
                     var18.add(var22);
 }
@@ -292,8 +300,8 @@ public class MiningBlockScanner {
         var18.sort((var11x, var12) -> {
             double var19x;
             int var16x;
-            Block var13x = var6.func_180495_p(var11x).func_177230_c();
-            Block var14 = var6.func_180495_p(var12).func_177230_c();
+            Block var13x = var6.getBlockState(var11x).getBlock();
+            Block var14 = var6.getBlockState(var12).getBlock();
             int var15x = MiningBlockScanner.B(var13x, var3, var4);
             if (var15x != (var16x = MiningBlockScanner.B(var14, var3, var4))) {
                 return Integer.compare(var15x, var16x);
@@ -303,8 +311,8 @@ public class MiningBlockScanner {
             if (var21x != 0) {
                 return var21x;
 }
-            double var22x = var11x.func_177954_c(var7, var9, var11);
-            double var24x = var12.func_177954_c(var7, var9, var11);
+            double var22x = var11x.distanceSq(var7, var9, var11);
+            double var24x = var12.distanceSq(var7, var9, var11);
             return Double.compare(var22x, var24x);
         });
         for (int var25 = 0; var25 < Math.min(128, var18.size()); ++var25) {
@@ -341,13 +349,13 @@ public class MiningBlockScanner {
 }
     public static MiningAxisScanResult l(long var0, int var2) {
         long var3 = var0 ^ 0x74F9D222FDFFL;
-        EntityPlayerSP var7 = MiningBlockScanner.R.field_71439_g;
+        EntityPlayerSP var7 = MiningBlockScanner.R.thePlayer;
         MiningAxisScanResult var8 = new MiningAxisScanResult(var3);
         double var9 = MiningBlockScanner.E(MiningBlockScanner.A(var7));
         int var11 = var9 >= 45.0 && var9 < 135.0 ? 3 : (var9 >= 135.0 && var9 < 225.0 ? 2 : (var9 >= 225.0 && var9 < 315.0 ? 1 : 0));
-        int var12 = (int)Math.floor(var7.field_70165_t);
-        int var13 = (int)Math.floor(var7.field_70163_u);
-        int var14 = (int)Math.floor(var7.field_70161_v);
+        int var12 = (int)Math.floor(var7.posX);
+        int var13 = (int)Math.floor(var7.posY);
+        int var14 = (int)Math.floor(var7.posZ);
         int var15 = -1;
         int var16 = -1;
         BlockPos var17 = null;
@@ -377,20 +385,20 @@ public class MiningBlockScanner {
                     var21 = new BlockPos(var12, var13, var14 + var19);
 }
 }
-            Block var22 = MiningBlockScanner.R.field_71441_e.func_180495_p(var20).func_177230_c();
-            if (var22 == Blocks.field_150348_b) {
+            Block var22 = MiningBlockScanner.R.theWorld.getBlockState(var20).getBlock();
+            if (var22 == Blocks.stone) {
                 ++var8.t;
                 var8.n.add(var20);
 }
-            if (var22 == Blocks.field_150357_h && var15 == -1) {
+            if (var22 == Blocks.bedrock && var15 == -1) {
                 var15 = var19;
                 var17 = var20;
 }
-            if ((var23 = MiningBlockScanner.R.field_71441_e.func_180495_p(var21).func_177230_c()) == Blocks.field_150348_b) {
+            if ((var23 = MiningBlockScanner.R.theWorld.getBlockState(var21).getBlock()) == Blocks.stone) {
                 ++var8.Z;
                 var8.z.add(var21);
 }
-            if (var23 != Blocks.field_150357_h || var16 != -1) continue;
+            if (var23 != Blocks.bedrock || var16 != -1) continue;
             var16 = var19;
             var18 = var21;
 }
@@ -442,13 +450,13 @@ public class MiningBlockScanner {
 }
 }
     private static boolean l(Block var0) {
-        return var0 == Blocks.field_150486_ae || var0 == Blocks.field_150447_bR;
+        return var0 == Blocks.chest || var0 == Blocks.trapped_chest;
 }
     private static int B(Block var0, boolean var1, boolean var2) {
         if (MiningBlockScanner.l(var0)) {
             return 0;
 }
-        if (var0 == Blocks.field_150348_b) {
+        if (var0 == Blocks.stone) {
             return 1;
 }
         if (var1 && MiningBlockScanner.j(var0)) {
@@ -466,6 +474,7 @@ public class MiningBlockScanner {
     private MiningBlockScanner() {
 }
     static {
+        a = 333798174003L;
         V = 10000L;
         Y = new ArrayList<BlockPos>();
         s = new ArrayList<BlockPos>();

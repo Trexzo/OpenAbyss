@@ -38,6 +38,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,6 +67,26 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 public final class AccountLookupService {
+    private static final class HttpResult {
+        private final int status;
+        private final String body;
+
+        private HttpResult(int status, String body) {
+            this.status = status;
+            this.body = body;
+}
+}
+    private static HttpResult execute(CloseableHttpClient client, HttpUriRequest request) throws IOException {
+        try (CloseableHttpResponse response = client.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            String body = entity != null ? EntityUtils.toString(entity) : "";
+            if (status < 200 || status >= 300) {
+                throw new IOException("HTTP " + status + " from " + request.getURI());
+}
+            return new HttpResult(status, body);
+}
+}
     private static String i;
     private static Map<Long, String> j;
     private static long[] e;
@@ -81,8 +102,8 @@ public final class AccountLookupService {
                 var11.setConfig(AuthService.e);
                 var11.setHeader("Content-Type", "application/json");
                 var11.setEntity((HttpEntity)new StringEntity(String.format("{\"identityToken\":\"XBL3.0 x=%s;%s\"}", var1, var0)));
-                CloseableHttpResponse var12 = var9.execute((HttpUriRequest)var11);
-                JsonObject var13 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var12.getEntity())).getAsJsonObject();
+                HttpResult http = AccountLookupService.execute(var9, (HttpUriRequest)var11);
+                JsonObject var13 = new JsonParser().parse(http.body).getAsJsonObject();
                 String string = Optional.ofNullable(var13.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception(var13.has("error") ? var13.get("error").getAsString() + ": " + var13.get("errorMessage").getAsString() : "Minecraft access token missing from response."));
                 return string;
 }
@@ -110,8 +131,8 @@ public final class AccountLookupService {
                 var12.setConfig(AuthService.e);
                 var12.setHeader("Content-Type", "application/json");
                 var12.setEntity((HttpEntity)new StringEntity(var10.toString()));
-                CloseableHttpResponse var13 = var8.execute((HttpUriRequest)var12);
-                JsonObject var14 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var13.getEntity())).getAsJsonObject();
+                HttpResult http = AccountLookupService.execute(var8, (HttpUriRequest)var12);
+                JsonObject var14 = new JsonParser().parse(http.body).getAsJsonObject();
                 String var15 = Optional.ofNullable(var14.get("Token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception("Xbox Live token missing from response."));
                 String var16 = var14.get("DisplayClaims").getAsJsonObject().get("xui").getAsJsonArray().get(0).getAsJsonObject().get("uhs").getAsString();
                 HashMap<String, String> var17 = new HashMap<String, String>();
@@ -129,7 +150,7 @@ public final class AccountLookupService {
         }, var1);
 }
     public static CompletableFuture<Account> Y(String var0, Executor var1) {
-        return AccountLookupService.m(var0, var1).thenComposeAsync(var1x -> AccountLookupService.C((String)var1x.get("access_token"), var1).thenComposeAsync(var2x -> AccountLookupService.w((String)var2x.get("Token"), var1).thenComposeAsync(var3x -> AccountLookupService.g((String)var3x.get("Token"), (String)var2x.get("uhs"), var1).thenComposeAsync(var2xxx -> AuthService.i(var2xxx, var1).thenApply(var2xxxx -> new Account((String)var1x.get("refresh_token"), (String)var2xxx, var2xxxx.func_111285_a(), var2xxxx.func_148255_b(), 0L, AccountType.MINECRAFT))))), var1);
+        return AccountLookupService.m(var0, var1).thenComposeAsync(var1x -> AccountLookupService.C((String)var1x.get("access_token"), var1).thenComposeAsync(var2x -> AccountLookupService.w((String)var2x.get("Token"), var1).thenComposeAsync(var3x -> AccountLookupService.g((String)var3x.get("Token"), (String)var2x.get("uhs"), var1).thenComposeAsync(var2xxx -> AuthService.i(var2xxx, var1).thenApply(var2xxxx -> new Account((String)var1x.get("refresh_token"), (String)var2xxx, var2xxxx.getUsername(), var2xxxx.getPlayerID(), 0L, AccountType.MINECRAFT))))), var1);
 }
     private static CompletableFuture<Map<String, String>> m(String var0, Executor var1) {
         return CompletableFuture.supplyAsync(() -> {
@@ -138,8 +159,8 @@ public final class AccountLookupService {
                 var7.setConfig(AuthService.e);
                 var7.setHeader("Content-Type", "application/x-www-form-urlencoded");
                 var7.setEntity((HttpEntity)new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("client_id", "00000000402b5328"), new BasicNameValuePair("grant_type", "refresh_token"), new BasicNameValuePair("redirect_uri", "https://login.live.com/oauth20_desktop.srf"), new BasicNameValuePair("refresh_token", var0), new BasicNameValuePair("scope", "service::user.auth.xboxlive.com::MBI_SSL")), "UTF-8"));
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AccountLookupService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 if (var9.has("error")) {
                     String var28 = var9.get("error").getAsString();
                     String var29 = var9.has("error_description") ? var9.get("error_description").getAsString() : var28;
@@ -183,8 +204,8 @@ public final class AccountLookupService {
                 var13.setConfig(AuthService.e);
                 var13.setHeader("Content-Type", "application/json");
                 var13.setEntity((HttpEntity)new StringEntity(var10.toString()));
-                CloseableHttpResponse var14 = var8.execute((HttpUriRequest)var13);
-                JsonObject var15 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var14.getEntity())).getAsJsonObject();
+                HttpResult http = AccountLookupService.execute(var8, (HttpUriRequest)var13);
+                JsonObject var15 = new JsonParser().parse(http.body).getAsJsonObject();
                 if (var15.has("XErr")) {
                     long var33 = var15.get("XErr").getAsLong();
                     String var18 = j.containsKey(var33) ? j.get(var33) : "Unknown Xbox error (" + var33 + ")";

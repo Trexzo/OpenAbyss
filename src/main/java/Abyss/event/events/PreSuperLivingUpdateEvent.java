@@ -7,6 +7,6 @@ import Abyss.event.Event;
 
 public class PreSuperLivingUpdateEvent
 extends Event {
-    private static final long public PreSuperLivingUpdateEvent(char var1) {
+    public PreSuperLivingUpdateEvent(char var1) {
 }
 }

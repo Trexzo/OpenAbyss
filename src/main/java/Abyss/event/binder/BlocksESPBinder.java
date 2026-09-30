@@ -13,7 +13,7 @@ import Abyss.event.invoker.BlocksESPRender3DInvoker;
 import Abyss.module.impl.visual_utility.BlocksESP;
 
 public final class BlocksESPBinder {
-    private static final long private BlocksESPBinder() {
+    private BlocksESPBinder() {
 }
     public static void b(EventBus var2, BlocksESP var3) {
         var2.R(var3, EntityJoinWorldEvent.class, 3, new BlocksESPEntityJoinWorldInvoker(var3));

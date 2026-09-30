@@ -39,10 +39,16 @@ import net.minecraft.network.play.client.C0EPacketClickWindow;
 import net.minecraft.network.play.server.S2DPacketOpenWindow;
 import net.minecraft.network.play.server.S2EPacketCloseWindow;
 import org.lwjgl.input.Keyboard;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ContainerKeeper
 extends Module
 implements EventSubscriber {
+    private static long a = 89937564371945L;
     private boolean v;
     private boolean t;
     private boolean T;
@@ -69,7 +75,7 @@ implements EventSubscriber {
 }
         if (KeyBindUtil.V(1, var11)) {
             this.p();
-        } else if (ContainerKeeper.f.field_71462_r instanceof GuiInventory) {
+        } else if (ContainerKeeper.f.currentScreen instanceof GuiInventory) {
             this.p();
         } else {
             this.W(var15, var7);
@@ -93,8 +99,8 @@ implements EventSubscriber {
         long var5 = (var1 << 32 | (long)var3 << 32 >>> 32) ^ a;
         long var7 = var5 ^ 0x4A9A08B8F4CEL;
         if (this.t) {
-            float var11 = (float)var4.C.func_78326_a() / 2.0f + 10.0f;
-            float var12 = (float)var4.C.func_78328_b() / 2.0f + 10.0f;
+            float var11 = (float)var4.C.getScaledWidth() / 2.0f + 10.0f;
+            float var12 = (float)var4.C.getScaledHeight() / 2.0f + 10.0f;
             CustomFont var13 = Font.s(0L);
             var13.T(var7, "Press " + toggleKey.X() + " for container", var11, var12, -1);
 }
@@ -106,17 +112,17 @@ implements EventSubscriber {
     private void W(boolean var1, long var2) {
         long var6 = var2 ^ 0x20F5FF2E7B44L;
         if (!this.T && var1) {
-            if (!this.t && ContainerKeeper.f.field_71462_r instanceof GuiContainer && (!requireShiftToSave.c() || KeyBindUtil.V(ContainerKeeper.f.field_71474_y.field_74311_E.func_151463_i(), var6))) {
-                this.H = ContainerKeeper.f.field_71462_r;
-                f.func_147108_a(null);
+            if (!this.t && ContainerKeeper.f.currentScreen instanceof GuiContainer && (!requireShiftToSave.c() || KeyBindUtil.V(ContainerKeeper.f.gameSettings.keyBindSneak.getKeyCode(), var6))) {
+                this.H = ContainerKeeper.f.currentScreen;
+                f.displayGuiScreen(null);
                 if (!this.v) {
                     InvMove.c(0L);
 }
-                ContainerKeeper.f.field_71415_G = true;
+                ContainerKeeper.f.inGameHasFocus = true;
                 this.t = true;
                 this.T = true;
             } else if (this.t) {
-                f.func_147108_a(this.H);
+                f.displayGuiScreen(this.H);
                 this.t = false;
                 this.T = true;
 }

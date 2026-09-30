@@ -30,14 +30,14 @@ extends Command {
 }
     @Override
     public void j(String[] var1, long var2) {
-        Minecraft var4 = Minecraft.func_71410_x();
-        if (var4 == null || var4.field_71439_g == null) {
+        Minecraft var4 = Minecraft.getMinecraft();
+        if (var4 == null || var4.thePlayer == null) {
             AbyssCommands.chat("\u00a7cNot in a world.");
             return;
 }
-        String var5 = var4.field_71439_g.func_70005_c_();
+        String var5 = var4.thePlayer.getName();
         try {
-            GuiScreen.func_146275_d((String)var5);
+            GuiScreen.setClipboardString((String)var5);
 }
         catch (Throwable var7) {
             AbyssCommands.chat("\u00a77Your IGN is \u00a7f" + var5 + "\u00a77 (clipboard unavailable: " + var7 + ")");

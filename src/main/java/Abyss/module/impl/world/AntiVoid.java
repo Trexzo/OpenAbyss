@@ -38,11 +38,15 @@ import net.minecraft.util.AxisAlignedBB;
 public class AntiVoid
 extends Module
 implements EventSubscriber {
+    private static long a;
+    static {
+        a = 54765974288452L;
+    }
     private double[] s;
     private boolean D;
     private boolean k;
     private boolean t;
-    private static long public static ModeSetting mode;
+    public static ModeSetting mode;
     private boolean U;
     public static NumberSetting blinkFallDistance;
 
@@ -60,7 +64,7 @@ implements EventSubscriber {
         int var7 = (int)((var5 ^ 0x5D6AF6DA685L) >>> 32);
         int var8 = (int)((var5 ^ 0x5D6AF6DA685L) << 32 >>> 48);
         int var9 = (int)((var5 ^ 0x5D6AF6DA685L) << 48 >>> 48);
-        if (var1.R == AntiVoid.f.field_71474_y.field_74313_G.func_151463_i() && (var10 = AntiVoid.f.field_71439_g.field_71071_by.func_70448_g()) != null && var10.func_77973_b() instanceof ItemEnderPearl) {
+        if (var1.R == AntiVoid.f.gameSettings.keyBindUseItem.getKeyCode() && (var10 = AntiVoid.f.thePlayer.inventory.getCurrentItem()) != null && var10.getItem() instanceof ItemEnderPearl) {
             this.j(var7, (short)var8, (short)var9);
 }
 }
@@ -73,7 +77,7 @@ implements EventSubscriber {
             int var9 = (int)((var2 ^ 0x14D7C68A99E8L) >>> 32);
             int var10 = (int)((var2 ^ 0x14D7C68A99E8L) << 32 >>> 48);
             int var11 = (int)((var2 ^ 0x14D7C68A99E8L) << 48 >>> 48);
-            boolean bl = this.D = !AntiVoid.f.field_71439_g.field_71075_bZ.field_75101_c && CombatUtil.u();
+            boolean bl = this.D = !AntiVoid.f.thePlayer.capabilities.allowFlying && CombatUtil.u();
             if (!this.D) {
                 this.j(var9, (short)var10, (short)var11);
 }
@@ -92,7 +96,7 @@ implements EventSubscriber {
                         this.t = true;
                         break;
 }
-                    if (!this.t || this.D && !AntiVoid.f.field_71439_g.field_70122_E) break;
+                    if (!this.t || this.D && !AntiVoid.f.thePlayer.onGround) break;
                     if (var19.o()) {
                         var19.u((short)var4, var5);
 }
@@ -113,7 +117,7 @@ implements EventSubscriber {
                         this.t = true;
                         break;
 }
-                    if (!this.t || !AntiVoid.f.field_71439_g.field_70122_E) break;
+                    if (!this.t || !AntiVoid.f.thePlayer.onGround) break;
                     if (var18.o()) {
                         var18.u((short)var4, var5);
 }
@@ -123,15 +127,15 @@ implements EventSubscriber {
                 case "BLINK": {
                     float var15;
                     float var14;
-                    if (this.s != null && CombatUtil.T(new AxisAlignedBB(this.s[0] - (double)(var14 = AntiVoid.f.field_71439_g.field_70130_N / 2.0f), this.s[1], this.s[2] - (double)var14, this.s[0] + (double)var14, this.s[1] + (double)(var15 = AntiVoid.f.field_71439_g.field_70131_O), this.s[2] + (double)var14))) {
+                    if (this.s != null && CombatUtil.T(new AxisAlignedBB(this.s[0] - (double)(var14 = AntiVoid.f.thePlayer.width / 2.0f), this.s[1], this.s[2] - (double)var14, this.s[0] + (double)var14, this.s[1] + (double)(var15 = AntiVoid.f.thePlayer.height), this.s[2] + (double)var14))) {
                         this.j(var9, (short)var10, (short)var11);
 }
                     if (!this.k && this.D) {
                         PacketManager.M(true);
                         this.U = true;
-                        this.s = new double[]{AntiVoid.f.field_71439_g.field_70169_q, AntiVoid.f.field_71439_g.field_70167_r, AntiVoid.f.field_71439_g.field_70166_s};
+                        this.s = new double[]{AntiVoid.f.thePlayer.prevPosX, AntiVoid.f.thePlayer.prevPosY, AntiVoid.f.thePlayer.prevPosZ};
 }
-                    if (!PacketManager.Z || this.s == null || !(this.s[1] - (double)blinkFallDistance.L() > AntiVoid.f.field_71439_g.field_70163_u)) break;
+                    if (!PacketManager.Z || this.s == null || !(this.s[1] - (double)blinkFallDistance.L() > AntiVoid.f.thePlayer.posY)) break;
                     double var17 = this.s[1] - (double)MathUtil.h(10.0f, 20.0f);
                     PacketManager.u.add(0, (Packet<?>)new C03PacketPlayer.C04PacketPlayerPosition(this.s[0], var17, this.s[2], false));
                     this.j(var9, (short)var10, (short)var11);

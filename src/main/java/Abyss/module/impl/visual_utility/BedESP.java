@@ -62,6 +62,11 @@ import net.minecraft.util.EnumFacing;
 public class BedESP
 extends Module
 implements EventSubscriber {
+    private static String[] c;
+    private static long a;
+    private static String[] b;
+    private static Map d;
+    private static String[] n;
     
     public static ColorSetting customColor;
     private static Map k;
@@ -110,7 +115,7 @@ implements EventSubscriber {
         return Arrays.asList(EnumFacing.UP, EnumFacing.NORTH, EnumFacing.EAST, EnumFacing.SOUTH, EnumFacing.WEST);
 }
     private void h(long var1, BlockPos var3, BedESPViewerOffset var4) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        IBlockState var9 = BedESP.f.field_71441_e.func_180495_p(var3);
+        IBlockState var9 = BedESP.f.theWorld.getBlockState(var3);
         BlockPos var10 = this.C(var3, var9);
         if (this.I(var10)) {
             this.X(var3, var10, 125221138039108L, var4);
@@ -118,22 +123,22 @@ implements EventSubscriber {
 }
 }
     private AxisAlignedBB z(BlockPos var1, BlockPos var2) {
-        return new AxisAlignedBB((double)Math.min(var1.func_177958_n(), var2.func_177958_n()), (double)var1.func_177956_o(), (double)Math.min(var1.func_177952_p(), var2.func_177952_p()), Math.max((double)var1.func_177958_n() + 1.0, (double)var2.func_177958_n() + 1.0), (double)var1.func_177956_o() + 1.0, Math.max((double)var1.func_177952_p() + 1.0, (double)var2.func_177952_p() + 1.0));
+        return new AxisAlignedBB((double)Math.min(var1.getX(), var2.getX()), (double)var1.getY(), (double)Math.min(var1.getZ(), var2.getZ()), Math.max((double)var1.getX() + 1.0, (double)var2.getX() + 1.0), (double)var1.getY() + 1.0, Math.max((double)var1.getZ() + 1.0, (double)var2.getZ() + 1.0));
 }
     private boolean I(BlockPos var1) {
-        IBlockState var2 = BedESP.f.field_71441_e.func_180495_p(var1);
-        return var2.func_177230_c() instanceof BlockBed && var2.func_177229_b((IProperty)BlockBed.field_176472_a) == BlockBed.EnumPartType.FOOT;
+        IBlockState var2 = BedESP.f.theWorld.getBlockState(var1);
+        return var2.getBlock() instanceof BlockBed && var2.getValue((IProperty)BlockBed.PART) == BlockBed.EnumPartType.FOOT;
 }
     private boolean M(BlockPos var1) {
-        return BedESP.f.field_71441_e.func_180495_p(var1).func_177230_c() instanceof BlockObsidian;
+        return BedESP.f.theWorld.getBlockState(var1).getBlock() instanceof BlockObsidian;
 }
     private int Q() {
         return (int)(2.55 * (double)backgroundOpacity.k());
 }
     private void X(BlockPos var1, BlockPos var2, long var3, BedESPViewerOffset var5) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         for (EnumFacing var11 : this.I$r1()) {
-            BlockPos var12 = var1.func_177972_a(var11);
-            BlockPos var13 = var2.func_177972_a(var11);
+            BlockPos var12 = var1.offset(var11);
+            BlockPos var13 = var2.offset(var11);
             boolean var14 = this.M(var12);
             boolean var15 = this.M(var13);
             if (var14 && var15) {
@@ -152,7 +157,7 @@ implements EventSubscriber {
         BedESPBinder.Q(var3, this);
 }
     private BedESPViewerOffset getRenderManager(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        return new BedESPViewerOffset(RenderManagerAccessor.k(0L, f.func_175598_ae()), RenderManagerAccessor.y(13236, f.func_175598_ae()), RenderManagerAccessor.W(0L, f.func_175598_ae()), null);
+        return new BedESPViewerOffset(RenderManagerAccessor.k(0L, f.getRenderManager()), RenderManagerAccessor.y(13236, f.getRenderManager()), RenderManagerAccessor.W(0L, f.getRenderManager()), null);
 }
     private void H(BlockPos var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (outline.c()) {
@@ -160,26 +165,33 @@ implements EventSubscriber {
 }
         RenderUtil.C(var1, 1.0, 170, 96914206771396L, 0, 170, this.Q());
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private boolean Z(BlockPos var1) {
-        IBlockState var2 = BedESP.f.field_71441_e.func_180495_p(var1);
-        return var2.func_177230_c() instanceof BlockBed && var2.func_177229_b((IProperty)BlockBed.field_176472_a) == BlockBed.EnumPartType.HEAD;
+        IBlockState var2 = BedESP.f.theWorld.getBlockState(var1);
+        return var2.getBlock() instanceof BlockBed && var2.getValue((IProperty)BlockBed.PART) == BlockBed.EnumPartType.HEAD;
 }
     private static void a() {
         BedESP.m[0] = "HRP\u0015\u0013\bZ";
@@ -193,7 +205,7 @@ implements EventSubscriber {
         BedESP.m[6] = "(D`2r>!F>][T>\u0000\u007f\"b. \u001c0];4/G9f~;=\u001e\u0000gzk/E|d=l3|;6k*t\u0001o:ooO";
 }
     private BlockPos C(BlockPos var1, IBlockState var2) {
-        return var1.func_177972_a(((EnumFacing)var2.func_177229_b((IProperty)BlockBed.field_176387_N)).func_176734_d());
+        return var1.offset(((EnumFacing)var2.getValue((IProperty)BlockBed.FACING)).getOpposite());
 }
     private int z(long var1) {
         switch (color.Y()) {
@@ -211,7 +223,7 @@ implements EventSubscriber {
         DeferredRendererReload.request();
 }
     private AxisAlignedBB P(AxisAlignedBB var1, BedESPViewerOffset var2) {
-        return var1.func_72317_d(-BedESPViewerOffset.w(var2), -BedESPViewerOffset.l(var2), -BedESPViewerOffset.Q(var2));
+        return var1.offset(-BedESPViewerOffset.w(var2), -BedESPViewerOffset.l(var2), -BedESPViewerOffset.Q(var2));
 }
     private void h(BlockPos var1, BlockPos var2, long var3, BedESPViewerOffset var5) {
         AxisAlignedBB var10 = this.s(var1, var2);
@@ -240,9 +252,14 @@ implements EventSubscriber {
 }
 }
     private AxisAlignedBB s(BlockPos var1, BlockPos var2) {
-        return new AxisAlignedBB((double)Math.min(var1.func_177958_n(), var2.func_177958_n()), (double)var1.func_177956_o(), (double)Math.min(var1.func_177952_p(), var2.func_177952_p()), Math.max((double)var1.func_177958_n() + 1.0, (double)var2.func_177958_n() + 1.0), (double)var1.func_177956_o() + 0.5625, Math.max((double)var1.func_177952_p() + 1.0, (double)var2.func_177952_p() + 1.0));
+        return new AxisAlignedBB((double)Math.min(var1.getX(), var2.getX()), (double)var1.getY(), (double)Math.min(var1.getZ(), var2.getZ()), Math.max((double)var1.getX() + 1.0, (double)var2.getX() + 1.0), (double)var1.getY() + 0.5625, Math.max((double)var1.getZ() + 1.0, (double)var2.getZ() + 1.0));
 }
-                Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            m = new Object[7]; n = new String[7]; a(); d = new HashMap(13); long var11 = a ^ 68154640225343L;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var14 = 1; var14 < 8; ++var14) { var10003[var14] = (byte)(var11 << var14 * 8 >>> 56); }
+            Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var13.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var20 = new String[2];
             int var18 = 0;
@@ -303,7 +320,6 @@ implements EventSubscriber {
                             var34 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                             var37 = 0;
 }
-                        break;
 }
 }
                 var16 = var17.charAt(var15);
@@ -314,6 +330,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 32376492224292L;
+        zkm$clinit();
         backgroundOpacity = new PercentageSetting("Background-opacity", 40);
         color = new ModeSetting("Color", "THEME", "THEME_CUSTOM", "CUSTOM");
         customColor = new ColorSetting("Custom-color", "FF0000");

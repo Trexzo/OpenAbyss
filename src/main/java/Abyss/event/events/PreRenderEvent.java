@@ -12,7 +12,7 @@ import net.minecraft.entity.EntityLivingBase;
 public class PreRenderEvent
 extends Event {
     public final EntityLivingBase B;
-    private static final long public PreRenderEvent(EntityLivingBase var3) {
+    public PreRenderEvent(EntityLivingBase var3) {
         this.B = var3;
 }
 }

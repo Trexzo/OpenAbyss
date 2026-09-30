@@ -58,6 +58,9 @@ implements EventSubscriber {
     public static BooleanSetting lock;
     public static NumberSetting horizontalSpeed;
     public static BooleanSetting friends;
+    private static String[] m;
+    private static String[] n;
+    private static long k;
         public static NumberSetting verticalSpeed;
     public static BooleanSetting breakBlocks;
     public static BooleanSetting bosses;
@@ -79,23 +82,30 @@ implements EventSubscriber {
     public String g(long var1) {
         return String.valueOf(horizontalSpeed.L());
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     @Override
     public void A(long var1) {
         this.g = null;
@@ -123,11 +133,11 @@ implements EventSubscriber {
 }
 }
     public void onPostTick(long var1, PostTickEvent var3) {
-        if (AimAssist.f.field_71462_r != null) {
+        if (AimAssist.f.currentScreen != null) {
             this.g = null;
-        } else if (!KeyBindUtil.V(AimAssist.f.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) {
+        } else if (!KeyBindUtil.V(AimAssist.f.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) {
             this.g = null;
-        } else if (breakBlocks.c() && AimAssist.f.field_71476_x.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK) {
+        } else if (breakBlocks.c() && AimAssist.f.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
             this.g = null;
         } else if (swordOnly.c() && !ItemUtil.d()) {
             this.g = null;
@@ -157,7 +167,7 @@ implements EventSubscriber {
         boolean var14 = enemies.c();
         boolean var15 = teammates.c();
         boolean var16 = bots.c();
-        List var17 = EntityUtil.K(EntityUtil.F(var7 > 3.0f ? 3.0 : (double)var7, 84864282554303L, var8), var9, 127230230889546L, var10, var11, var12, var13, var14, var15, var16);
+        List<EntityLivingBase> var17 = EntityUtil.K(EntityUtil.F(var7 > 3.0f ? 3.0 : (double)var7, 84864282554303L, var8), var9, 127230230889546L, var10, var11, var12, var13, var14, var15, var16);
         if (var7 > 3.0f && var17.isEmpty()) {
             var17 = EntityUtil.K(EntityUtil.F(var7, 84864282554303L, var8), var9, 127230230889546L, var10, var11, var12, var13, var14, var15, var16);
 }
@@ -169,11 +179,11 @@ implements EventSubscriber {
 }
         switch (sort.Y()) {
             case "HEALTH": {
-                var17.sort(Comparator.comparingDouble(EntityLivingBase::func_110143_aJ));
+                var17.sort(Comparator.comparingDouble(EntityLivingBase::getHealth));
                 break;
 }
             case "DISTANCE": {
-                var17.sort(Comparator.comparingDouble(arg_0 -> ((EntityPlayerSP)AimAssist.f.field_71439_g).func_70032_d(arg_0)));
+                var17.sort(Comparator.comparingDouble(arg_0 -> ((EntityPlayerSP)AimAssist.f.thePlayer).getDistanceToEntity(arg_0)));
                 break;
 }
             case "VIEW": {
@@ -181,21 +191,29 @@ implements EventSubscriber {
                 break;
 }
             case "HURT_TIME": {
-                var17.sort(Comparator.comparingInt(var0 -> var0.field_70737_aN));
+                var17.sort(Comparator.comparingInt(var0 -> var0.hurtTime));
                 break;
 }
             case "ARMOR": {
-                var17.sort(Comparator.comparingInt(EntityLivingBase::func_70658_aO));
+                var17.sort(Comparator.comparingInt(EntityLivingBase::getTotalArmorValue));
 }
 }
         return (EntityLivingBase)var17.get(0);
 }
     public AimAssist(long var1) {
-        super();
-        this.declare("AimAssist", Category.Combat, "Help you aim BETTER when you click", new Setting[0]);
+        super((k ^ var1) ^ 101115674713218L);
+        this.declare("AimAssist", Category.Combat, "Help you aim BETTER when you click");
+        var1 = k ^ var1;
         this.g = null;
-}
-                Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    }
+    private static void zkm$clinit() {
+        try {
+            long var0 = k ^ 130649753332591L;
+            byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var0 << var3 * 8 >>> 56);
+            }
+            Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var9 = new String[5];
             int var7 = 0;
@@ -235,7 +253,6 @@ implements EventSubscriber {
                     var14 = var6.substring(++var13, var13 + var5);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var11) {
@@ -243,6 +260,8 @@ implements EventSubscriber {
 }
 }
     static {
+        k = 103167649702968L;
+        zkm$clinit();
         lock = new BooleanSetting("Lock", false);
         breakBlocks = new BooleanSetting("Break-blocks", true);
         ignoreBehindWall = new BooleanSetting("Ignore-behind-wall", true);

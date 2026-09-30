@@ -15,7 +15,7 @@ public class ActionPerformedEvent
 extends Event {
     public final GuiScreen O;
     public final GuiButton Q;
-    private static final long public ActionPerformedEvent(GuiScreen var1, GuiButton var4) {
+    public ActionPerformedEvent(GuiScreen var1, GuiButton var4) {
         this.O = var1;
         this.Q = var4;
 }

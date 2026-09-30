@@ -15,7 +15,7 @@ import net.minecraft.client.gui.GuiScreen;
 public class InitGuiEvent
 extends Event {
     public final GuiScreen A;
-    private static final long public final List<GuiButton> B;
+    public final List<GuiButton> B;
 
     public InitGuiEvent(GuiScreen var3, List var4) {
         this.A = var3;

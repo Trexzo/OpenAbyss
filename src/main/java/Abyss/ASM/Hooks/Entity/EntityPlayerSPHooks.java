@@ -44,8 +44,18 @@ import net.minecraft.network.play.client.C01PacketChatMessage;
 import net.minecraft.network.play.client.C03PacketPlayer;
 import net.minecraft.network.play.client.C0BPacketEntityAction;
 import net.minecraft.util.MovementInputFromOptions;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class EntityPlayerSPHooks {
+    private static long a;
+    private static String[] d;
+    static {
+        a = 86858135230569L;
+    }
     private static long b;
     
     private static Minecraft w;
@@ -77,39 +87,39 @@ public class EntityPlayerSPHooks {
 }
     public static void onPreLivingUpdate(EntityPlayerSP var0, CallbackInfo var1) {
         EntityPlayerSPHooks.Q(var0);
-        PreLivingUpdateEvent var9 = new PreLivingUpdateEvent(4433, -41, 4672537);
+        PreLivingUpdateEvent var9 = new PreLivingUpdateEvent(4433, (byte)215, 4672537);
         AbyssClient.w.e(var9, 18670087776179L);
         if (var9.a()) {
             var1.cancel();
 }
 }
     private static void Q(EntityPlayerSP var0) {
-        if (var0 != null && var0.field_71158_b == null) {
+        if (var0 != null && var0.movementInput == null) {
             GameSettings var7;
             Minecraft var6 = MinecraftRef.c((byte)0, 0L);
-            GameSettings gameSettings = var7 = var6 == null ? null : var6.field_71474_y;
+            GameSettings gameSettings = var7 = var6 == null ? null : var6.gameSettings;
             if (var7 != null) {
-                var0.field_71158_b = new MovementInputFromOptions(var7);
+                var0.movementInput = new MovementInputFromOptions(var7);
 }
 }
 }
     public static void redirectIsUsingItem(EntityPlayerSP var0) {
-        if (var0 != null && var0.field_71158_b != null) {
+        if (var0 != null && var0.movementInput != null) {
             RedirectIsUsingItemEvent var7 = new RedirectIsUsingItemEvent(0.2f);
             AbyssClient.w.e(var7, 18670087776179L);
             if (!var7.v()) {
-                var0.field_71158_b.field_78902_a *= var7.q();
-                var0.field_71158_b.field_78900_b *= var7.q();
+                var0.movementInput.moveStrafe *= var7.q();
+                var0.movementInput.moveForward *= var7.q();
 }
 }
 }
     public static void onUpdateWalkingPlayer(EntityPlayerSP var0, CallbackInfo var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         int var31 = 32593;
-        UpdateWalkingPlayerEvent var45 = new UpdateWalkingPlayerEvent(var0.field_70165_t, var0.field_70163_u, var0.field_70161_v, RotationManager.p(), RotationManager.s(), var0.field_70122_E, var0.func_70051_ag(), var0.func_70093_af(), false);
+        UpdateWalkingPlayerEvent var45 = new UpdateWalkingPlayerEvent(var0.posX, var0.posY, var0.posZ, RotationManager.p(), RotationManager.s(), var0.onGround, var0.isSprinting(), var0.isSneaking(), false);
         AbyssClient.w.e(var45, 18670087776179L);
         if (!var45.a()) {
             boolean var47;
-            boolean var46 = var0.func_70051_ag();
+            boolean var46 = var0.isSprinting();
             if (var46 != EntityPlayerSPAccessor.N(var0) && !var45.I()) {
                 if (var46) {
                     PacketManager.b(new C0BPacketEntityAction((Entity)var0, C0BPacketEntityAction.Action.START_SPRINTING));
@@ -118,7 +128,7 @@ public class EntityPlayerSPHooks {
 }
                 EntityPlayerSPAccessor.N(var0, var46, (short)0);
 }
-            if ((var47 = var0.func_70093_af()) != EntityPlayerSPAccessor.f(var0) && !var45.I()) {
+            if ((var47 = var0.isSneaking()) != EntityPlayerSPAccessor.f(var0) && !var45.I()) {
                 if (var47) {
                     PacketManager.b(new C0BPacketEntityAction((Entity)var0, C0BPacketEntityAction.Action.START_SNEAKING));
                 } else {
@@ -126,15 +136,15 @@ public class EntityPlayerSPHooks {
 }
                 EntityPlayerSPAccessor.l(var0, var47);
 }
-            if (w.func_175606_aa() == var0) {
+            if (w.getRenderViewEntity() == var0) {
                 boolean var59;
                 if (!Scaffold.Z()) {
                     if (!RotationManager.U) {
-                        var0.field_70759_as = var45.O();
+                        var0.rotationYawHead = var45.O();
                         RotationManager.I = var45.O();
                         RotationManager.K = var45.P();
                     } else {
-                        var0.field_70759_as = RotationManager.p();
+                        var0.rotationYawHead = RotationManager.p();
                         RotationManager.I = RotationManager.p();
                         RotationManager.K = RotationManager.s();
 }
@@ -146,8 +156,8 @@ public class EntityPlayerSPHooks {
                 double var56 = var45.P() - EntityPlayerSPAccessor.Q(var0);
                 boolean var58 = var48 * var48 + var50 * var50 + var52 * var52 > 9.0E-4 || EntityPlayerSPAccessor.L(var0) >= (int)b;
                 boolean bl = var59 = var54 != 0.0 || var56 != 0.0;
-                if (var0.field_70154_o != null && !var45.I()) {
-                    PacketManager.b(new C03PacketPlayer.C06PacketPlayerPosLook(var0.field_70159_w, -999.0, var0.field_70179_y, var45.O(), var45.P(), var45.f()));
+                if (var0.ridingEntity != null && !var45.I()) {
+                    PacketManager.b(new C03PacketPlayer.C06PacketPlayerPosLook(var0.motionX, -999.0, var0.motionZ, var45.O(), var45.P(), var45.f()));
                     var58 = false;
                 } else if (!var45.I()) {
                     if (var58 && var59) {

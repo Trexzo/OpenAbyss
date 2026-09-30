@@ -63,7 +63,7 @@ extends Command {
 }
     private static List<String> options() {
         try {
-            ArrayList var0 = MainMenuTheme.mode.S();
+            List<String> var0 = MainMenuTheme.mode.S();
             return var0 == null ? new ArrayList() : var0;
 }
         catch (Throwable var1) {

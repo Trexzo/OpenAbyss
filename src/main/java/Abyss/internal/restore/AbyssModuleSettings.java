@@ -76,18 +76,15 @@ public final class AbyssModuleSettings {
                 nullStatics += AbyssModuleSettings.collect(m2.getClass(), byName, declared);
                 JsonObject block = AbyssModuleSettings.configBlock(cfg, m2);
                 if (block != null) {
-                    Object r2;
                     relabelModule = m2.b();
                     if (System.getProperty("abyss.settings.relabel") != null) {
-                        r2 = AbyssModuleSettings.relabel(block, declared);
-                        renamed += r2[0];
-                        revalued += r2[1];
-                        unresolved += r2[2];
+                        int[] relabelResult = AbyssModuleSettings.relabel(block, declared);
+                        renamed += relabelResult[0];
+                        revalued += relabelResult[1];
+                        unresolved += relabelResult[2];
 }
                     byName.clear();
-                    r2 = declared.iterator();
-                    while (r2.hasNext()) {
-                        Setting s = (Setting)r2.next();
+                    for (Setting s : declared) {
                         String n2 = AbyssModuleSettings.name(s);
                         if (n2 == null || byName.containsKey(n2)) continue;
                         byName.put(n2, s);
@@ -219,6 +216,9 @@ public final class AbyssModuleSettings {
 }
             if (s instanceof PercentageSetting) {
                 int v3 = p.getAsInt();
+                if (v3 < 0 || v3 > 100) {
+                    return 2;
+}
                 if (dryRun) {
                     return 0;
 }
@@ -269,12 +269,64 @@ public final class AbyssModuleSettings {
                 return v7.equals(((TextSetting)s).X()) ? 0 : 6;
 }
 }
-        finally {
+        catch (Throwable t2) {
             return 6;
 }
-        {
+        return 6;
+}
+    static String selfTest() {
+        try {
+            BooleanSetting bool = new BooleanSetting("Bool", false);
+            if (AbyssModuleSettings.write(bool, new JsonPrimitive(Boolean.TRUE), false) != 0 || !bool.c()) {
+                return "FAIL boolean";
+}
+            PercentageSetting pct = new PercentageSetting("Percent", 10);
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(75)), false) != 0 || pct.k() != 75) {
+                return "FAIL percentage-valid";
+}
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(101)), false) != 2 || pct.k() != 75) {
+                return "FAIL percentage-high-range value=" + pct.k();
+}
+            if (AbyssModuleSettings.write(pct, new JsonPrimitive(Integer.valueOf(-1)), false) != 2 || pct.k() != 75) {
+                return "FAIL percentage-low-range value=" + pct.k();
+}
+            NumberSetting number = new NumberSetting("Number", 1.0f, 0.0f, 10.0f, 0.5f);
+            if (AbyssModuleSettings.write(number, new JsonPrimitive(Float.valueOf(3.5f)), false) != 0
+                    || number.L() != 3.5f) {
+                return "FAIL number-valid value=" + number.L();
+}
+            if (AbyssModuleSettings.write(number, new JsonPrimitive(Float.valueOf(10.5f)), false) != 2
+                    || number.L() != 3.5f) {
+                return "FAIL number-range value=" + number.L();
+}
+            ModeSetting mode = new ModeSetting("Mode", "ONE", "TWO");
+            if (AbyssModuleSettings.write(mode, new JsonPrimitive("TWO"), false) != 0 || !mode.R("TWO")) {
+                return "FAIL mode-valid value=" + mode.Y();
+}
+            if (AbyssModuleSettings.write(mode, new JsonPrimitive("THREE"), false) != 1 || !mode.R("TWO")) {
+                return "FAIL mode-invalid value=" + mode.Y();
+}
+            ColorSetting color = new ColorSetting("Color", "000000");
+            if (AbyssModuleSettings.write(color, new JsonPrimitive("A1B2C3"), false) != 0
+                    || !"A1B2C3".equals(color.Q())) {
+                return "FAIL color-valid value=" + color.Q();
+}
+            if (AbyssModuleSettings.write(color, new JsonPrimitive("NOPE"), false) != 2
+                    || !"A1B2C3".equals(color.Q())) {
+                return "FAIL color-invalid value=" + color.Q();
+}
+            TextSetting text = new TextSetting("Text", "");
+            if (AbyssModuleSettings.write(text, new JsonPrimitive("hello world"), false) != 0
+                    || !"hello world".equals(text.X())) {
+                return "FAIL text value=" + text.X();
+}
+            return "PASS strict-setting-writes percentage-range=0..100 number-range mode-options color-hex readback";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
 }
 }
+
     private static int collect(Class<?> c, Map<String, Setting> byName, List<Setting> declared) {
         int nulls = 0;
         for (Class<?> k = c; k != null && Module.class.isAssignableFrom(k); k = k.getSuperclass()) {
@@ -365,9 +417,9 @@ public final class AbyssModuleSettings {
             if (AbyssModuleSettings.bucketOf(s) == -1) continue;
             ss.add(s);
 }
-        ArrayList keys = new ArrayList();
-        ArrayList vals = new ArrayList();
-        for (Map.Entry en : block.entrySet()) {
+        ArrayList<String> keys = new ArrayList<String>();
+        ArrayList<JsonElement> vals = new ArrayList<JsonElement>();
+        for (Map.Entry<String, JsonElement> en : block.entrySet()) {
             if (COMMON.contains(en.getKey()) || AbyssModuleSettings.bucketOf((JsonElement)en.getValue()) == -1) continue;
             keys.add(en.getKey());
             vals.add(en.getValue());
@@ -471,13 +523,14 @@ public final class AbyssModuleSettings {
                 ++nS;
 }
             if (!uniform || nK == 0 || nS == 0 || nS > nK) continue;
-            block12: for (i = 0; i < n2; ++i) {
+            for (i = 0; i < n2; ++i) {
                 if (doneS[i] || AbyssModuleSettings.groupOf(AbyssModuleSettings.bucketOf((Setting)ss.get(i)), null, splitStrings) != g) continue;
                 for (int j = 0; j < m2; ++j) {
                     if (doneK[j] || AbyssModuleSettings.groupOf(AbyssModuleSettings.bucketOf((JsonElement)vals.get(j)), (JsonElement)vals.get(j), splitStrings) != g) continue;
-                    if (!AbyssModuleSettings.applyValue((Setting)ss.get(i), (JsonElement)vals.get(j))) continue block12;
-                    ++revalued;
-                    continue block12;
+                    if (AbyssModuleSettings.applyValue((Setting)ss.get(i), (JsonElement)vals.get(j))) {
+                        ++revalued;
+}
+                    break;
 }
 }
 }

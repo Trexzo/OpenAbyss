@@ -15,7 +15,7 @@ import Abyss.util.render.VisualSpoofRenderer;
 import net.minecraft.entity.EntityLivingBase;
 
 public class RendererLivingEntityHooks {
-    private static final long public static void canRenderName(EntityLivingBase var0, CallbackInfoReturnable<Boolean> var1) {
+    public static void canRenderName(EntityLivingBase var0, CallbackInfoReturnable<Boolean> var1) {
         if (NameTags.x.contains(var0)) {
             var1.setReturnValue(false);
             var1.cancel();

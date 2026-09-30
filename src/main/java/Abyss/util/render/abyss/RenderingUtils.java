@@ -51,14 +51,14 @@ public final class RenderingUtils {
     private RenderingUtils() {
 }
     public static boolean isBBInFrustum(AxisAlignedBB aabb) {
-        EntityPlayerSP player = Minecraft.func_71410_x().field_71439_g;
-        FRUSTUM.func_78547_a(player.field_70165_t, player.field_70163_u, player.field_70161_v);
-        return FRUSTUM.func_78546_a(aabb);
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        FRUSTUM.setPosition(player.posX, player.posY, player.posZ);
+        return FRUSTUM.isBoundingBoxInFrustum(aabb);
 }
     public static void drawGradientRect(double left, double top, double right, double bottom, boolean sideways, int startColor, int endColor) {
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         OGLUtils.enableBlending();
-        GlStateManager.func_179103_j((int)7425);
+        GlStateManager.shadeModel((int)7425);
         GL11.glBegin((int)7);
         OGLUtils.color(startColor);
         if (sideways) {
@@ -76,20 +76,20 @@ public final class RenderingUtils {
             GL11.glVertex2d((double)right, (double)top);
 }
         GL11.glEnd();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179103_j((int)7424);
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.disableBlend();
+        GlStateManager.shadeModel((int)7424);
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void drawRect(float left, float top, float right, float bottom, int color) {
         int alpha = color >> 24 & 0xFF;
         boolean needBlend = alpha < 255;
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         if (needBlend) {
             OGLUtils.enableBlending();
-            GlStateManager.func_179131_c((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)alpha / 255.0f));
+            GlStateManager.color((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)((float)alpha / 255.0f));
         } else {
-            GlStateManager.func_179131_c((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)1.0f);
+            GlStateManager.color((float)((float)(color >> 16 & 0xFF) / 255.0f), (float)((float)(color >> 8 & 0xFF) / 255.0f), (float)((float)(color & 0xFF) / 255.0f), (float)1.0f);
 }
         GL11.glBegin((int)7);
         GL11.glVertex2f((float)left, (float)top);
@@ -98,10 +98,10 @@ public final class RenderingUtils {
         GL11.glVertex2f((float)right, (float)top);
         GL11.glEnd();
         if (needBlend) {
-            GlStateManager.func_179084_k();
+            GlStateManager.disableBlend();
 }
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static LockedResolution getLockedResolution() {
         int width = Display.getWidth();
@@ -117,12 +117,12 @@ public final class RenderingUtils {
     public static ScaledResolution getScaledResolution() {
         int displayWidth = Display.getWidth();
         int displayHeight = Display.getHeight();
-        int guiScale = Minecraft.func_71410_x().field_71474_y.field_74335_Z;
+        int guiScale = Minecraft.getMinecraft().gameSettings.guiScale;
         if (displayWidth != lastScaledWidth || displayHeight != lastScaledHeight || guiScale != lastGuiScale) {
             lastScaledWidth = displayWidth;
             lastScaledHeight = displayHeight;
             lastGuiScale = guiScale;
-            scaledResolution = new ScaledResolution(Minecraft.func_71410_x());
+            scaledResolution = new ScaledResolution(Minecraft.getMinecraft());
             return scaledResolution;
 }
         return scaledResolution;
@@ -157,7 +157,7 @@ public final class RenderingUtils {
         GL11.glEnable((int)2848);
         GL11.glHint((int)3154, (int)4354);
         GL11.glLineWidth((float)1.0f);
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         GL11.glBegin((int)4);
         if (rotate) {
             GL11.glVertex2f((float)size, (float)(size / 2.0f));
@@ -169,14 +169,14 @@ public final class RenderingUtils {
             GL11.glVertex2f((float)size, (float)0.0f);
 }
         GL11.glEnd();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179084_k();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
         GL11.glDisable((int)2848);
         GL11.glPopMatrix();
 }
     public static double progressiveAnimation(double now, double desired, double speed) {
         double dif = Math.abs(now - desired);
-        int fps = Minecraft.func_175610_ah();
+        int fps = Minecraft.getDebugFPS();
         if (dif > 0.0) {
             double animationSpeed = MathUtils.roundToDecimalPlace(Math.min(10.0, Math.max(0.05, 144.0 / (double)fps * (dif / 10.0) * speed)), 0.05);
             if (dif != 0.0 && dif < animationSpeed) {
@@ -193,7 +193,7 @@ public final class RenderingUtils {
 }
     public static double linearAnimation(double now, double desired, double speed) {
         double dif = Math.abs(now - desired);
-        int fps = Minecraft.func_175610_ah();
+        int fps = Minecraft.getDebugFPS();
         if (dif > 0.0) {
             double animationSpeed = MathUtils.roundToDecimalPlace(Math.min(10.0, Math.max(0.005, 144.0 / (double)fps * speed)), 0.005);
             if (dif != 0.0 && dif < animationSpeed) {
@@ -239,19 +239,19 @@ public final class RenderingUtils {
         fr.drawString(s, x, y, color);
 }
     public static void drawImage(float x, float y, float width, float height, float r2, float g, float b, ResourceLocation image) {
-        Minecraft.func_71410_x().func_110434_K().func_110577_a(image);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(image);
         float f = 1.0f / width;
         float f1 = 1.0f / height;
-        GlStateManager.func_179131_c((float)r2, (float)g, (float)b, (float)1.0f);
-        Tessellator tessellator = Tessellator.func_178181_a();
-        WorldRenderer worldrenderer = tessellator.func_178180_c();
-        worldrenderer.func_181668_a(7, DefaultVertexFormats.field_181707_g);
-        worldrenderer.func_181662_b((double)x, (double)(y + height), 0.0).func_181673_a(0.0, (double)(height * f1)).func_181675_d();
-        worldrenderer.func_181662_b((double)(x + width), (double)(y + height), 0.0).func_181673_a((double)(width * f), (double)(height * f1)).func_181675_d();
-        worldrenderer.func_181662_b((double)(x + width), (double)y, 0.0).func_181673_a((double)(width * f), 0.0).func_181675_d();
-        worldrenderer.func_181662_b((double)x, (double)y, 0.0).func_181673_a(0.0, 0.0).func_181675_d();
-        tessellator.func_78381_a();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.color((float)r2, (float)g, (float)b, (float)1.0f);
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos((double)x, (double)(y + height), 0.0).tex(0.0, (double)(height * f1)).endVertex();
+        worldrenderer.pos((double)(x + width), (double)(y + height), 0.0).tex((double)(width * f), (double)(height * f1)).endVertex();
+        worldrenderer.pos((double)(x + width), (double)y, 0.0).tex((double)(width * f), 0.0).endVertex();
+        worldrenderer.pos((double)x, (double)y, 0.0).tex(0.0, 0.0).endVertex();
+        tessellator.draw();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static int fadeBetween(int startColor, int endColor, float progress) {
         if (progress > 1.0f) {
@@ -271,7 +271,7 @@ public final class RenderingUtils {
         return (a & 0xFF) << 24 | (r2 & 0xFF) << 16 | (g & 0xFF) << 8 | b & 0xFF;
 }
     public static void drawLoop(float x, float y, double radius, int points, float width, int color, boolean filled) {
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         GL11.glLineWidth((float)width);
         OGLUtils.enableBlending();
         OGLUtils.color(color);
@@ -292,16 +292,16 @@ public final class RenderingUtils {
 }
         GL11.glEnd();
         GL11.glDisable((int)smooth);
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.disableBlend();
+        GlStateManager.enableDepth();
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void drawRoundedRect(float x1, float y1, float x2, float y2, float radius, int color) {
         double rad;
         int i;
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179118_c();
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableAlpha();
         OGLUtils.enableBlending();
         OGLUtils.color(color);
         GL11.glEnable((int)2848);
@@ -325,16 +325,16 @@ public final class RenderingUtils {
 }
         GL11.glEnd();
         GL11.glDisable((int)2848);
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.enableAlpha();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void drawGradientBar(float x, float y, float width, float height, float pct, int colorStart, int colorEnd) {
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179118_c();
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableAlpha();
         OGLUtils.enableBlending();
-        GlStateManager.func_179103_j((int)7425);
+        GlStateManager.shadeModel((int)7425);
         float filled = width * Math.max(0.0f, Math.min(1.0f, pct));
         GL11.glBegin((int)7);
         OGLUtils.color(colorStart);
@@ -344,11 +344,11 @@ public final class RenderingUtils {
         GL11.glVertex2f((float)(x + filled), (float)(y + height));
         GL11.glVertex2f((float)(x + filled), (float)y);
         GL11.glEnd();
-        GlStateManager.func_179103_j((int)7424);
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.shadeModel((int)7424);
+        GlStateManager.enableAlpha();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
 }
     public static void drawRoundedHead(int x, int y, int size, float radius, ResourceLocation skin) {
         if (skin == null) {
@@ -367,11 +367,11 @@ public final class RenderingUtils {
         GL11.glDepthMask((boolean)true);
         GL11.glStencilFunc((int)514, (int)1, (int)255);
         GL11.glStencilMask((int)0);
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        Minecraft.func_71410_x().func_110434_K().func_110577_a(skin);
-        Gui.func_152125_a((int)x, (int)y, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)size, (int)size, (float)64.0f, (float)64.0f);
-        Gui.func_152125_a((int)x, (int)y, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)size, (int)size, (float)64.0f, (float)64.0f);
+        GlStateManager.enableTexture2D();
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(skin);
+        Gui.drawScaledCustomSizeModalRect((int)x, (int)y, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)size, (int)size, (float)64.0f, (float)64.0f);
+        Gui.drawScaledCustomSizeModalRect((int)x, (int)y, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)size, (int)size, (float)64.0f, (float)64.0f);
         GL11.glDisable((int)2960);
 }
     public static int withAlpha(int rgb, int alpha) {

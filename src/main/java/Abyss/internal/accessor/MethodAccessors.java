@@ -91,9 +91,9 @@ public class MethodAccessors {
             return Accessor.D(ItemStackAccessor.j(), new Object[]{var0, var1});
 }
         if (ItemStackAccessor.q() != null) {
-            return Accessor.D(ItemStackAccessor.q(), new Object[]{var0, var1 == null ? 0 : var1.func_77960_j()});
+            return Accessor.D(ItemStackAccessor.q(), new Object[]{var0, var1 == null ? 0 : var1.getMetadata()});
 }
-        return var1 == null ? 0 : var1.func_77960_j();
+        return var1 == null ? 0 : var1.getMetadata();
 }
     static IOException H(Throwable var0) throws IOException {
         return MethodAccessors.Y(var0);
@@ -120,7 +120,7 @@ public class MethodAccessors {
         if (var3 == null) {
             throw new IllegalStateException("Unable to resolve method " + var0.getName() + " " + var5);
 }
-        return var4 == null ? new Accessor(var3, null, 1, null) : new Accessor(var3, var4, 0, null);
+        return var4 == null ? new Accessor(var3, null, (byte)1, null) : new Accessor(var3, var4, (byte)0, null);
 }
     private static RuntimeException G(Throwable var0) {
         if (var0 instanceof InvocationTargetException && ((InvocationTargetException)var0).getCause() != null) {

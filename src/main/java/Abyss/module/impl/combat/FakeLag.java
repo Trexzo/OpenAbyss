@@ -100,13 +100,13 @@ implements EventSubscriber {
             return true;
 }
         if (var1 instanceof C07PacketPlayerDigging) {
-            return ((C07PacketPlayerDigging)var1).func_180762_c() != C07PacketPlayerDigging.Action.RELEASE_USE_ITEM;
+            return ((C07PacketPlayerDigging)var1).getStatus() != C07PacketPlayerDigging.Action.RELEASE_USE_ITEM;
 }
         if (!(var1 instanceof C08PacketPlayerBlockPlacement)) {
             return false;
 }
-        ItemStack var2 = ((C08PacketPlayerBlockPlacement)var1).func_149574_g();
-        return var2 == null || !(var2.func_77973_b() instanceof ItemSword);
+        ItemStack var2 = ((C08PacketPlayerBlockPlacement)var1).getStack();
+        return var2 == null || !(var2.getItem() instanceof ItemSword);
 }
     @Override
     public String g(long var1) {
@@ -178,7 +178,7 @@ implements EventSubscriber {
 }
 }
     public void onPostTick(PostTickEvent var1, long var2) {
-        if (FakeLag.f.field_71439_g.field_70128_L) {
+        if (FakeLag.f.thePlayer.isDead) {
             this.W();
 }
 }

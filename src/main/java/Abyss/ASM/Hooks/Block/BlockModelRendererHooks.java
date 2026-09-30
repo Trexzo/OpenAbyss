@@ -28,19 +28,19 @@ import net.minecraft.util.ReportedException;
 import net.minecraft.world.IBlockAccess;
 
 public class BlockModelRendererHooks {
-    private static long public static void renderModel(IBlockAccess var0, IBakedModel var1, IBlockState var2, BlockPos var3, WorldRenderer var4, boolean var5, BlockModelRenderer var6, CallbackInfoReturnable<Boolean> var7) {
-        boolean var10 = var2.func_177230_c().func_149750_m() == 0 && var1.func_177555_b();
+    public static void renderModel(IBlockAccess var0, IBakedModel var1, IBlockState var2, BlockPos var3, WorldRenderer var4, boolean var5, BlockModelRenderer var6, CallbackInfoReturnable<Boolean> var7) {
+        boolean var10 = var2.getBlock().getLightValue() == 0 && var1.isAmbientOcclusion();
         try {
-            Block var11 = var2.func_177230_c();
-            boolean var15 = var10 ? var6.func_178265_a(var0, var1, var11, var3, var4, var5) : var6.func_178258_b(var0, var1, var11, var3, var4, var5);
+            Block var11 = var2.getBlock();
+            boolean var15 = var10 ? var6.renderModelAmbientOcclusion(var0, var1, var11, var3, var4, var5) : var6.renderModelStandard(var0, var1, var11, var3, var4, var5);
             var7.setReturnValue(var15);
             var7.cancel();
 }
         catch (Throwable var14) {
-            CrashReport var12 = CrashReport.func_85055_a((Throwable)var14, (String)"Tesselating block model");
-            CrashReportCategory var13 = var12.func_85058_a("Block model being tesselated");
-            CrashReportCategory.func_175750_a((CrashReportCategory)var13, (BlockPos)var3, (IBlockState)var2);
-            var13.func_71507_a("Using AO", (Object)var10);
+            CrashReport var12 = CrashReport.makeCrashReport((Throwable)var14, (String)"Tesselating block model");
+            CrashReportCategory var13 = var12.makeCategory("Block model being tesselated");
+            CrashReportCategory.addBlockInfo((CrashReportCategory)var13, (BlockPos)var3, (IBlockState)var2);
+            var13.addCrashSection("Using AO", (Object)var10);
             throw new ReportedException(var12);
 }
         var7.cancel();

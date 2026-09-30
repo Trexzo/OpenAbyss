@@ -11,7 +11,7 @@ import Abyss.event.invoker.NameTagsRender3DInvoker;
 import Abyss.module.impl.visual_utility.NameTags;
 
 public final class NameTagsBinder {
-    private static final long private NameTagsBinder() {
+    private NameTagsBinder() {
 }
     public static void A(EventBus var0, NameTags var1) {
         var0.R(var1, PostTickEvent.class, 3, new NameTagsPostTickInvoker(var1));

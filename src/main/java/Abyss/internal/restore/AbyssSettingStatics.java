@@ -73,27 +73,25 @@ public final class AbyssSettingStatics {
         Envelope env = new Envelope(block);
         ArrayList<String> unvalued = new ArrayList<String>();
         for (Class<?> k = m2.getClass(); k != null && Module.class.isAssignableFrom(k); k = k.getSuperclass()) {
-            int n2 = 0;
-            Field[] fieldArray = k.getDeclaredFields();
-            int n3 = fieldArray.length;
-            if (n2 >= n3) continue;
-            Field f = fieldArray[n2];
-            if (Modifier.isStatic(f.getModifiers())) {
-                if (!Setting.class.isAssignableFrom(f.getType())) {
+            for (Field f : k.getDeclaredFields()) {
+                if (!Modifier.isStatic(f.getModifiers()) || !Setting.class.isAssignableFrom(f.getType())) {
+                    continue;
 }
                 try {
                     f.setAccessible(true);
                     if (f.get(null) != null) {
+                        continue;
 }
                     Setting s = AbyssSettingStatics.build(f.getType(), f.getName(), env, unvalued);
                     if (s == null) {
                         ++skipped;
+                        continue;
 }
                     f.set(null, s);
                     ++built;
 }
-                finally {
-                    ++n2;
+                catch (Throwable t2) {
+                    ++failed;
 }
 }
 }

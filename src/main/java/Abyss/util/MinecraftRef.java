@@ -17,6 +17,14 @@ import java.util.Set;
 import net.minecraft.client.Minecraft;
 
 public class MinecraftRef {
+    private static long a;
+
+    private static String[] c;
+
+    private static String[] b;
+
+    private static Map d;
+
     private static volatile Minecraft z;
     private static String[] q;
     private static String[] w;
@@ -131,6 +139,7 @@ public class MinecraftRef {
         return null;
 }
     static {
+        a = 86858850250517L;
         d = new HashMap(13);
         b = new String[]{"\u0093\u00a3EZ\u008f\u00b9\u00b0\u00a8\f\u008e\u0016`&\u00a4\u00d6\u001b", ";\u00ecas\u00d8s8\u009c\u00b4-\u0016\u00853f\u0004\u00993\u0081\u00a5\u0013\u00b9\u00be\u009b\u00c3\u0087c\u008b\u00a8 Zr9_/\u00a1.\u00da\u0086\u00b5z", "\u0085!\u00f2\u0019O\u0089\\\tT\u00ce\u00ec4o\u009b\u001f\u001e", "\u00f7\u0007o\u009f\u00fb\u00ac\u00b5 vT`|}\u000f\b1", "U\u00de\u0085\u00aa\u00bc\u0095e\u00d8s\u00a9:\u00c4wF\u00b4\u00d1"};
         c = new String[5];

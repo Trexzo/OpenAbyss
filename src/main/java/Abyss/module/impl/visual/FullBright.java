@@ -14,17 +14,17 @@ extends Module {
 
     @Override
     public void A(long var1) {
-        FullBright.f.field_71474_y.field_74333_Y = this.a;
+        FullBright.f.gameSettings.gammaSetting = this.a;
 }
     public FullBright(long var1) {
         super(0x67437145ACB8L ^ var1 ^ 0x1F7A5F0BCA30L);
         this.declare("FullBright", Category.Visual, "Let the game always be bright", new Setting[0]);
         var1 = 0x67437145ACB8L ^ var1;
-        this.a = FullBright.f.field_71474_y.field_74333_Y;
+        this.a = FullBright.f.gameSettings.gammaSetting;
 }
     @Override
     public void i(long var1) {
-        this.a = FullBright.f.field_71474_y.field_74333_Y;
-        FullBright.f.field_71474_y.field_74333_Y = 15.0f;
+        this.a = FullBright.f.gameSettings.gammaSetting;
+        FullBright.f.gameSettings.gammaSetting = 15.0f;
 }
 }

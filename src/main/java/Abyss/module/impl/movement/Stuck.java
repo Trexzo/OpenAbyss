@@ -25,6 +25,10 @@ import net.minecraft.client.entity.EntityPlayerSP;
 public class Stuck
 extends Module
 implements EventSubscriber {
+    private static Map e;
+
+    private static long a = 23420914338661L;
+
     private static Object[] g;
         private static long[] c;
     private static String[] h;
@@ -46,11 +50,11 @@ implements EventSubscriber {
 }
     public void onPreLivingUpdate(PreLivingUpdateEvent var1, long var2) {
         this.U = false;
-        Stuck.f.field_71439_g.func_70031_b(false);
+        Stuck.f.thePlayer.setSprinting(false);
         if (this.s > 0) {
             this.s -= 50;
 }
-        if (Stuck.f.field_71439_g.field_70737_aN != 0) {
+        if (Stuck.f.thePlayer.hurtTime != 0) {
             this.U = true;
         } else if (mode.R(b) && this.s <= 0) {
             this.s += (int)(pulseDelay.L() * 50.0f);
@@ -59,7 +63,7 @@ implements EventSubscriber {
 }
     @Override
     public void h(long var1) {
-        Stuck.f.field_71439_g.func_70031_b(false);
+        Stuck.f.thePlayer.setSprinting(false);
         this.U = false;
         this.s = 0;
 }

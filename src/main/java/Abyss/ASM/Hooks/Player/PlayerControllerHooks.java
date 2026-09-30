@@ -53,11 +53,16 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class PlayerControllerHooks {
     private static final Minecraft V;
-    private static final long public static void onAttackEntity(Entity var0, CallbackInfo var1) {
-        AttackEntityEvent var9 = new AttackEntityEvent(var0, '\u0000', 21630, -261330477);
+    public static void onAttackEntity(Entity var0, CallbackInfo var1) {
+        AttackEntityEvent var9 = new AttackEntityEvent(var0, (char)0, (short)21630, -261330477);
         AbyssClient.w.e(var9, 18670087776179L);
         if (var9.a()) {
             var1.cancel();
@@ -80,10 +85,10 @@ public class PlayerControllerHooks {
 }
 }
     public static void onPostStoppedUsingItem() {
-        AbyssClient.w.e(new PostStoppedUsingItemEvent('\u0000', 23334, 1287003355), 18670087776179L);
+        AbyssClient.w.e(new PostStoppedUsingItemEvent((char)0, (short)23334, 1287003355), 18670087776179L);
 }
     public static void onDamageBlock(BlockPos var0, EnumFacing var1, PlayerControllerMP var2, CallbackInfoReturnable<Boolean> var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (PlayerControllerHooks.V.field_71439_g.func_71039_bw()) {
+        if (PlayerControllerHooks.V.thePlayer.isUsingItem()) {
             var3.setReturnValue(false);
             var3.cancel();
         } else {
@@ -92,39 +97,39 @@ public class PlayerControllerHooks {
                 PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, var2, PlayerControllerStateAccessor.W(var2) - 1);
                 var3.setReturnValue(true);
                 var3.cancel();
-            } else if (var2.func_178889_l().func_77145_d() && PlayerControllerHooks.V.field_71441_e.func_175723_af().func_177746_a(var0)) {
+            } else if (var2.getCurrentGameType().isCreative() && PlayerControllerHooks.V.theWorld.getWorldBorder().contains(var0)) {
                 PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, var2, 5);
                 PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.START_DESTROY_BLOCK, var0, var1));
-                PlayerControllerMP.func_178891_a((Minecraft)V, (PlayerControllerMP)var2, (BlockPos)var0, (EnumFacing)var1);
+                PlayerControllerMP.clickBlockCreative((Minecraft)V, (PlayerControllerMP)var2, (BlockPos)var0, (EnumFacing)var1);
                 var3.setReturnValue(true);
                 var3.cancel();
             } else if (PlayerControllerAccessor.E(var2, var0)) {
-                Block var23 = PlayerControllerHooks.V.field_71441_e.func_180495_p(var0).func_177230_c();
-                if (var23.func_149688_o() == Material.field_151579_a) {
+                Block var23 = PlayerControllerHooks.V.theWorld.getBlockState(var0).getBlock();
+                if (var23.getMaterial() == Material.air) {
                     PlayerControllerStateAccessor.Q(0L, var2, false);
                     var3.setReturnValue(false);
                     var3.cancel();
                 } else {
-                    float var24 = var23.func_180647_a((EntityPlayer)PlayerControllerHooks.V.field_71439_g, PlayerControllerHooks.V.field_71439_g.field_70170_p, var0);
+                    float var24 = var23.getPlayerRelativeBlockHardness((EntityPlayer)PlayerControllerHooks.V.thePlayer, PlayerControllerHooks.V.thePlayer.worldObj, var0);
                     PlayerControllerStateAccessor.e(0L, var2, PlayerControllerStateAccessor.s(0L, var2) + var24);
                     if (PlayerControllerStateAccessor.v(var2, 0L) % 4.0f == 0.0f) {
-                        V.func_147118_V().func_147682_a((ISound)new PositionedSoundRecord(new ResourceLocation(var23.field_149762_H.func_150498_e()), (var23.field_149762_H.func_150497_c() + 1.0f) / 8.0f, var23.field_149762_H.func_150494_d() * 0.5f, (float)var0.func_177958_n() + 0.5f, (float)var0.func_177956_o() + 0.5f, (float)var0.func_177952_p() + 0.5f));
+                        V.getSoundHandler().playSound((ISound)new PositionedSoundRecord(new ResourceLocation(var23.stepSound.getStepSound()), (var23.stepSound.getVolume() + 1.0f) / 8.0f, var23.stepSound.getFrequency() * 0.5f, (float)var0.getX() + 0.5f, (float)var0.getY() + 0.5f, (float)var0.getZ() + 0.5f));
 }
                     PlayerControllerStateAccessor.W(0L, var2, PlayerControllerStateAccessor.v(var2, 0L) + 1.0f);
                     if (PlayerControllerStateAccessor.s(0L, var2) >= 1.0f) {
                         PlayerControllerStateAccessor.Q(0L, var2, false);
                         PacketManager.b(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK, var0, var1));
-                        var2.func_178888_a(var0, var1);
+                        var2.onPlayerDestroyBlock(var0, var1);
                         PlayerControllerStateAccessor.e(0L, var2, 0.0f);
                         PlayerControllerStateAccessor.W(0L, var2, 0.0f);
                         PlayerControllerStateAccessor.w((byte)0, 7374982, 11824981, var2, 5);
 }
-                    PlayerControllerHooks.V.field_71441_e.func_175715_c(PlayerControllerHooks.V.field_71439_g.func_145782_y(), PlayerControllerStateAccessor.Z(var2), (int)(PlayerControllerStateAccessor.s(0L, var2) * 10.0f) - 1);
+                    PlayerControllerHooks.V.theWorld.sendBlockBreakProgress(PlayerControllerHooks.V.thePlayer.getEntityId(), PlayerControllerStateAccessor.Z(var2), (int)(PlayerControllerStateAccessor.s(0L, var2) * 10.0f) - 1);
                     var3.setReturnValue(true);
                     var3.cancel();
 }
             } else {
-                var3.setReturnValue(var2.func_180511_b(var0, var1));
+                var3.setReturnValue(var2.clickBlock(var0, var1));
                 var3.cancel();
 }
 }
@@ -141,7 +146,7 @@ public class PlayerControllerHooks {
 }
 }
     public static void onDamageBlockAfterSync(CallbackInfoReturnable<Boolean> var0) {
-        if (PlayerControllerHooks.V.field_71439_g.func_71039_bw() && Modules.J(Animations.class).o()) {
+        if (PlayerControllerHooks.V.thePlayer.isUsingItem() && Modules.J(Animations.class).o()) {
             var0.setReturnValue(true);
             var0.cancel();
 }

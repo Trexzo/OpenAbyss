@@ -58,7 +58,7 @@ import net.minecraft.util.MathHelper;
 
 public class EntityPlayerHooks {
     private static final Minecraft D;
-    private static final long public static void onGetDisplayName(EntityPlayer var0, CallbackInfoReturnable<IChatComponent> var1) {
+    public static void onGetDisplayName(EntityPlayer var0, CallbackInfoReturnable<IChatComponent> var1) {
         GetDisplayNameEvent var8 = new GetDisplayNameEvent(var0, var1.getReturnValue());
         AbyssClient.w.e(var8, 18670087776179L);
         var1.setReturnValue(var8.c());
@@ -67,79 +67,79 @@ public class EntityPlayerHooks {
         AbyssClient.w.e(new PostItemUseFinishEvent(), 18670087776179L);
 }
     public static void onAttackTargetEntity(EntityPlayer var0, Entity var1, CallbackInfo var2) {
-        if (var1.func_70075_an() && !var1.func_85031_j((Entity)var0)) {
-            float var11 = (float)var0.func_110148_a(SharedMonsterAttributes.field_111264_e).func_111126_e();
+        if (var1.canAttackWithItem() && !var1.hitByEntity((Entity)var0)) {
+            float var11 = (float)var0.getEntityAttribute(SharedMonsterAttributes.attackDamage).getAttributeValue();
             int var12 = 0;
-            float var13 = var1 instanceof EntityLivingBase ? EnchantmentHelperAccessorImpl.P(var0.func_70694_bm(), ((EntityLivingBase)var1).func_70668_bt()) : EnchantmentHelperAccessorImpl.P(var0.func_70694_bm(), EnumCreatureAttribute.UNDEFINED);
-            var12 += EnchantmentHelper.func_77501_a((EntityLivingBase)var0);
-            if (var0.func_70051_ag()) {
+            float var13 = var1 instanceof EntityLivingBase ? EnchantmentHelperAccessorImpl.P(var0.getHeldItem(), ((EntityLivingBase)var1).getCreatureAttribute()) : EnchantmentHelperAccessorImpl.P(var0.getHeldItem(), EnumCreatureAttribute.UNDEFINED);
+            var12 += EnchantmentHelper.getKnockbackModifier((EntityLivingBase)var0);
+            if (var0.isSprinting()) {
                 ++var12;
 }
             if (var11 > 0.0f || var13 > 0.0f) {
                 boolean var14;
-                boolean bl = var14 = var0.field_70143_R > 0.0f && !var0.field_70122_E && !var0.func_70617_f_() && !var0.func_70090_H() && !var0.func_70644_a(Potion.field_76440_q) && var0.field_70154_o == null && var1 instanceof EntityLivingBase;
+                boolean bl = var14 = var0.fallDistance > 0.0f && !var0.onGround && !var0.isOnLadder() && !var0.isInWater() && !var0.isPotionActive(Potion.blindness) && var0.ridingEntity == null && var1 instanceof EntityLivingBase;
                 if (var14 && var11 > 0.0f) {
                     var11 *= 1.5f;
 }
                 var11 += var13;
                 boolean var15 = false;
-                int var16 = EnchantmentHelper.func_90036_a((EntityLivingBase)var0);
-                if (var1 instanceof EntityLivingBase && var16 > 0 && !var1.func_70027_ad()) {
+                int var16 = EnchantmentHelper.getFireAspectModifier((EntityLivingBase)var0);
+                if (var1 instanceof EntityLivingBase && var16 > 0 && !var1.isBurning()) {
                     var15 = true;
-                    var1.func_70015_d(1);
+                    var1.setFire(1);
 }
-                double var17 = var1.field_70159_w;
-                double var19 = var1.field_70181_x;
-                double var21 = var1.field_70179_y;
-                boolean var23 = var1.func_70097_a(DamageSource.func_76365_a((EntityPlayer)var0), var11);
+                double var17 = var1.motionX;
+                double var19 = var1.motionY;
+                double var21 = var1.motionZ;
+                boolean var23 = var1.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)var0), var11);
                 if (var23) {
                     IEntityMultiPart var26;
                     if (var12 > 0) {
-                        var1.func_70024_g((double)(-MathHelper.func_76126_a((float)(var0.field_70177_z * (float)Math.PI / 180.0f)) * (float)var12 * 0.5f), 0.1, (double)(MathHelper.func_76134_b((float)(var0.field_70177_z * (float)Math.PI / 180.0f)) * (float)var12 * 0.5f));
+                        var1.addVelocity((double)(-MathHelper.sin((float)(var0.rotationYaw * (float)Math.PI / 180.0f)) * (float)var12 * 0.5f), 0.1, (double)(MathHelper.cos((float)(var0.rotationYaw * (float)Math.PI / 180.0f)) * (float)var12 * 0.5f));
                         if (Modules.J(KeepSprint.class).o()) {
                             KeepSprint.k(0L);
                         } else {
-                            var0.field_70159_w *= 0.6;
-                            var0.field_70179_y *= 0.6;
-                            var0.func_70031_b(false);
+                            var0.motionX *= 0.6;
+                            var0.motionZ *= 0.6;
+                            var0.setSprinting(false);
 }
 }
-                    if (var1 instanceof EntityPlayerMP && var1.field_70133_I) {
-                        ((EntityPlayerMP)var1).field_71135_a.func_147359_a((Packet)new S12PacketEntityVelocity(var1));
-                        var1.field_70133_I = false;
-                        var1.field_70159_w = var17;
-                        var1.field_70181_x = var19;
-                        var1.field_70179_y = var21;
+                    if (var1 instanceof EntityPlayerMP && var1.velocityChanged) {
+                        ((EntityPlayerMP)var1).playerNetServerHandler.sendPacket((Packet)new S12PacketEntityVelocity(var1));
+                        var1.velocityChanged = false;
+                        var1.motionX = var17;
+                        var1.motionY = var19;
+                        var1.motionZ = var21;
 }
                     if (var11 >= 18.0f) {
-                        EntityPlayerHooks.D.field_71439_g.func_71029_a((StatBase)AchievementList.field_75999_E);
+                        EntityPlayerHooks.D.thePlayer.triggerAchievement((StatBase)AchievementList.overkill);
 }
-                    var0.func_130011_c(var1);
+                    var0.setLastAttacker(var1);
                     if (var1 instanceof EntityLivingBase) {
-                        EnchantmentHelper.func_151384_a((EntityLivingBase)((EntityLivingBase)var1), (Entity)var0);
+                        EnchantmentHelper.applyThornEnchantments((EntityLivingBase)((EntityLivingBase)var1), (Entity)var0);
 }
-                    EnchantmentHelper.func_151385_b((EntityLivingBase)var0, (Entity)var1);
-                    ItemStack var24 = EntityPlayerHooks.D.field_71439_g.func_71045_bC();
+                    EnchantmentHelper.applyArthropodEnchantments((EntityLivingBase)var0, (Entity)var1);
+                    ItemStack var24 = EntityPlayerHooks.D.thePlayer.getCurrentEquippedItem();
                     Entity var25 = var1;
-                    if (var1 instanceof EntityDragonPart && (var26 = ((EntityDragonPart)var1).field_70259_a) instanceof EntityLivingBase) {
+                    if (var1 instanceof EntityDragonPart && (var26 = ((EntityDragonPart)var1).entityDragonObj) instanceof EntityLivingBase) {
                         var25 = (EntityLivingBase)var26;
 }
                     Entity var29 = var25;
                     if (var24 != null && var29 instanceof EntityLivingBase) {
-                        var24.func_77961_a((EntityLivingBase)var29, var0);
-                        if (var24.field_77994_a <= 0) {
-                            EntityPlayerHooks.D.field_71439_g.func_71028_bD();
+                        var24.hitEntity((EntityLivingBase)var29, var0);
+                        if (var24.stackSize <= 0) {
+                            EntityPlayerHooks.D.thePlayer.destroyCurrentEquippedItem();
 }
 }
                     if (var1 instanceof EntityLivingBase) {
-                        EntityPlayerHooks.D.field_71439_g.func_71064_a(StatList.field_75951_w, Math.round(var11 * 10.0f));
+                        EntityPlayerHooks.D.thePlayer.addStat(StatList.damageDealtStat, Math.round(var11 * 10.0f));
                         if (var16 > 0) {
-                            var1.func_70015_d(var16 * 4);
+                            var1.setFire(var16 * 4);
 }
 }
-                    EntityPlayerHooks.D.field_71439_g.func_71020_j(0.3f);
+                    EntityPlayerHooks.D.thePlayer.addExhaustion(0.3f);
                 } else if (var15) {
-                    var1.func_70066_B();
+                    var1.extinguish();
 }
 }
             AbyssClient.w.e(new AttackTargetEntityEvent(var1), 18670087776179L);

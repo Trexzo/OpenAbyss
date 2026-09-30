@@ -26,7 +26,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 
 public class RotationUtil {
-    private static final long private static final Minecraft j;
+    private static final Minecraft j;
 
     public static Vec3 T(float var0) {
         if (var0 == 1.0f) {
@@ -39,76 +39,76 @@ public class RotationUtil {
     public static Vec3 h(BlockPos var0, EnumFacing var1, double var2) {
         double var20;
         double var18;
-        double var4 = RaytraceUtil.f().field_72450_a;
-        double var6 = RaytraceUtil.f().field_72449_c;
-        double var8 = (double)var0.func_177958_n() + 0.05;
-        double var10 = (double)var0.func_177958_n() + 0.95;
-        double var12 = (double)var0.func_177956_o() + 0.05;
-        double var14 = (double)var0.func_177952_p() + 0.05;
-        double var16 = (double)var0.func_177952_p() + 0.95;
+        double var4 = RaytraceUtil.f().xCoord;
+        double var6 = RaytraceUtil.f().zCoord;
+        double var8 = (double)var0.getX() + 0.05;
+        double var10 = (double)var0.getX() + 0.95;
+        double var12 = (double)var0.getY() + 0.05;
+        double var14 = (double)var0.getZ() + 0.05;
+        double var16 = (double)var0.getZ() + 0.95;
         switch (RotationUtilSwitchMapEnumFacing.m[var1.ordinal()]) {
             case 1: {
-                var18 = MathUtil.R(RaytraceUtil.f().field_72450_a, var8, var10);
-                var12 = Math.max((double)var0.func_177956_o() + 0.05, Math.min(RaytraceUtil.f().field_72448_b, (double)(var0.func_177956_o() + 1) - 0.05));
-                var20 = MathUtil.R(RaytraceUtil.f().field_72449_c, var14, var16);
+                var18 = MathUtil.R(RaytraceUtil.f().xCoord, var8, var10);
+                var12 = Math.max((double)var0.getY() + 0.05, Math.min(RaytraceUtil.f().yCoord, (double)(var0.getY() + 1) - 0.05));
+                var20 = MathUtil.R(RaytraceUtil.f().zCoord, var14, var16);
                 break;
 }
             case 2: {
                 var20 = var14;
                 if (var4 <= var10) {
                     if (var8 + var2 > var4) {
-                        var18 = MathUtil.R(RaytraceUtil.f().field_72450_a + var2, var8, var10);
+                        var18 = MathUtil.R(RaytraceUtil.f().xCoord + var2, var8, var10);
                         break;
 }
-                    var18 = MathUtil.R(RaytraceUtil.f().field_72450_a - var2, var8, var10);
+                    var18 = MathUtil.R(RaytraceUtil.f().xCoord - var2, var8, var10);
                     break;
 }
-                var18 = MathUtil.R(RaytraceUtil.f().field_72450_a - var2, var8, var10);
+                var18 = MathUtil.R(RaytraceUtil.f().xCoord - var2, var8, var10);
                 break;
 }
             case 3: {
                 var20 = var16;
                 if (var4 >= var8) {
                     if (var10 - var2 < var4) {
-                        var18 = MathUtil.R(RaytraceUtil.f().field_72450_a - var2, var8, var10);
+                        var18 = MathUtil.R(RaytraceUtil.f().xCoord - var2, var8, var10);
                         break;
 }
-                    var18 = MathUtil.R(RaytraceUtil.f().field_72450_a + var2, var8, var10);
+                    var18 = MathUtil.R(RaytraceUtil.f().xCoord + var2, var8, var10);
                     break;
 }
-                var18 = MathUtil.R(RaytraceUtil.f().field_72450_a + var2, var8, var10);
+                var18 = MathUtil.R(RaytraceUtil.f().xCoord + var2, var8, var10);
                 break;
 }
             case 4: {
                 var18 = var8;
                 if (var6 >= var14) {
                     if (var16 - var2 < var6) {
-                        var20 = MathUtil.R(RaytraceUtil.f().field_72449_c - var2, var14, var16);
+                        var20 = MathUtil.R(RaytraceUtil.f().zCoord - var2, var14, var16);
                         break;
 }
-                    var20 = MathUtil.R(RaytraceUtil.f().field_72449_c + var2, var14, var16);
+                    var20 = MathUtil.R(RaytraceUtil.f().zCoord + var2, var14, var16);
                     break;
 }
-                var20 = MathUtil.R(RaytraceUtil.f().field_72449_c + var2, var14, var16);
+                var20 = MathUtil.R(RaytraceUtil.f().zCoord + var2, var14, var16);
                 break;
 }
             case 5: {
                 var18 = var10;
                 if (var6 <= var16) {
                     if (var14 + var2 > var6) {
-                        var20 = MathUtil.R(RaytraceUtil.f().field_72449_c + var2, var14, var16);
+                        var20 = MathUtil.R(RaytraceUtil.f().zCoord + var2, var14, var16);
                         break;
 }
-                    var20 = MathUtil.R(RaytraceUtil.f().field_72449_c - var2, var14, var16);
+                    var20 = MathUtil.R(RaytraceUtil.f().zCoord - var2, var14, var16);
                     break;
 }
-                var20 = MathUtil.R(RaytraceUtil.f().field_72449_c - var2, var14, var16);
+                var20 = MathUtil.R(RaytraceUtil.f().zCoord - var2, var14, var16);
                 break;
 }
             default: {
-                var18 = Math.max((double)var0.func_177958_n() + 0.05, Math.min(RaytraceUtil.f().field_72450_a + var2, (double)(var0.func_177958_n() + 1) - 0.05));
-                var12 = Math.max((double)var0.func_177956_o() + 0.05, Math.min(RaytraceUtil.f().field_72448_b, (double)(var0.func_177956_o() + 1) - 0.05));
-                var20 = Math.max((double)var0.func_177952_p() + 0.05, Math.min(RaytraceUtil.f().field_72449_c + var2, (double)(var0.func_177952_p() + 1) - 0.05));
+                var18 = Math.max((double)var0.getX() + 0.05, Math.min(RaytraceUtil.f().xCoord + var2, (double)(var0.getX() + 1) - 0.05));
+                var12 = Math.max((double)var0.getY() + 0.05, Math.min(RaytraceUtil.f().yCoord, (double)(var0.getY() + 1) - 0.05));
+                var20 = Math.max((double)var0.getZ() + 0.05, Math.min(RaytraceUtil.f().zCoord + var2, (double)(var0.getZ() + 1) - 0.05));
 }
 }
         return new Vec3(var18, var12, var20);
@@ -128,12 +128,12 @@ public class RotationUtil {
 }
     public static float n(long var0, Vec3 var2) {
         Vec3 var3 = RaytraceUtil.f();
-        if (RotationUtil.j.field_71439_g.func_174813_aQ().func_72318_a(var2)) {
+        if (RotationUtil.j.thePlayer.getEntityBoundingBox().isVecInside(var2)) {
             return 0.0f;
 }
-        double var4 = var2.field_72450_a - var3.field_72450_a;
-        double var6 = var2.field_72449_c - var3.field_72449_c;
-        return Math.abs(MathHelper.func_76142_g((float)((float)(Math.atan2(var6, var4) * 180.0 / Math.PI) - 90.0f - RotationManager.p()))) * 2.0f;
+        double var4 = var2.xCoord - var3.xCoord;
+        double var6 = var2.zCoord - var3.zCoord;
+        return Math.abs(MathHelper.wrapAngleTo180_float((float)((float)(Math.atan2(var6, var4) * 180.0 / Math.PI) - 90.0f - RotationManager.p()))) * 2.0f;
 }
     public static boolean B(char var0, int var1, BlockPos var2, short var3, EnumFacing var4, double var5) {
         long var7 = ((long)var0 << 48 | (long)var1 << 32 >>> 16 | (long)var3 << 48 >>> 48) ^ 0x69CE2458EE46L;
@@ -152,12 +152,12 @@ public class RotationUtil {
         return (double)RotationUtil.e(var2, var5) <= var3;
 }
     public static float[] W(Vec3 var0, Vec3 var1) {
-        double var2 = var1.field_72450_a;
-        double var4 = var1.field_72448_b;
-        double var6 = var1.field_72449_c;
-        double var8 = var0.field_72450_a - var2;
-        double var10 = var0.field_72448_b - var4;
-        double var12 = var0.field_72449_c - var6;
+        double var2 = var1.xCoord;
+        double var4 = var1.yCoord;
+        double var6 = var1.zCoord;
+        double var8 = var0.xCoord - var2;
+        double var10 = var0.yCoord - var4;
+        double var12 = var0.zCoord - var6;
         double var14 = Math.sqrt(var8 * var8 + var12 * var12);
         float var16 = (float)(Math.toDegrees(Math.atan2(var12, var8)) - 90.0);
         float var17 = (float)(-Math.toDegrees(Math.atan2(var10, var14)));
@@ -182,10 +182,10 @@ public class RotationUtil {
         return RotationUtil.b(var3, var2, 0.0);
 }
     public static Vec3 d(float var0, float var1) {
-        float var2 = MathHelper.func_76134_b((float)(-var1 * ((float)Math.PI / 180) - (float)Math.PI));
-        float var3 = MathHelper.func_76126_a((float)(-var1 * ((float)Math.PI / 180) - (float)Math.PI));
-        float var4 = -MathHelper.func_76134_b((float)(-var0 * ((float)Math.PI / 180)));
-        float var5 = MathHelper.func_76126_a((float)(-var0 * ((float)Math.PI / 180)));
+        float var2 = MathHelper.cos((float)(-var1 * ((float)Math.PI / 180) - (float)Math.PI));
+        float var3 = MathHelper.sin((float)(-var1 * ((float)Math.PI / 180) - (float)Math.PI));
+        float var4 = -MathHelper.cos((float)(-var0 * ((float)Math.PI / 180)));
+        float var5 = MathHelper.sin((float)(-var0 * ((float)Math.PI / 180)));
         return new Vec3((double)(var3 * var4), (double)var5, (double)(var2 * var4));
 }
     public static float[] y(long var0, AxisAlignedBB var2, double var3) {

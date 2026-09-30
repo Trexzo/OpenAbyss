@@ -8,7 +8,7 @@ import Abyss.event.Event;
 public class KnockbackEvent
 extends Event {
     private double R;
-    private static final long private double n;
+    private double n;
     private double S;
 
     public double f() {

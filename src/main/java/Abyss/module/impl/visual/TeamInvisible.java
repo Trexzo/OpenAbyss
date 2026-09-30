@@ -31,6 +31,10 @@ import net.minecraft.entity.Entity;
 public class TeamInvisible
 extends Module
 implements EventSubscriber {
+    private static Map d;
+
+    private static long a = 110532025384406L;
+
     private static Object[] e;
     private static long[] b;
         public static PercentageSetting opacity;
@@ -55,11 +59,11 @@ implements EventSubscriber {
 }
     public void v(Entity var1, long var2) {
         if (this.C(1481626796L, '\ub4eb', var1)) {
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)((float)opacity.k() / 100.0f));
-            GlStateManager.func_179132_a((boolean)false);
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179112_b((int)770, (int)771);
-            GlStateManager.func_179092_a((int)516, (float)0.003921569f);
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)((float)opacity.k() / 100.0f));
+            GlStateManager.depthMask((boolean)false);
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc((int)770, (int)771);
+            GlStateManager.alphaFunc((int)516, (float)0.003921569f);
 }
 }
     public void onPreRenderCape(PreRenderCapeEvent var1, long var2) {
@@ -68,15 +72,15 @@ implements EventSubscriber {
 }
     public void j(Entity var1, long var2) {
         if (this.C(1481626796L, '\ub4eb', var1)) {
-            GlStateManager.func_179084_k();
-            GlStateManager.func_179092_a((int)516, (float)0.1f);
-            GlStateManager.func_179132_a((boolean)true);
+            GlStateManager.disableBlend();
+            GlStateManager.alphaFunc((int)516, (float)0.1f);
+            GlStateManager.depthMask((boolean)true);
 }
 }
     private boolean C(long var1, char var3, Entity var4) {
         long var5 = (0x584FD4AC0000L | (long)var3 << 48 >>> 48) ^ a;
         long var7 = var5 ^ 0x114D839FBD3DL;
-        return var4 != TeamInvisible.f.field_71439_g && RaytraceUtil.q(var7, var4, range.L()) && Teams.g(0L, var4);
+        return var4 != TeamInvisible.f.thePlayer && RaytraceUtil.q(var7, var4, range.L()) && Teams.g(0L, var4);
 }
     public void onEntityRenderState(char var1, int var2, EntityRenderStateEvent var3, int var4) {
         long var5 = ((long)var1 << 48 | (long)var2 << 32 >>> 16 | (long)var4 << 48 >>> 48) ^ a;

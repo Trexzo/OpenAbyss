@@ -90,4 +90,33 @@ public class Account {
     public void r(String var1) {
         this.a = var1;
 }
+    public static String selfTest() {
+        try {
+            Account original = new Account("refresh-token", "access-token", "TestUser", "0123456789abcdef", 123456789L, AccountType.MINECRAFT);
+            JsonObject json = original.F(0L);
+            Account restored = Account.k(json, 0L);
+            if (!"refresh-token".equals(restored.d())) {
+                return "FAIL refresh-token";
+}
+            if (!"access-token".equals(restored.Y())) {
+                return "FAIL access-token";
+}
+            if (!"TestUser".equals(restored.h())) {
+                return "FAIL username";
+}
+            if (!"0123456789abcdef".equals(restored.f())) {
+                return "FAIL uuid";
+}
+            if (restored.F() != 123456789L) {
+                return "FAIL unban=" + restored.F();
+}
+            if (restored.v() != AccountType.MINECRAFT) {
+                return "FAIL type=" + restored.v();
+}
+            return "PASS json-roundtrip";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+}
 }

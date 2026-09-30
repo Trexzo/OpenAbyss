@@ -36,6 +36,14 @@ import net.minecraft.client.gui.ScaledResolution;
 import org.lwjgl.opengl.GL11;
 
 public class FontUtil {
+    private static String[] c;
+
+    private static String[] b;
+
+    private static Map d;
+
+    private static long a;
+
     private static Map g;
     private static long[] e;
         public static final float x = 0.66f;
@@ -44,15 +52,72 @@ public class FontUtil {
     
 
     public static float J(FontRenderer var0, float var1) {
-        return (float)var0.field_78288_b * var1;
+        return (float)var0.FONT_HEIGHT * var1;
 }
     public static void R(long var0) {
         GL11.glDisable((int)3089);
 }
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+
+        for (int var4 = 0; var4 < var2; var4++) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << '\f');
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+
+        return new String(var3, 0, var1);
+    }
+
+    private static String a(int var0, long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
+        int var5 = var0 ^ (int)(var1 & 32767L) ^ 30329;
+        if (c[var5] == null) {
+            Object[] var4;
+            try {
+                Long var3 = Thread.currentThread().getId();
+                var4 = (Object[])d.get(var3);
+                if (var4 == null) {
+                    var4 = new Object[]{Cipher.getInstance("DES/CBC/PKCS5Padding"), SecretKeyFactory.getInstance("DES"), new IvParameterSpec(new byte[8])};
+                    d.put(var3, var4);
+                }
+            } catch (Exception var10) {
+                throw new RuntimeException("Abyss/util/render/FontUtil", var10);
+            }
+
+            byte[] var6 = new byte[8];
+            var6[0] = (byte)(var1 >>> 56);
+            for (int var7 = 1; var7 < 8; var7++) {
+                var6[var7] = (byte)(var1 << var7 * 8 >>> 56);
+            }
+
+            DESKeySpec var11 = new DESKeySpec(var6);
+            SecretKey var8 = ((SecretKeyFactory)var4[1]).generateSecret(var11);
+            ((Cipher)var4[0]).init(2, var8, (IvParameterSpec)var4[2]);
+            byte[] var9 = b[var5].getBytes("ISO-8859-1");
+            c[var5] = a(((Cipher)var4[0]).doFinal(var9));
+        }
+
+        return c[var5];
+    }
     public static void F(FontRenderer var0, String var1, float var2, float var3, float var4, int var5) {
         GL11.glPushMatrix();
         GL11.glScalef((float)var4, (float)var4, (float)1.0f);
-        var0.func_175063_a(var1, var2 / var4, var3 / var4, var5);
+        var0.drawStringWithShadow(var1, var2 / var4, var3 / var4, var5);
         GL11.glPopMatrix();
 }
     public static void u(float var0, float var1, float var4, float var5, int var6) {
@@ -75,7 +140,7 @@ public class FontUtil {
         GL11.glPopMatrix();
 }
     public static float m(FontRenderer var0, float var1, float var2) {
-        return var1 + (var2 - (float)var0.field_78288_b) / 2.0f;
+        return var1 + (var2 - (float)var0.FONT_HEIGHT) / 2.0f;
 }
     public static float I(long var0, CustomFont var2, float var3, float var4, float var5) {
         long var6 = var0 ^ 0x2485A71EF859L;
@@ -86,9 +151,9 @@ public class FontUtil {
         int var7 = (int)((var0 ^ 0x6C06C863740CL) >>> 56);
         Minecraft var10 = MinecraftRef.c((byte)var7, 0L);
         ScaledResolution var11 = new ScaledResolution(var10);
-        int var12 = var11.func_78325_e();
+        int var12 = var11.getScaleFactor();
         int var13 = Math.round(var2 * (float)var12 * var6);
-        int var14 = Math.round(((float)var11.func_78328_b() - (var3 + var5) * var6) * (float)var12);
+        int var14 = Math.round(((float)var11.getScaledHeight() - (var3 + var5) * var6) * (float)var12);
         int var15 = Math.round(var4 * (float)var12 * var6);
         int var16 = Math.round(var5 * (float)var12 * var6);
         GL11.glEnable((int)3089);
@@ -109,14 +174,14 @@ public class FontUtil {
         if (var2 == null) {
             return "";
 }
-        if ((float)var1.func_78256_a(var2) <= var4) {
+        if ((float)var1.getStringWidth(var2) <= var4) {
             return var2;
 }
         String var8 = FontUtil.a(32506, 0x7269EF51D4C13455L ^ var6);
         String var9 = var2;
         while (!var9.isEmpty()) {
             StringBuilder stringBuilder = new StringBuilder();
-            if (!((float)var1.func_78256_a(stringBuilder.append(var9).append(var8).toString()) > var4)) break;
+            if (!((float)var1.getStringWidth(stringBuilder.append(var9).append(var8).toString()) > var4)) break;
             var9 = var9.substring(0, var9.length() - 1);
 }
         return var9 + var8;
@@ -175,7 +240,7 @@ public class FontUtil {
 }
     public static float c(FontRenderer var0, String var1, float var2, float var3, float var4) {
         if (var1 != null && !var1.isEmpty()) {
-            float var5 = var0.func_78256_a(var1);
+            float var5 = var0.getStringWidth(var1);
             if (var5 <= 0.0f) {
                 return var3;
 }
@@ -184,6 +249,9 @@ public class FontUtil {
 }
         return var3;
 }
+    public static int a(int var0, int var1, Color var2, float var3) {
+        return y(var2.getRGB(), var3);
+    }
     public static String Q(int var0, CustomFont var1, String var2, short var3, char var4, float var5, float var6) {
         long var7 = ((long)var0 << 32 | (long)var3 << 48 >>> 32 | (long)var4 << 48 >>> 48) ^ a;
         long var9 = var7 ^ 0x21B6DDE367F0L;
@@ -198,7 +266,7 @@ public class FontUtil {
         FontUtil.F(var0, var1, var8, var9, var6, var7);
 }
     public static float M(FontRenderer var0, String var1, float var2) {
-        return (float)var0.func_78256_a(var1) * var2;
+        return (float)var0.getStringWidth(var1) * var2;
 }
     public static float w(CustomFont var0, String var1, float var2, float var3, float var4, long var5) {
         long var7 = var5 ^ 0x594859E7D62CL;
@@ -233,6 +301,7 @@ public class FontUtil {
         return new Color(Math.round((float)var0.getRed() * var3 + (float)var1.getRed() * var2), Math.round((float)var0.getGreen() * var3 + (float)var1.getGreen() * var2), Math.round((float)var0.getBlue() * var3 + (float)var1.getBlue() * var2), Math.round((float)var0.getAlpha() * var3 + (float)var1.getAlpha() * var2));
 }
     static {
+        a = 18527240782280L;
         d = new HashMap(13);
         b = new String[]{"}\u009a Z\u000bgAs", "[\u00a4\u0097a\u00d4\u0016\u00bb[", "\u00d9\u00b7Z\u00fa\u008bVk\u0099", "O\u00cb\u00e44\u00cd\u00c4\u00bb\u00ab7\u00a3\u00d5\u00af\u00cb\u00bdZV", "\u00a9^uN\u00a8\u008c\u00ea\u00f7", "(\u0092\u00bfz\u009f\u0081\u00a0\u0093"};
         c = new String[6];

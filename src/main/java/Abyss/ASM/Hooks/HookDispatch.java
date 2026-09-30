@@ -39,9 +39,14 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.MovementInput;
 import net.minecraft.util.Vec3;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class HookDispatch {
-    private static final long public static void PlayerControllerMP$clickBlockReturn(BlockPos var0, EnumFacing var1, PlayerControllerMP var2, CallbackInfoReturnable<Boolean> var3) {
+    public static void PlayerControllerMP$clickBlockReturn(BlockPos var0, EnumFacing var1, PlayerControllerMP var2, CallbackInfoReturnable<Boolean> var3) {
         PlayerControllerHooks.clickBlockReturn(var0, var3);
 }
     public static void Minecraft$onStartGame() {

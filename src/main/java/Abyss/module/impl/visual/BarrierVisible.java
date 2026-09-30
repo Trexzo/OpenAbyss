@@ -10,7 +10,7 @@ import Abyss.util.DeferredRendererReload;
 
 public class BarrierVisible
 extends Module {
-    private static final long @Override
+    @Override
     public void i(long var1) {
         DeferredRendererReload.request();
 }

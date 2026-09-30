@@ -3,6 +3,7 @@
  */
 package Abyss.util.render.abyss;
 
+import Abyss.AbyssClient;
 import Abyss.module.impl.visual.HUD;
 import Abyss.util.render.abyss.FontRenderer;
 import Abyss.util.render.abyss.TTFUtils;
@@ -80,7 +81,7 @@ public final class FontManager {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("FontManager", "custom-font-setting", throwable);
 }
         if (!texturesReady) {
             if (warmingInProgress) {
@@ -97,7 +98,7 @@ public final class FontManager {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("FontManager", "custom-font-setting", throwable);
 }
         if (!texturesReady) {
             if (warmingInProgress) {
@@ -114,7 +115,7 @@ public final class FontManager {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("FontManager", "custom-font-setting", throwable);
 }
         if (!texturesReady) {
             if (warmingInProgress) {

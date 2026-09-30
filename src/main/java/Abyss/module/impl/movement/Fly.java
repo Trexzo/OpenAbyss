@@ -19,7 +19,7 @@ public class Fly
 extends Module
 implements EventSubscriber {
     private double K;
-    private static final long public static NumberSetting horizontalSpeed;
+    public static NumberSetting horizontalSpeed;
     public static NumberSetting verticalSpeed;
 
     private static void a() {
@@ -28,8 +28,8 @@ implements EventSubscriber {
         long var5 = ((long)var1 << 48 | (long)var2 << 32 >>> 16 | (long)var3 << 48 >>> 48) ^ 0x72276E9B7B7EL;
         long var7 = var5 ^ 0x479F902631FFL;
         if (this.o()) {
-            if (Fly.f.field_71439_g.field_70163_u % 1.0 != 0.0) {
-                Fly.f.field_71439_g.field_70181_x = this.K;
+            if (Fly.f.thePlayer.posY % 1.0 != 0.0) {
+                Fly.f.thePlayer.motionY = this.K;
 }
             MoveUtil.y(0.0, var7);
             var4.H((float)MoveUtil.A() * horizontalSpeed.L());
@@ -39,9 +39,9 @@ implements EventSubscriber {
     public void A(long var1) {
         long var3 = var1 ^ 0x711DE0724254L;
         long var5 = var1 ^ 0xF9FDC7ACA5AL;
-        Fly.f.field_71439_g.field_70181_x = 0.0;
+        Fly.f.thePlayer.motionY = 0.0;
         MoveUtil.y(0.0, var3);
-        KeyBindUtil.o(var5, Fly.f.field_71474_y.field_74311_E.func_151463_i());
+        KeyBindUtil.o(var5, Fly.f.gameSettings.keyBindSneak.getKeyCode());
 }
     public Fly(long var1) {
         super(0x72276E9B7B7EL ^ var1 ^ 0x15358AB60AF1L);
@@ -55,14 +55,14 @@ implements EventSubscriber {
 }
     public void onPreUpdate(PreUpdateEvent var3) {
         this.K = 0.0;
-        if (Fly.f.field_71462_r == null) {
-            if (KeyBindUtil.V(Fly.f.field_71474_y.field_74314_A.func_151463_i(), 64165991731362L)) {
+        if (Fly.f.currentScreen == null) {
+            if (KeyBindUtil.V(Fly.f.gameSettings.keyBindJump.getKeyCode(), 64165991731362L)) {
                 this.K += (double)(verticalSpeed.L() * 0.42f);
 }
-            if (KeyBindUtil.V(Fly.f.field_71474_y.field_74311_E.func_151463_i(), 64165991731362L)) {
+            if (KeyBindUtil.V(Fly.f.gameSettings.keyBindSneak.getKeyCode(), 64165991731362L)) {
                 this.K -= (double)(verticalSpeed.L() * 0.42f);
 }
-            KeyBindUtil.A(82009306480869L, Fly.f.field_71474_y.field_74311_E.func_151463_i(), false);
+            KeyBindUtil.A(82009306480869L, Fly.f.gameSettings.keyBindSneak.getKeyCode(), false);
 }
 }
     static {

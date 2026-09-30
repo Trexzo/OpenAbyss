@@ -17,6 +17,10 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 
 public class CallbackInfo {
+    private static long a;
+    static {
+        a = 80856353992445L;
+    }
     private boolean p;
     private static long c;
     

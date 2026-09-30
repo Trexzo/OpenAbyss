@@ -13,6 +13,11 @@ import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ColorUtil {
     
@@ -28,9 +33,9 @@ public class ColorUtil {
         return ColorUtil.O(var0, var0, var0, var1);
 }
     public static int O(int var0, int var1, int var2, int var5) {
-        int var6 = MathHelper.func_76125_a((int)var5, (int)0, (int)255) << 24;
-        var6 |= MathHelper.func_76125_a((int)var0, (int)0, (int)255) << 16;
-        return (var6 |= MathHelper.func_76125_a((int)var1, (int)0, (int)255) << 8) | MathHelper.func_76125_a((int)var2, (int)0, (int)255);
+        int var6 = MathHelper.clamp_int((int)var5, (int)0, (int)255) << 24;
+        var6 |= MathHelper.clamp_int((int)var0, (int)0, (int)255) << 16;
+        return (var6 |= MathHelper.clamp_int((int)var1, (int)0, (int)255) << 8) | MathHelper.clamp_int((int)var2, (int)0, (int)255);
 }
     public static Color I(EnumChatFormatting var0) {
         return P.getOrDefault(var0, Color.WHITE);

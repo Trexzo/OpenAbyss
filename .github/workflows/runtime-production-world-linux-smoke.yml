@@ -1,0 +1,1532 @@
+name: OpenAbyss Linux Production World Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - .github/workflows/runtime-production-world-linux-smoke.yml
+      - src/main/java/Abyss/**
+      - src/main/java/com/formdev/flatlaf/**
+      - src/main/resources/**
+      - launcher/**
+      - tools/production_forge_linux.py
+      - tools/run_production_world_smoke.sh
+      - build.gradle
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-linux-production-world-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  linux-production-world-runtime:
+    name: Production reobf JAR / normal Forge / local world / RSHIFT
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install graphics and network-isolation runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb mesa-utils x11-xserver-utils x11-utils xdotool openbox scrot imagemagick \
+            libgl1-mesa-dri libglx-mesa0 \
+            libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libxrandr2 libxinerama1 libxcursor1 libxxf86vm1 \
+            iproute2 util-linux
+
+      - name: Install Gradle 2.14.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="$RUNNER_TEMP/gradle-2.14.1-bin.zip"
+          HOME_DIR="$RUNNER_TEMP/gradle-2.14.1"
+          USER_HOME="$RUNNER_TEMP/gradle-user-home-production-world"
+          rm -f "$ZIP"
+          curl -L --fail --silent --show-error \
+            --retry 6 --retry-delay 2 --retry-max-time 90 --retry-all-errors \
+            'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' \
+            -o "$ZIP"
+          test -s "$ZIP"
+          unzip -tq "$ZIP" >/dev/null
+          unzip -q -o "$ZIP" -d "$RUNNER_TEMP"
+          GRADLE="$HOME_DIR/bin/gradle"
+          test -x "$GRADLE"
+          echo "OPENABYSS_GRADLE=$GRADLE" >> "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=$USER_HOME" >> "$GITHUB_ENV"
+          "$GRADLE" --version
+
+      - name: Build exact shipped production package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/production_forge_linux.py
+          bash -n tools/run_production_world_smoke.sh
+
+          build_ok=0
+          for attempt in 1 2 3; do
+            echo "PRODUCTION_WORLD_BUILD_ATTEMPT=$attempt"
+            if "$OPENABYSS_GRADLE" --no-daemon clean packageWindowsLauncher; then
+              build_ok=1
+              break
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 5))
+            fi
+          done
+          if [ "$build_ok" -ne 1 ]; then
+            echo "PRODUCTION_WORLD_BUILD_RETRIES_EXHAUSTED=1" >&2
+            exit 1
+          fi
+
+          PACKAGE="$GITHUB_WORKSPACE/build/distributions/OpenAbyss-Windows-Launcher.zip"
+          OUT="$RUNNER_TEMP/openabyss-production-world-package"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          unzip -q "$PACKAGE" -d "$OUT"
+
+          test -s "$OUT/abyss.jar"
+          test -s "$OUT/BUILD-INFO.txt"
+          JAR_HASH="$(sha256sum "$OUT/abyss.jar" | awk '{print toupper($1)}')"
+          INFO_HASH="$(grep '^JAR_SHA256=' "$OUT/BUILD-INFO.txt" | cut -d= -f2- | tr '[:lower:]' '[:upper:]')"
+          test "$JAR_HASH" = "$INFO_HASH"
+
+          echo "OPENABYSS_PRODUCTION_WORLD_PACKAGE=$OUT" >> "$GITHUB_ENV"
+          echo "OPENABYSS_PRODUCTION_WORLD_JAR=$OUT/abyss.jar" >> "$GITHUB_ENV"
+          echo "PRODUCTION_WORLD_SHIPPED_JAR_SHA256=$JAR_HASH"
+
+      - name: Prepare normal Forge profile, official assets, and local server
+        shell: bash
+        run: |
+          set -euo pipefail
+          MC="$RUNNER_TEMP/openabyss-production-world-minecraft"
+          rm -rf "$MC"
+          python tools/production_forge_linux.py prepare \
+            --minecraft-dir "$MC" \
+            --download-assets
+
+          grep -Fq 'OPENABYSS_PRODUCTION_FORGE_PROFILE=READY' "$MC/openabyss-production-profile.txt"
+          cat "$MC/openabyss-production-profile.txt"
+          echo "OPENABYSS_PRODUCTION_WORLD_MC=$MC" >> "$GITHUB_ENV"
+
+          SERVER_JAR="$RUNNER_TEMP/minecraft_server.1.8.9.jar"
+          python - "$SERVER_JAR" <<'PY'
+          import hashlib, json, sys, urllib.request
+          output = sys.argv[1]
+          manifest = json.load(urllib.request.urlopen(
+              'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+              timeout=30,
+          ))
+          entry = next(v for v in manifest['versions'] if v['id'] == '1.8.9')
+          version = json.load(urllib.request.urlopen(entry['url'], timeout=30))
+          server = version['downloads']['server']
+          with urllib.request.urlopen(server['url'], timeout=60) as response:
+              data = response.read()
+          actual = hashlib.sha1(data).hexdigest()
+          if actual.lower() != server['sha1'].lower():
+              raise SystemExit('SERVER_SHA1_MISMATCH expected=%s actual=%s' % (server['sha1'], actual))
+          open(output, 'wb').write(data)
+          print('MINECRAFT_SERVER_1_8_9_SHA1=' + actual.upper())
+          print('MINECRAFT_SERVER_1_8_9_BYTES=' + str(len(data)))
+          PY
+          test -s "$SERVER_JAR"
+          echo "OPENABYSS_SERVER_JAR=$SERVER_JAR" >> "$GITHUB_ENV"
+
+      - name: Start Mesa X server
+        shell: bash
+        run: |
+          set -euo pipefail
+          Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset \
+            >"$RUNNER_TEMP/openabyss-production-world-xvfb.log" 2>&1 &
+          echo "OPENABYSS_XVFB_PID=$!" >> "$GITHUB_ENV"
+
+          for _ in $(seq 1 30); do
+            if DISPLAY=:99 xdpyinfo >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          DISPLAY=:99 xdpyinfo >/dev/null
+
+          DISPLAY=:99 openbox >"$RUNNER_TEMP/openabyss-production-world-openbox.log" 2>&1 &
+          echo "OPENABYSS_OPENBOX_PID=$!" >> "$GITHUB_ENV"
+          sleep 2
+
+          DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | tee "$RUNNER_TEMP/openabyss-production-world-glxinfo.txt"
+          DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 glxinfo -B | grep -Eq 'OpenGL renderer string:.*(llvmpipe|softpipe|Mesa)'
+          echo 'PRODUCTION_WORLD_MESA=PASS'
+
+      - name: Run shipped production JAR with no external network
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/run_production_world_smoke.sh
+
+          RUNNER_UID="$(id -u)"
+          RUNNER_GID="$(id -g)"
+
+          sudo unshare --net -- bash -c '
+            set -euo pipefail
+            ip link set lo up
+            ip link add abyss-dummy type dummy
+            ip addr add 192.0.2.1/32 dev abyss-dummy
+            ip link set abyss-dummy up
+            test -z "$(ip route show default)"
+
+            exec setpriv --reuid="$1" --regid="$2" --init-groups \
+              env \
+                HOME="$3" \
+                DISPLAY=:99 \
+                JAVA_HOME="$4" \
+                PATH="$4/bin:$5" \
+                GITHUB_WORKSPACE="$6" \
+                RUNNER_TEMP="$7" \
+                OPENABYSS_SERVER_JAR="$8" \
+                OPENABYSS_PRODUCTION_WORLD_MC="$9" \
+                OPENABYSS_PRODUCTION_WORLD_JAR="${10}" \
+                LIBGL_ALWAYS_SOFTWARE=1 \
+                GITHUB_TOKEN= \
+                ACTIONS_RUNTIME_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+                ACTIONS_ID_TOKEN_REQUEST_URL= \
+                ABYSS_PAYLOAD_KEY= \
+                bash "$6/tools/run_production_world_smoke.sh"
+          ' _ \
+            "$RUNNER_UID" "$RUNNER_GID" "$HOME" "$JAVA_HOME" "$PATH" \
+            "$GITHUB_WORKSPACE" "$RUNNER_TEMP" "$OPENABYSS_SERVER_JAR" \
+            "$OPENABYSS_PRODUCTION_WORLD_MC" "$OPENABYSS_PRODUCTION_WORLD_JAR"
+
+      - name: Validate and stage production-world evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          GAME="$RUNNER_TEMP/openabyss-production-world-game"
+          STAGE="$GAME/abyss-runtime-stage.txt"
+          STDOUT="$RUNNER_TEMP/openabyss-production-world-client.stdout.log"
+          SCREENSHOT="$RUNNER_TEMP/openabyss-production-world-clickgui.png"
+
+          test -f "$STAGE"
+          test -f "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG_COUNT=109' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.worldFunctionalProbe=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe13=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe14=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe15=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe16=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe17=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe18=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe19=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe20=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe21=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe22=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe23=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe24=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe25=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe26=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe27=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe28=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe29=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe30=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe31=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe32=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe33=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe34=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe35=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe36=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe37=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe38=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe39=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe40=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe41=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe42=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe43=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe44=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe45=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe46=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe47=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe48=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe49=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe50=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe51=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe52=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe53=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe54=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe55=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe56=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe57=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe58=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe59=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe60=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe61=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe62=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe63=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe64=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe65=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe66=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe67=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe68=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe69=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe70=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe71=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe72=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe73=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe74=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe75=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe76=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe77=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe78=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe79=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe80=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe81=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe82=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe83=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe84=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe85=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe86=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe87=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe88=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe89=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe90=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe91=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe92=true' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_JVM_ARG=-Dabyss.highRiskFunctionalProbe93=true' "$STDOUT"
+          echo 'PRODUCTION_WORLD_EXPLICIT_JVM_PROBES=PASS count=109'
+          grep -Fq 'menu-no-world-tick' "$STAGE"
+          grep -Fq 'menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
+          echo 'PRODUCTION_WORLD_MENU_LIFECYCLE=PASS'
+          echo 'PRODUCTION_WORLD_MENU_PACKET_CLEANUP=PASS'
+          grep -Fq 'entity-player-join-world' "$STAGE"
+          grep -Fq 'world-ready-tick' "$STAGE"
+          grep -Fq 'world-module-lifecycle-complete' "$STAGE"
+          NETWORK_STAGE="$GAME/abyss-network-stage.txt"
+          test -f "$NETWORK_STAGE"
+          grep -Fq 'send-hook:' "$NETWORK_STAGE"
+          grep -Fq 'receive-hook:' "$NETWORK_STAGE"
+          grep -Fq 'world-functional-probe-pass' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-pass:9' "$STAGE"
+          grep -Fq 'high-risk-functional-probe-module-pass:Velocity' "$STAGE"
+          grep -Fq 'high-risk-functional-probe-module-pass:NoSlow' "$STAGE"
+          grep -Fq 'high-risk-functional-probe-module-pass:Blink' "$STAGE"
+          grep -Fq 'high-risk-functional-probe-module-pass:Speed' "$STAGE"
+          grep -Fq 'high-risk-functional-probe-pass:4' "$STAGE"
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL=PASS modules=Velocity,NoSlow,Blink,Speed'
+          grep -Fq 'high-risk-functional-probe2-module-pass:Sprint' "$STAGE"
+          grep -Fq 'high-risk-functional-probe2-module-pass:BackTrack' "$STAGE"
+          grep -Fq 'high-risk-functional-probe2-module-pass:NoInteract' "$STAGE"
+          grep -Fq 'high-risk-functional-probe2-pass:3' "$STAGE"
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL2=PASS modules=Sprint,BackTrack,NoInteract'
+          grep -Fq 'physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true' "$STAGE"
+          grep -Fq 'physical-input-functional-probe-effect-pass:FastFall:motionY=' "$STAGE"
+          grep -Fq 'physical-input-functional-probe-pass:2' "$STAGE"
+          echo 'PRODUCTION_WORLD_PHYSICAL_INPUT_FUNCTIONAL=PASS modules=AutoClicker,FastFall'
+          grep -Fq 'high-risk-functional-probe3-effect-pass:WTap:forward=0.0:strafe=0.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe3-restore-pass:WTap' "$STAGE"
+          grep -Fq 'high-risk-functional-probe3-module-pass:WTap' "$STAGE"
+          grep -Fq 'high-risk-functional-probe3-pass:1' "$STAGE"
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL3=PASS modules=WTap'
+          grep -Fq 'high-risk-functional-probe4-effect-pass:ChestESP:visible=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe4-effect-pass:ChestESP:ignoreOpened=true:hidden=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe4-restore-pass:ChestESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe4-module-pass:ChestESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe4-pass:1' "$STAGE"
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL4=PASS modules=ChestESP'
+          grep -Fq 'invmove-physical-probe-input-seen:inventory=true' "$STAGE"
+          grep -Fq 'invmove-physical-probe-container-open:' "$STAGE"
+          grep -Fq 'invmove-physical-probe-input-seen:forward=true' "$STAGE"
+          grep -Fq 'invmove-physical-probe-effect-pass:forwardBinding=true:screen=' "$STAGE"
+          grep -Fq 'invmove-physical-probe-close-effect-pass:forwardBinding=false' "$STAGE"
+          grep -Fq 'invmove-physical-probe-restore-pass:' "$STAGE"
+          grep -Fq 'invmove-physical-probe-pass:1' "$STAGE"
+          echo 'PRODUCTION_WORLD_INVMOVE_PHYSICAL=PASS input=real-E-plus-W'
+          grep -Fq 'high-risk-functional-probe5-effect-pass:AntiDebuff:disabled:blindnessVisible=true:confusionVisible=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe5-effect-pass:AntiDebuff:enabled:blindnessVisible=false:confusionVisible=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe5-restore-pass:AntiDebuff:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe5-module-pass:AntiDebuff' "$STAGE"
+          grep -Fq 'high-risk-functional-probe5-pass:1' "$STAGE"
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL5=PASS modules=AntiDebuff'
+          grep -Fq 'high-risk-functional-probe6-effect-pass:NoHurtCam:disabled:identityDelta=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe6-effect-pass:NoHurtCam:enabled:identityDelta=0.0:effect=0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe6-restore-pass:NoHurtCam:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe6-module-pass:NoHurtCam' "$STAGE"
+          grep -Fq 'high-risk-functional-probe6-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe6-fail:' "$STAGE"; then
+            echo 'NoHurtCam renderer-hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe6-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL6=PASS modules=NoHurtCam'
+          grep -Fq 'high-risk-functional-probe7-effect-pass:BarrierVisible:disabled:cancelled=false:returnValue=71' "$STAGE"
+          grep -Fq 'high-risk-functional-probe7-effect-pass:BarrierVisible:enabled:cancelled=true:returnValue=3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe7-restore-pass:BarrierVisible:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe7-module-pass:BarrierVisible' "$STAGE"
+          grep -Fq 'high-risk-functional-probe7-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe7-fail:' "$STAGE"; then
+            echo 'BarrierVisible render-type hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe7-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL7=PASS modules=BarrierVisible'
+          grep -Fq 'high-risk-functional-probe8-effect-pass:ViewClip:disabled:takeover=false:result=null' "$STAGE"
+          grep -Fq 'high-risk-functional-probe8-effect-pass:ViewClip:enabled:takeover=true:result=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe8-restore-pass:ViewClip:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe8-module-pass:ViewClip' "$STAGE"
+          grep -Fq 'high-risk-functional-probe8-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe8-fail:' "$STAGE"; then
+            echo 'ViewClip camera-hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe8-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL8=PASS modules=ViewClip'
+          grep -Fq 'high-risk-functional-probe9-effect-pass:Animations:disabled:cancelled=false:noRotations=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-effect-pass:Animations:enabled:cancelled=true:noRotations=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-restore-pass:Animations:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-module-pass:Animations' "$STAGE"
+          grep -Fq 'high-risk-functional-probe9-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe9-fail:' "$STAGE"; then
+            echo 'Animations item-renderer hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe9-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL9=PASS modules=Animations'
+          grep -Fq 'high-risk-functional-probe10-baseline-pass:Timer:timerSpeed=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe10-effect-pass:Timer:enabled:timerSpeed=1.37' "$STAGE"
+          grep -Fq 'high-risk-functional-probe10-effect-pass:Timer:disabled:timerSpeed=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe10-restore-pass:Timer:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe10-module-pass:Timer' "$STAGE"
+          grep -Fq 'high-risk-functional-probe10-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe10-fail:' "$STAGE"; then
+            echo 'Timer Render2D speed/restoration probe reported a failure.'
+            grep -F 'high-risk-functional-probe10-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL10=PASS modules=Timer'
+          grep -Fq 'high-risk-functional-probe11-effect-pass:Chams:disabled:pre=false:post=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe11-effect-pass:Chams:enabled:pre=true:post=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe11-effect-pass:Chams:restored:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe11-restore-pass:Chams:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe11-module-pass:Chams' "$STAGE"
+          grep -Fq 'high-risk-functional-probe11-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe11-fail:' "$STAGE"; then
+            echo 'Chams PreRender/PostRender polygon-offset probe reported a failure.'
+            grep -F 'high-risk-functional-probe11-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL11=PASS modules=Chams'
+          grep -Fq 'high-risk-functional-probe12-effect-pass:Freelook:enabled:view=1:active=true:yaw=37.25:pitch=-18.5' "$STAGE"
+          grep -Fq 'high-risk-functional-probe12-effect-pass:Freelook:disabled:view=0:active=false:yaw=37.25:pitch=-18.5' "$STAGE"
+          grep -Fq 'high-risk-functional-probe12-restore-pass:Freelook:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe12-module-pass:Freelook' "$STAGE"
+          grep -Fq 'high-risk-functional-probe12-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe12-fail:' "$STAGE"; then
+            echo 'Freelook camera lifecycle probe reported a failure.'
+            grep -F 'high-risk-functional-probe12-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL12=PASS modules=Freelook'
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:disabled:cancelled=false:opaqueBit=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:enabled:cancelled=true:opaqueBit=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-effect-pass:CaveXray:restored:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-restore-pass:CaveXray=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-module-pass:CaveXray' "$STAGE"
+          grep -Fq 'high-risk-functional-probe13-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe13-fail:' "$STAGE"; then
+            echo 'CaveXray VisGraph-hook probe reported a failure.'
+            grep -F 'high-risk-functional-probe13-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL13=PASS modules=CaveXray'
+          grep -Fq 'high-risk-functional-probe14-effect-pass:ItemScale:none=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe14-effect-pass:ItemScale:all=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe14-effect-pass:ItemScale:gapples=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe14-restore-pass:ItemScale:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe14-module-pass:ItemScale' "$STAGE"
+          grep -Fq 'high-risk-functional-probe14-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe14-fail:' "$STAGE"; then
+            echo 'ItemScale selection-policy probe reported a failure.'
+            grep -F 'high-risk-functional-probe14-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL14=PASS modules=ItemScale'
+          grep -Fq 'high-risk-functional-probe15-effect-pass:AntiNick:version1=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-effect-pass:AntiNick:version4=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-restore-pass:AntiNick:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-module-pass:AntiNick' "$STAGE"
+          grep -Fq 'high-risk-functional-probe15-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe15-fail:' "$STAGE"; then
+            echo 'AntiNick player-name probe reported a failure.'
+            grep -F 'high-risk-functional-probe15-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL15=PASS modules=AntiNick'
+          grep -Fq 'high-risk-functional-probe16-effect-pass:KeyStrokes:setKeyBindState=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe16-effect-pass:KeyStrokes:isPressed=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe16-restore-pass:KeyStrokes:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe16-module-pass:KeyStrokes' "$STAGE"
+          grep -Fq 'high-risk-functional-probe16-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe16-fail:' "$STAGE"; then
+            echo 'KeyStrokes input-event probe reported a failure.'
+            grep -F 'high-risk-functional-probe16-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL16=PASS modules=KeyStrokes'
+          grep -Fq 'high-risk-functional-probe17-effect-pass:ContainerKeeper:hide=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe17-effect-pass:ContainerKeeper:restoreGui=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe17-effect-pass:ContainerKeeper:disableReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe17-restore-pass:ContainerKeeper:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe17-module-pass:ContainerKeeper' "$STAGE"
+          grep -Fq 'high-risk-functional-probe17-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe17-fail:' "$STAGE"; then
+            echo 'ContainerKeeper retain/reopen probe reported a failure.'
+            grep -F 'high-risk-functional-probe17-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL17=PASS modules=ContainerKeeper'
+          grep -Fq 'high-risk-functional-probe18-effect-pass:BindGUI:entries=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe18-effect-pass:BindGUI:disableReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe18-restore-pass:BindGUI:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe18-module-pass:BindGUI' "$STAGE"
+          grep -Fq 'high-risk-functional-probe18-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe18-fail:' "$STAGE"; then
+            echo 'BindGUI bound-module cache probe reported a failure.'
+            grep -F 'high-risk-functional-probe18-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL18=PASS modules=BindGUI'
+          grep -Fq 'high-risk-functional-probe19-effect-pass:LeapModeHUD:arced=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe19-effect-pass:LeapModeHUD:arrow=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe19-restore-pass:LeapModeHUD:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe19-module-pass:LeapModeHUD' "$STAGE"
+          grep -Fq 'high-risk-functional-probe19-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe19-fail:' "$STAGE"; then
+            echo 'LeapModeHUD chat-packet probe reported a failure.'
+            grep -F 'high-risk-functional-probe19-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL19=PASS modules=LeapModeHUD'
+          grep -Fq 'high-risk-functional-probe20-effect-pass:TeamInvisible:pattern=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe20-effect-pass:TeamInvisible:none=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe20-restore-pass:TeamInvisible:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe20-module-pass:TeamInvisible' "$STAGE"
+          grep -Fq 'high-risk-functional-probe20-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe20-fail:' "$STAGE"; then
+            echo 'TeamInvisible team-selection probe reported a failure.'
+            grep -F 'high-risk-functional-probe20-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL20=PASS modules=TeamInvisible'
+          grep -Fq 'high-risk-functional-probe21-effect-pass:CustomCape:mappings=23' "$STAGE"
+          grep -Fq 'high-risk-functional-probe21-effect-pass:Font:selectors=6' "$STAGE"
+          grep -Fq 'high-risk-functional-probe21-effect-pass:Gadgets:hooks=3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe21-effect-pass:NoObfuscation:strip=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe21-effect-pass:Language:lookup=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe21-restore-pass:modules=5' "$STAGE"
+          for module in CustomCape Font Gadgets NoObfuscation Language; do
+            grep -Fq "high-risk-functional-probe21-module-pass:$module" "$STAGE"
+          done
+          grep -Fq 'high-risk-functional-probe21-pass:5' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe21-fail:' "$STAGE"; then
+            echo 'Promoted helper/config functional probe reported a failure.'
+            grep -F 'high-risk-functional-probe21-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL21=PASS modules=CustomCape,Font,Gadgets,NoObfuscation,Language'
+          grep -Fq 'high-risk-functional-probe22-effect-pass:RawInput:enable=true:workers=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe22-effect-pass:RawInput:shutdown=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe22-effect-pass:VisualSpoof:settings=2' "$STAGE"
+          grep -Fq 'high-risk-functional-probe22-effect-pass:Theme:custom=123456' "$STAGE"
+          grep -Fq 'high-risk-functional-probe22-restore-pass:modules=3' "$STAGE"
+          for module in RawInput VisualSpoof Theme; do
+            grep -Fq "high-risk-functional-probe22-module-pass:$module" "$STAGE"
+          done
+          grep -Fq 'high-risk-functional-probe22-pass:3' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe22-fail:' "$STAGE"; then
+            echo 'RawInput/VisualSpoof/Theme promoted probe reported a failure.'
+            grep -F 'high-risk-functional-probe22-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL22=PASS modules=RawInput,VisualSpoof,Theme'
+          grep -Fq 'high-risk-functional-probe23-effect-pass:ClosestPlayerHUD:prefix=red:distance=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe23-effect-pass:ClosestPlayerHUD:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe23-module-pass:ClosestPlayerHUD' "$STAGE"
+          grep -Fq 'high-risk-functional-probe23-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe23-fail:' "$STAGE"; then
+            echo 'ClosestPlayerHUD nearest-team selection probe reported a failure.'
+            grep -F 'high-risk-functional-probe23-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL23=PASS modules=ClosestPlayerHUD'
+          grep -Fq 'high-risk-functional-probe24-effect-pass:FallIndicator:visible=true:damage=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe24-effect-pass:FallIndicator:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe24-module-pass:FallIndicator' "$STAGE"
+          grep -Fq 'high-risk-functional-probe24-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe24-fail:' "$STAGE"; then
+            echo 'FallIndicator world prediction probe reported a failure.'
+            grep -F 'high-risk-functional-probe24-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL24=PASS modules=FallIndicator'
+          grep -Fq 'high-risk-functional-probe25-effect-pass:InputFix:text=true:takeovers=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe25-restore-pass:InputFix:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe25-module-pass:InputFix' "$STAGE"
+          grep -Fq 'high-risk-functional-probe25-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe25-fail:' "$STAGE"; then
+            echo 'InputFix physical keyboard takeover probe reported a failure.'
+            grep -F 'high-risk-functional-probe25-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL25=PASS modules=InputFix'
+          grep -Fq 'high-risk-functional-probe26-effect-pass:FKCounter:merge=1' "$STAGE"
+          grep -Fq 'high-risk-functional-probe26-effect-pass:FKCounter:finalize=1' "$STAGE"
+          grep -Fq 'high-risk-functional-probe26-module-pass:FKCounter' "$STAGE"
+          grep -Fq 'high-risk-functional-probe26-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe26-fail:' "$STAGE"; then
+            echo 'FKCounter kill-accounting probe reported a failure.'
+            grep -F 'high-risk-functional-probe26-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL26=PASS modules=FKCounter'
+          grep -Fq 'high-risk-functional-probe27-effect-pass:FakeLag:buffering=true:flags=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe27-effect-pass:FakeLag:attackFlush=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe27-module-pass:FakeLag' "$STAGE"
+          grep -Fq 'high-risk-functional-probe27-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe27-fail:' "$STAGE"; then
+            echo 'FakeLag packet-buffer state-machine probe reported a failure.'
+            grep -F 'high-risk-functional-probe27-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL27=PASS modules=FakeLag'
+          grep -Fq 'high-risk-functional-probe28-effect-pass:KillAura:distance=near' "$STAGE"
+          grep -Fq 'high-risk-functional-probe28-effect-pass:KillAura:health=low' "$STAGE"
+          grep -Fq 'high-risk-functional-probe28-effect-pass:KillAura:switch=second' "$STAGE"
+          grep -Fq 'high-risk-functional-probe28-module-pass:KillAura' "$STAGE"
+          grep -Fq 'high-risk-functional-probe28-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe28-fail:' "$STAGE"; then
+            echo 'KillAura target-selector probe reported a failure.'
+            grep -F 'high-risk-functional-probe28-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL28=PASS modules=KillAura'
+          grep -Fq 'high-risk-functional-probe29-effect-pass:AutoBlock:disabled=0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-effect-pass:AutoBlock:ready=1' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-effect-pass:AutoBlock:smartUnblock=2' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-effect-pass:AutoBlock:modeNone=0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-restore-pass:AutoBlock:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-module-pass:AutoBlock' "$STAGE"
+          grep -Fq 'high-risk-functional-probe29-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe29-fail:' "$STAGE"; then
+            echo 'AutoBlock readiness-state probe reported a failure.'
+            grep -F 'high-risk-functional-probe29-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL29=PASS modules=AutoBlock'
+          grep -Fq 'high-risk-functional-probe30-effect-pass:Scaffold:candidate=support-west' "$STAGE"
+          grep -Fq 'high-risk-functional-probe30-effect-pass:Scaffold:rotation=offset' "$STAGE"
+          grep -Fq 'high-risk-functional-probe30-module-pass:Scaffold' "$STAGE"
+          grep -Fq 'high-risk-functional-probe30-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe30-fail:' "$STAGE"; then
+            echo 'Scaffold placement/rotation probe reported a failure.'
+            grep -F 'high-risk-functional-probe30-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL30=PASS modules=Scaffold'
+          grep -Fq 'high-risk-functional-probe31-effect-pass:BedNuker:scanFixture=1:cursor=1:active=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe31-module-pass:BedNuker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe31-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe31-fail:' "$STAGE"; then
+            echo 'BedNuker bounded-scan probe reported a failure.'
+            grep -F 'high-risk-functional-probe31-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL31=PASS modules=BedNuker'
+          grep -Fq 'high-risk-functional-probe32-effect-pass:AutoTool:switch=0->4' "$STAGE"
+          grep -Fq 'high-risk-functional-probe32-effect-pass:AutoTool:switchBack=4->0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe32-module-pass:AutoTool' "$STAGE"
+          grep -Fq 'high-risk-functional-probe32-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe32-fail:' "$STAGE"; then
+            echo 'AutoTool mining-switch probe reported a failure.'
+            grep -F 'high-risk-functional-probe32-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL32=PASS modules=AutoTool'
+          grep -Fq 'high-risk-functional-probe33-acquire-pass:HitSelect:targetTicks=60:pause=20' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-effect-pass:HitSelect:attackAllowed=false:targetDelta=1:pauseDelta=1:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-reset-pass:HitSelect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-module-pass:HitSelect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe33-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe33-fail:' "$STAGE"; then
+            echo 'HitSelect attack-gate state-machine probe reported a failure.'
+            grep -F 'high-risk-functional-probe33-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL33=PASS modules=HitSelect'
+          grep -Fq 'high-risk-functional-probe34-effect-pass:AimAssist:yawChanged=true:lockAngles=true:' "$STAGE"
+          grep -Fq 'high-risk-functional-probe34-release-pass:AimAssist:cacheCleared=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe34-module-pass:AimAssist' "$STAGE"
+          grep -Fq 'high-risk-functional-probe34-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe34-fail:' "$STAGE"; then
+            echo 'AimAssist physical targeting/rotation probe reported a failure.'
+            grep -F 'high-risk-functional-probe34-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL34=PASS modules=AimAssist'
+          grep -Fq 'high-risk-functional-probe35-effect-pass:JumpReset:forward=1.0:jump=true:target=mobs' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-reset-pass:JumpReset:oneShot=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-module-pass:JumpReset' "$STAGE"
+          grep -Fq 'high-risk-functional-probe35-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe35-fail:' "$STAGE"; then
+            echo 'JumpReset knockback/move-input probe reported a failure.'
+            grep -F 'high-risk-functional-probe35-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL35=PASS modules=JumpReset'
+          grep -Fq 'high-risk-functional-probe36-effect-pass:SprintReset:forward=0.0:strafe=0.0:logicalW=false:physicalW=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe36-duration-pass:SprintReset:logicalW=true:physicalW=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe36-release-pass:SprintReset:logicalW=false:physicalW=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe36-module-pass:SprintReset' "$STAGE"
+          grep -Fq 'high-risk-functional-probe36-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe36-fail:' "$STAGE"; then
+            echo 'SprintReset physical forward-reset probe reported a failure.'
+            grep -F 'high-risk-functional-probe36-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL36=PASS modules=SprintReset'
+          grep -Fq 'high-risk-functional-probe37-effect-pass:AntiFireball:closeSpawnIgnored=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe37-effect-pass:AntiFireball:farTracked=true:selected=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe37-effect-pass:AntiFireball:approachSelected=true:range=2.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe37-reset-pass:AntiFireball:tracked=0:ignored=0:target=null' "$STAGE"
+          grep -Fq 'high-risk-functional-probe37-module-pass:AntiFireball' "$STAGE"
+          grep -Fq 'high-risk-functional-probe37-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe37-fail:' "$STAGE"; then
+            echo 'AntiFireball tracked-projectile selection probe reported a failure.'
+            grep -F 'high-risk-functional-probe37-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL37=PASS modules=AntiFireball'
+          grep -Fq 'high-risk-functional-probe38-effect-pass:BlockHit:E=true:x=false:Y=0:y=7' "$STAGE"
+          grep -Fq 'high-risk-functional-probe38-restore-pass:BlockHit:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe38-module-pass:BlockHit' "$STAGE"
+          grep -Fq 'high-risk-functional-probe38-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe38-fail:' "$STAGE"; then
+            echo 'BlockHit prediction packet probe reported a failure.'
+            grep -F 'high-risk-functional-probe38-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL38=PASS modules=BlockHit'
+          grep -Fq 'high-risk-functional-probe39-effect-pass:SpeedMine:blockHitDelay=4->0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe39-restore-pass:SpeedMine:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe39-module-pass:SpeedMine' "$STAGE"
+          grep -Fq 'high-risk-functional-probe39-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe39-fail:' "$STAGE"; then
+            echo 'SpeedMine post-tick delay probe reported a failure.'
+            grep -F 'high-risk-functional-probe39-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL39=PASS modules=SpeedMine'
+          grep -Fq 'high-risk-functional-probe40-ready:AutoWeapon:mouse=left:best=4' "$STAGE"
+          grep -Fq 'high-risk-functional-probe40-effect-pass:AutoWeapon:switch=0->4:physicalLmb=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe40-restore-pass:AutoWeapon:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe40-module-pass:AutoWeapon' "$STAGE"
+          grep -Fq 'high-risk-functional-probe40-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe40-fail:' "$STAGE"; then
+            echo 'AutoWeapon physical best-weapon probe reported a failure.'
+            grep -F 'high-risk-functional-probe40-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL40=PASS modules=AutoWeapon'
+          grep -Fq 'high-risk-functional-probe41-target-pass:LagRange:distance=5.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe41-effect-pass:LagRange:packetBuffer=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe41-effect-pass:LagRange:packetBuffer=false:distance=1.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe41-restore-pass:LagRange:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe41-module-pass:LagRange' "$STAGE"
+          grep -Fq 'high-risk-functional-probe41-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe41-fail:' "$STAGE"; then
+            echo 'LagRange target-band packet-buffer probe reported a failure.'
+            grep -F 'high-risk-functional-probe41-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL41=PASS modules=LagRange'
+          grep -Fq 'high-risk-functional-probe42-effect-pass:Fly:verticalAccumulator=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe42-effect-pass:Fly:motionY=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe42-restore-pass:Fly:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe42-module-pass:Fly' "$STAGE"
+          grep -Fq 'high-risk-functional-probe42-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe42-fail:' "$STAGE"; then
+            echo 'Fly physical Space/binder probe reported a failure.'
+            grep -F 'high-risk-functional-probe42-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL42=PASS modules=Fly'
+          grep -Fq 'high-risk-functional-probe43-effect-pass:InvManager:swordSwap=10->0:best=diamond_sword' "$STAGE"
+          grep -Fq 'high-risk-functional-probe43-restore-pass:InvManager:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe43-module-pass:InvManager' "$STAGE"
+          grep -Fq 'high-risk-functional-probe43-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe43-fail:' "$STAGE"; then
+            echo 'InvManager best-sword sorting probe reported a failure.'
+            grep -F 'high-risk-functional-probe43-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL43=PASS modules=InvManager'
+          grep -Fq 'high-risk-functional-probe44-input-pass:InvClicker:physicalLmb=true:physicalShift=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe44-gui-pass:InvClicker:net.minecraft.client.gui.inventory.GuiInventory' "$STAGE"
+          grep -Fq 'high-risk-functional-probe44-effect-pass:InvClicker:shiftClick=9->0:item=apple*3:physicalLmb=true:physicalShift=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe44-restore-pass:InvClicker:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe44-module-pass:InvClicker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe44-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe44-fail:' "$STAGE"; then
+            echo 'InvClicker physical shift-click probe reported a failure.'
+            grep -F 'high-risk-functional-probe44-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL44=PASS modules=InvClicker'
+          grep -Fq 'high-risk-functional-probe45-buffer-armed:Blink:buffering=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe45-buffered-pass:Blink:sentinel=OPENABYSS_BLINK_45' "$STAGE"
+          grep -Fq 'chat-buffered:PacketManager:OPENABYSS_BLINK_45' "$NETWORK_STAGE"
+          grep -Fq 'high-risk-functional-probe45-flush-pass:Blink:buffering=false:queued=0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe45-restore-pass:Blink:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe45-module-pass:Blink' "$STAGE"
+          grep -Fq 'high-risk-functional-probe45-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe45-fail:' "$STAGE"; then
+            echo 'Blink real packet buffer/flush probe reported a failure.'
+            grep -F 'high-risk-functional-probe45-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL45_CONTRACT=PASS modules=Blink'
+          grep -Fq 'high-risk-functional-probe46-effect-pass:ChestStealer:shiftClick=chest0->player:item=apple*3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe46-restore-pass:ChestStealer:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe46-module-pass:ChestStealer' "$STAGE"
+          grep -Fq 'high-risk-functional-probe46-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe46-fail:' "$STAGE"; then
+            echo 'ChestStealer physical shift-click probe reported a failure.'
+            grep -F 'high-risk-functional-probe46-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL46=PASS modules=ChestStealer'
+          grep -Fq 'high-risk-functional-probe47-effect-pass:GhostHand:permissiveRemoved=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe47-effect-pass:GhostHand:toolsOnlyEmptyHandRetained=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe47-restore-pass:GhostHand:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe47-module-pass:GhostHand' "$STAGE"
+          grep -Fq 'high-risk-functional-probe47-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe47-fail:' "$STAGE"; then
+            echo 'GhostHand entity filtering probe reported a failure.'
+            grep -F 'high-risk-functional-probe47-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL47=PASS modules=GhostHand'
+          grep -Fq 'high-risk-functional-probe48-effect-pass:AntiBot:absentTabPlayer=true:localPlayer=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe48-restore-pass:AntiBot:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe48-module-pass:AntiBot' "$STAGE"
+          grep -Fq 'high-risk-functional-probe48-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe48-fail:' "$STAGE"; then
+            echo 'AntiBot multiplayer tablist probe reported a failure.'
+            grep -F 'high-risk-functional-probe48-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL48=PASS modules=AntiBot'
+          grep -Fq 'high-risk-functional-probe49-effect-pass:Teams:friend=true:enemy=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe49-effect-pass:Teams:mutualExclusion=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe49-effect-pass:Teams:clearApis=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe49-restore-pass:Teams:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe49-module-pass:Teams' "$STAGE"
+          grep -Fq 'high-risk-functional-probe49-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe49-fail:' "$STAGE"; then
+            echo 'Teams manual classification probe reported a failure.'
+            grep -F 'high-risk-functional-probe49-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL49=PASS modules=Teams'
+          grep -Fq 'high-risk-functional-probe50-effect-pass:Stuck:moveInputZero=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe50-effect-pass:Stuck:moveEntityCancelled=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe50-effect-pass:Stuck:moveHeadingCancelled=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe50-restore-pass:Stuck:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe50-module-pass:Stuck' "$STAGE"
+          grep -Fq 'high-risk-functional-probe50-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe50-fail:' "$STAGE"; then
+            echo 'Stuck movement cancellation probe reported a failure.'
+            grep -F 'high-risk-functional-probe50-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL50=PASS modules=Stuck'
+          grep -Fq 'high-risk-functional-probe51-effect-pass:Denick:duplicateAppend=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe51-effect-pass:Denick:duplicateGuard=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe51-restore-pass:Denick:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe51-module-pass:Denick' "$STAGE"
+          grep -Fq 'high-risk-functional-probe51-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe51-fail:' "$STAGE"; then
+            echo 'Denick duplicate-name resolution probe reported a failure.'
+            grep -F 'high-risk-functional-probe51-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL51=PASS modules=Denick'
+          grep -Fq 'high-risk-functional-probe52-effect-pass:BreakProgress:progress=true:text=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe52-effect-pass:BreakProgress:zeroClear=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe52-restore-pass:BreakProgress:enabled=' "$STAGE"
+          grep -Fq 'high-risk-functional-probe52-module-pass:BreakProgress' "$STAGE"
+          grep -Fq 'high-risk-functional-probe52-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe52-fail:' "$STAGE"; then
+            echo 'BreakProgress post-tick state probe reported a failure.'
+            grep -F 'high-risk-functional-probe52-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL52=PASS modules=BreakProgress'
+          grep -Fq 'high-risk-functional-probe53-ready:Macro2,Macro3,Macro4,Macro5' "$STAGE"
+          for macro in Macro2 Macro3 Macro4 Macro5; do
+            grep -Fq "high-risk-functional-probe53-effect-pass:$macro:clientSend=true:selfDisable=true:sentinel=OPENABYSS_${macro^^}_PROBE53" "$STAGE"
+            grep -Fq "high-risk-functional-probe53-restore-pass:$macro:enabled=" "$STAGE"
+            grep -Fq "high-risk-functional-probe53-module-pass:$macro" "$STAGE"
+            grep -Fq "OPENABYSS_${macro^^}_PROBE53" "$RUNNER_TEMP/openabyss-production-world-server.log"
+          done
+          grep -Fq 'high-risk-functional-probe53-pass:4' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe53-fail:' "$STAGE"; then
+            echo 'Macro2-5 chat sibling probe reported a failure.'
+            grep -F 'high-risk-functional-probe53-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL53=PASS modules=Macro2,Macro3,Macro4,Macro5'
+          grep -Fq 'high-risk-functional-probe54-effect-pass:MegaWallsDetector:phoenixPrefix=true:potionCount=3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe54-effect-pass:MegaWallsDetector:settingGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe54-restore-pass:MegaWallsDetector:settings=true:caches=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe54-module-pass:MegaWallsDetector' "$STAGE"
+          grep -Fq 'high-risk-functional-probe54-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe54-fail:' "$STAGE"; then
+            echo 'MegaWallsDetector tab-decoration probe reported a failure.'
+            grep -F 'high-risk-functional-probe54-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL54=PASS modules=MegaWallsDetector'
+          grep -Fq 'high-risk-functional-probe55-effect-pass:TabGUI:booleanToggle=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe55-effect-pass:TabGUI:navigation=true:wrap=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe55-restore-pass:TabGUI:setting=true:navigationState=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe55-module-pass:TabGUI' "$STAGE"
+          grep -Fq 'high-risk-functional-probe55-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe55-fail:' "$STAGE"; then
+            echo 'TabGUI key-navigation probe reported a failure.'
+            grep -F 'high-risk-functional-probe55-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL55=PASS modules=TabGUI'
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:snowballTracked=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:settingGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-effect-pass:Indicators:approachFilter=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-restore-pass:Indicators:settings=true:caches=true:counter=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-module-pass:Indicators' "$STAGE"
+          grep -Fq 'high-risk-functional-probe56-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe56-fail:' "$STAGE"; then
+            echo 'Indicators projectile-filter probe reported a failure.'
+            grep -F 'high-risk-functional-probe56-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL56=PASS modules=Indicators'
+          grep -Fq 'high-risk-functional-probe57-effect-pass:ItemESP:diamondOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe57-effect-pass:ItemESP:ironOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe57-effect-pass:ItemESP:ageGate=3' "$STAGE"
+          grep -Fq 'high-risk-functional-probe57-restore-pass:ItemESP:settings=true:entries=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe57-module-pass:ItemESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe57-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe57-fail:' "$STAGE"; then
+            echo 'ItemESP dropped-item filter probe reported a failure.'
+            grep -F 'high-risk-functional-probe57-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL57=PASS modules=ItemESP'
+          grep -Fq 'high-risk-functional-probe58-effect-pass:NameTags:mobIncluded=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-effect-pass:ESP:mobIncluded=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-effect-pass:NameTags:mobGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-effect-pass:ESP:mobGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-effect-pass:NameTags:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-effect-pass:ESP:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-restore-pass:NameTags,ESP:settings=true:caches=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-module-pass:NameTags' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-module-pass:ESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe58-pass:2' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe58-fail:' "$STAGE"; then
+            echo 'NameTags/ESP target-filter probe reported a failure.'
+            grep -F 'high-risk-functional-probe58-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL58=PASS modules=NameTags,ESP'
+          grep -Fq 'high-risk-functional-probe59-effect-pass:ItemTags:bedwarsResources=true:colors=true:stackCounts=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-effect-pass:ItemTags:renderAll=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-effect-pass:ItemTags:nbtOnlyGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-effect-pass:ItemTags:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-restore-pass:ItemTags:settings=true:entries=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-module-pass:ItemTags' "$STAGE"
+          grep -Fq 'high-risk-functional-probe59-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe59-fail:' "$STAGE"; then
+            echo 'ItemTags dropped-item semantics probe reported a failure.'
+            grep -F 'high-risk-functional-probe59-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL59=PASS modules=ItemTags'
+          grep -Fq 'high-risk-functional-probe60-effect-pass:TargetHUD:firstHit=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-effect-pass:TargetHUD:rollover=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-effect-pass:TargetHUD:mobGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-effect-pass:TargetHUD:modeGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-effect-pass:TargetHUD:reset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-restore-pass:TargetHUD:settings=true:targets=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-module-pass:TargetHUD' "$STAGE"
+          grep -Fq 'high-risk-functional-probe60-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe60-fail:' "$STAGE"; then
+            echo 'TargetHUD hit-target probe reported a failure.'
+            grep -F 'high-risk-functional-probe60-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL60=PASS modules=TargetHUD'
+          grep -Fq 'high-risk-functional-probe61-effect-pass:ChestAura:rightClickPending=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-effect-pass:ChestAura:doubleChestHandled=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-effect-pass:ChestAura:closeClearsPending=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-effect-pass:ChestAura:worldJoinReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-restore-pass:ChestAura:cache=true:world=true:state=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-module-pass:ChestAura' "$STAGE"
+          grep -Fq 'high-risk-functional-probe61-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe61-fail:' "$STAGE"; then
+            echo 'ChestAura interaction-bookkeeping probe reported a failure.'
+            grep -F 'high-risk-functional-probe61-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL61=PASS modules=ChestAura'
+          grep -Fq 'high-risk-functional-probe62-effect-pass:FastCraft:iron8=helmet+chestplate' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-effect-pass:FastCraft:iron4=boots-only' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-effect-pass:FastCraft:sticks7=ladders-only' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-effect-pass:FastCraft:resetQueue=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-restore-pass:FastCraft:container=true:queue=true:state=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-module-pass:FastCraft' "$STAGE"
+          grep -Fq 'high-risk-functional-probe62-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe62-fail:' "$STAGE"; then
+            echo 'FastCraft recipe-eligibility probe reported a failure.'
+            grep -F 'high-risk-functional-probe62-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL62=PASS modules=FastCraft'
+          grep -Fq 'high-risk-functional-probe63-effect-pass:BlocksESP:diamondPacketCached=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-effect-pass:BlocksESP:disabledIronIgnored=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-effect-pass:BlocksESP:ironPacketCached=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-effect-pass:BlocksESP:worldJoinClearsCaches=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-restore-pass:BlocksESP:settings=true:caches=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-module-pass:BlocksESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe63-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe63-fail:' "$STAGE"; then
+            echo 'BlocksESP packet-cache probe reported a failure.'
+            grep -F 'high-risk-functional-probe63-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL63=PASS modules=BlocksESP'
+          grep -Fq 'high-risk-functional-probe64-effect-pass:FireBallPredict:impact=true:color=FF0000' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-effect-pass:FireBallPredict:disabledClearsImpact=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-restore-pass:FireBallPredict:settings=true:impact=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-module-pass:FireBallPredict' "$STAGE"
+          grep -Fq 'high-risk-functional-probe64-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe64-fail:' "$STAGE"; then
+            echo 'FireBallPredict real-impact probe reported a failure.'
+            grep -F 'high-risk-functional-probe64-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL64=PASS modules=FireBallPredict'
+          grep -Fq 'high-risk-functional-probe65-effect-pass:BedPlates:materials=wool+obsidian+glass' "$STAGE"
+          grep -Fq 'high-risk-functional-probe65-effect-pass:BedPlates:resetClearsCache=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe65-restore-pass:BedPlates:range=true:beds=true:cache=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe65-module-pass:BedPlates' "$STAGE"
+          grep -Fq 'high-risk-functional-probe65-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe65-fail:' "$STAGE"; then
+            echo 'BedPlates surrounding-material probe reported a failure.'
+            grep -F 'high-risk-functional-probe65-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL65=PASS modules=BedPlates'
+          grep -Fq 'high-risk-functional-probe66-effect-pass:StorageESP:types=chest+brewing+ender+furnace+dispenser+hopper' "$STAGE"
+          grep -Fq 'high-risk-functional-probe66-effect-pass:StorageESP:customColors=123456+654321+ABCDEF' "$STAGE"
+          grep -Fq 'high-risk-functional-probe66-effect-pass:StorageESP:disabledGates=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe66-restore-pass:StorageESP:settings=true:colors=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe66-module-pass:StorageESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe66-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe66-fail:' "$STAGE"; then
+            echo 'StorageESP tile-filter/color probe reported a failure.'
+            grep -F 'high-risk-functional-probe66-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL66=PASS modules=StorageESP'
+          grep -Fq 'high-risk-functional-probe67-effect-pass:BedESP:headFootOrientation=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe67-effect-pass:BedESP:obsidianDetection=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe67-effect-pass:BedESP:customColor=13579B' "$STAGE"
+          grep -Fq 'high-risk-functional-probe67-restore-pass:BedESP:color=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe67-module-pass:BedESP' "$STAGE"
+          grep -Fq 'high-risk-functional-probe67-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe67-fail:' "$STAGE"; then
+            echo 'BedESP bed-structure probe reported a failure.'
+            grep -F 'high-risk-functional-probe67-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL67=PASS modules=BedESP'
+          grep -Fq 'high-risk-functional-probe68-effect-pass:Trajectories:gates=first-person+held-item' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-effect-pass:Trajectories:specs=snowball+egg+pearl+rod' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-effect-pass:Trajectories:airPhysics=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-effect-pass:Trajectories:blockCollision=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-restore-pass:Trajectories:inventory=true:view=true:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-module-pass:Trajectories' "$STAGE"
+          grep -Fq 'high-risk-functional-probe68-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe68-fail:' "$STAGE"; then
+            echo 'Trajectories projectile-semantics probe reported a failure.'
+            grep -F 'high-risk-functional-probe68-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL68=PASS modules=Trajectories'
+          grep -Fq 'high-risk-functional-probe69-effect-pass:AutoDigPlace:priority=upper-support/DOWN' "$STAGE"
+          grep -Fq 'high-risk-functional-probe69-effect-pass:AutoDigPlace:airSupportGate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe69-restore-pass:AutoDigPlace:world=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe69-module-pass:AutoDigPlace' "$STAGE"
+          grep -Fq 'high-risk-functional-probe69-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe69-fail:' "$STAGE"; then
+            echo 'AutoDigPlace placement-semantics probe reported a failure.'
+            grep -F 'high-risk-functional-probe69-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL69=PASS modules=AutoDigPlace'
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:levels=0+1+2+3+mineDown' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:axes=0+90+180+270:geometry=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-effect-pass:Nuker:scanState=x+z' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-restore-pass:Nuker:mineDown=true:yaw=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-module-pass:Nuker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe70-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe70-fail:' "$STAGE"; then
+            echo 'Nuker scan-geometry semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe70-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL70=PASS modules=Nuker'
+          grep -Fq 'high-risk-functional-probe71-effect-pass:Notifications:easing=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe71-effect-pass:Notifications:leaveClamp=180+225+320' "$STAGE"
+          grep -Fq 'high-risk-functional-probe71-effect-pass:Notifications:modes=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe71-restore-pass:Notifications:leaveTime=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe71-module-pass:Notifications' "$STAGE"
+          grep -Fq 'high-risk-functional-probe71-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe71-fail:' "$STAGE"; then
+            echo 'Notifications semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe71-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL71=PASS modules=Notifications'
+          grep -Fq 'high-risk-functional-probe72-effect-pass:Tracers:filters=players-only+mixed' "$STAGE"
+          grep -Fq 'high-risk-functional-probe72-effect-pass:Tracers:interpolation=12.5' "$STAGE"
+          grep -Fq 'high-risk-functional-probe72-effect-pass:Tracers:origin+classification=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe72-restore-pass:Tracers:filters=true:view=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe72-module-pass:Tracers' "$STAGE"
+          grep -Fq 'high-risk-functional-probe72-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe72-fail:' "$STAGE"; then
+            echo 'Tracers filter/geometry semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe72-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL72=PASS modules=Tracers'
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:tag=0+0.27' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:rotationWrapClamp=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-effect-pass:BridgeAssist:movementProjection=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-restore-pass:BridgeAssist:edgeOffset=true:sprint=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-module-pass:BridgeAssist' "$STAGE"
+          grep -Fq 'high-risk-functional-probe73-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe73-fail:' "$STAGE"; then
+            echo 'BridgeAssist semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe73-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL73=PASS modules=BridgeAssist'
+          grep -Fq 'high-risk-functional-probe74-effect-pass:AntiVoid:modes+tag=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe74-effect-pass:AntiVoid:disableCleanup=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe74-restore-pass:AntiVoid:blinkDistance=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe74-module-pass:AntiVoid' "$STAGE"
+          grep -Fq 'high-risk-functional-probe74-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe74-fail:' "$STAGE"; then
+            echo 'AntiVoid semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe74-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL74=PASS modules=AntiVoid'
+          grep -Fq 'high-risk-functional-probe75-effect-pass:BlockIn:scalarMath=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe75-effect-pass:BlockIn:closestPointDistance=3.0' "$STAGE"
+          grep -Fq 'high-risk-functional-probe75-effect-pass:BlockIn:relativeGeometry=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe75-effect-pass:BlockIn:rotation+moveFix=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe75-module-pass:BlockIn' "$STAGE"
+          grep -Fq 'high-risk-functional-probe75-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe75-fail:' "$STAGE"; then
+            echo 'BlockIn placement-geometry semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe75-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL75=PASS modules=BlockIn'
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:remoteCache=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:selfExcluded=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-effect-pass:KillEffect:worldJoinReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-module-pass:KillEffect' "$STAGE"
+          grep -Fq 'high-risk-functional-probe76-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe76-fail:' "$STAGE"; then
+            echo 'KillEffect target-cache semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe76-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL76=PASS modules=KillEffect'
+          grep -Fq 'high-risk-functional-probe77-effect-pass:AutoTunnel:normal+keep=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe77-effect-pass:AutoTunnel:gapAlt+none=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe77-effect-pass:AutoTunnel:staircase+random=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe77-restore-pass:AutoTunnel:settings+constants=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe77-module-pass:AutoTunnel' "$STAGE"
+          grep -Fq 'high-risk-functional-probe77-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe77-fail:' "$STAGE"; then
+            echo 'AutoTunnel settings-to-mining-constants semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe77-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL77=PASS modules=AutoTunnel'
+          grep -Fq 'high-risk-functional-probe78-effect-pass:ScoreBoard:hiddenShortCircuit=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe78-effect-pass:ScoreBoard:settingsRoundTrip=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe78-restore-pass:ScoreBoard:settings=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe78-module-pass:ScoreBoard' "$STAGE"
+          grep -Fq 'high-risk-functional-probe78-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe78-fail:' "$STAGE"; then
+            echo 'ScoreBoard hidden-render-gate semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe78-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL78=PASS modules=ScoreBoard'
+          grep -Fq 'high-risk-functional-probe79-effect-pass:Language:dictionary+fallback=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe79-effect-pass:Language:englishGates=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe79-restore-pass:Language:settings=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe79-module-pass:Language' "$STAGE"
+          grep -Fq 'high-risk-functional-probe79-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe79-fail:' "$STAGE"; then
+            echo 'Language translation/fallback semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe79-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL79=PASS modules=Language'
+          grep -Fq 'high-risk-functional-probe80-effect-pass:NameHider:replaceAll=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe80-effect-pass:NameHider:disabledBypass=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe80-restore-pass:NameHider:owner+setting=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe80-module-pass:NameHider' "$STAGE"
+          grep -Fq 'high-risk-functional-probe80-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe80-fail:' "$STAGE"; then
+            echo 'NameHider string-replacement semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe80-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL80=PASS modules=NameHider'
+          grep -Fq 'high-risk-functional-probe81-effect-pass:HUD:themeAliases=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe81-effect-pass:HUD:settingsSurface=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe81-effect-pass:HUD:settingsRoundTrip=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe81-restore-pass:HUD:settings=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe81-module-pass:HUD' "$STAGE"
+          grep -Fq 'high-risk-functional-probe81-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe81-fail:' "$STAGE"; then
+            echo 'HUD settings/theme-alias semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe81-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL81=PASS modules=HUD'
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:integerRange=13-15' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:decimalRange=13.5-15.5' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-effect-pass:AutoClicker:equalCps=14' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-restore-pass:AutoClicker:minmax=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-module-pass:AutoClicker' "$STAGE"
+          grep -Fq 'high-risk-functional-probe82-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe82-fail:' "$STAGE"; then
+            echo 'AutoClicker CPS tag-format semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe82-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL82=PASS modules=AutoClicker'
+          grep -Fq 'high-risk-functional-probe83-effect-pass:ArrayList:modeTag=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe83-effect-pass:ArrayList:cubicClamp=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe83-effect-pass:ArrayList:alphaClamp=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe83-restore-pass:ArrayList:mode=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe83-module-pass:ArrayList' "$STAGE"
+          grep -Fq 'high-risk-functional-probe83-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe83-fail:' "$STAGE"; then
+            echo 'ArrayList mode/easing semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe83-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL83=PASS modules=ArrayList'
+          grep -Fq 'high-risk-functional-probe84-effect-pass:InvMove:slotClassifier=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe84-effect-pass:InvMove:disableReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe84-restore-pass:InvMove:container+clickState=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe84-module-pass:InvMove' "$STAGE"
+          grep -Fq 'high-risk-functional-probe84-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe84-fail:' "$STAGE"; then
+            echo 'InvMove slot-classifier/disable-reset semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe84-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL84=PASS modules=InvMove'
+          grep -Fq 'high-risk-functional-probe85-effect-pass:AutoGG:emptyPatternAuthority=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-effect-pass:AutoGG:delayTicks=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-restore-pass:AutoGG:readOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-module-pass:AutoGG' "$STAGE"
+          grep -Fq 'high-risk-functional-probe85-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe85-fail:' "$STAGE"; then
+            echo 'AutoGG binary-empty-pattern/delay semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe85-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL85=PASS modules=AutoGG'
+          grep -Fq 'high-risk-functional-probe86-effect-pass:NameHider:disabledPassthrough=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe86-effect-pass:NameHider:exactReplacement=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe86-restore-pass:NameHider:stateAndAlias=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe86-module-pass:NameHider' "$STAGE"
+          grep -Fq 'high-risk-functional-probe86-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe86-fail:' "$STAGE"; then
+            echo 'NameHider exact self-name replacement semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe86-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL86=PASS modules=NameHider'
+          grep -Fq 'high-risk-functional-probe87-effect-pass:Timer:applied=1.75' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-effect-pass:Timer:disableRestore=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-restore-pass:Timer:settingAndTimerSpeed=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-module-pass:Timer' "$STAGE"
+          grep -Fq 'high-risk-functional-probe87-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe87-fail:' "$STAGE"; then
+            echo 'Timer speed apply/restore semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe87-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL87=PASS modules=Timer'
+          grep -Fq 'high-risk-functional-probe88-effect-pass:AntiNick:uuidVersion1=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe88-effect-pass:AntiNick:uuidVersion4=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe88-restore-pass:AntiNick:readOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe88-module-pass:AntiNick' "$STAGE"
+          grep -Fq 'high-risk-functional-probe88-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe88-fail:' "$STAGE"; then
+            echo 'AntiNick UUID-version semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe88-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL88=PASS modules=AntiNick'
+          grep -Fq 'high-risk-functional-probe89-effect-pass:ContainerKeeper:disableReset=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe89-effect-pass:ContainerKeeper:settings=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe89-restore-pass:ContainerKeeper:scratchOnly=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe89-module-pass:ContainerKeeper' "$STAGE"
+          grep -Fq 'high-risk-functional-probe89-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe89-fail:' "$STAGE"; then
+            echo 'ContainerKeeper state-reset semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe89-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL89=PASS modules=ContainerKeeper'
+          grep -Fq 'high-risk-functional-probe90-effect-pass:Denick:mode=DUPLICATE' "$STAGE"
+          grep -Fq 'high-risk-functional-probe90-effect-pass:Denick:refreshDelay=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe90-restore-pass:Denick:refreshRate=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe90-module-pass:Denick' "$STAGE"
+          grep -Fq 'high-risk-functional-probe90-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe90-fail:' "$STAGE"; then
+            echo 'Denick mode/refresh-delay semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe90-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL90=PASS modules=Denick'
+          grep -Fq 'high-risk-functional-probe91-effect-pass:AntiBot:self=false' "$STAGE"
+          grep -Fq 'high-risk-functional-probe91-effect-pass:AntiBot:absentRemote=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe91-restore-pass:AntiBot:tablistSetting=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe91-module-pass:AntiBot' "$STAGE"
+          grep -Fq 'high-risk-functional-probe91-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe91-fail:' "$STAGE"; then
+            echo 'AntiBot self/absent-remote semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe91-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL91=PASS modules=AntiBot'
+          grep -Fq 'high-risk-functional-probe92-effect-pass:Theme:customPalette=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe92-effect-pass:Theme:thirdUsesColor2=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe92-restore-pass:Theme:settings=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe92-module-pass:Theme' "$STAGE"
+          grep -Fq 'high-risk-functional-probe92-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe92-fail:' "$STAGE"; then
+            echo 'Theme custom-palette semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe92-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL92=PASS modules=Theme'
+          grep -Fq 'high-risk-functional-probe93-effect-pass:VisualSpoof:noneValidNotPressed=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe93-effect-pass:VisualSpoof:invalidRejected=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe93-restore-pass:VisualSpoof:keybind=true' "$STAGE"
+          grep -Fq 'high-risk-functional-probe93-module-pass:VisualSpoof' "$STAGE"
+          grep -Fq 'high-risk-functional-probe93-pass:1' "$STAGE"
+          if grep -Fq 'high-risk-functional-probe93-fail:' "$STAGE"; then
+            echo 'VisualSpoof keybind semantic probe reported a failure.'
+            grep -F 'high-risk-functional-probe93-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_HIGH_RISK_FUNCTIONAL93=PASS modules=VisualSpoof'
+          grep -Fq 'promoted-registry-probe-pass:20' "$STAGE"
+          PROMOTED_MODULE_PASSES="$(grep -Fc 'promoted-registry-probe-module-pass:' "$STAGE" || true)"
+          test "$PROMOTED_MODULE_PASSES" -eq 20
+          if grep -Fq 'promoted-registry-probe-fail:' "$STAGE"; then
+            echo 'Promoted-registry lifecycle probe reported a failure.'
+            grep -F 'promoted-registry-probe-' "$STAGE" || true
+            exit 1
+          fi
+          echo 'PRODUCTION_WORLD_PROMOTED_REGISTRY_PROBE=PASS modules=20'
+          grep -Fq 'event-functional-probe-dispatch:FastPlace:rightClickDelay=4' "$STAGE"
+          grep -Fq 'event-functional-probe-effect-pass:FastPlace:rightClickDelay=1' "$STAGE"
+          grep -Fq 'event-functional-probe-restore-state-pass:FastPlace' "$STAGE"
+          grep -Fq 'event-functional-probe-pass:FastPlace:' "$STAGE"
+          echo 'PRODUCTION_WORLD_FASTPLACE_EVENT_EFFECT=PASS'
+          grep -Fq 'movement-functional-probe-dispatch:NoJumpDelay:jumpTicks=7' "$STAGE"
+          grep -Fq 'movement-functional-probe-effect-pass:NoJumpDelay:jumpTicks=1' "$STAGE"
+          grep -Fq 'movement-functional-probe-restore-state-pass:NoJumpDelay' "$STAGE"
+          grep -Fq 'movement-functional-probe-pass:NoJumpDelay:' "$STAGE"
+          echo 'PRODUCTION_WORLD_NOJUMPDELAY_EVENT_EFFECT=PASS'
+          grep -Fq 'player-functional-probe-dispatch:NoHitDelay:leftClickCounter=7' "$STAGE"
+          grep -Fq 'player-functional-probe-effect-pass:NoHitDelay:leftClickCounter=0' "$STAGE"
+          grep -Fq 'player-functional-probe-restore-state-pass:NoHitDelay' "$STAGE"
+          grep -Fq 'player-functional-probe-pass:NoHitDelay:' "$STAGE"
+          echo 'PRODUCTION_WORLD_NOHITDELAY_CLICK_EFFECT=PASS'
+          grep -Fq 'combat-functional-probe-dispatch:KeepSprint:motion=1.25,-0.75:slowdown=50' "$STAGE"
+          grep -Fq 'combat-functional-probe-effect-pass:KeepSprint:motion=1.0,-0.6:sprinting=true' "$STAGE"
+          grep -Fq 'combat-functional-probe-restore-state-pass:KeepSprint' "$STAGE"
+          grep -Fq 'combat-functional-probe-pass:KeepSprint:' "$STAGE"
+          echo 'PRODUCTION_WORLD_KEEP_SPRINT_HOOK_EFFECT=PASS'
+          grep -Fq 'packet-functional-probe-dispatch:Ambience:S03PacketTimeUpdate' "$STAGE"
+          grep -Fq 'packet-functional-probe-effect-pass:Ambience:S03PacketTimeUpdate:cancelled=true' "$STAGE"
+          grep -Fq 'render-functional-probe-dispatch:Ambience:worldTime=1234' "$STAGE"
+          grep -Fq 'render-functional-probe-effect-pass:Ambience:worldTime=6000' "$STAGE"
+          grep -Fq 'render-functional-probe-worldtime-restore-pass:Ambience' "$STAGE"
+          grep -Fq 'packet-functional-probe-restore-state-pass:Ambience' "$STAGE"
+          grep -Fq 'packet-functional-probe-pass:Ambience:' "$STAGE"
+          echo 'PRODUCTION_WORLD_AMBIENCE_PACKET_CANCEL=PASS'
+          echo 'PRODUCTION_WORLD_AMBIENCE_RENDER_EFFECT=PASS'
+          grep -Fq 'macro-functional-probe-dispatch:Macro1:CHAT:OPENABYSS_MACRO_PROBE_7E51' "$STAGE"
+          grep -Fq 'macro-functional-probe-packet-buffer:false' "$STAGE"
+          grep -Fq 'macro-functional-probe-client-send-pass:Macro1:OPENABYSS_MACRO_PROBE_7E51' "$STAGE"
+          grep -Fq 'macro-functional-probe-restore-state-pass:Macro1' "$STAGE"
+          grep -Fq 'macro-functional-probe-pass:Macro1:' "$STAGE"
+          grep -Fq 'chat-send-probe-payload:true' "$NETWORK_STAGE"
+          grep -Fq 'chat-send-decision:accepted' "$NETWORK_STAGE"
+          grep -Fq 'chat-receive-probe-echo:true' "$NETWORK_STAGE"
+          if grep -Fq 'chat-buffered:PacketManager:OPENABYSS_MACRO_PROBE_7E51' "$NETWORK_STAGE"; then
+            echo 'Macro1 synthetic chat was unexpectedly buffered by PacketManager.'
+            cat "$NETWORK_STAGE"
+            exit 1
+          fi
+          grep -Fq 'chat-buffered:PacketManager:OPENABYSS_BLINK_45' "$NETWORK_STAGE"
+          grep -Fq 'OPENABYSS_MACRO_PROBE_7E51' "$RUNNER_TEMP/openabyss-production-world-server.log"
+          echo 'PRODUCTION_WORLD_MACRO1_CHAT_CLIENT=PASS'
+          echo 'PRODUCTION_WORLD_MACRO1_CHAT_SERVER_RECEIPT=PASS'
+          echo 'PRODUCTION_WORLD_MACRO1_CHAT_ROUNDTRIP=PASS'
+          grep -Fq 'visual-utility-functional-probe-effect-pass:InventoryHUD:cache0=stone*3' "$STAGE"
+          grep -Fq 'visual-utility-functional-probe-restore-state-pass:InventoryHUD' "$STAGE"
+          grep -Fq 'visual-utility-functional-probe-pass:InventoryHUD:' "$STAGE"
+          echo 'PRODUCTION_WORLD_INVENTORYHUD_NATURAL_TICK_EFFECT=PASS'
+          for module in HitBox Notifications Macro1 NameHider NoJumpDelay NoHitDelay NoHurtCam Tracers AutoTool; do
+            grep -Fq "category-lifecycle-probe-module-pass:$module:" "$STAGE"
+          done
+          grep -Fq 'category-lifecycle-probe-hitbox-border:opposite:enabled=true:' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-hitbox-border:restored:enabled=false:' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-hitbox-effect-pass:delta=0.35' "$STAGE"
+          echo 'PRODUCTION_WORLD_HITBOX_ASM_COLLISION_EFFECT=PASS'
+          grep -Fq 'category-lifecycle-probe-namehider-effect-pass:opposite:enabled=true:alias=' "$STAGE"
+          grep -Fq 'category-lifecycle-probe-namehider-effect-pass:restored:enabled=false:alias=' "$STAGE"
+          echo 'PRODUCTION_WORLD_NAMEHIDER_TRANSFORM_EFFECT=PASS'
+          grep -Fq 'command-runtime-probe-fullbright-original:enabled=false:gamma=' "$STAGE"
+          grep -Fq 'command-runtime-probe-toggle-request:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-toggle-pass:FullBright:enabled=true' "$STAGE"
+          grep -Fq 'command-runtime-probe-fullbright-effect-pass:enabled=true:gamma=15.0' "$STAGE"
+          grep -Fq 'command-runtime-probe-restore-request:FullBright:' "$STAGE"
+          grep -Fq 'command-runtime-probe-fullbright-restore-pass:enabled=false:gamma=' "$STAGE"
+          grep -Fq 'command-runtime-probe-pass:commands=7:' "$STAGE"
+          echo 'PRODUCTION_WORLD_FULLBRIGHT_GAMMA_EFFECT=PASS'
+          grep -Fq 'network-command-probe-ready:CommandLine:original=' "$STAGE"
+          grep -Fq 'network-command-probe-pass:CommandLine:restored=' "$STAGE"
+          grep -Fq 'command-intercept:.help' "$NETWORK_STAGE"
+          grep -Fq 'command-intercept-dispatch:true:.help' "$NETWORK_STAGE"
+          if grep -Fq '.help' "$RUNNER_TEMP/openabyss-production-world-server.log"; then
+            echo 'Typed .help leaked to production local server.'
+            exit 1
+          fi
+          for mode in STUDIO RAVEN VESTIGE; do
+            grep -Fq "clickgui-mode-probe-open:$mode:" "$STAGE"
+            grep -Fq "clickgui-mode-probe-close:$mode" "$STAGE"
+          done
+          grep -Fq 'clickgui-font-ready' "$STAGE"
+          grep -Fq 'clickgui-mode-probe-pass:3:restored=' "$STAGE"
+          grep -Fq 'clickgui-open-success:' "$STAGE"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_EXPLICIT_COREMOD_PROPERTY=0' "$STDOUT"
+          grep -Fq 'OPENABYSS_PRODUCTION_LINUX_INSTALL_MODE=mods-folder' "$STDOUT"
+          test -s "$SCREENSHOT"
+
+          SOURCE_HASH="$(sha256sum "$OPENABYSS_PRODUCTION_WORLD_JAR" | awk '{print toupper($1)}')"
+          MOD_HASH="$(sha256sum "$GAME/mods/abyss.jar" | awk '{print toupper($1)}')"
+          test "$SOURCE_HASH" = "$MOD_HASH"
+
+          EVIDENCE="$GITHUB_WORKSPACE/production-world-evidence"
+          rm -rf "$EVIDENCE"
+          mkdir -p "$EVIDENCE"
+          cp -a "$GAME/." "$EVIDENCE/game"
+          cp "$RUNNER_TEMP/openabyss-production-world-client.stdout.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-client.stderr.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-server.log" "$EVIDENCE/"
+          cp "$RUNNER_TEMP/openabyss-production-world-glxinfo.txt" "$EVIDENCE/"
+          cp "$SCREENSHOT" "$EVIDENCE/"
+          cp "$RUNNER_TEMP"/openabyss-production-world-clickgui-mode-*.png "$EVIDENCE/"
+          cp "$OPENABYSS_PRODUCTION_WORLD_PACKAGE/BUILD-INFO.txt" "$EVIDENCE/"
+
+          grep -Fq 'world-session-join:1' "$STAGE"
+          grep -Fq 'world-session-exit:1' "$STAGE"
+          grep -Fq 'world-session-menu-cleanup:1:packetBuffer=false:u=0:v=0:a=0' "$STAGE"
+          grep -Fq 'world-session-join:2' "$STAGE"
+          grep -Fq 'world-session-lifecycle-complete:2' "$STAGE"
+          grep -Fq 'world-session-heartbeat:2:300' "$STAGE"
+          LOGIN_COUNT="$(grep -Ec 'CIProdWorld.*logged in with entity id' "$RUNNER_TEMP/openabyss-production-world-server.log" || true)"
+          test "$LOGIN_COUNT" -ge 2
+          echo 'PRODUCTION_WORLD_SAME_PROCESS_RECONNECT_CONTRACT=PASS sessions=2'
+
+          echo 'PRODUCTION_WORLD_SHIPPED_JAR_HASH_CONTRACT=PASS'
+          echo 'OPENABYSS_LINUX_PRODUCTION_WORLD_RUNTIME_SMOKE=PASS'
+
+      - name: Upload production world runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-linux-production-world-runtime-smoke
+          path: |
+            production-world-evidence/**
+            ${{ runner.temp }}/openabyss-production-world-game/logs/**
+            ${{ runner.temp }}/openabyss-production-world-game/crash-reports/**
+            ${{ runner.temp }}/openabyss-production-world-game/abyss-*.txt
+            ${{ runner.temp }}/openabyss-production-world-game/abyss-*.tsv
+            ${{ runner.temp }}/openabyss-production-world-game/mods/abyss.jar
+            ${{ runner.temp }}/openabyss-production-world-client.stdout.log
+            ${{ runner.temp }}/openabyss-production-world-client.stderr.log
+            ${{ runner.temp }}/openabyss-production-world-server.log
+            ${{ runner.temp }}/openabyss-production-world-glxinfo.txt
+            ${{ runner.temp }}/openabyss-production-world-jstack.txt
+            ${{ runner.temp }}/openabyss-production-world-jstack-2.txt
+            ${{ runner.temp }}/openabyss-production-world-jstack-3.txt
+            ${{ runner.temp }}/openabyss-production-world-stall.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-exit-fail.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-menu.png
+            ${{ runner.temp }}/openabyss-production-world-reconnect-join-fail.png
+            ${{ runner.temp }}/openabyss-production-world-before-clickgui.png
+            ${{ runner.temp }}/openabyss-production-world-clickgui-mode-*.png
+            ${{ runner.temp }}/openabyss-production-world-clickgui.png
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Xvfb/Openbox
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [ -n "$OPENABYSS_OPENBOX_PID" ]; then kill "$OPENABYSS_OPENBOX_PID" 2>/dev/null || true; fi
+          if [ -n "$OPENABYSS_XVFB_PID" ]; then kill "$OPENABYSS_XVFB_PID" 2>/dev/null || true; fi

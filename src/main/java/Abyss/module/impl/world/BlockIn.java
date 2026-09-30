@@ -77,6 +77,9 @@ import net.minecraft.world.World;
 public class BlockIn
 extends PriorityModule
 implements EventSubscriber {
+    private static String[] c;
+    private static Map r;
+    private static Map h;
     private boolean e;
     private BlockPos v;
     public static NumberSetting rotationTolerance;
@@ -107,14 +110,14 @@ implements EventSubscriber {
     
     private BlockInPlacement E(long var1) {
         BlockInPlacement var31;
-        BlockPos var5 = new BlockPos(MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70165_t), MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70163_u), MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70161_v));
-        BlockPos var6 = var5.func_177984_a();
+        BlockPos var5 = new BlockPos(MathHelper.floor_double((double)BlockIn.f.thePlayer.posX), MathHelper.floor_double((double)BlockIn.f.thePlayer.posY), MathHelper.floor_double((double)BlockIn.f.thePlayer.posZ));
+        BlockPos var6 = var5.up();
         double var7 = range.L();
-        Vec3 var9 = BlockIn.f.field_71439_g.func_174824_e(1.0f);
+        Vec3 var9 = BlockIn.f.thePlayer.getPositionEyes(1.0f);
         ArrayList<BlockPos> var10 = new ArrayList<BlockPos>(8);
         for (EnumFacing var14 : J) {
-            var10.add(var5.func_177972_a(var14));
-            var10.add(var6.func_177972_a(var14));
+            var10.add(var5.offset(var14));
+            var10.add(var6.offset(var14));
 }
         ArrayList<BlockPos> var26 = new ArrayList<BlockPos>(var10.size());
         for (BlockPos var29 : var10) {
@@ -127,8 +130,8 @@ implements EventSubscriber {
         Vec3 var28 = this.r(100.0);
         if (var28 != null) {
             var10.sort((var1x, var2) -> {
-                double var3x = BlockIn.H((double)var1x.func_177958_n() + 0.5 - var28.field_72450_a) + BlockIn.H((double)var1x.func_177956_o() + 0.5 - var28.field_72448_b) + BlockIn.H((double)var1x.func_177952_p() + 0.5 - var28.field_72449_c);
-                double var5x = BlockIn.H((double)var2.func_177958_n() + 0.5 - var28.field_72450_a) + BlockIn.H((double)var2.func_177956_o() + 0.5 - var28.field_72448_b) + BlockIn.H((double)var2.func_177952_p() + 0.5 - var28.field_72449_c);
+                double var3x = BlockIn.H((double)var1x.getX() + 0.5 - var28.xCoord) + BlockIn.H((double)var1x.getY() + 0.5 - var28.yCoord) + BlockIn.H((double)var1x.getZ() + 0.5 - var28.zCoord);
+                double var5x = BlockIn.H((double)var2.getX() + 0.5 - var28.xCoord) + BlockIn.H((double)var2.getY() + 0.5 - var28.yCoord) + BlockIn.H((double)var2.getZ() + 0.5 - var28.zCoord);
                 return Double.compare(var3x, var5x);
             });
             int var30 = 0;
@@ -147,16 +150,16 @@ implements EventSubscriber {
 }
         ArrayList var33 = new ArrayList(var26);
         HashSet<Long> var34 = new HashSet<Long>(var33.size() * 8);
-        for (BlockPos var17 : var33) {
-            var34.add(var17.func_177986_g());
+        for (BlockPos var17 : (Iterable<BlockPos>)(var33)) {
+            var34.add(var17.toLong());
 }
         for (int var36 = 0; var36 < 5 && !var33.isEmpty(); ++var36) {
             BlockInPlacement var38;
             ArrayList<BlockPos> var37 = new ArrayList<BlockPos>(var33.size() * 3);
-            for (BlockPos var19 : var33) {
+            for (BlockPos var19 : (Iterable<BlockPos>)(var33)) {
                 for (EnumFacing var23 : EnumFacing.values()) {
-                    BlockPos var24 = var19.func_177972_a(var23);
-                    if (!BlockUtil.a$r1(var24) || !var34.add(var24.func_177986_g())) continue;
+                    BlockPos var24 = var19.offset(var23);
+                    if (!BlockUtil.a$r1(var24) || !var34.add(var24.toLong())) continue;
                     var37.add(var24);
 }
 }
@@ -169,7 +172,7 @@ implements EventSubscriber {
 }
     private boolean j(BlockPos var1, BlockPos ... var2) {
         for (EnumFacing var6 : EnumFacing.values()) {
-            BlockPos var7 = var1.func_177972_a(var6);
+            BlockPos var7 = var1.offset(var6);
             if (!BlockUtil.a$r1(var7)) continue;
             boolean var8 = false;
             for (BlockPos var12 : var2) {
@@ -184,15 +187,15 @@ implements EventSubscriber {
 }
     private BlockInPlacement g(List var1, long var2, double var4, Vec3 var6) {
         if (var1 != null && !var1.isEmpty() && this.M >= 0 && this.M <= 8) {
-            ItemStack var7 = BlockIn.f.field_71439_g.field_71071_by.field_70462_a[this.M];
+            ItemStack var7 = BlockIn.f.thePlayer.inventory.mainInventory[this.M];
             float var8 = RotationManager.r;
             float var9 = RotationManager.G;
             MovingObjectPosition var10 = this.I(var4, var8, var9);
-            if (var10.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK) {
-                BlockPos var11 = var10.func_178782_a();
-                EnumFacing var12 = var10.field_178784_b;
+            if (var10.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                BlockPos var11 = var10.getBlockPos();
+                EnumFacing var12 = var10.sideHit;
                 if (!BlockUtil.a$r1(var11) && this.I(var7, var11, var12)) {
-                    for (BlockPos var14 : var1) {
+                    for (BlockPos var14 : (Iterable<BlockPos>)(var1)) {
                         BlockInPlacement var15 = this.j(var4, var8, var9, var11, var12, var14);
                         if (var15 == null) continue;
                         return var15;
@@ -203,13 +206,13 @@ implements EventSubscriber {
             double var51 = 0.949;
             double var52 = 0.051000000000000004;
             ArrayList<BlockInPlacementCandidate> var17 = new ArrayList<BlockInPlacementCandidate>(Math.max(16, var1.size() * 6 * (d + 1) * (d + 1)));
-            for (BlockPos var19 : var1) {
+            for (BlockPos var19 : (Iterable<BlockPos>)(var1)) {
                 for (BlockInFaceOffset var23 : K) {
-                    BlockPos var24 = new BlockPos(var19.func_177958_n() + var23.C, var19.func_177956_o() + var23.m, var19.func_177952_p() + var23.I);
+                    BlockPos var24 = new BlockPos(var19.getX() + var23.C, var19.getY() + var23.m, var19.getZ() + var23.I);
                     if (BlockUtil.a$r1(var24) || !this.I(var7, var24, var23.z)) continue;
-                    double var25 = var24.func_177958_n();
-                    double var27 = var24.func_177956_o();
-                    double var29 = var24.func_177952_p();
+                    double var25 = var24.getX();
+                    double var27 = var24.getY();
+                    double var29 = var24.getZ();
                     for (int var31 = 0; var31 <= d; ++var31) {
                         boolean var32 = (var31 & 1) == 0;
                         double var33 = BlockIn.B((double)var31 * 0.2 + BlockIn.i(var50));
@@ -234,7 +237,7 @@ implements EventSubscriber {
                                 var40 = var25 + (var23.C < 0 ? var51 : var52);
 }
                             float[] var46 = RotationUtil.W(new Vec3(var40, var42, var44), var6);
-                            float var47 = Math.abs(MathHelper.func_76142_g((float)(var46[0] - var8)));
+                            float var47 = Math.abs(MathHelper.wrapAngleTo180_float((float)(var46[0] - var8)));
                             float var48 = Math.abs(var46[1] - var9);
                             if (var47 < 0.1f && var48 < 0.1f) continue;
                             var17.add(new BlockInPlacementCandidate(var47 + var48, var46[0], var46[1], var24, var23.z, var19));
@@ -264,11 +267,11 @@ implements EventSubscriber {
         return var0 < 0.0 ? 0.0 : Math.min(var0, 1.0);
 }
     private float H(Block var1) {
-        float var2 = var1.func_176195_g((World)BlockIn.f.field_71441_e, null);
+        float var2 = var1.getBlockHardness((World)BlockIn.f.theWorld, null);
         if (var2 < 0.0f) {
             return Float.MAX_VALUE;
 }
-        return var2 == 0.0f ? 0.0f : var2 * (var1.func_149688_o().func_76229_l() ? 30.0f : 100.0f);
+        return var2 == 0.0f ? 0.0f : var2 * (var1.getMaterial().isToolNotRequired() ? 30.0f : 100.0f);
 }
     private void x$r3(long var1) {
         var1 = b ^ var1;
@@ -279,7 +282,7 @@ implements EventSubscriber {
         int var11 = (int)((var1 ^ 0x517BB61A8B5AL) << 48 >>> 48);
         long var12 = var1 ^ 0x104CDDF84D71L;
         this.E();
-        if (BlockIn.f.field_71462_r != null) {
+        if (BlockIn.f.currentScreen != null) {
             this.s(0L);
         } else {
             int var14 = this.S(true);
@@ -372,7 +375,6 @@ implements EventSubscriber {
                         var34 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                         var37 = 0;
 }
-                    break;
 }
 }
             var14 = var15.charAt(var13);
@@ -382,16 +384,16 @@ implements EventSubscriber {
         return var0 * var0;
 }
     private boolean C(BlockPos var1) {
-        BlockPos var2 = new BlockPos(MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70165_t), MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70163_u), MathHelper.func_76128_c((double)BlockIn.f.field_71439_g.field_70161_v));
-        int var3 = var1.func_177958_n() - var2.func_177958_n();
-        int var4 = var1.func_177956_o() - var2.func_177956_o();
-        int var5 = var1.func_177952_p() - var2.func_177952_p();
+        BlockPos var2 = new BlockPos(MathHelper.floor_double((double)BlockIn.f.thePlayer.posX), MathHelper.floor_double((double)BlockIn.f.thePlayer.posY), MathHelper.floor_double((double)BlockIn.f.thePlayer.posZ));
+        int var3 = var1.getX() - var2.getX();
+        int var4 = var1.getY() - var2.getY();
+        int var5 = var1.getZ() - var2.getZ();
         return var3 == 0 && var5 == 0 && var4 == 2 ? true : (var4 == 0 || var4 == 1) && (Math.abs(var3) == 1 && var5 == 0 || Math.abs(var5) == 1 && var3 == 0);
 }
     private void s(long var1) {
         this.T(false);
         if (this.Y) {
-            if (this.y && this.O != -1 && this.O != BlockIn.f.field_71439_g.field_71071_by.field_70461_c) {
+            if (this.y && this.O != -1 && this.O != BlockIn.f.thePlayer.inventory.currentItem) {
                 ItemUtil.P(this.O);
 }
             this.Y = false;
@@ -404,7 +406,7 @@ implements EventSubscriber {
 }
     private void l(List var1, Vec3 var2, double var3, double var5, double var7, float var11, float var12) {
         float[] var13 = RotationUtil.W(new Vec3(var3, var5, var7), var2);
-        var1.add(new BlockInRotationCandidate(Math.abs(MathHelper.func_76142_g((float)(var13[0] - var11))) + Math.abs(var13[1] - var12), var13[0], var13[1]));
+        var1.add(new BlockInRotationCandidate(Math.abs(MathHelper.wrapAngleTo180_float((float)(var13[0] - var11))) + Math.abs(var13[1] - var12), var13[0], var13[1]));
 }
     public void onPreMouseInput(PreMouseInputEvent var1, long var2) {
         try {
@@ -452,7 +454,7 @@ implements EventSubscriber {
         if (var7 == null) {
             return false;
 }
-        BlockPos var8 = var7.h.func_177972_a(var7.C);
+        BlockPos var8 = var7.h.offset(var7.C);
         this.I = this.C(var8);
         this.R = var7.h;
         this.n = var7.C;
@@ -464,22 +466,22 @@ implements EventSubscriber {
         return BlockUtil.F(new float[]{var3, var4}, var1);
 }
     private boolean I(ItemStack var1, BlockPos var2, EnumFacing var3) {
-        return var1 != null && var1.func_77973_b() instanceof ItemBlock ? ((ItemBlock)var1.func_77973_b()).func_179222_a((World)BlockIn.f.field_71441_e, var2, var3, (EntityPlayer)BlockIn.f.field_71439_g, var1) : false;
+        return var1 != null && var1.getItem() instanceof ItemBlock ? ((ItemBlock)var1.getItem()).canPlaceBlockOnSide((World)BlockIn.f.theWorld, var2, var3, (EntityPlayer)BlockIn.f.thePlayer, var1) : false;
 }
     private void c(int var1, char var2, char var3) {
         if (!this.Y) {
             this.Y = true;
             this.y = false;
-            this.O = BlockIn.f.field_71439_g.field_71071_by.field_70461_c;
+            this.O = BlockIn.f.thePlayer.inventory.currentItem;
 }
 }
     private double e(Vec3 var1, BlockPos var2) {
-        double var3 = Math.max((double)var2.func_177958_n(), Math.min((double)(var2.func_177958_n() + 1), var1.field_72450_a));
-        double var5 = Math.max((double)var2.func_177956_o(), Math.min((double)(var2.func_177956_o() + 1), var1.field_72448_b));
-        double var7 = Math.max((double)var2.func_177952_p(), Math.min((double)(var2.func_177952_p() + 1), var1.field_72449_c));
-        double var9 = var1.field_72450_a - var3;
-        double var11 = var1.field_72448_b - var5;
-        double var13 = var1.field_72449_c - var7;
+        double var3 = Math.max((double)var2.getX(), Math.min((double)(var2.getX() + 1), var1.xCoord));
+        double var5 = Math.max((double)var2.getY(), Math.min((double)(var2.getY() + 1), var1.yCoord));
+        double var7 = Math.max((double)var2.getZ(), Math.min((double)(var2.getZ() + 1), var1.zCoord));
+        double var9 = var1.xCoord - var3;
+        double var11 = var1.yCoord - var5;
+        double var13 = var1.zCoord - var7;
         return var9 * var9 + var11 * var11 + var13 * var13;
 }
     @Override
@@ -491,20 +493,20 @@ implements EventSubscriber {
         RotationManager.O(var5);
 }
     private BlockInPlacement N(long var1) {
-        Vec3 var5 = new Vec3(BlockIn.f.field_71439_g.field_70165_t, BlockIn.f.field_71439_g.field_70163_u, BlockIn.f.field_71439_g.field_70161_v);
-        BlockPos var6 = new BlockPos(MathHelper.func_76128_c((double)var5.field_72450_a), MathHelper.func_76128_c((double)var5.field_72448_b) + 2, MathHelper.func_76128_c((double)var5.field_72449_c));
+        Vec3 var5 = new Vec3(BlockIn.f.thePlayer.posX, BlockIn.f.thePlayer.posY, BlockIn.f.thePlayer.posZ);
+        BlockPos var6 = new BlockPos(MathHelper.floor_double((double)var5.xCoord), MathHelper.floor_double((double)var5.yCoord) + 2, MathHelper.floor_double((double)var5.zCoord));
         if (BlockUtil.a$r1(var6) && this.M >= 0 && this.M <= 8) {
-            ItemStack var7 = BlockIn.f.field_71439_g.field_71071_by.field_70462_a[this.M];
+            ItemStack var7 = BlockIn.f.thePlayer.inventory.mainInventory[this.M];
             double var8 = range.L();
-            Vec3 var10 = BlockIn.f.field_71439_g.func_174824_e(1.0f);
+            Vec3 var10 = BlockIn.f.thePlayer.getPositionEyes(1.0f);
             double var11 = var8 * var8;
             double var13 = (var8 + 1.0) * (var8 + 1.0);
-            int var15 = MathHelper.func_76128_c((double)var10.field_72448_b) + 1;
-            int var16 = MathHelper.func_76128_c((double)(var10.field_72448_b + var8));
-            int var17 = MathHelper.func_76128_c((double)(var10.field_72450_a - var8));
-            int var18 = MathHelper.func_76128_c((double)(var10.field_72450_a + var8));
-            int var19 = MathHelper.func_76128_c((double)(var10.field_72449_c - var8));
-            int var20 = MathHelper.func_76128_c((double)(var10.field_72449_c + var8));
+            int var15 = MathHelper.floor_double((double)var10.yCoord) + 1;
+            int var16 = MathHelper.floor_double((double)(var10.yCoord + var8));
+            int var17 = MathHelper.floor_double((double)(var10.xCoord - var8));
+            int var18 = MathHelper.floor_double((double)(var10.xCoord + var8));
+            int var19 = MathHelper.floor_double((double)(var10.zCoord - var8));
+            int var20 = MathHelper.floor_double((double)(var10.zCoord + var8));
             ArrayList<BlockInScoredBlockPos> var21 = new ArrayList<BlockInScoredBlockPos>();
             for (int var22 = var15; var22 <= var16; ++var22) {
                 for (int var23 = var17; var23 <= var18; ++var23) {
@@ -512,9 +514,9 @@ implements EventSubscriber {
                         double var33;
                         Block var32;
                         BlockPos var31;
-                        double var25 = (double)var23 + 0.5 - var10.field_72450_a;
-                        double var27 = (double)var22 + 0.5 - var10.field_72448_b;
-                        double var29 = (double)var24 + 0.5 - var10.field_72449_c;
+                        double var25 = (double)var23 + 0.5 - var10.xCoord;
+                        double var27 = (double)var22 + 0.5 - var10.yCoord;
+                        double var29 = (double)var24 + 0.5 - var10.zCoord;
                         if (var25 * var25 + var27 * var27 + var29 * var29 > var13 || BlockUtil.a$r1(var31 = new BlockPos(var23, var22, var24)) || BlockUtil.p(var32 = BlockUtil.a(var31)) || var32 instanceof BlockFence || var32 instanceof BlockWall || (var33 = this.e(var10, var31)) > var11) continue;
                         var21.add(new BlockInScoredBlockPos(var33, var31));
 }
@@ -535,7 +537,7 @@ implements EventSubscriber {
         return (double)Math.abs(MathUtil.M(RotationManager.r, this.G)) <= var1 && (double)Math.abs(MathUtil.M(RotationManager.G, this.B)) <= var1;
 }
     private void v(int var1, int var2) {
-        int var7 = BlockIn.f.field_71439_g.field_71071_by.field_70461_c;
+        int var7 = BlockIn.f.thePlayer.inventory.currentItem;
         if (this.M != -1 && this.M != var7) {
             ItemUtil.P(this.M);
             this.y = true;
@@ -545,32 +547,39 @@ implements EventSubscriber {
         int var4 = -1;
         float var5 = var3 ? -1.0f : Float.MAX_VALUE;
         for (int var6 = 8; var6 >= 0; --var6) {
-            ItemStack var7 = BlockIn.f.field_71439_g.field_71071_by.field_70462_a[var6];
+            ItemStack var7 = BlockIn.f.thePlayer.inventory.mainInventory[var6];
             if (!ItemUtil.u(var7)) continue;
-            Block var8 = ((ItemBlock)var7.func_77973_b()).func_179223_d();
+            Block var8 = ((ItemBlock)var7.getItem()).getBlock();
             float var9 = this.H(var8);
             if (!(var3 ? var9 > var5 : var9 < var5)) continue;
             var4 = var6;
 }
         return var4;
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private void T(int var1, short var2, short var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         long var4 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ b;
         long var8 = var4 ^ 0x27286A3318C3L;
@@ -591,13 +600,13 @@ implements EventSubscriber {
         RotationManager.I(var14[0], 0L);
         RotationManager.A(var8, var14[1]);
         MovingObjectPosition var15 = this.I(range.L(), RotationManager.r, RotationManager.G);
-        if (var15.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK) {
-            BlockPos var12 = var15.func_178782_a();
-            EnumFacing var13 = var15.field_178784_b;
+        if (var15.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+            BlockPos var12 = var15.getBlockPos();
+            EnumFacing var13 = var15.sideHit;
             if (var12.equals((Object)this.R) && var13 == this.n && this.T()) {
                 this.v = var12;
                 this.s = var13;
-                this.T = var15.field_72307_f;
+                this.T = var15.hitVec;
                 this.e = true;
 }
 }
@@ -605,12 +614,12 @@ implements EventSubscriber {
     private BlockInPlacement f(ItemStack var1, BlockPos var2, Vec3 var3, double var4, int var6) {
         float var11 = RotationManager.r;
         float var12 = RotationManager.G;
-        boolean var13 = Math.abs(var3.field_72448_b - (double)(var2.func_177956_o() + 1)) < Math.abs(var3.field_72448_b - (double)var2.func_177956_o());
-        boolean var14 = Math.abs(var3.field_72449_c - (double)(var2.func_177952_p() + 1)) < Math.abs(var3.field_72449_c - (double)var2.func_177952_p());
-        boolean var15 = Math.abs(var3.field_72450_a - (double)(var2.func_177958_n() + 1)) < Math.abs(var3.field_72450_a - (double)var2.func_177958_n());
-        double var16 = var2.func_177958_n();
-        double var18 = var2.func_177956_o();
-        double var20 = var2.func_177952_p();
+        boolean var13 = Math.abs(var3.yCoord - (double)(var2.getY() + 1)) < Math.abs(var3.yCoord - (double)var2.getY());
+        boolean var14 = Math.abs(var3.zCoord - (double)(var2.getZ() + 1)) < Math.abs(var3.zCoord - (double)var2.getZ());
+        boolean var15 = Math.abs(var3.xCoord - (double)(var2.getX() + 1)) < Math.abs(var3.xCoord - (double)var2.getX());
+        double var16 = var2.getX();
+        double var18 = var2.getY();
+        double var20 = var2.getZ();
         double var22 = 0.020000000000000004;
         ArrayList<BlockInRotationCandidate> var24 = new ArrayList<BlockInRotationCandidate>((d + 1) * (d + 1) * 3 + 1);
         var24.add(new BlockInRotationCandidate(0.0, var11, var12));
@@ -624,13 +633,13 @@ implements EventSubscriber {
 }
 }
         var24.sort((var0, var1x) -> Double.compare(var0.Y, var1x.Y));
-        int var32 = var2.func_177956_o();
+        int var32 = var2.getY();
         for (BlockInRotationCandidate var27 : var24) {
             MovingObjectPosition var34 = this.I(var4, var27.j, var27.N);
-            if (var34.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK) continue;
-            BlockPos var35 = var34.func_178782_a();
-            EnumFacing var30 = var34.field_178784_b;
-            if (!var35.equals((Object)var2) || var35.func_177956_o() < var6 || var30 == EnumFacing.DOWN && var32 == var6 || !this.I(var1, var35, var30)) continue;
+            if (var34.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) continue;
+            BlockPos var35 = var34.getBlockPos();
+            EnumFacing var30 = var34.sideHit;
+            if (!var35.equals((Object)var2) || var35.getY() < var6 || var30 == EnumFacing.DOWN && var32 == var6 || !this.I(var1, var35, var30)) continue;
             return new BlockInPlacement(var35, var30, var27.j, var27.N);
 }
         return null;
@@ -644,13 +653,13 @@ implements EventSubscriber {
 }
     private BlockInPlacement j(double var1, float var3, float var4, BlockPos var5, EnumFacing var6, BlockPos var7) {
         MovingObjectPosition var8 = this.I(var1, var3, var4);
-        if (var8.field_72313_a != MovingObjectPosition.MovingObjectType.BLOCK) {
+        if (var8.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) {
             return null;
 }
-        BlockPos var9 = var8.func_178782_a();
-        EnumFacing var10 = var8.field_178784_b;
+        BlockPos var9 = var8.getBlockPos();
+        EnumFacing var10 = var8.sideHit;
         if (var9.equals((Object)var5) && var10 == var6) {
-            BlockPos var11 = var9.func_177972_a(var10);
+            BlockPos var11 = var9.offset(var10);
             return !var11.equals((Object)var7) ? null : new BlockInPlacement(var9, var10, var3, var4);
 }
         return null;
@@ -667,18 +676,18 @@ implements EventSubscriber {
         BlockInBinder.s(var3, this);
 }
     private Vec3 r(double var1) {
-        if (BlockIn.f.field_71441_e != null && BlockIn.f.field_71439_g != null) {
+        if (BlockIn.f.theWorld != null && BlockIn.f.thePlayer != null) {
             Vec3 var3 = null;
             double var4 = var1;
-            for (Object var7 : BlockIn.f.field_71441_e.field_73010_i) {
+            for (Object var7 : BlockIn.f.theWorld.playerEntities) {
                 double var13;
                 double var11;
                 double var9;
                 double var15;
                 EntityPlayer var8;
-                if (!(var7 instanceof EntityPlayer) || (var8 = (EntityPlayer)var7) == BlockIn.f.field_71439_g || f.func_147114_u() == null || f.func_147114_u().func_175102_a(var8.func_110124_au()) == null || !((var15 = (var9 = var8.field_70165_t - BlockIn.f.field_71439_g.field_70165_t) * var9 + (var11 = var8.field_70163_u - BlockIn.f.field_71439_g.field_70163_u) * var11 + (var13 = var8.field_70161_v - BlockIn.f.field_71439_g.field_70161_v) * var13) < var4)) continue;
+                if (!(var7 instanceof EntityPlayer) || (var8 = (EntityPlayer)var7) == BlockIn.f.thePlayer || f.getNetHandler() == null || f.getNetHandler().getPlayerInfo(var8.getUniqueID()) == null || !((var15 = (var9 = var8.posX - BlockIn.f.thePlayer.posX) * var9 + (var11 = var8.posY - BlockIn.f.thePlayer.posY) * var11 + (var13 = var8.posZ - BlockIn.f.thePlayer.posZ) * var13) < var4)) continue;
                 var4 = var15;
-                var3 = new Vec3(var8.field_70165_t, var8.field_70163_u, var8.field_70161_v);
+                var3 = new Vec3(var8.posX, var8.posY, var8.posZ);
 }
             return var3;
 }
@@ -686,11 +695,11 @@ implements EventSubscriber {
 }
     private float[] a(float var1, float var2, float var3, float var4, double var5) {
         float var7 = (float)var5;
-        var7 = MathHelper.func_76131_a((float)var7, (float)1.0f, (float)(var7 * 2.0f));
-        float var8 = MathHelper.func_76142_g((float)(var3 - var1));
+        var7 = MathHelper.clamp_float((float)var7, (float)1.0f, (float)(var7 * 2.0f));
+        float var8 = MathHelper.wrapAngleTo180_float((float)(var3 - var1));
         float var9 = var4 - var2;
-        float var10 = var1 + MathHelper.func_76131_a((float)var8, (float)(-var7), (float)var7);
-        float var11 = MathHelper.func_76131_a((float)(var2 + MathHelper.func_76131_a((float)var9, (float)(-var7), (float)var7)), (float)-90.0f, (float)90.0f);
+        float var10 = var1 + MathHelper.clamp_float((float)var8, (float)(-var7), (float)var7);
+        float var11 = MathHelper.clamp_float((float)(var2 + MathHelper.clamp_float((float)var9, (float)(-var7), (float)var7)), (float)-90.0f, (float)90.0f);
         return new float[]{var10, var11};
 }
     static {

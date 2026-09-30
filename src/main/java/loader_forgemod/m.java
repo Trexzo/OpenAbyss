@@ -29,7 +29,7 @@ public class m {
         if (var1 == null) {
             throw new NullPointerException("handler is null");
 }
-        this.d = var1;
+        this.d = (D<Object, Object>)var1;
         var1.b = this;
 }
     public native void a(String var1);

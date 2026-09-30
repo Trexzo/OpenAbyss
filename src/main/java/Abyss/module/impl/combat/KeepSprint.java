@@ -25,6 +25,11 @@ import Abyss.util.ScoreboardReader;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class KeepSprint
 extends Module
@@ -45,7 +50,7 @@ implements EventSubscriber {
                 if (var3.O() instanceof EntityPlayer) {
                     switch (t) {
                         case 0: {
-                            if (KeepSprint.S.field_71439_g.func_70051_ag()) {
+                            if (KeepSprint.S.thePlayer.isSprinting()) {
                                 var3.I(21307, 3074332907L);
                                 t = 1;
                                 a = 0;
@@ -56,7 +61,7 @@ implements EventSubscriber {
                             break;
 }
                         case 1: {
-                            KeepSprint.S.field_71439_g.func_70031_b(false);
+                            KeepSprint.S.thePlayer.setSprinting(false);
                             a = 0;
                             t = 2;
 }
@@ -74,25 +79,25 @@ implements EventSubscriber {
     public static void k(long var0) {
         switch (mode.Y()) {
             case "PREDICTION": {
-                if (!KeepSprint.S.field_71439_g.func_70051_ag()) break;
+                if (!KeepSprint.S.thePlayer.isSprinting()) break;
                 if (t == 2) {
-                    KeepSprint.S.field_71439_g.field_70159_w *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
-                    KeepSprint.S.field_71439_g.field_70179_y *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
+                    KeepSprint.S.thePlayer.motionX *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
+                    KeepSprint.S.thePlayer.motionZ *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
                     if (slowdown.k() != 60) break;
-                    KeepSprint.S.field_71439_g.func_70031_b(false);
+                    KeepSprint.S.thePlayer.setSprinting(false);
                     break;
 }
-                KeepSprint.S.field_71439_g.field_70159_w *= 0.6;
-                KeepSprint.S.field_71439_g.field_70179_y *= 0.6;
-                KeepSprint.S.field_71439_g.func_70031_b(false);
+                KeepSprint.S.thePlayer.motionX *= 0.6;
+                KeepSprint.S.thePlayer.motionZ *= 0.6;
+                KeepSprint.S.thePlayer.setSprinting(false);
                 break;
 }
             default: {
-                if (!KeepSprint.S.field_71439_g.func_70051_ag()) break;
-                KeepSprint.S.field_71439_g.field_70159_w *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
-                KeepSprint.S.field_71439_g.field_70179_y *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
+                if (!KeepSprint.S.thePlayer.isSprinting()) break;
+                KeepSprint.S.thePlayer.motionX *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
+                KeepSprint.S.thePlayer.motionZ *= 1.0 - 0.4 * (double)slowdown.k() / 100.0;
                 if (slowdown.k() != 60) break;
-                KeepSprint.S.field_71439_g.func_70031_b(false);
+                KeepSprint.S.thePlayer.setSprinting(false);
 }
 }
 }
@@ -108,17 +113,17 @@ implements EventSubscriber {
 }
             switch (t) {
                 case 1: {
-                    KeepSprint.S.field_71439_g.func_70031_b(false);
+                    KeepSprint.S.thePlayer.setSprinting(false);
                     ++a;
                     break;
 }
                 case 2: {
-                    if (KeepSprint.S.field_71439_g.func_71039_bw()) {
+                    if (KeepSprint.S.thePlayer.isUsingItem()) {
                         if (Sprint.U(0L)) {
-                            KeepSprint.S.field_71439_g.func_70031_b(true);
+                            KeepSprint.S.thePlayer.setSprinting(true);
 }
                     } else {
-                        KeepSprint.S.field_71439_g.func_70031_b(true);
+                        KeepSprint.S.thePlayer.setSprinting(true);
 }
                     a = 0;
                     t = 0;
@@ -147,16 +152,16 @@ implements EventSubscriber {
         if (mode.R("PREDICTION") && ScoreboardReader.v(0L)) {
             switch (t) {
                 case 1: {
-                    KeepSprint.S.field_71439_g.func_70031_b(false);
+                    KeepSprint.S.thePlayer.setSprinting(false);
                     break;
 }
                 case 2: {
-                    if (KeepSprint.S.field_71439_g.func_71039_bw()) {
+                    if (KeepSprint.S.thePlayer.isUsingItem()) {
                         if (!Sprint.U(0L)) break;
-                        KeepSprint.S.field_71439_g.func_70031_b(true);
+                        KeepSprint.S.thePlayer.setSprinting(true);
                         break;
 }
-                    KeepSprint.S.field_71439_g.func_70031_b(true);
+                    KeepSprint.S.thePlayer.setSprinting(true);
 }
 }
         } else {

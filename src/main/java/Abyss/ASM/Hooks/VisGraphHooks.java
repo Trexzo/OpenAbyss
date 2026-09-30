@@ -13,7 +13,7 @@ import net.minecraft.util.BlockPos;
 
 public class VisGraphHooks {
     private static int getIndex(BlockPos var0) {
-        return VisGraphHooks.getIndex(var0.func_177958_n() & 0xF, var0.func_177956_o() & 0xF, var0.func_177952_p() & 0xF);
+        return VisGraphHooks.getIndex(var0.getX() & 0xF, var0.getY() & 0xF, var0.getZ() & 0xF);
 }
     private static int getIndex(int var0, int var1, int var2) {
         return var0 << 0 | var1 << 8 | var2 << 4;

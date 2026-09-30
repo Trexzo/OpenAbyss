@@ -86,10 +86,9 @@ PropertyChangeListener {
     @Override
     public void update(Graphics g, JComponent c) {
         if (c.isOpaque()) {
-            int arc;
             int width = c.getWidth();
             int height = c.getHeight();
-            int n2 = this.arc >= 0 ? this.arc : (arc = c.getBorder() instanceof FlatLineBorder ? ((FlatLineBorder)c.getBorder()).getArc() : 0);
+            int arc = this.arc >= 0 ? this.arc : (c.getBorder() instanceof FlatLineBorder ? ((FlatLineBorder)c.getBorder()).getArc() : 0);
             if (arc > 0) {
                 FlatUIUtils.paintParentBackground(g, c);
 }

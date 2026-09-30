@@ -112,7 +112,6 @@ public class NativeLibrary {
                 ++i;
                 continue;
 }
-            break;
 }
 }
     private static Path getTempDir() throws IOException {

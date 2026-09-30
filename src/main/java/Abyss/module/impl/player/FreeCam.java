@@ -14,7 +14,7 @@ import net.minecraft.client.entity.EntityOtherPlayerMP;
 public class FreeCam
 extends Module {
     private EntityOtherPlayerMP r;
-    private static final long private static double x;
+    private static double x;
     private float B;
     private boolean s;
     private float R;

@@ -9,7 +9,7 @@ import java.awt.Color;
 
 public class CategoryPalette {
     public final Color i;
-    private static long public final Color D;
+    public final Color D;
     public final Color g;
 
     public CategoryPalette(Color var1, Color var2, Color var3) {

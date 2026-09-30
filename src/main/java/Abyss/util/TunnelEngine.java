@@ -12,7 +12,7 @@ import Abyss.util.AutoToolService;
 import Abyss.util.MiningConstants;
 
 public class TunnelEngine {
-    private static long private static long[] e;
+    private static long[] e;
     private static boolean j;
     
     public static void z(long var0) {

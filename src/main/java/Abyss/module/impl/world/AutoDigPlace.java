@@ -69,17 +69,17 @@ implements EventSubscriber {
             this.C = null;
             return true;
 }
-        if (this.n && !AutoDigPlace.f.field_71439_g.field_70122_E) {
-            KeyBindUtil.A(82009306480869L, AutoDigPlace.f.field_71474_y.field_74314_A.func_151463_i(), false);
+        if (this.n && !AutoDigPlace.f.thePlayer.onGround) {
+            KeyBindUtil.A(82009306480869L, AutoDigPlace.f.gameSettings.keyBindJump.getKeyCode(), false);
             return false;
 }
         if (!this.N) {
-            this.K = AutoDigPlace.f.field_71439_g.field_71071_by.field_70461_c;
+            this.K = AutoDigPlace.f.thePlayer.inventory.currentItem;
             this.N = true;
 }
         boolean var11 = false;
-        for (int var12 = 0; var12 < InventoryPlayer.func_70451_h(); ++var12) {
-            if (AutoDigPlace.f.field_71439_g.field_71071_by.field_70462_a[var12] == null || !ItemUtil.u(AutoDigPlace.f.field_71439_g.field_71071_by.field_70462_a[var12]) || AutoDigPlace.f.field_71439_g.field_71071_by.field_70462_a[var12].field_77994_a <= 0 || var11) continue;
+        for (int var12 = 0; var12 < InventoryPlayer.getHotbarSize(); ++var12) {
+            if (AutoDigPlace.f.thePlayer.inventory.mainInventory[var12] == null || !ItemUtil.u(AutoDigPlace.f.thePlayer.inventory.mainInventory[var12]) || AutoDigPlace.f.thePlayer.inventory.mainInventory[var12].stackSize <= 0 || var11) continue;
             ItemUtil.P(var12);
             var11 = true;
 }
@@ -88,7 +88,7 @@ implements EventSubscriber {
 }
         RotationManager.N(71285564916286L, RotationManager.r, this.n ? -90.0f : 90.0f);
         this.a = true;
-        if (AutoDigPlace.f.field_71439_g.func_71039_bw()) {
+        if (AutoDigPlace.f.thePlayer.isUsingItem()) {
             return true;
 }
         PlacementTarget var14 = this.q(this.R);
@@ -107,13 +107,13 @@ implements EventSubscriber {
             this.T(true);
             RotationManager.n(RotationMode.SILENT);
             var1.q(9819, 57776);
-            boolean bl = this.n = rightClickDigDown.c() && KeyBindUtil.V(AutoDigPlace.f.field_71474_y.field_74313_G.func_151463_i(), 64165991731362L);
+            boolean bl = this.n = rightClickDigDown.c() && KeyBindUtil.V(AutoDigPlace.f.gameSettings.keyBindUseItem.getKeyCode(), 64165991731362L);
             if (!this.n) {
-                EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)AutoDigPlace.f.field_71439_g, 0);
-                KeyBindUtil.A(82009306480869L, AutoDigPlace.f.field_71474_y.field_74314_A.func_151463_i(), true);
+                EntityLivingBaseStateAccessor.x(14848, (EntityLivingBase)AutoDigPlace.f.thePlayer, 0);
+                KeyBindUtil.A(82009306480869L, AutoDigPlace.f.gameSettings.keyBindJump.getKeyCode(), true);
                 this.t = true;
             } else {
-                KeyBindUtil.A(82009306480869L, AutoDigPlace.f.field_71474_y.field_74314_A.func_151463_i(), false);
+                KeyBindUtil.A(82009306480869L, AutoDigPlace.f.gameSettings.keyBindJump.getKeyCode(), false);
 }
             if (this.C == null) {
                 if (this.L()) {
@@ -121,11 +121,11 @@ implements EventSubscriber {
                     return;
 }
                 BlockPos var22 = null;
-                double var23 = AutoDigPlace.f.field_71439_g.field_70165_t;
-                double var25 = AutoDigPlace.f.field_71439_g.field_70163_u;
-                double var27 = AutoDigPlace.f.field_71439_g.field_70161_v;
+                double var23 = AutoDigPlace.f.thePlayer.posX;
+                double var25 = AutoDigPlace.f.thePlayer.posY;
+                double var27 = AutoDigPlace.f.thePlayer.posZ;
                 BlockPos var29 = BlockUtil.Z();
-                BlockPos var30 = var29.func_177982_a(0, 2, 0);
+                BlockPos var30 = var29.add(0, 2, 0);
                 if (this.n && this.E(var30, 0L)) {
                     this.C = null;
                     this.R = var30;
@@ -146,7 +146,7 @@ implements EventSubscriber {
                     var22 = new BlockPos(var23, var25 + 3.0, var27);
 }
                 if (var22 != null) {
-                    if (AutoDigPlace.f.field_71441_e.func_175623_d(var22)) {
+                    if (AutoDigPlace.f.theWorld.isAirBlock(var22)) {
                         this.C = null;
                         this.R = this.n ? var22 : BlockUtil.Z();
                         this.O = true;
@@ -159,7 +159,7 @@ implements EventSubscriber {
                     this.getKeyCode(0L);
 }
             } else {
-                if (AutoDigPlace.f.field_71441_e.func_175623_d(this.C)) {
+                if (AutoDigPlace.f.theWorld.isAirBlock(this.C)) {
                     BlockPos var32 = this.C;
                     this.C = null;
                     this.R = this.n ? var32 : BlockUtil.Z();
@@ -187,9 +187,9 @@ implements EventSubscriber {
     private void getKeyCode(long var1) {
         if (this.C != null) {
             this.E = true;
-            KeyBindUtil.A(82009306480869L, AutoDigPlace.f.field_71474_y.field_74314_A.func_151463_i(), false);
+            KeyBindUtil.A(82009306480869L, AutoDigPlace.f.gameSettings.keyBindJump.getKeyCode(), false);
             int var13 = ItemUtil.e(0L, BlockUtil.a(this.C));
-            ItemUtil.P(var13 == -1 ? AutoDigPlace.f.field_71439_g.field_71071_by.field_70461_c : var13);
+            ItemUtil.P(var13 == -1 ? AutoDigPlace.f.thePlayer.inventory.currentItem : var13);
             if (!OutgoingPacketState.P || !OutgoingPacketState.h) {
                 EnumFacing var11 = this.n ? EnumFacing.UP : EnumFacing.DOWN;
                 BlockPos var12 = this.C;
@@ -203,7 +203,7 @@ implements EventSubscriber {
 }
     private void swingItem() {
         if (swing.c()) {
-            AutoDigPlace.f.field_71439_g.func_71038_i();
+            AutoDigPlace.f.thePlayer.swingItem();
         } else {
             PacketManager.b(new C0APacketAnimation());
 }
@@ -226,7 +226,7 @@ implements EventSubscriber {
             this.a = false;
 }
         if (this.t) {
-            KeyBindUtil.o(var7, AutoDigPlace.f.field_71474_y.field_74314_A.func_151463_i());
+            KeyBindUtil.o(var7, AutoDigPlace.f.gameSettings.keyBindJump.getKeyCode());
             this.t = false;
 }
 }
@@ -238,7 +238,7 @@ implements EventSubscriber {
         long var5 = ((long)var1 << 32 | (long)var2 << 48 >>> 32 | (long)var3 << 48 >>> 48) ^ b;
         int var7 = (int)((var5 ^ 0x1EF797CA4FC5L) >>> 32);
         long var8 = (var5 ^ 0x1EF797CA4FC5L) << 32 >>> 32;
-        if (this.E && var4.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var4.B).func_180762_c() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
+        if (this.E && var4.B instanceof C07PacketPlayerDigging && ((C07PacketPlayerDigging)var4.B).getStatus() == C07PacketPlayerDigging.Action.ABORT_DESTROY_BLOCK) {
             var4.I(var7, var8);
 }
 }
@@ -246,7 +246,7 @@ implements EventSubscriber {
         EnumFacing[] var4;
         EnumFacing[] var10000 = new EnumFacing[]{EnumFacing.DOWN, EnumFacing.UP, EnumFacing.NORTH, EnumFacing.SOUTH, EnumFacing.WEST, EnumFacing.EAST};
         for (EnumFacing var8 : var4 = var10000) {
-            BlockPos var9 = var1.func_177972_a(var8.func_176734_d());
+            BlockPos var9 = var1.offset(var8.getOpposite());
             if (BlockUtil.a$r1(var9)) continue;
             return new PlacementTarget(var9, var8, false);
 }

@@ -49,10 +49,16 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ChestESP
 extends Module
 implements EventSubscriber {
+    private static long a = 17077916200986L;
     public static ModeSetting color;
     public static BooleanSetting showTargetShade;
         public static BooleanSetting ignoreOpened;
@@ -63,59 +69,82 @@ implements EventSubscriber {
     public static ColorSetting customColor;
 
     private void B(long var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        this.I.clear();
-        List var6 = ChestESP.f.field_71441_e.field_147482_g;
-        boolean var7 = ignoreOpened.c();
-        int var9 = var6.size();
-        block6: for (int var8 = 0; var8 < var9; ++var8) {
-            TileEntity var10 = (TileEntity)var6.get(var8);
-            if (!(var10 instanceof TileEntityChest)) continue;
-            BlockPos var11 = var10.func_174877_v();
-            if (!this.v.contains(var11) && (((TileEntityChest)var10).field_145987_o > 0 || BlockUtil.Y((byte)0, var11, 8170486))) {
+       this.I.clear();
+       List var6 = ChestESP.f.theWorld.loadedTileEntityList;
+       boolean var7 = ignoreOpened.c();
+       int var8 = 0;
+
+       for (int var9 = var6.size(); var8 < var9; var8++) {
+          TileEntity var10 = (TileEntity)var6.get(var8);
+          if (var10 instanceof TileEntityChest) {
+             BlockPos var11 = var10.getPos();
+             if (!this.v.contains(var11) && (((TileEntityChest)var10).numPlayersUsing > 0 || BlockUtil.Y((byte)0, var11, 8170486))) {
                 this.v.add(var11);
-}
-            if (this.v.contains(var11) && var7) continue;
-            Block var12 = ChestESP.f.field_71441_e.func_180495_p(var11).func_177230_c();
-            double var13 = 0.0625;
-            double var15 = 0.0625;
-            double var17 = 0.9375;
-            double var19 = 0.9375;
-            if (var12 instanceof BlockChest) {
-                EnumFacing var21 = (EnumFacing)ChestESP.f.field_71441_e.func_180495_p(var11).func_177229_b((IProperty)BlockChest.field_176459_a);
-                switch (ChestESPSwitchMapEnumFacing.V[var21.ordinal()]) {
-                    case 1: {
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177974_f()).func_177230_c() == var12) continue block6;
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177976_e()).func_177230_c() != var12) break;
-                        var13 -= 1.0;
-                        break;
-}
-                    case 2: {
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177976_e()).func_177230_c() == var12) continue block6;
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177974_f()).func_177230_c() != var12) break;
-                        var17 += 1.0;
-                        break;
-}
-                    case 3: {
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177978_c()).func_177230_c() == var12) continue block6;
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177968_d()).func_177230_c() != var12) break;
-                        var19 += 1.0;
-                        break;
-}
-                    case 4: {
-                        if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177968_d()).func_177230_c() != var12) {
-                            if (ChestESP.f.field_71441_e.func_180495_p(var11.func_177978_c()).func_177230_c() != var12) break;
-                            var15 -= 1.0;
+             }
+
+             if (!this.v.contains(var11) || !var7) {
+                Block var12 = ChestESP.f.theWorld.getBlockState(var11).getBlock();
+                double var13 = 0.0625;
+                double var15 = 0.0625;
+                double var17 = 0.9375;
+                double var19 = 0.9375;
+                if (var12 instanceof BlockChest) {
+                   EnumFacing var21 = (EnumFacing)ChestESP.f.theWorld.getBlockState(var11).getValue(BlockChest.FACING);
+                   switch (ChestESPSwitchMapEnumFacing.V[var21.ordinal()]) {
+                      case 1:
+                         if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() == var12) {
+                            var13--;
+                         }
+                         break;
+                      case 2:
+                         if (ChestESP.f.theWorld.getBlockState(var11.west()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.east()).getBlock() == var12) {
+                            var17++;
+                         }
+                         break;
+                      case 3:
+                         if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() == var12) {
+                            continue;
+                         }
+
+                         if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() == var12) {
+                            var19++;
+                         }
+                         break;
+                      case 4:
+                         if (ChestESP.f.theWorld.getBlockState(var11.south()).getBlock() != var12) {
+                            if (ChestESP.f.theWorld.getBlockState(var11.north()).getBlock() == var12) {
+                               var15--;
+                            }
                             break;
-}
-}
-                    default: {
-                        continue block6;
-}
-}
-}
-            this.I.add(new AxisAlignedBB((double)var11.func_177958_n() + var13, (double)var11.func_177956_o(), (double)var11.func_177952_p() + var15, (double)var11.func_177958_n() + var17, (double)var11.func_177956_o() + 0.875, (double)var11.func_177952_p() + var19));
-}
-}
+                         }
+                      default:
+                         continue;
+                   }
+                }
+
+                this.I
+                   .add(
+                      new AxisAlignedBB(
+                         var11.getX() + var13,
+                         var11.getY(),
+                         var11.getZ() + var15,
+                         var11.getX() + var17,
+                         var11.getY() + 0.875,
+                         var11.getZ() + var19
+                      )
+                   );
+             }
+          }
+       }
+    }
     @Override
     public final void x(long var1, EventBus var3) {
         ChestESPBinder.N(var3, this);
@@ -135,12 +164,12 @@ implements EventSubscriber {
                 var19 = customColor.k(96531491288662L);
 }
 }
-        double var30 = RenderManagerAccessor.k(0L, f.func_175598_ae());
-        double var22 = RenderManagerAccessor.y(13236, f.func_175598_ae());
-        double var24 = RenderManagerAccessor.W(0L, f.func_175598_ae());
+        double var30 = RenderManagerAccessor.k(0L, f.getRenderManager());
+        double var22 = RenderManagerAccessor.y(13236, f.getRenderManager());
+        double var24 = RenderManagerAccessor.W(0L, f.getRenderManager());
         int var26 = (int)(2.55 * (double)opacity.k());
         for (int var27 = 0; var27 < this.I.size(); ++var27) {
-            AxisAlignedBB var28 = this.I.get(var27).func_72317_d(-var30, -var22, -var24);
+            AxisAlignedBB var28 = this.I.get(var27).offset(-var30, -var22, -var24);
             RenderUtil.W(var28, 48544574689857L, var19, var26, showTargetOutline.c(), showTargetShade.c());
 }
 }
@@ -171,7 +200,7 @@ implements EventSubscriber {
 }
     public void onPlayerRightClick(PlayerRightClickEvent var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         BlockPos var6 = var1.a$r2();
-        if (ChestESP.f.field_71441_e.func_180495_p(var6).func_177230_c() == Blocks.field_150486_ae) {
+        if (ChestESP.f.theWorld.getBlockState(var6).getBlock() == Blocks.chest) {
             this.v.add(var6);
             this.B(129551973060899L);
 }

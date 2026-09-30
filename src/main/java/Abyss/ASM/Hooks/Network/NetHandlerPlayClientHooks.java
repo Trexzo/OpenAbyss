@@ -22,6 +22,12 @@ import Abyss.event.events.HandleChatEvent;
 import Abyss.event.events.KnockbackEvent;
 import Abyss.event.events.PostKnockbackEvent;
 import Abyss.util.MinecraftRef;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -35,27 +41,43 @@ import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.util.IThreadListener;
 
 public class NetHandlerPlayClientHooks {
-    private static final long private static final Minecraft g;
+    private static final Minecraft g;
+    private static final Set<String> RUNTIME_MARKERS =
+            Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private static synchronized void runtimeMarker(String marker) {
+        if (marker == null || !RUNTIME_MARKERS.add(marker)) {
+            return;
+        }
+        try {
+            try (OutputStreamWriter out = new OutputStreamWriter(
+                    new FileOutputStream(new File("abyss-network-stage.txt"), true), "UTF-8")) {
+                out.write(System.currentTimeMillis() + "\t" + marker + "\n");
+            }
+        }
+        catch (Throwable ignored) {
+        }
+    }
 
     public static void onHandleEntityVelocity(NetHandlerPlayClient var0, S12PacketEntityVelocity var1, CallbackInfo var2) {
-        WorldClient var12 = NetHandlerPlayClientHooks.g.field_71441_e;
-        PacketThreadUtil.func_180031_a((Packet)var1, (INetHandler)var0, (IThreadListener)g);
-        Entity var13 = var12.func_73045_a(var1.func_149412_c());
+        WorldClient var12 = NetHandlerPlayClientHooks.g.theWorld;
+        PacketThreadUtil.checkThreadAndEnqueue((Packet)var1, (INetHandler)var0, (IThreadListener)g);
+        Entity var13 = var12.getEntityByID(var1.getEntityID());
         if (var13 == null) {
             var2.cancel();
             return;
 }
-        if (var13.func_145782_y() == NetHandlerPlayClientHooks.g.field_71439_g.func_145782_y()) {
-            KnockbackEvent var14 = new KnockbackEvent(var1.func_149411_d(), var1.func_149410_e(), var1.func_149409_f());
+        if (var13.getEntityId() == NetHandlerPlayClientHooks.g.thePlayer.getEntityId()) {
+            KnockbackEvent var14 = new KnockbackEvent(var1.getMotionX(), var1.getMotionY(), var1.getMotionZ());
             AbyssClient.w.e(var14, 18670087776179L);
             if (var14.a()) {
                 var2.cancel();
                 return;
 }
-            var13.func_70016_h(var14.S() / 8000.0, var14.f() / 8000.0, var14.R() / 8000.0);
+            var13.setVelocity(var14.S() / 8000.0, var14.f() / 8000.0, var14.R() / 8000.0);
             AbyssClient.w.e(new PostKnockbackEvent('\u0000', 446144442, 25937), 18670087776179L);
         } else {
-            var13.func_70016_h((double)var1.func_149411_d() / 8000.0, (double)var1.func_149410_e() / 8000.0, (double)var1.func_149409_f() / 8000.0);
+            var13.setVelocity((double)var1.getMotionX() / 8000.0, (double)var1.getMotionY() / 8000.0, (double)var1.getMotionZ() / 8000.0);
 }
         var2.cancel();
 }
@@ -65,7 +87,13 @@ public class NetHandlerPlayClientHooks {
 }
 }
     public static void handleChat(S02PacketChat var0) {
-        AbyssClient.w.e(new HandleChatEvent(var0.func_148915_c()), 18670087776179L);
+        if (var0 != null && var0.getChatComponent() != null) {
+            String text = var0.getChatComponent().getUnformattedText();
+            if (text != null && text.contains("OPENABYSS_MACRO_PROBE_")) {
+                runtimeMarker("chat-receive-probe-echo:true");
+            }
+        }
+        AbyssClient.w.e(new HandleChatEvent(var0.getChatComponent()), 18670087776179L);
 }
     static {
         boolean var2 = false;

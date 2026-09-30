@@ -12,6 +12,11 @@ import Abyss.internal.accessor.TypedValueStore;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public final class EntityPlayerSPAccessor {
     private static TypedValueStore Q;

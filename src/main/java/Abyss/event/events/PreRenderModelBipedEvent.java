@@ -11,7 +11,7 @@ import net.minecraft.entity.Entity;
 
 public class PreRenderModelBipedEvent
 extends StoppableEvent {
-    private static final long public final Entity O;
+    public final Entity O;
 
     public PreRenderModelBipedEvent(Entity var3) {
         this.O = var3;

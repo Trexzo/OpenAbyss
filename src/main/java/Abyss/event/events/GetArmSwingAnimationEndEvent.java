@@ -8,7 +8,7 @@ import Abyss.event.Event;
 public class GetArmSwingAnimationEndEvent
 extends Event {
     private int N;
-    private static final long public GetArmSwingAnimationEndEvent(int var1, int var4) {
+    public GetArmSwingAnimationEndEvent(int var1, int var4) {
         this.N = var4;
 }
     public int N() {

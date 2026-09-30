@@ -9,7 +9,9 @@ import Abyss.setting.Setting;
 
 public class NoObfuscation
 extends Module {
-    private static long private static String b = "\u00a7k";
+    private static long a;
+
+    private static String b = "\u00a7k";
 
     public static String f(String var2) {
         if (var2 == null) {
@@ -22,4 +24,7 @@ extends Module {
         this.declare("NoObfuscation", Category.Misc, "Remove the obfuscation minecraft chat code", new Setting[0]);
         var1 = a ^ var1;
 }
+    static {
+        a = 82802124200324L;
+    }
 }

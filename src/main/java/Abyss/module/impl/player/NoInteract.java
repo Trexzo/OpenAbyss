@@ -15,7 +15,7 @@ import Abyss.util.BlockUtil;
 public class NoInteract
 extends Module
 implements EventSubscriber {
-    private static final long private static void a() {
+    private static void a() {
 }
     public NoInteract(long var1) {
         super(0x46A33A3E2A7FL ^ var1 ^ 0x7852AF29E643L);

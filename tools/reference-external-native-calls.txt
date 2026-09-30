@@ -1,0 +1,19 @@
+# OpenAbyss runnable-era cross-class native call authority
+# reference_jar_sha256=13814827D8341CA6F4D7510F8B07C66F998EB7F43FA70BB18B0755AB7A4474F1
+# format=caller|native_owner|method|descriptor
+Abyss/command/AbyssCommands|Abyss/command/Command|e|(J)[Ljava/lang/String;
+Abyss/command/AbyssCommands|Abyss/command/Command|h|(J)V
+Abyss/command/AbyssCommands|Abyss/command/Command|j|([Ljava/lang/String;J)V
+Abyss/command/impl/AbyssCommandHelp|Abyss/command/Command|e|(J)[Ljava/lang/String;
+Abyss/command/impl/AbyssCommandHelp|Abyss/command/Command|h|(J)V
+Abyss/internal/ChatInputHandler|Abyss/command/Command|e|(J)[Ljava/lang/String;
+Abyss/internal/ChatInputHandler|Abyss/command/Command|g|([Ljava/lang/String;IJ)Ljava/util/List;
+Abyss/module/Module|Abyss/internal/jnic/StockClientBootstrap|W|(JLAbyss/module/Module;Ljava/lang/String;Ljava/lang/Boolean;LAbyss/module/Category;Ljava/lang/Boolean;Ljava/lang/String;[LAbyss/setting/Setting;)V
+Abyss/module/Module|Abyss/internal/jnic/StockClientBootstrap|Z|(LAbyss/module/Module;Ljava/lang/String;JLjava/lang/Boolean;LAbyss/module/Category;Ljava/lang/Boolean;Ljava/lang/String;ZZ[LAbyss/setting/Setting;)V
+Abyss/ui/swing/ConfigManagerKeyAdapter|Abyss/ui/swing/ConfigManagerWindow|P|(LAbyss/ui/swing/ConfigManagerWindow;Z)Z
+Abyss/ui/swing/ConfigManagerTextSettingListener|Abyss/ui/swing/ConfigManagerWindow|P|(LAbyss/ui/swing/ConfigManagerWindow;Z)Z
+Abyss/ui/swing/ConfigManagerWindowCloseAdapter|Abyss/ui/swing/ConfigManagerWindow|S|(LAbyss/ui/swing/ConfigManagerWindow;J)V
+Abyss/ui/swing/tt_2|Abyss/ui/swing/ConfigManagerWindow|P|(LAbyss/ui/swing/ConfigManagerWindow;Z)Z
+com/formdev/flatlaf/ui/FlatPopupFactory|com/formdev/flatlaf/ui/FlatNativeWindowsLibrary|getHWND|(Ljava/awt/Window;)J
+com/formdev/flatlaf/ui/FlatPopupFactory|com/formdev/flatlaf/ui/FlatNativeWindowsLibrary|setWindowBorderColor|(JIII)Z
+com/formdev/flatlaf/ui/FlatPopupFactory|com/formdev/flatlaf/ui/FlatNativeWindowsLibrary|setWindowCornerPreference|(JI)Z

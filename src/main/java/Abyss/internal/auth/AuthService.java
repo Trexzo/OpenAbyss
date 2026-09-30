@@ -44,6 +44,7 @@ import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -57,6 +58,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLSocketFactory;
@@ -85,11 +91,78 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 public final class AuthService {
+    private static long a;
+
     public static String E;
     
     public static int P;
     
         public static RequestConfig e;
+    private static final int CALLBACK_PORT = 25575;
+    private static final long CALLBACK_TIMEOUT_SECONDS = 300L;
+
+    private static InetSocketAddress callbackAddress() {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), CALLBACK_PORT);
+}
+    private static ExecutorService newCallbackExecutor() {
+        return Executors.newSingleThreadExecutor(runnable -> {
+            Thread worker = new Thread(runnable, "OpenAbyss-MicrosoftCallback");
+            worker.setDaemon(true);
+            return worker;
+        });
+}
+    private static final class HttpResult {
+        private final int status;
+        private final String body;
+
+        private HttpResult(int status, String body) {
+            this.status = status;
+            this.body = body;
+}
+}
+    private static HttpResult execute(CloseableHttpClient client, HttpUriRequest request) throws IOException {
+        try (CloseableHttpResponse response = client.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            HttpEntity entity = response.getEntity();
+            String body = entity != null ? EntityUtils.toString(entity) : "";
+            if (status < 200 || status >= 300) {
+                throw new IOException("HTTP " + status + " from " + request.getURI());
+}
+            return new HttpResult(status, body);
+}
+}
+    public static String selfTest() {
+        ExecutorService executor = null;
+        try {
+            InetSocketAddress address = AuthService.callbackAddress();
+            if (address.getAddress() == null || !address.getAddress().isLoopbackAddress() || address.getPort() != CALLBACK_PORT) {
+                return "FAIL callback-address=" + address;
+}
+            if (CALLBACK_TIMEOUT_SECONDS <= 0L) {
+                return "FAIL timeout";
+}
+            URI loginUri = AuthService.P("state-probe");
+            if (loginUri == null
+                    || !loginUri.toString().contains("localhost%3A" + CALLBACK_PORT + "%2Fcallback")
+                    || !loginUri.toString().contains("state=state-probe")) {
+                return "FAIL authorize-uri=" + loginUri;
+}
+            executor = AuthService.newCallbackExecutor();
+            Future<Boolean> probe = executor.submit(() -> Boolean.valueOf(Thread.currentThread().isDaemon()));
+            if (!Boolean.TRUE.equals(probe.get(5L, TimeUnit.SECONDS))) {
+                return "FAIL callback-worker-not-daemon";
+}
+            return "PASS loopback daemon-callback timeout=" + CALLBACK_TIMEOUT_SECONDS + "s";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + String.valueOf(failure.getMessage());
+}
+        finally {
+            if (executor != null) {
+                executor.shutdownNow();
+}
+}
+}
 
     public static CompletableFuture<String> P(String var0, String var1, Executor var2) {
         return CompletableFuture.supplyAsync(() -> {
@@ -98,8 +171,8 @@ public final class AuthService {
                 var8.setConfig(e);
                 var8.setHeader("Content-Type", "application/json");
                 var8.setEntity((HttpEntity)new StringEntity(String.format("{\"identityToken\": \"XBL3.0 x=%s;%s\"}", var1, var0)));
-                CloseableHttpResponse var9 = var6.execute((HttpUriRequest)var8);
-                JsonObject var10 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var9.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var6, (HttpUriRequest)var8);
+                JsonObject var10 = new JsonParser().parse(http.body).getAsJsonObject();
                 String string = Optional.ofNullable(var10.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception(var10.has("error") ? String.format("%s: %s", var10.get("error").getAsString(), var10.get("errorMessage").getAsString()) : "There was no access token or error description present."));
                 return string;
 }
@@ -126,8 +199,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/json");
                 var7.setEntity((HttpEntity)new StringEntity(var8.toString()));
-                CloseableHttpResponse var10 = var5.execute((HttpUriRequest)var7);
-                JsonObject var11 = var10.getStatusLine().getStatusCode() == 200 ? new JsonParser().parse(EntityUtils.toString((HttpEntity)var10.getEntity())).getAsJsonObject() : new JsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var11 = http.status == 200 ? new JsonParser().parse(http.body).getAsJsonObject() : new JsonObject();
                 String string = Optional.ofNullable(var11.get("Token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> new Exception(var11.has("XErr") ? String.format("%s: %s", var11.get("XErr").getAsString(), var11.get("Message").getAsString()) : "There was no access token or error description present."));
                 return string;
 }
@@ -141,7 +214,7 @@ public final class AuthService {
 }
     public static URI P(String var2) {
         try {
-            URIBuilder var3 = new URIBuilder("https://login.live.com/oauth20_authorize.srf").addParameter("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2").addParameter("response_type", "code").addParameter("redirect_uri", String.format("http://localhost:%d/callback", 25575)).addParameter("scope", "XboxLive.signin XboxLive.offline_access").addParameter("state", var2).addParameter("prompt", "select_account");
+            URIBuilder var3 = new URIBuilder("https://login.live.com/oauth20_authorize.srf").addParameter("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2").addParameter("response_type", "code").addParameter("redirect_uri", String.format("http://localhost:%d/callback", CALLBACK_PORT)).addParameter("scope", "XboxLive.signin XboxLive.offline_access").addParameter("state", var2).addParameter("prompt", "select_account");
             return var3.build();
 }
         catch (Exception var4) {
@@ -155,8 +228,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/x-www-form-urlencoded");
                 var7.setEntity((HttpEntity)new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2"), new BasicNameValuePair("grant_type", "authorization_code"), new BasicNameValuePair("code", var0), new BasicNameValuePair("redirect_uri", String.format("http://localhost:%d/callback", 25575))), "UTF-8"));
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 String var10 = Optional.ofNullable(var9.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> {
                     long var1xx = a ^ 0x3816C65E69DCL;
                     return new Exception(var9.has("error") ? String.format("%s: %s", var9.get("error").getAsString(), var9.get("error_description").getAsString()) : "There was no Microsoft access token or error description present.");
@@ -195,8 +268,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/json");
                 var7.setEntity((HttpEntity)new StringEntity(var8.toString()));
-                CloseableHttpResponse var11 = var5.execute((HttpUriRequest)var7);
-                JsonObject var12 = var11.getStatusLine().getStatusCode() == 200 ? new JsonParser().parse(EntityUtils.toString((HttpEntity)var11.getEntity())).getAsJsonObject() : new JsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var12 = http.status == 200 ? new JsonParser().parse(http.body).getAsJsonObject() : new JsonObject();
                 Map map = Optional.ofNullable(var12.get("Token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).map(var1xx -> {
                     String var4 = var12.get("DisplayClaims").getAsJsonObject().get("xui").getAsJsonArray().get(0).getAsJsonObject().get("uhs").getAsString();
                     HashMap<String, String> var5x = new HashMap<String, String>();
@@ -224,58 +297,85 @@ public final class AuthService {
 }
     public static CompletableFuture<String> S(String var0, Executor var1) {
         return CompletableFuture.supplyAsync(() -> {
+            HttpServer server = null;
+            ExecutorService callbackExecutor = null;
             try {
-                HttpServer var3;
-                long var1x = 49014433104943L;
-                try {
-                    var3 = HttpServer.create(new InetSocketAddress(25575), 0);
-}
-                catch (IOException var12) {
-                    throw new CompletionException("Unable to start local auth server!", var12);
-}
-                CountDownLatch var4 = new CountDownLatch(1);
-                AtomicReference<Object> var5 = new AtomicReference<Object>(null);
-                AtomicReference<Object> var6 = new AtomicReference<Object>(null);
-                var3.createContext("/callback", var4x -> {
-                    Map<String, String> var7x = URLEncodedUtils.parse((String)var4x.getRequestURI().toString().replaceAll("/callback\\?", ""), (Charset)StandardCharsets.UTF_8).stream().collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-                    if (!var0.equals(var7x.get("state"))) {
-                        var6.set(String.format("State mismatch! Expected '%s' but got '%s'.", var0, var7x.get("state")));
-                    } else if (var7x.containsKey("code")) {
-                        var5.set(var7x.get("code"));
-                    } else if (var7x.containsKey("error")) {
-                        var6.set(String.format("%s: %s", var7x.get("error"), var7x.get("error_description")));
-}
-                    InputStream var8 = AuthService.class.getResourceAsStream("/callback.html");
-                    byte[] var9x = var8 != null ? IOUtils.toByteArray((InputStream)var8) : new byte[]{};
-                    var4x.getResponseHeaders().add("Content-Type", "text/html");
-                    var4x.sendResponseHeaders(200, var9x.length);
-                    var4x.getResponseBody().write(var9x);
-                    var4x.getResponseBody().close();
-                    var4.countDown();
-                });
-                try {
-                    var3.start();
-                    var4.await();
-                    String var13 = (String)Optional.ofNullable(var5.get()).filter(var0xx -> !StringUtils.isBlank((CharSequence)((CharSequence)var0xx))).orElseThrow(() -> new Exception(Optional.ofNullable(var6.get()).orElse("There was no auth code or error description present.")));
-                    var3.stop(2);
-                    return var13;
-}
-                catch (Throwable var11) {
-                    Throwable var7 = var11;
+                server = HttpServer.create(AuthService.callbackAddress(), 0);
+                callbackExecutor = AuthService.newCallbackExecutor();
+                server.setExecutor(callbackExecutor);
+
+                CountDownLatch latch = new CountDownLatch(1);
+                AtomicReference<String> code = new AtomicReference<String>(null);
+                AtomicReference<String> error = new AtomicReference<String>(null);
+
+                server.createContext("/callback", exchange -> {
                     try {
-                        var3.stop(2);
-                        throw var7;
+                        Map<String, String> query = URLEncodedUtils.parse(
+                                exchange.getRequestURI().toString().replaceFirst("^/callback\\??", ""),
+                                StandardCharsets.UTF_8).stream().collect(Collectors.toMap(
+                                        NameValuePair::getName,
+                                        NameValuePair::getValue,
+                                        (first, second) -> second));
+                        if (!var0.equals(query.get("state"))) {
+                            error.set(String.format("State mismatch! Expected '%s' but got '%s'.", var0, query.get("state")));
+                        } else if (query.containsKey("code")) {
+                            code.set(query.get("code"));
+                        } else if (query.containsKey("error")) {
+                            error.set(String.format("%s: %s", query.get("error"), query.get("error_description")));
+                        } else {
+                            error.set("There was no auth code or error description present.");
 }
-                    catch (InterruptedException var9) {
-                        throw new CancellationException("Microsoft auth code acquisition was cancelled!");
+                        byte[] body;
+                        try (InputStream in = AuthService.class.getResourceAsStream("/callback.html")) {
+                            body = in != null ? IOUtils.toByteArray(in) : new byte[0];
 }
-                    catch (Exception var10) {
-                        throw new CompletionException("Unable to acquire Microsoft auth code!", var10);
+                        exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                        exchange.sendResponseHeaders(200, body.length);
+                        exchange.getResponseBody().write(body);
+                    }
+                    catch (Throwable callbackFailure) {
+                        error.set("Local auth callback failed: " + String.valueOf(callbackFailure.getMessage()));
+                    }
+                    finally {
+                        try {
+                            exchange.getResponseBody().close();
 }
+                        catch (Throwable ignored) {
 }
+                        latch.countDown();
 }
-            catch (Throwable ex) {
-                throw Sneaky.rethrow(ex);
+                });
+
+                server.start();
+                if (!latch.await(CALLBACK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new TimeoutException("Timed out waiting for Microsoft auth callback after "
+                            + CALLBACK_TIMEOUT_SECONDS + " seconds.");
+}
+                String authCode = code.get();
+                if (StringUtils.isBlank(authCode)) {
+                    throw new Exception(error.get() != null
+                            ? error.get()
+                            : "There was no auth code or error description present.");
+}
+                return authCode;
+}
+            catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new CancellationException("Microsoft auth code acquisition was cancelled!");
+}
+            catch (CancellationException cancelled) {
+                throw cancelled;
+}
+            catch (Exception failure) {
+                throw new CompletionException("Unable to acquire Microsoft auth code!", failure);
+}
+            finally {
+                if (server != null) {
+                    server.stop(1);
+}
+                if (callbackExecutor != null) {
+                    callbackExecutor.shutdownNow();
+}
 }
         }, var1);
 }
@@ -285,8 +385,8 @@ public final class AuthService {
                 HttpGet var7 = new HttpGet(URI.create("https://api.minecraftservices.com/minecraft/profile"));
                 var7.setConfig(e);
                 var7.setHeader("Authorization", "Bearer " + var0);
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 if (var9.has("error")) {
                     throw new Exception(String.format("%s: %s", var9.get("error").getAsString(), var9.get("errorMessage").getAsString()));
 }
@@ -308,8 +408,8 @@ public final class AuthService {
                 var7.setConfig(e);
                 var7.setHeader("Content-Type", "application/x-www-form-urlencoded");
                 var7.setEntity((HttpEntity)new UrlEncodedFormEntity(Arrays.asList(new BasicNameValuePair("client_id", "42a60a84-599d-44b2-a7c6-b00cdef1d6a2"), new BasicNameValuePair("grant_type", "refresh_token"), new BasicNameValuePair("refresh_token", var0), new BasicNameValuePair("redirect_uri", String.format("http://localhost:%d/callback", 25575))), "UTF-8"));
-                CloseableHttpResponse var8 = var5.execute((HttpUriRequest)var7);
-                JsonObject var9 = new JsonParser().parse(EntityUtils.toString((HttpEntity)var8.getEntity())).getAsJsonObject();
+                HttpResult http = AuthService.execute(var5, (HttpUriRequest)var7);
+                JsonObject var9 = new JsonParser().parse(http.body).getAsJsonObject();
                 String var10 = Optional.ofNullable(var9.get("access_token")).map(JsonElement::getAsString).filter(var0xx -> !StringUtils.isBlank((CharSequence)var0xx)).orElseThrow(() -> {
                     long var1xx = a ^ 0x44814E318172L;
                     return new Exception(var9.has("error") ? String.format("%s: %s", var9.get("error").getAsString(), var9.get("error_description").getAsString()) : "There was no Microsoft access token or error description present.");
@@ -343,7 +443,8 @@ public final class AuthService {
 }
 }
     static {
-        P = 25575;
+        a = 56313239387342L;
+        P = CALLBACK_PORT;
         e = RequestConfig.custom().setConnectionRequestTimeout(30000).setConnectTimeout(30000).setSocketTimeout(30000).build();
 }
 }

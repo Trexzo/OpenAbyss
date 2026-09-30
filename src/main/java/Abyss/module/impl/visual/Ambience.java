@@ -21,28 +21,37 @@ import Abyss.setting.settings.NumberSetting;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.network.play.server.S03PacketTimeUpdate;
 import net.minecraft.network.play.server.S2BPacketChangeGameState;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class Ambience
 extends Module
 implements EventSubscriber {
+    private static long a;
+    static {
+        a = 81694087725472L;
+    }
     public static NumberSetting time;
     public static ModeSetting mode;
     public static NumberSetting speed;
     
     public void onUpdateWalkingPlayer(long var1, UpdateWalkingPlayerEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (Ambience.f.field_71439_g.field_70173_aa % 20 == 0) {
+        if (Ambience.f.thePlayer.ticksExisted % 20 == 0) {
             switch (mode.Y()) {
                 case "CLEAR": {
                     this.D((byte)-117);
                     break;
 }
                 case "RAIN": {
-                    Ambience.f.field_71441_e.func_72894_k(1.0f);
-                    Ambience.f.field_71441_e.func_72912_H().func_176142_i(0);
-                    Ambience.f.field_71441_e.func_72912_H().func_76080_g(Integer.MAX_VALUE);
-                    Ambience.f.field_71441_e.func_72912_H().func_76090_f(Integer.MAX_VALUE);
-                    Ambience.f.field_71441_e.func_72912_H().func_76084_b(true);
-                    Ambience.f.field_71441_e.func_72912_H().func_76069_a(false);
+                    Ambience.f.theWorld.setRainStrength(1.0f);
+                    Ambience.f.theWorld.getWorldInfo().setCleanWeatherTime(0);
+                    Ambience.f.theWorld.getWorldInfo().setRainTime(Integer.MAX_VALUE);
+                    Ambience.f.theWorld.getWorldInfo().setThunderTime(Integer.MAX_VALUE);
+                    Ambience.f.theWorld.getWorldInfo().setRaining(true);
+                    Ambience.f.theWorld.getWorldInfo().setThundering(false);
 }
 }
 }
@@ -58,7 +67,7 @@ implements EventSubscriber {
         var1 = a ^ var1;
 }
     public void onRender2D(Render2DEvent var1) {
-        Ambience.f.field_71441_e.func_72877_b((long)(time.L() + (float)System.currentTimeMillis() * speed.L()));
+        Ambience.f.theWorld.setWorldTime((long)(time.L() + (float)System.currentTimeMillis() * speed.L()));
 }
     @Override
     public String g(long var1) {
@@ -71,7 +80,7 @@ implements EventSubscriber {
         S2BPacketChangeGameState var7;
         if (var3.d instanceof S03PacketTimeUpdate) {
             var3.I(21307, 3074332907L);
-        } else if (var3.d instanceof S2BPacketChangeGameState && !mode.R("NONE") && ((var7 = (S2BPacketChangeGameState)var3.d).func_149138_c() == 1 || var7.func_149138_c() == 2)) {
+        } else if (var3.d instanceof S2BPacketChangeGameState && !mode.R("NONE") && ((var7 = (S2BPacketChangeGameState)var3.d).getGameState() == 1 || var7.getGameState() == 2)) {
             var3.I(21307, 3074332907L);
 }
 }
@@ -80,12 +89,12 @@ implements EventSubscriber {
         AmbienceBinder.K(var3, this);
 }
     private void D(byte var3) {
-        Ambience.f.field_71441_e.func_72894_k(0.0f);
-        Ambience.f.field_71441_e.func_72912_H().func_176142_i(Integer.MAX_VALUE);
-        Ambience.f.field_71441_e.func_72912_H().func_76080_g(0);
-        Ambience.f.field_71441_e.func_72912_H().func_76090_f(0);
-        Ambience.f.field_71441_e.func_72912_H().func_76084_b(false);
-        Ambience.f.field_71441_e.func_72912_H().func_76069_a(false);
+        Ambience.f.theWorld.setRainStrength(0.0f);
+        Ambience.f.theWorld.getWorldInfo().setCleanWeatherTime(Integer.MAX_VALUE);
+        Ambience.f.theWorld.getWorldInfo().setRainTime(0);
+        Ambience.f.theWorld.getWorldInfo().setThunderTime(0);
+        Ambience.f.theWorld.getWorldInfo().setRaining(false);
+        Ambience.f.theWorld.getWorldInfo().setThundering(false);
 }
     static {
         time = new NumberSetting("Time", 0.0f, 0.0f, 24000.0f, 10.0f);

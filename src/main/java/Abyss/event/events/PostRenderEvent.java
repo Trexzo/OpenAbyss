@@ -12,7 +12,7 @@ import net.minecraft.entity.EntityLivingBase;
 public class PostRenderEvent
 extends Event {
     public final EntityLivingBase z;
-    private static final long public PostRenderEvent(EntityLivingBase var3) {
+    public PostRenderEvent(EntityLivingBase var3) {
         this.z = var3;
 }
 }

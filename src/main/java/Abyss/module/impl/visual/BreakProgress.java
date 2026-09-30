@@ -22,32 +22,37 @@ import Abyss.util.render.CustomFont;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.BlockPos;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class BreakProgress
 extends Module
 implements EventSubscriber {
     private BlockPos p;
     private String g;
-    private static final long private double B;
+    private double B;
 
     public void onRender3D(Render3DEvent var1) {
         if (this.B != 0.0 && this.p != null) {
-            double var10 = (double)this.p.func_177958_n() + 0.5 - BreakProgress.f.func_175598_ae().field_78730_l;
-            double var12 = (double)this.p.func_177956_o() + 0.5 - BreakProgress.f.func_175598_ae().field_78731_m;
-            double var14 = (double)this.p.func_177952_p() + 0.5 - BreakProgress.f.func_175598_ae().field_78728_n;
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179109_b((float)((float)var10), (float)((float)var12), (float)((float)var14));
-            GlStateManager.func_179114_b((float)(-BreakProgress.f.func_175598_ae().field_78735_i), (float)0.0f, (float)1.0f, (float)0.0f);
-            GlStateManager.func_179114_b((float)BreakProgress.f.func_175598_ae().field_78732_j, (float)(LunarClientDetector.q(0L) ? 1.0f : this.g()), (float)0.0f, (float)0.0f);
-            GlStateManager.func_179152_a((float)-0.02266667f, (float)-0.02266667f, (float)-0.02266667f);
-            GlStateManager.func_179132_a((boolean)false);
-            GlStateManager.func_179097_i();
+            double var10 = (double)this.p.getX() + 0.5 - BreakProgress.f.getRenderManager().viewerPosX;
+            double var12 = (double)this.p.getY() + 0.5 - BreakProgress.f.getRenderManager().viewerPosY;
+            double var14 = (double)this.p.getZ() + 0.5 - BreakProgress.f.getRenderManager().viewerPosZ;
+            GlStateManager.pushMatrix();
+            GlStateManager.translate((float)((float)var10), (float)((float)var12), (float)((float)var14));
+            GlStateManager.rotate((float)(-BreakProgress.f.getRenderManager().playerViewY), (float)0.0f, (float)1.0f, (float)0.0f);
+            GlStateManager.rotate((float)BreakProgress.f.getRenderManager().playerViewX, (float)(LunarClientDetector.q(0L) ? 1.0f : this.g()), (float)0.0f, (float)0.0f);
+            GlStateManager.scale((float)-0.02266667f, (float)-0.02266667f, (float)-0.02266667f);
+            GlStateManager.depthMask((boolean)false);
+            GlStateManager.disableDepth();
             CustomFont var16 = Font.s(0L);
-            var16.v(this.g, -BreakProgress.f.field_71466_p.func_78256_a(this.g) / 2, -3.0f, -1, 88827598794260L, true);
-            GlStateManager.func_179126_j();
-            GlStateManager.func_179132_a((boolean)true);
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-            GlStateManager.func_179121_F();
+            var16.v(this.g, -BreakProgress.f.fontRendererObj.getStringWidth(this.g) / 2, -3.0f, -1, 88827598794260L, true);
+            GlStateManager.enableDepth();
+            GlStateManager.depthMask((boolean)true);
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            GlStateManager.popMatrix();
 }
 }
     @Override
@@ -68,12 +73,12 @@ implements EventSubscriber {
         this.g = (int)(100.0 * this.B) + "%";
 }
     public void onPostTick(int var1, PostTickEvent var2, short var3, short var4) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (!BreakProgress.f.field_71439_g.field_71075_bZ.field_75098_d && BreakProgress.f.field_71439_g.field_71075_bZ.field_75099_e) {
-            this.B = PlayerControllerStateAccessor.s(0L, BreakProgress.f.field_71442_b);
+        if (!BreakProgress.f.thePlayer.capabilities.isCreativeMode && BreakProgress.f.thePlayer.capabilities.allowEdit) {
+            this.B = PlayerControllerStateAccessor.s(0L, BreakProgress.f.playerController);
             if (this.B == 0.0) {
                 this.B();
             } else {
-                this.p = PlayerControllerStateAccessor.Z(BreakProgress.f.field_71442_b);
+                this.p = PlayerControllerStateAccessor.Z(BreakProgress.f.playerController);
                 this.w$r4();
 }
         } else {
@@ -85,7 +90,7 @@ implements EventSubscriber {
         BreakProgressBinder.Z(var3, this);
 }
     private float g() {
-        return BreakProgress.f.field_71474_y.field_74320_O == 2 ? -1.0f : 1.0f;
+        return BreakProgress.f.gameSettings.thirdPersonView == 2 ? -1.0f : 1.0f;
 }
     private static void a() {
 }

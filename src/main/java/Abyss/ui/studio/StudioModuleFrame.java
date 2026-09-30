@@ -40,12 +40,19 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class StudioModuleFrame {
+    private static long a = 12075157230319L;
+
     private float Z;
     private final Minecraft m;
     private boolean s;
-    private static long private static final float L = 11.5f;
+    private static final float L = 11.5f;
     private final Animation J;
     private final List<AbstractSettingComponent<?>> t;
     private static final float T = 4.0f;
@@ -164,7 +171,7 @@ public class StudioModuleFrame {
                 continue;
 }
             if (var19 instanceof ModeSetting) {
-                this.t.add(new ModeSettingComponent(24565, this.d, this, 6954670, -60, (ModeSetting)var19));
+                this.t.add(new ModeSettingComponent(24565, this.d, this, 6954670, (byte)196, (ModeSetting)var19));
                 continue;
 }
             if (var19 instanceof NumberSetting) {
@@ -331,7 +338,7 @@ public class StudioModuleFrame {
         int var6 = (int)((var4 ^ 0x4CF45ABB64AAL) >>> 48);
         long var7 = (var4 ^ 0x4CF45ABB64AAL) << 16 >>> 16;
         long var9 = var4 ^ 0x20901AC41B4BL;
-        if (this.m.field_71439_g != null) {
+        if (this.m.thePlayer != null) {
             this.M.u((short)var6, var7);
         } else {
             this.M.I(var9, !this.M.o());

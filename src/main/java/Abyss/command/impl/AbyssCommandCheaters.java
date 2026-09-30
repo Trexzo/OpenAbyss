@@ -36,8 +36,8 @@ extends Command {
 }
     @Override
     public void j(String[] var1, long var2) {
-        Minecraft var4 = Minecraft.func_71410_x();
-        if (var4 == null || var4.field_71441_e == null) {
+        Minecraft var4 = Minecraft.getMinecraft();
+        if (var4 == null || var4.theWorld == null) {
             AbyssCommands.chat("\u00a7cNot in a world.");
             return;
 }
@@ -50,7 +50,7 @@ extends Command {
         LinkedHashMap<UUID, CheaterRegistry> var7 = new LinkedHashMap<UUID, CheaterRegistry>();
         for (Map.Entry<UUID, EntityPlayer> entry : var5.entrySet()) {
             CheaterRegistry var10;
-            if (var4.field_71441_e.func_152378_a(entry.getKey()) == null || (var10 = var6.get(entry.getKey())) == null || !var10.M()) continue;
+            if (var4.theWorld.getPlayerEntityByUUID(entry.getKey()) == null || (var10 = var6.get(entry.getKey())) == null || !var10.M()) continue;
             var7.put(entry.getKey(), var10);
 }
         if (var7.isEmpty()) {
@@ -58,8 +58,8 @@ extends Command {
             return;
 }
         AbyssCommands.chat("\u00a77Flagged players:");
-        for (Map.Entry<UUID, Object> entry : var7.entrySet()) {
-            EntityPlayer var13 = var4.field_71441_e.func_152378_a(entry.getKey());
+        for (Map.Entry<UUID, CheaterRegistry> entry : var7.entrySet()) {
+            EntityPlayer var13 = var4.theWorld.getPlayerEntityByUUID(entry.getKey());
             if (var13 == null) continue;
             ArrayList<String> var14 = new ArrayList<String>();
             for (Map.Entry<DetectedCheat, Boolean> var16 : ((CheaterRegistry)entry.getValue()).e.entrySet()) {
@@ -67,7 +67,7 @@ extends Command {
                 DetectedCheat var17 = var16.getKey();
                 var14.add(var17.colorFormatCode + var17.name());
 }
-            AbyssCommands.chat("\u00a77" + var13.func_145748_c_().func_150254_d() + "\u00a78: " + String.join((CharSequence)"\u00a78, ", var14));
+            AbyssCommands.chat("\u00a77" + var13.getDisplayName().getFormattedText() + "\u00a78: " + String.join((CharSequence)"\u00a78, ", var14));
 }
 }
     @Override

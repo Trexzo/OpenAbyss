@@ -20,15 +20,15 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.scoreboard.ScoreObjective;
 
 public class GuiIngameHooks {
-    private static long private static long b = 1704908060083879945L;
+    private static long b = 1704908060083879945L;
 
     public static ItemStack updateTickGetCurrentItem(InventoryPlayer var0) {
         int var4;
         Scaffold var3 = Modules.J(Scaffold.class);
         if (var3 != null && var3.o() && Scaffold.fakeItem != null && Scaffold.fakeItem.c() && (var4 = var3.q()) >= 0 && var4 < (int)b) {
-            return var0.func_70301_a(var4);
+            return var0.getStackInSlot(var4);
 }
-        return var0.func_70448_g();
+        return var0.getCurrentItem();
 }
     public static void renderScoreboard(ScoreObjective var0, ScaledResolution var1, CallbackInfo var2) {
         if (!VisualSpoofRenderer.H()) {

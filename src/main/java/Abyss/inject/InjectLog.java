@@ -76,14 +76,10 @@ public final class InjectLog {
         PENDING.offer(text);
         InjectLog.startDrainer();
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static void startDrainer() {
         if (drainer != null) {
             return;
 }
-        Class<InjectLog> clazz = InjectLog.class;
         synchronized (InjectLog.class) {
             if (drainer == null) {
                 Thread thread = new Thread(new Runnable(){
@@ -98,8 +94,6 @@ public final class InjectLog {
                 thread.start();
                 drainer = thread;
 }
-            // ** MonitorExit[var0] (shouldn't be in output)
-            return;
 }
 }
     private static void runDrainer() {
@@ -113,6 +107,7 @@ public final class InjectLog {
                     Thread.currentThread().interrupt();
                     return;
 }
+                continue;
 }
             try {
                 System.out.println(text);
@@ -123,9 +118,6 @@ public final class InjectLog {
             InjectLog.append(text);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static void append(String text) {
         Object object = LOCK;
         synchronized (object) {

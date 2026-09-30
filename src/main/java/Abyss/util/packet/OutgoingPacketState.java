@@ -46,18 +46,18 @@ public class OutgoingPacketState {
     public static void D(long var0, Packet var2) {
         if (var2 instanceof C02PacketUseEntity) {
             E = true;
-            if (((C02PacketUseEntity)var2).func_149565_c() == C02PacketUseEntity.Action.INTERACT) {
+            if (((C02PacketUseEntity)var2).getAction() == C02PacketUseEntity.Action.INTERACT) {
                 h = true;
-            } else if (((C02PacketUseEntity)var2).func_179712_b() != null) {
+            } else if (((C02PacketUseEntity)var2).getHitVec() != null) {
                 h = true;
-            } else if (((C02PacketUseEntity)var2).func_149565_c() == C02PacketUseEntity.Action.INTERACT_AT) {
+            } else if (((C02PacketUseEntity)var2).getAction() == C02PacketUseEntity.Action.INTERACT_AT) {
                 h = true;
 }
 }
         if (var2 instanceof C07PacketPlayerDigging) {
             P = true;
             R = true;
-            if (((C07PacketPlayerDigging)var2).func_180762_c() == C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK) {
+            if (((C07PacketPlayerDigging)var2).getStatus() == C07PacketPlayerDigging.Action.STOP_DESTROY_BLOCK) {
                 C = true;
 }
 }
@@ -65,7 +65,7 @@ public class OutgoingPacketState {
             h = true;
 }
         if (var2 instanceof C09PacketHeldItemChange) {
-            if (((C09PacketHeldItemChange)var2).func_149614_c() != OutgoingPacketState.l.field_71439_g.field_71071_by.field_70461_c) {
+            if (((C09PacketHeldItemChange)var2).getSlotId() != OutgoingPacketState.l.thePlayer.inventory.currentItem) {
                 P = true;
 }
             O = true;

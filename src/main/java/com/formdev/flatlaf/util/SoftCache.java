@@ -64,7 +64,7 @@ implements Map<K, V> {
     @Override
     public void putAll(Map<? extends K, ? extends V> m2) {
         this.expungeStaleEntries();
-        for (Map.Entry<K, V> e : m2.entrySet()) {
+        for (Map.Entry<? extends K, ? extends V> e : m2.entrySet()) {
             this.put(e.getKey(), e.getValue());
 }
 }
@@ -95,7 +95,7 @@ implements Map<K, V> {
         throw new UnsupportedOperationException();
 }
     private void expungeStaleEntries() {
-        Reference<V> reference;
+        Reference<? extends V> reference;
         while ((reference = this.queue.poll()) != null) {
             this.map.remove(((CacheReference)reference).key);
 }

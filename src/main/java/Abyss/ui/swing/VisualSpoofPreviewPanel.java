@@ -27,6 +27,10 @@ import javax.swing.JPanel;
 
 class VisualSpoofPreviewPanel
 extends JPanel {
+    private static Map e;
+
+    private static long a;
+
     private static long[] c;
     private static String b;
     private volatile BufferedImage g;
@@ -34,6 +38,32 @@ extends JPanel {
     
     
 
+    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+
+        for (int var4 = 0; var4 < var2; var4++) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << '\f');
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+
+        return new String(var3, 0, var1);
+    }
     VisualSpoofPreviewPanel(VisualSpoofWindowCloseListener var1) {
         this();
 }
@@ -70,6 +100,7 @@ extends JPanel {
     private VisualSpoofPreviewPanel() {
 }
     static {
+        a = 44558175713610L;
         try {
             Cipher var0;
             Cipher var13;

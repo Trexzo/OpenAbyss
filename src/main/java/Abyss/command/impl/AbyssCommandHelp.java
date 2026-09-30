@@ -18,7 +18,7 @@ extends Command {
     private static final String LINE_PREFIX = "  \u00a7l.";
     private static final String ALIAS_SEP = "\u00a7r, \u00a7l.";
     private static final String FOOTER_HELP = "\u00a7bUse .help <command> to get usage of a specific command";
-    private static final String FOOTER_MODULE = "\u00a7aUse .<module> to configure a module's setting";
+    private static final String FOOTER_MODULE = "\u00a7aUse .<module> <setting> [value] to inspect or configure a module setting";
 
     @Override
     public boolean J() {
@@ -60,7 +60,7 @@ extends Command {
         AbyssCommands.chat(FOOTER_HELP);
         AbyssCommands.chat(FOOTER_MODULE);
         AbyssCommands.chat("\u00a78[restored] " + var3 + " of " + (var3 + var4) + " commands have a restored body" + (var4 == 0 ? "." : "; the other " + var4 + " print the stock client's own text only (" + var5 + " with its real usage)."));
-        AbyssCommands.chat("\u00a78[note] the .<module> line above is generic stock text; configure a module directly with \u00a7f.<module>\u00a78. " + AbyssCommandHelp.namedModules() + " modules are reachable by name.");
+        AbyssCommands.chat("\u00a78[restored] module settings are Java-backed: \u00a7f.<module> <setting> [value]\u00a78. " + AbyssCommandHelp.namedModules() + " modules are reachable by name.");
 }
     @Override
     public void j(String[] var1, long var2) {
@@ -80,7 +80,12 @@ extends Command {
             catch (Throwable throwable) {
 }
 }
-        AbyssCommands.chat("\u00a7cNo command named \u00a7f" + var4 + "\u00a7c.");
+        Module module = AbyssCommands.module(var4);
+        if (module != null && StockCommandRegistry.J != null) {
+            StockCommandRegistry.J.j(new String[]{module.b()}, var2);
+            return;
+}
+        AbyssCommands.chat("\u00a7cNo command or module named \u00a7f" + var4 + "\u00a7c.");
 }
     @Override
     public List g(String[] var1, int var2, long var3) {
@@ -93,6 +98,18 @@ extends Command {
                     var5.add(var8[0]);
 }
                 catch (Throwable throwable) {}
+}
+            if (ModuleManager.S != null) {
+                for (Module module : ModuleManager.S) {
+                    try {
+                        String name = module == null ? null : module.b();
+                        if (name != null && !name.startsWith("?")) {
+                            var5.add(name);
+}
+}
+                    catch (Throwable ignored) {
+}
+}
 }
 }
         return var5;

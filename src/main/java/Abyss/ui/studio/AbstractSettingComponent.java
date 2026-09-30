@@ -16,6 +16,11 @@ import Abyss.util.render.FontUtil;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
 import net.minecraft.client.Minecraft;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public abstract class AbstractSettingComponent<T extends Setting> {
     private static long b = 58681122439128L;
@@ -37,7 +42,7 @@ public abstract class AbstractSettingComponent<T extends Setting> {
         this.M = var1;
         this.d = var2;
         this.S = var2.E();
-        this.O = var3;
+        this.O = (T)var3;
 }
     public T y() {
         return this.O;

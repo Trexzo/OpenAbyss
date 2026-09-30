@@ -10,6 +10,7 @@ import Abyss.command.AbyssCommands;
 import Abyss.command.Command;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
+import Abyss.util.KeyBindUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.input.Keyboard;
@@ -41,7 +42,7 @@ extends Command {
         for (int var4 = 0; var4 < USAGE.length; ++var4) {
             AbyssCommands.chat("\u00a7f" + USAGE[var4]);
 }
-        AbyssCommands.chat("\u00a78Key names are LWJGL names, e.g. R, LSHIFT, NUMPAD0.");
+        AbyssCommands.chat("\u00a78Keys: LWJGL names (R, LSHIFT, NUMPAD0) plus LMB/RMB/MMB, SIDE1/SIDE2, MOUSE1...");
         int var3 = AbyssCommands.placeholderCount();
         if (var3 > 0) {
             AbyssCommands.chat("\u00a78" + var3 + " module(s) have no confirmed name yet and cannot be bound.");
@@ -100,12 +101,13 @@ extends Command {
             return;
 }
         int var6 = var4.h();
+        int expectedStored = KeyBindUtil.m(0L, var5);
         if (var6 == 0) {
             AbyssCommands.chat("\u00a7a" + var4.b() + "\u00a77 is now unbound.");
-        } else if (var6 == var5) {
+        } else if (var6 == expectedStored) {
             AbyssCommands.chat("\u00a7a" + var4.b() + "\u00a77 bound to \u00a7f" + AbyssCommandBind.keyName(var6) + "\u00a77.");
         } else {
-            AbyssCommands.chat("\u00a7a" + var4.b() + "\u00a77 bound; stored code \u00a7f" + var6 + "\u00a77 (\u00a7f" + AbyssCommandBind.keyName(var6) + "\u00a77), remapped from " + var5 + ".");
+            AbyssCommands.chat("\u00a7a" + var4.b() + "\u00a77 bound; stored code \u00a7f" + var6 + "\u00a77 (\u00a7f" + AbyssCommandBind.keyName(var6) + "\u00a77), expected " + expectedStored + " from input " + var5 + ".");
 }
         AbyssCommands.chat("\u00a78Not saved yet -- use \u00a77.config save <name>\u00a78 to persist it.");
 }
@@ -175,10 +177,11 @@ extends Command {
                 AbyssCommands.chat("\u00a7cUnknown key \u00a7f" + var0[var2] + "\u00a7c.");
                 continue;
 }
+            int storedKey = KeyBindUtil.m(0L, var3);
             if (ModuleManager.S == null) continue;
             for (Module var5 : ModuleManager.S) {
-                if (var5 == null || var5.S() || var5.h() != var3 || !AbyssCommandBind.write(var5, 0)) continue;
-                AbyssCommands.chat("\u00a77" + var5.b() + " \u00a78unbound from \u00a7f" + AbyssCommandBind.keyName(var3));
+                if (var5 == null || var5.S() || var5.h() != storedKey || !AbyssCommandBind.write(var5, 0)) continue;
+                AbyssCommands.chat("\u00a77" + var5.b() + " \u00a78unbound from \u00a7f" + AbyssCommandBind.keyName(storedKey));
                 ++var1;
 }
 }
@@ -229,12 +232,19 @@ extends Command {
 }
 }
     private static int parseKey(String var0) {
+        if (var0 == null) {
+            return -1;
+}
         if ("none".equalsIgnoreCase(var0) || "null".equalsIgnoreCase(var0) || "0".equals(var0)) {
             return 0;
 }
-        int var1 = Keyboard.getKeyIndex((String)var0.toUpperCase());
-        if (var1 != 0) {
-            return var1;
+        int runtimeCode = KeyBindUtil.a(0L, var0);
+        if (runtimeCode != Integer.MIN_VALUE) {
+            if (runtimeCode >= 0) {
+                return runtimeCode;
+}
+            int mouseIndex = KeyBindUtil.x(runtimeCode, 0L);
+            return mouseIndex >= 0 ? MOUSE_BASE + mouseIndex : -1;
 }
         try {
             int var2 = Integer.parseInt(var0);
@@ -245,13 +255,9 @@ extends Command {
 }
 }
     private static String keyName(int var0) {
-        if (var0 == 0) {
-            return "NONE";
+        return KeyBindUtil.p(0L, '\u0000', var0);
 }
-        String var1 = Keyboard.getKeyName((int)var0);
-        return var1 == null ? String.valueOf(var0) : var1;
-}
-    static synchronized boolean gateOk() {
+    public static synchronized boolean gateOk() {
         String var1;
         if (trusted != null) {
             return trusted;
@@ -286,8 +292,38 @@ extends Command {
         trusted = var0;
         return var0;
 }
-    static String gateNote() {
+    public static String gateNote() {
         return gateNote;
+}
+    public static String selfTest() {
+        try {
+            if (!AbyssCommandBind.gateOk()) {
+                return "FAIL gate " + gateNote;
+}
+            int rshift = AbyssCommandBind.parseKey("RSHIFT");
+            if (rshift <= 0 || !"RSHIFT".equalsIgnoreCase(AbyssCommandBind.keyName(rshift))) {
+                return "FAIL rshift code=" + rshift + " name=" + AbyssCommandBind.keyName(rshift);
+}
+            int lmb = AbyssCommandBind.parseKey("LMB");
+            int mouse1 = AbyssCommandBind.parseKey("MOUSE1");
+            if (lmb != 1000 || mouse1 != 1000 || KeyBindUtil.m(0L, lmb) != -100) {
+                return "FAIL mouse1 lmb=" + lmb + " mouse1=" + mouse1 + " stored=" + KeyBindUtil.m(0L, lmb);
+}
+            if (!"MOUSE1".equals(AbyssCommandBind.keyName(KeyBindUtil.m(0L, lmb)))) {
+                return "FAIL mouse1-name " + AbyssCommandBind.keyName(KeyBindUtil.m(0L, lmb));
+}
+            int side2 = AbyssCommandBind.parseKey("SIDE2");
+            if (side2 != 1004 || KeyBindUtil.m(0L, side2) != -96) {
+                return "FAIL side2=" + side2 + " stored=" + KeyBindUtil.m(0L, side2);
+}
+            if (AbyssCommandBind.parseKey("__INVALID__") != -1) {
+                return "FAIL invalid accepted";
+}
+            return "PASS keyboard mouse-fold display removal-normalization";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
+}
 }
     static {
         gateNote = "not run";

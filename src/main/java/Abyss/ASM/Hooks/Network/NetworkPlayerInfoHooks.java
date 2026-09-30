@@ -20,7 +20,7 @@ public class NetworkPlayerInfoHooks {
     private static String b;
     
     public static void getLocationCape(ResourceLocation var0, GameProfile var1, NetworkPlayerInfo var2, CallbackInfoReturnable<ResourceLocation> var3) {
-        if (var1.getId().equals(MinecraftRef.c((byte)0, (long)0L).field_71439_g.func_146103_bH().getId()) && !CustomCape.cape.R(b)) {
+        if (var1.getId().equals(MinecraftRef.c((byte)0, (long)0L).thePlayer.getGameProfile().getId()) && !CustomCape.cape.R(b)) {
             var3.setReturnValue(CustomCape.d(0L));
             var3.cancel();
         } else if (var0 == null) {

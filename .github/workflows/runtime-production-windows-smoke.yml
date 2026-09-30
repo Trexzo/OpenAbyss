@@ -1,0 +1,330 @@
+name: OpenAbyss Windows Production JAR Runtime Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+    paths:
+      - 'src/main/java/**'
+      - 'src/main/resources/**'
+      - 'build.gradle'
+      - 'launcher/**'
+      - 'tools/prepare-production-forge-profile.ps1'
+      - '.github/workflows/runtime-production-windows-smoke.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-production-windows-runtime-smoke
+  cancel-in-progress: true
+
+jobs:
+  production-runtime-smoke:
+    name: Production reobf JAR / normal Forge / Windows
+    runs-on: windows-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout recovery source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Install Gradle 2.14.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-bin.zip'
+          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
+          $userHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
+          & curl.exe -L --fail --silent --show-error 'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip' -o $zip
+          if ($LASTEXITCODE -ne 0) { throw "curl failed: $LASTEXITCODE" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
+          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
+          if (-not (Test-Path -LiteralPath $gradle)) { throw "Gradle missing: $gradle" }
+          "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "GRADLE_USER_HOME=$userHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & $gradle --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build exact production launcher package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon clean packageWindowsLauncher
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { exit $code }
+
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $hash = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash
+          Write-Host "PRODUCTION_PACKAGE=$package"
+          Write-Host "PRODUCTION_PACKAGE_SHA256=$hash"
+
+      - name: Prepare normal Minecraft 1.8.9 Forge profile
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mc = Join-Path $env:RUNNER_TEMP 'openabyss-production-minecraft'
+          Remove-Item -LiteralPath $mc -Recurse -Force -ErrorAction SilentlyContinue
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\prepare-production-forge-profile.ps1' -MinecraftDir $mc
+          if ($LASTEXITCODE -ne 0) {
+            throw "Production Forge profile preparation failed: $LASTEXITCODE"
+          }
+
+          $record = Join-Path $mc 'openabyss-production-profile.txt'
+          if (-not (Test-Path -LiteralPath $record -PathType Leaf)) {
+            throw "Production Forge profile record missing: $record"
+          }
+          Get-Content -LiteralPath $record | Out-Host
+          "OPENABYSS_PRODUCTION_MC=$mc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Extract shipped package and prove production install mode
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-production-package'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          $jar = Join-Path $out 'abyss.jar'
+          $info = Join-Path $out 'BUILD-INFO.txt'
+          foreach ($required in @($jar,$info,(Join-Path $out 'launch_abyss.ps1'))) {
+            if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
+              throw "Shipped production package member missing: $required"
+            }
+          }
+
+          $jarHash = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
+          $infoMap = @{}
+          foreach ($line in @(Get-Content -LiteralPath $info)) {
+            if ($line -match '^([^=]+)=(.*)$') { $infoMap[$matches[1]] = $matches[2] }
+          }
+          if ($infoMap['JAR_SHA256'] -ne $jarHash) {
+            throw "Shipped production JAR does not match BUILD-INFO: $jarHash"
+          }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'launch_abyss.ps1') -LauncherDir $out -MinecraftDir $env:OPENABYSS_PRODUCTION_MC -Java8 $env:JAVA_HOME -ModsFolder -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw "Production launcher preflight failed: $LASTEXITCODE" }
+
+          $preflight = Join-Path $out 'launcher-result.txt'
+          $preflightText = [IO.File]::ReadAllText($preflight)
+          if (-not $preflightText.Contains('OPENABYSS_STANDALONE_PREFLIGHT=PASS')) {
+            throw 'Production preflight PASS marker is missing.'
+          }
+          if (-not $preflightText.Contains('RUNTIME_INSTALL_MODE=mods-folder')) {
+            throw 'Production preflight did not use mods-folder mode.'
+          }
+          if (-not $preflightText.Contains('EXPLICIT_COREMOD_PROPERTY=false')) {
+            throw 'Production preflight still relies on explicit coremod property.'
+          }
+
+          $modsJar = Join-Path $out 'game\mods\abyss.jar'
+          if (-not (Test-Path -LiteralPath $modsJar -PathType Leaf)) {
+            throw "Production preflight did not install mods-folder JAR: $modsJar"
+          }
+          $modsHash = (Get-FileHash -LiteralPath $modsJar -Algorithm SHA256).Hash
+          if ($modsHash -ne $jarHash) {
+            throw "Production mods-folder JAR hash mismatch: $modsHash != $jarHash"
+          }
+
+          Write-Host "PRODUCTION_SHIPPED_JAR_SHA256=$jarHash"
+          Write-Host "PRODUCTION_MODS_FOLDER_SHA256=$modsHash"
+          Write-Host 'PRODUCTION_INSTALL_MODE_CONTRACT=PASS'
+
+          $profileEvidence = Join-Path $env:OPENABYSS_PRODUCTION_MC 'openabyss-production-profile.txt'
+          if (Test-Path -LiteralPath $profileEvidence -PathType Leaf) {
+            Copy-Item -LiteralPath $profileEvidence -Destination (Join-Path $out 'openabyss-production-profile.txt') -Force
+          }
+
+          "OPENABYSS_PRODUCTION_PACKAGE=$out" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Block Java outbound traffic for production runtime
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $java = Join-Path $env:JAVA_HOME 'bin\java.exe'
+          $javaw = Join-Path $env:JAVA_HOME 'bin\javaw.exe'
+          foreach ($exe in @($java,$javaw)) {
+            if (Test-Path -LiteralPath $exe) {
+              $name = 'OpenAbyss-Production-CI-Block-' + [IO.Path]::GetFileNameWithoutExtension($exe)
+              New-NetFirewallRule -DisplayName $name -Direction Outbound -Program $exe -Action Block -Profile Any | Out-Null
+              Write-Host "BLOCKED_OUTBOUND $exe"
+            }
+          }
+
+      - name: Run exact shipped production JAR for up to 100 seconds
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:GITHUB_TOKEN = $null
+          $env:ACTIONS_RUNTIME_TOKEN = $null
+          $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
+          $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
+          $env:ABYSS_PAYLOAD_KEY = $null
+          $env:JAVA_TOOL_OPTIONS = '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=true -Dabyss.runtimeSelfTest=true'
+
+          $launcher = Join-Path $env:OPENABYSS_PRODUCTION_PACKAGE 'launch_abyss.ps1'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -LauncherDir $env:OPENABYSS_PRODUCTION_PACKAGE -MinecraftDir $env:OPENABYSS_PRODUCTION_MC -Java8 $env:JAVA_HOME -ModsFolder -RunSeconds 100 -Username CIProduction
+          $launcherCode = $LASTEXITCODE
+          Write-Host "PRODUCTION_LAUNCHER_COMMAND_EXIT=$launcherCode"
+          "OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT=$launcherCode" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $result = Join-Path $env:OPENABYSS_PRODUCTION_PACKAGE 'launcher-result.txt'
+          if (-not (Test-Path -LiteralPath $result -PathType Leaf)) {
+            throw "Production launcher result is missing after launcher exit $launcherCode."
+          }
+          Get-Content -LiteralPath $result | Out-Host
+
+          # A software-OpenGL runner can terminate Minecraft before the bounded
+          # timeout. Do not classify that here: the next step inspects Forge,
+          # Abyss bootstrap/census, linkage failures, and the exact GL failure.
+          Write-Host 'PRODUCTION_RUNTIME_EXIT_DEFERRED_TO_EVIDENCE_VALIDATOR'
+
+      - name: Validate exact production runtime evidence
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pkg = $env:OPENABYSS_PRODUCTION_PACKAGE
+          $game = Join-Path $pkg 'game'
+          $stdout = Join-Path $pkg 'minecraft.stdout.log'
+          $stderr = Join-Path $pkg 'minecraft.stderr.log'
+          $latest = Join-Path $game 'logs\latest.log'
+          $result = Join-Path $pkg 'launcher-result.txt'
+          $census = Join-Path $game 'abyss-census.tsv'
+          $diag = Join-Path $game 'abyss-bootstrap-diagnostics.txt'
+          $bootstrap = Join-Path $game 'abyss-bootstrap-stage.txt'
+          $runtime = Join-Path $game 'abyss-runtime-stage.txt'
+          $moduleFailure = Join-Path $game 'abyss-module-failure.txt'
+          $featureFailure = Join-Path $game 'abyss-feature-failure.txt'
+
+          $combined = ''
+          foreach ($file in @($stdout,$stderr,$latest)) {
+            if (Test-Path -LiteralPath $file -PathType Leaf) {
+              $combined += [Environment]::NewLine + [IO.File]::ReadAllText($file)
+            }
+          }
+
+          $resultText = [IO.File]::ReadAllText($result)
+          if (-not $resultText.Contains('RUNTIME_INSTALL_MODE=mods-folder')) {
+            throw 'Production runtime did not use mods-folder installation.'
+          }
+          if (-not $resultText.Contains('EXPLICIT_COREMOD_PROPERTY=false')) {
+            throw 'Production runtime used an explicit coremod property.'
+          }
+
+          $jar = Join-Path $pkg 'abyss.jar'
+          $modsJar = Join-Path $game 'mods\abyss.jar'
+          $jarHash = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
+          $modsHash = (Get-FileHash -LiteralPath $modsJar -Algorithm SHA256).Hash
+          if ($jarHash -ne $modsHash) {
+            throw "Runtime mods JAR changed: $modsHash != $jarHash"
+          }
+
+          $forgeLaunch = $combined -match 'Forge Mod Loader|MinecraftForge v|Launching wrapped minecraft|LWJGL Version'
+          $transformer = $combined -match 'Class Transformer initialized|Abyss Class Transformer|Abyss\.ASM\.CoreMod'
+          $bootstrapFailed = $combined -match '\[abyss-inject\].*client failed to start'
+          $initializerFailure = $combined -match 'ExceptionInInitializerError'
+          $linkageFailure = $combined -match 'NoSuchMethodError|NoSuchFieldError|NoClassDefFoundError|ClassNotFoundException|VerifyError|AbstractMethodError'
+          $graphicsLimited = ($combined -match 'OpenGL: GDI Generic GL version 1\.1\.0') -and ($combined -match 'OpenGL 1\.4 is not supported|Texture creation: Invalid enum')
+
+          Write-Host "PRODUCTION_FORGE_LAUNCH_EVIDENCE=$forgeLaunch"
+          Write-Host "PRODUCTION_TRANSFORMER_EVIDENCE=$transformer"
+          Write-Host "PRODUCTION_BOOTSTRAP_FAILURE=$bootstrapFailed"
+          Write-Host "PRODUCTION_INITIALIZER_FAILURE=$initializerFailure"
+          Write-Host "PRODUCTION_LINKAGE_FAILURE=$linkageFailure"
+          Write-Host "PRODUCTION_GRAPHICS_LIMITED=$graphicsLimited"
+
+          if (-not $forgeLaunch) { throw 'No normal Forge launch evidence was observed.' }
+          if ($bootstrapFailed) { throw 'Production JAR emitted explicit Abyss bootstrap failure.' }
+          if ($initializerFailure) { throw 'Production JAR hit ExceptionInInitializerError.' }
+          if ($linkageFailure) { throw 'Production JAR hit a linkage/class-resolution failure.' }
+
+          $censusReady = Test-Path -LiteralPath $census -PathType Leaf
+          $diagReady = Test-Path -LiteralPath $diag -PathType Leaf
+          Write-Host "PRODUCTION_CENSUS_READY=$censusReady"
+          Write-Host "PRODUCTION_DIAGNOSTICS_READY=$diagReady"
+
+          if ($censusReady) {
+            $rows = @(Get-Content -LiteralPath $census | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            Write-Host "PRODUCTION_MODULE_CENSUS_COUNT=$($rows.Count)"
+            if ($rows.Count -ne 112) {
+              throw "Production module census is $($rows.Count), expected 112."
+            }
+          }
+
+          if ($diagReady) {
+            $diagText = [IO.File]::ReadAllText($diag)
+            foreach ($required in @(
+              '[ABYSSDIAG] module count     = 112 of 112 OK',
+              '[ABYSSDIAG] census names       = 112 of 112 (truth 112)',
+              '[ABYSSDIAG] module usability   = toggleable=109 stockDisabled=3 invalid=0 nullSettings=0',
+              '[ABYSSDIAG] eventbus selftest  = PASS',
+              '[ABYSSDIAG] module selftest    = PASS',
+              '[ABYSSDIAG] config selftest    = PASS'
+            )) {
+              if (-not $diagText.Contains($required)) {
+                throw "Production bootstrap diagnostic is missing: $required"
+              }
+            }
+            Write-Host 'PRODUCTION_BOOTSTRAP_DIAGNOSTIC_CONTRACT=PASS'
+          }
+
+          $launcherCommandExit = -1
+          if ($env:OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT -match '^-?\d+$') {
+            $launcherCommandExit = [int]$env:OPENABYSS_PRODUCTION_LAUNCHER_COMMAND_EXIT
+          }
+          Write-Host "PRODUCTION_LAUNCHER_COMMAND_EXIT_EVIDENCE=$launcherCommandExit"
+
+          if (-not $censusReady -and -not $diagReady) {
+            if ($graphicsLimited) {
+              Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_GRAPHICS_LIMITED'
+            } else {
+              throw 'Normal Forge process launched but production Abyss bootstrap evidence was not produced.'
+            }
+          } elseif ($graphicsLimited) {
+            Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_PASS_GRAPHICS_LIMITED'
+          } else {
+            Write-Host 'PRODUCTION_RUNTIME_BOOTSTRAP_PASS'
+          }
+
+          if ($launcherCommandExit -ne 0 -and -not $graphicsLimited) {
+            throw "Production launcher returned $launcherCommandExit without the known graphics-limited runner condition."
+          }
+
+          if (Test-Path -LiteralPath $moduleFailure -PathType Leaf) {
+            $failureText = [IO.File]::ReadAllText($moduleFailure).Trim()
+            if ($failureText) { throw "Production module lifecycle failure recorded: $failureText" }
+          }
+
+          Write-Host 'PRODUCTION_RUNTIME_LINKAGE_CONTRACT=PASS'
+          Write-Host "PRODUCTION_JAR_SHA256=$jarHash"
+
+      - name: Upload production runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-windows-production-runtime-smoke
+          path: |
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\launcher-result.txt
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\launcher-latest.log
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\minecraft.stdout.log
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\minecraft.stderr.log
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\game\logs\**
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\game\crash-reports\**
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\game\abyss-*.txt
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\game\abyss-*.tsv
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\abyss.jar
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\BUILD-INFO.txt
+            ${{ env.OPENABYSS_PRODUCTION_PACKAGE }}\openabyss-production-profile.txt
+          if-no-files-found: warn
+          retention-days: 7

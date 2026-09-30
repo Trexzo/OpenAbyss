@@ -9,7 +9,7 @@ import Abyss.event.invoker.AutoToolServicePreTickInvoker;
 import Abyss.util.AutoToolService;
 
 public final class AutoToolServiceBinder {
-    private static final long public static void z(EventBus var2, AutoToolService var3) {
+    public static void z(EventBus var2, AutoToolService var3) {
         var2.R(var3, PreTickEvent.class, 3, new AutoToolServicePreTickInvoker(var3));
 }
     private AutoToolServiceBinder() {

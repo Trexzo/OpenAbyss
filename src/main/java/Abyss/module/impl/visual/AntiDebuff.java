@@ -9,7 +9,7 @@ import Abyss.setting.Setting;
 
 public class AntiDebuff
 extends Module {
-    private static final long public AntiDebuff(long var1) {
+    public AntiDebuff(long var1) {
         super(0x274492DF5667L ^ var1 ^ 0x782A9A62245L);
         this.declare("AntiDebuff", Category.Visual, "Remove debuff rendering", new Setting[0]);
         var1 = 0x274492DF5667L ^ var1;

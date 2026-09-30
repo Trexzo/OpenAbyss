@@ -57,9 +57,16 @@ import net.minecraft.util.ChatAllowedCharacters;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class VestigeClickGuiScreen
 extends GuiScreen {
+    private static long a;
+
     private static int c;
     private static Color k;
         private static Map<Module, Boolean> p;
@@ -96,14 +103,14 @@ extends GuiScreen {
         this.Y = 0;
         VestigeClickGuiScreen.M();
 }
-    protected void func_73869_a(char var1, int var2) {
+    protected void keyTyped(char var1, int var2) {
         if (var2 == 1) {
             if (this.K != null) {
                 this.Q();
             } else {
-                this.field_146297_k.func_147108_a(null);
-                if (this.field_146297_k.field_71462_r == null) {
-                    this.field_146297_k.func_71381_h();
+                this.mc.displayGuiScreen(null);
+                if (this.mc.currentScreen == null) {
+                    this.mc.setIngameFocus();
 }
                 this.j(1310, 48485, '\ua408');
 }
@@ -164,22 +171,22 @@ extends GuiScreen {
         CustomFont var22 = this.s(var15);
         if (var1.o()) {
             for (int var23 = var2; var23 < var4; ++var23) {
-                Gui.func_73734_a((int)var23, (int)var3, (int)(var23 + 1), (int)var5, (int)this.S(var20, var23));
+                Gui.drawRect((int)var23, (int)var3, (int)(var23 + 1), (int)var5, (int)this.S(var20, var23));
 }
         } else {
-            Gui.func_73734_a((int)var2, (int)var3, (int)var4, (int)var5, (int)w.getRGB());
+            Gui.drawRect((int)var2, (int)var3, (int)var4, (int)var5, (int)w.getRGB());
 }
         if (this.B(var1)) {
             double var28 = var4 - 11;
             double var25 = var3 + 7;
             int var27 = new Color(225, 225, 225).getRGB();
-            Gui.func_73734_a((int)((int)var28), (int)((int)var25), (int)(var4 - 5), (int)((int)(var25 + 1.0)), (int)var27);
-            Gui.func_73734_a((int)((int)(var28 + 1.0)), (int)((int)(var25 + 1.0)), (int)(var4 - 6), (int)((int)(var25 + 2.0)), (int)var27);
-            Gui.func_73734_a((int)((int)(var28 + 2.0)), (int)((int)(var25 + 2.0)), (int)(var4 - 7), (int)((int)(var25 + 3.0)), (int)var27);
+            Gui.drawRect((int)((int)var28), (int)((int)var25), (int)(var4 - 5), (int)((int)(var25 + 1.0)), (int)var27);
+            Gui.drawRect((int)((int)(var28 + 1.0)), (int)((int)(var25 + 1.0)), (int)(var4 - 6), (int)((int)(var25 + 2.0)), (int)var27);
+            Gui.drawRect((int)((int)(var28 + 2.0)), (int)((int)(var25 + 2.0)), (int)(var4 - 7), (int)((int)(var25 + 3.0)), (int)var27);
 }
         var22.T(var11, this.a(var1.Q(var17, (char)var18, (char)var19), var4 - var2 - 18, var13), var2 + 4, var3 + 5, Z.getRGB());
 }
-    public boolean func_73868_f() {
+    public boolean doesGuiPauseGame() {
         return false;
 }
     private void g(Module var1, Setting var2, int var3, int var4, int var5, int var6, long var7) throws Throwable {
@@ -217,8 +224,8 @@ extends GuiScreen {
         CustomFont var24 = this.s(var22);
         double var25 = var5 - var3;
         double var27 = (double)var3 + (double)(var2.L() - var2.i()) * var25 / (double)(var2.F() - var2.i());
-        Gui.func_73734_a((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
-        Gui.func_73734_a((int)var3, (int)var4, (int)((int)var27), (int)var6, (int)new Color(25, 25, 25).getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)((int)var27), (int)var6, (int)new Color(25, 25, 25).getRGB());
         String var29 = var2.e((byte)var15, var1, var16) + " : " + var2.L();
         var24.T(var13, this.a(var29, var5 - var3 - 10, var20), var3 + 4, var4 + 3, t.getRGB());
         if (this.F(var2)) {
@@ -247,9 +254,9 @@ extends GuiScreen {
         double var27 = var7 - var5;
         float[] var29 = Color.RGBtoHSB(var2.k(var24) >> 16 & 0xFF, var2.k(var24) >> 8 & 0xFF, var2.k(var24) & 0xFF, null);
         double var30 = (double)var5 + (double)var29[0] * var27;
-        Gui.func_73734_a((int)var5, (int)var6, (int)var7, (int)var8, (int)q.getRGB());
-        Gui.func_73734_a((int)var5, (int)var6, (int)((int)var30), (int)var8, (int)new Color(25, 25, 25).getRGB());
-        Gui.func_73734_a((int)(var7 - 10), (int)(var6 + 2), (int)(var7 - 3), (int)(var8 - 2), (int)var2.k(var24));
+        Gui.drawRect((int)var5, (int)var6, (int)var7, (int)var8, (int)q.getRGB());
+        Gui.drawRect((int)var5, (int)var6, (int)((int)var30), (int)var8, (int)new Color(25, 25, 25).getRGB());
+        Gui.drawRect((int)(var7 - 10), (int)(var6 + 2), (int)(var7 - 3), (int)(var8 - 2), (int)var2.k(var24));
         String var32 = var2.e((byte)var15, var1, var16) + " : #" + var2.Q().toUpperCase();
         var26.T(var13, this.a(var32, var7 - var5 - 22, var18), var5 + 4, var6 + 3, t.getRGB());
         if (this.F(var2)) {
@@ -258,7 +265,7 @@ extends GuiScreen {
 }
     private void d(Module var1, HeaderSetting var2, int var3, int var4, int var5, int var6, long var7) {
         CustomFont var17 = this.s(13213047758594L);
-        Gui.func_73734_a((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
         var17.T(37697014677608L, this.a(var2.U(133728681395781L, var1), var5 - var3 - 10, 38580066682603L), var3 + 5, var4 + 3, h.getRGB());
 }
     private void U(Module var1, Setting var2, int var3, long var4, int var6, int var7, int var8, int var9) {
@@ -284,11 +291,11 @@ extends GuiScreen {
 }
     private void F(Module var1, BooleanSetting var2, int var3, int var4, int var5, long var6, int var8) {
         CustomFont var18 = this.s(13213047758594L);
-        Gui.func_73734_a((int)var3, (int)var4, (int)var5, (int)var8, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)var5, (int)var8, (int)q.getRGB());
         int var19 = var2.c() ? k.getRGB() : t.getRGB();
         var18.T(37697014677608L, this.a(var2.e((byte)0, var1, 121580628905660L), var5 - var3 - 10, 38580066682603L), var3 + 5, var4 + 3, var19);
 }
-    public void func_73863_a(int var1, int var2, float var3) {
+    public void drawScreen(int var1, int var2, float var3) {
         try {
             long var4 = 17448604102766L;
             VestigeClickGuiScreen.Y(2549667498153L);
@@ -338,7 +345,7 @@ extends GuiScreen {
                     int var37 = var32 + 18;
                     this.U(var35, var28, var36, var30, var37, (byte)0, 4872547, 15864346);
                     if (var33 && var35.o()) {
-                        this.func_73733_a(var28, var36, var30, var36 + 3, 0x60000000, 0x5000000);
+                        this.drawGradientRect(var28, var36, var30, var36 + 3, 0x60000000, 0x5000000);
 }
                     var32 += 18;
                     if (this.O(var35)) {
@@ -364,7 +371,7 @@ extends GuiScreen {
         long var11 = var6 ^ 0xEF7B0A2A184L;
         long var13 = var6 ^ 0x5449865417E4L;
         if (var2 == 0) {
-            if (this.field_146297_k.field_71439_g != null) {
+            if (this.mc.thePlayer != null) {
                 var1.u((short)var8, var9);
             } else {
                 var1.I(var11, !var1.o());
@@ -413,7 +420,7 @@ extends GuiScreen {
         long var20 = var10 ^ 0x569A05F0EB1L;
         long var22 = var10 ^ 0x2A7B58701758L;
         CustomFont var24 = this.s(var22);
-        Gui.func_73734_a((int)var3, (int)var6, (int)var7, (int)var8, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var6, (int)var7, (int)var8, (int)q.getRGB());
         String var25 = var2.e((byte)var17, var1, var18) + " : " + var2.a((char)var12, (short)var13, var1, var14);
         var24.T(var15, this.a(var25, var7 - var3 - 10, var20), var3 + 5, var6 + 3, t.getRGB());
 }
@@ -425,8 +432,8 @@ extends GuiScreen {
 }
         return HeaderSetting.prune(var2);
 }
-    public void func_146281_b() {
-        super.func_146281_b();
+    public void onGuiClosed() {
+        super.onGuiClosed();
         this.j(1310, 48485, '\ua408');
 }
     private CustomFont s(long var1) {
@@ -434,11 +441,11 @@ extends GuiScreen {
 }
     private void B(Module var1, Setting var2, int var3, int var4, int var5, long var6, int var8) {
         CustomFont var18 = this.s(13213047758594L);
-        Gui.func_73734_a((int)var3, (int)var4, (int)var5, (int)var8, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)var5, (int)var8, (int)q.getRGB());
         var18.T(37697014677608L, this.a(var2.e((byte)0, var1, 121580628905660L), var5 - var3 - 10, 38580066682603L), var3 + 5, var4 + 3, t.getRGB());
 }
-    public void func_73866_w_() {
-        super.func_73866_w_();
+    public void initGui() {
+        super.initGui();
         VestigeClickGuiScreen.Y(2549667498153L);
         VestigeClickGuiScreen.M();
         this.I = false;
@@ -454,7 +461,7 @@ extends GuiScreen {
         long var17 = var10 ^ 0x618684BD2382L;
         long var19 = var10 ^ 0x4E947C923A6BL;
         CustomFont var21 = this.s(var19);
-        Gui.func_73734_a((int)var4, (int)var5, (int)var8, (int)var9, (int)q.getRGB());
+        Gui.drawRect((int)var4, (int)var5, (int)var8, (int)var9, (int)q.getRGB());
         String var22 = this.K == var3 ? this.B + "_" : var3.X();
         String var23 = var3.e((byte)var14, var2, var15) + " : " + var22;
         var21.T(var12, this.a(var23, var8 - var4 - 10, var17), var4 + 5, var5 + 3, t.getRGB());
@@ -469,7 +476,7 @@ extends GuiScreen {
         long var19 = var8 ^ 0x193E18BEF17AL;
         CustomFont var21 = this.s(var17);
         int var22 = var3 + 14;
-        Gui.func_73734_a((int)var2, (int)var3, (int)var7, (int)var22, (int)q.getRGB());
+        Gui.drawRect((int)var2, (int)var3, (int)var7, (int)var22, (int)q.getRGB());
         String var23 = var1.h() == 0 ? "NONE" : KeyBindUtil.p(var12, (char)var14, var1.h());
         String var24 = this.o == var1 ? "Bind : " + Language.z("clickgui.bind.press", var19) : "Bind : " + var23;
         var21.T(var10, this.a(var24, var7 - var2 - 10, var15), var2 + 5, var3 + 3, t.getRGB());
@@ -484,7 +491,7 @@ extends GuiScreen {
         p.clear();
         Minecraft var10 = MinecraftRef.c((byte)var5, var6);
         ScaledResolution var11 = new ScaledResolution(var10);
-        int var12 = Math.max(1, Math.max(1, var11.func_78326_a() - 40) / 126);
+        int var12 = Math.max(1, Math.max(1, var11.getScaledWidth() - 40) / 126);
         Category[] var13 = Category.values();
         for (int var14 = 0; var14 < var13.length; ++var14) {
             int var15 = var14 % var12;
@@ -497,8 +504,8 @@ extends GuiScreen {
     private boolean d(int var1, int var2, int var3, int var4, int var5, int var6) {
         return var1 >= var3 && var1 <= var5 && var2 >= var4 && var2 <= var6;
 }
-    public void func_146274_d() {
-        super.func_146274_d();
+    public void handleMouseInput() throws java.io.IOException {
+        super.handleMouseInput();
         int var5 = Mouse.getDWheel();
         if (var5 != 0) {
             this.x(var5);
@@ -512,12 +519,12 @@ extends GuiScreen {
                 if (!this.B.isEmpty()) {
                     this.B = this.B.substring(0, this.B.length() - 1);
 }
-            } else if (GuiScreen.func_146271_m() && var4 == 47) {
-                String var5 = GuiScreen.func_146277_j();
+            } else if (GuiScreen.isCtrlKeyDown() && var4 == 47) {
+                String var5 = GuiScreen.getClipboardString();
                 if (var5 != null) {
                     this.B = this.B + var5;
 }
-            } else if (ChatAllowedCharacters.func_71566_a((char)var3)) {
+            } else if (ChatAllowedCharacters.isAllowedCharacter((char)var3)) {
                 this.B = this.B + var3;
 }
 }
@@ -544,7 +551,7 @@ extends GuiScreen {
             int var19 = var6;
             int var20 = var6 + 14;
             if (var14 == 0) {
-                Gui.func_73734_a((int)var17, (int)var19, (int)var18, (int)(var19 + 0), (int)q.getRGB());
+                Gui.drawRect((int)var17, (int)var19, (int)var18, (int)(var19 + 0), (int)q.getRGB());
                 var19 = var6 += 0;
                 var20 = var6 + 14;
 }
@@ -573,10 +580,10 @@ extends GuiScreen {
         int var18 = Color.HSBtoRGB(var13, var16, var17) & 0xFFFFFF;
         var1.e(String.format("%06X", var18));
 }
-    protected void func_73864_a(int var1, int var2, int var3) {
+    protected void mouseClicked(int var1, int var2, int var3) {
         try {
             long var4 = 41053911563077L;
-            super.func_73864_a(var1, var2, var3);
+            super.mouseClicked(var1, var2, var3);
             if (this.o != null && var3 > 2) {
                 this.o.z(118276941480361L, KeyBindUtil.w('\u0000', var3, 132797583844084L));
                 this.o = null;
@@ -628,14 +635,14 @@ extends GuiScreen {
 }
 }
     private void B(long var1) {
-        this.K(139064014055973L, this.field_146297_k.field_71474_y.field_74351_w);
-        this.K(139064014055973L, this.field_146297_k.field_71474_y.field_74370_x);
-        this.K(139064014055973L, this.field_146297_k.field_71474_y.field_74366_z);
-        this.K(139064014055973L, this.field_146297_k.field_71474_y.field_74368_y);
-        this.K(139064014055973L, this.field_146297_k.field_71474_y.field_74314_A);
+        this.K(139064014055973L, this.mc.gameSettings.keyBindForward);
+        this.K(139064014055973L, this.mc.gameSettings.keyBindLeft);
+        this.K(139064014055973L, this.mc.gameSettings.keyBindRight);
+        this.K(139064014055973L, this.mc.gameSettings.keyBindBack);
+        this.K(139064014055973L, this.mc.gameSettings.keyBindJump);
 }
-    protected void func_146286_b(int var1, int var2, int var3) {
-        super.func_146286_b(var1, var2, var3);
+    protected void mouseReleased(int var1, int var2, int var3) {
+        super.mouseReleased(var1, var2, var3);
         this.I = false;
         this.s = null;
         for (ClickGuiPanel var7 : L.values()) {
@@ -657,8 +664,8 @@ extends GuiScreen {
         CustomFont var21 = this.s(13213047758594L);
         double var22 = var5 - var3;
         double var24 = (double)var3 + (double)var2.k() * var22 / 100.0;
-        Gui.func_73734_a((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
-        Gui.func_73734_a((int)var3, (int)var4, (int)((int)var24), (int)var6, (int)new Color(25, 25, 25).getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)var5, (int)var6, (int)q.getRGB());
+        Gui.drawRect((int)var3, (int)var4, (int)((int)var24), (int)var6, (int)new Color(25, 25, 25).getRGB());
         String var26 = var2.e((byte)0, var1, 121580628905660L) + " : " + var2.k() + "%";
         var21.T(37697014677608L, this.a(var26, var5 - var3 - 10, 38580066682603L), var3 + 4, var4 + 3, t.getRGB());
         if (this.F(var2)) {
@@ -677,14 +684,14 @@ extends GuiScreen {
 }
 }
     private void K(long var1, KeyBinding var3) {
-        KeyBindUtil.A(82009306480869L, var3.func_151463_i(), GameSettings.func_100015_a((KeyBinding)var3));
+        KeyBindUtil.A(82009306480869L, var3.getKeyCode(), GameSettings.isKeyDown((KeyBinding)var3));
 }
     private int S(long var1, int var3) {
         int var6 = -252851571;
         return this.H(4.0f, (long)(-var3) * 3L);
 }
     private void n(long var1) {
-        if (this.field_146297_k.field_71439_g == null) {
+        if (this.mc.thePlayer == null) {
             this.F = System.currentTimeMillis();
         } else {
             long var5 = System.currentTimeMillis();
@@ -744,7 +751,7 @@ extends GuiScreen {
     private void q(Category var1, int var2, long var3, int var5, int var6, int var7) {
         CustomFont var16 = this.s(13213047758594L);
         for (int var17 = var2; var17 < var6; ++var17) {
-            Gui.func_73734_a((int)var17, (int)var5, (int)(var17 + 1), (int)var7, (int)this.S(90900632844740L, var17));
+            Gui.drawRect((int)var17, (int)var5, (int)(var17 + 1), (int)var7, (int)this.S(90900632844740L, var17));
 }
         var16.T(37697014677608L, this.q(var1, 95043846217018L), var2 + 5, var5 + 6, Z.getRGB());
 }
@@ -752,6 +759,7 @@ extends GuiScreen {
         return p.getOrDefault(var1, false);
 }
     static {
+        a = 14637767574010L;
         Z = new Color(240, 240, 240);
         t = new Color(240, 240, 240);
         q = new Color(50, 50, 50);

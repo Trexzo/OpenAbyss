@@ -11,7 +11,7 @@ import Abyss.event.invoker.ESPRender3DInvoker;
 import Abyss.module.impl.visual_utility.ESP;
 
 public final class ESPBinder {
-    private static final long private ESPBinder() {
+    private ESPBinder() {
 }
     public static void Y(EventBus var0, ESP var3) {
         var0.R(var3, PostTickEvent.class, 3, new ESPPostTickInvoker(var3));

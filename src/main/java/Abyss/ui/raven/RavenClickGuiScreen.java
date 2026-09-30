@@ -39,6 +39,8 @@ import org.lwjgl.opengl.GL11;
 
 public class RavenClickGuiScreen
 extends GuiScreen {
+    private static long a;
+
     private static long[] e;
     public static Map<Category, RavenCategoryPanel> P;
     public ScheduledFuture<?> C;
@@ -66,9 +68,9 @@ extends GuiScreen {
     public void V(Runnable var1) {
         this.t = var1;
 }
-    public void func_73869_a(char var1, int var2) {
+    public void keyTyped(char var1, int var2) {
         if (var2 == 1 && !this.D()) {
-            this.field_146297_k.func_147108_a(null);
+            this.mc.displayGuiScreen(null);
             Modules.c(0L);
         } else {
             for (RavenCategoryPanel var10 : P.values()) {
@@ -79,11 +81,11 @@ extends GuiScreen {
 }
 }
 }
-    public void func_73866_w_() {
-        super.func_73866_w_();
-        new GuiTextField(1, this.field_146297_k.field_71466_p, 22, this.field_146295_m - 100, 150, 20).func_146203_f(256);
+    public void initGui() {
+        super.initGui();
+        new GuiTextField(1, this.mc.fontRendererObj, 22, this.height - 100, 150, 20).setMaxStringLength(256);
 }
-    public void func_146281_b() {
+    public void onGuiClosed() {
         this.F = null;
         if (this.C != null) {
             this.C.cancel(true);
@@ -96,8 +98,8 @@ extends GuiScreen {
 }
 }
 }
-    public void func_146274_d() {
-        super.func_146274_d();
+    public void handleMouseInput() throws java.io.IOException {
+        super.handleMouseInput();
         int var6 = Mouse.getDWheel();
         if (var6 != 0) {
             this.I((short)0, var6);
@@ -132,7 +134,7 @@ extends GuiScreen {
             this.y -= 30;
 }
 }
-    public void func_73863_a(int var1, int var2, float var3) {
+    public void drawScreen(int var1, int var2, float var3) {
         try {
             long var4 = 118078875334807L;
             int var12 = (int)((var4 ^ 0x3FFEA90A83EFL) << 48 >>> 48);
@@ -152,10 +154,10 @@ extends GuiScreen {
             GL11.glScaled((double)var24, (double)var24, (double)1.0);
             int var42 = (int)((double)var1 / var24);
             int var43 = (int)((double)var2 / var24);
-            this.Z.c(0, 0, (int)((double)this.field_146294_l / var24), (int)((double)this.field_146295_m / var24), 12509909862183L);
-            this.Z.a(24462996452178L, 0.0f, 0.0f, (int)((double)this.field_146294_l / var24), (int)((double)this.field_146295_m / var24), 1.0f, 0.1f);
-            int var44 = (int)((double)(this.field_146295_m / 3) / var24);
-            int var29 = (int)((double)(this.field_146294_l / 2) / var24);
+            this.Z.c(0, 0, (int)((double)this.width / var24), (int)((double)this.height / var24), 12509909862183L);
+            this.Z.a(24462996452178L, 0.0f, 0.0f, (int)((double)this.width / var24), (int)((double)this.height / var24), 1.0f, 0.1f);
+            int var44 = (int)((double)(this.height / 3) / var24);
+            int var29 = (int)((double)(this.width / 2) / var24);
             int var30 = 30 - this.w.F(0, 30, 3);
             long[] var21 = new long[]{1500L};
             long var22 = 2L;
@@ -169,12 +171,12 @@ extends GuiScreen {
             var21 = new long[]{0L};
             var22 = 2L;
             RavenClickGuiScreen.t().p("o", var29 - var30 + 12, var44, 136234257403985L, RenderUtil.M(21658, (short)-14239, var22, var21));
-            this.func_73728_b(var29 - 27 - var30, var44 - 4, var44 + 12, Color.white.getRGB());
-            this.func_73728_b(var29 + 27 + var30, var44 - 4, var44 + 12, Color.white.getRGB());
+            this.drawVerticalLine(var29 - 27 - var30, var44 - 4, var44 + 12, Color.white.getRGB());
+            this.drawVerticalLine(var29 + 27 + var30, var44 - 4, var44 + 12, Color.white.getRGB());
             if (this.F != null) {
                 int var31 = this.F.F(0, 54, 2);
-                this.func_73730_a(var29 - 27, var29 - 27 + var31, var44 - 4, -1);
-                this.func_73730_a(var29 + 27, var29 + 27 - var31, var44 + 12, -1);
+                this.drawHorizontalLine(var29 - 27, var29 - 27 + var31, var44 - 4, -1);
+                this.drawHorizontalLine(var29 + 27, var29 + 27 - var31, var44 + 12, -1);
 }
             for (Category var32 : h) {
                 RavenCategoryPanel var33 = P.get((Object)var32);
@@ -195,10 +197,10 @@ extends GuiScreen {
             throw Sneaky.rethrow(ex);
 }
 }
-    public boolean func_73868_f() {
+    public boolean doesGuiPauseGame() {
         return false;
 }
-    public void func_73864_a(int var1, int var2, int var3) {
+    public void mouseClicked(int var1, int var2, int var3) {
         try {
             long var4 = 38062450391851L;
             double var16 = ClickGUI.scale.L();
@@ -234,7 +236,7 @@ extends GuiScreen {
             throw Sneaky.rethrow(ex);
 }
 }
-    public void func_146286_b(int var1, int var2, int var3) {
+    public void mouseReleased(int var1, int var2, int var3) {
         double var9 = ClickGUI.scale.L();
         int var11 = (int)((double)var1 / var9);
         int var12 = (int)((double)var2 / var9);
@@ -249,5 +251,6 @@ extends GuiScreen {
 }
 }
     static {
+        a = 52686871891298L;
 }
 }

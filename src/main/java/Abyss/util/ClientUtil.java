@@ -35,6 +35,11 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ClientUtil {
     private static Map<Integer, Boolean> G;
@@ -48,17 +53,17 @@ public class ClientUtil {
 }
     public static void t(long var0, String var2) {
         long var3 = var0 ^ 0x3A2AE767A7F0L;
-        ClientUtil.l.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText(BuildInfo.y(var3) + var2));
+        ClientUtil.l.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText(BuildInfo.y(var3) + var2));
         ConfigManagerWindow.D.add(BuildInfo.y(var3) + var2);
 }
     public static boolean I(double var0) {
         return var0 == Math.floor(var0);
 }
     public static boolean q() {
-        return !ClientUtil.I() ? false : ClientUtil.l.field_71441_e.func_175623_d(new BlockPos(ClientUtil.l.field_71439_g.field_70165_t, ClientUtil.l.field_71439_g.field_70163_u - 1.0, ClientUtil.l.field_71439_g.field_70161_v));
+        return !ClientUtil.I() ? false : ClientUtil.l.theWorld.isAirBlock(new BlockPos(ClientUtil.l.thePlayer.posX, ClientUtil.l.thePlayer.posY - 1.0, ClientUtil.l.thePlayer.posZ));
 }
     public static boolean P() {
-        return ClientUtil.l.field_71441_e.func_72945_a((Entity)ClientUtil.l.field_71439_g, ClientUtil.l.field_71439_g.func_174813_aQ().func_72317_d(ClientUtil.l.field_71439_g.field_70159_w / 3.0, -1.0, ClientUtil.l.field_71439_g.field_70179_y / 3.0)).isEmpty();
+        return ClientUtil.l.theWorld.getCollidingBoundingBoxes((Entity)ClientUtil.l.thePlayer, ClientUtil.l.thePlayer.getEntityBoundingBox().offset(ClientUtil.l.thePlayer.motionX / 3.0, -1.0, ClientUtil.l.thePlayer.motionZ / 3.0)).isEmpty();
 }
     public static boolean b(int var0, long var1) {
         int var7 = KeyBindUtil.m(32881896332787L, var0);
@@ -75,24 +80,24 @@ public class ClientUtil {
         return NoObfuscation.f(var0);
 }
     public static void B(String var0) {
-        l.func_147118_V().func_147682_a((ISound)PositionedSoundRecord.func_147674_a((ResourceLocation)new ResourceLocation(var0), (float)1.0f));
+        l.getSoundHandler().playSound((ISound)PositionedSoundRecord.create((ResourceLocation)new ResourceLocation(var0), (float)1.0f));
 }
     public static float H(long var0) {
-        return MinecraftAccessor.o((Minecraft)ClientUtil.l).field_74281_c;
+        return MinecraftAccessor.o((Minecraft)ClientUtil.l).renderPartialTicks;
 }
     public static void b(String var0) {
-        ClientUtil.l.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText(var0));
+        ClientUtil.l.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText(var0));
         ConfigManagerWindow.D.add(var0);
 }
     public static void e(long var0) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        ClientUtil.l.field_71456_v.func_146158_b().func_146227_a((IChatComponent)new ChatComponentText("------------"));
+        ClientUtil.l.ingameGUI.getChatGUI().printChatMessage((IChatComponent)new ChatComponentText("------------"));
         ConfigManagerWindow.D.add("------------");
 }
     public static boolean I() {
-        return ClientUtil.l.field_71439_g != null && ClientUtil.l.field_71441_e != null && l.func_147114_u() != null;
+        return ClientUtil.l.thePlayer != null && ClientUtil.l.theWorld != null && l.getNetHandler() != null;
 }
     public static boolean d() {
-        return ClientUtil.l.field_71474_y.field_74314_A.func_151470_d();
+        return ClientUtil.l.gameSettings.keyBindJump.isKeyDown();
 }
     public static BlockPos p() {
         return BlockUtil.Z(RaytraceUtil.f());

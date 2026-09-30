@@ -19,7 +19,7 @@ import Abyss.event.invoker.CheaterDetectorWorldLoadInvoker;
 import Abyss.internal.CheaterDetector;
 
 public final class CheaterDetectorBinder {
-    private static final long public static void M(EventBus var0, CheaterDetector var1) {
+    public static void M(EventBus var0, CheaterDetector var1) {
         var0.R(var1, WorldLoadEvent.class, 3, new CheaterDetectorWorldLoadInvoker(var1));
         var0.R(var1, PostTickEvent.class, 3, new CheaterDetectorPostTickInvoker(var1));
         var0.R(var1, GetDisplayNameEvent.class, 3, new CheaterDetectorGetDisplayNameInvoker(var1));

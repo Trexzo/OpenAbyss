@@ -11,6 +11,7 @@
  */
 package Abyss.internal.restore;
 
+import Abyss.AbyssClient;
 import Abyss.internal.restore.AbyssModuleRegistry;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
@@ -64,64 +65,65 @@ public final class AbyssConfig {
 
     private AbyssConfig() {
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static String apply(List<String> pending) {
+        int configured = 0;
+        int matched = 0;
+        int meta = 0;
+        int applied = 0;
+        int skippedPlaceholder = 0;
+        int unmatched = 0;
+        int malformedStatus = 0;
         String note;
-        block17: {
-            int configured = 0;
-            int matched = 0;
-            int meta = 0;
-            int applied = 0;
-            int skippedPlaceholder = 0;
-            int unmatched = 0;
-            try {
-                JsonObject root;
-                File f = AbyssConfig.locate();
-                if (f == null) {
-                    String note2 = "Abyss.config NOT APPLIED -- no current.json found; every module keeps its factory state";
-                    pending.add(note2);
-                    return note2;
+        try {
+            File f = AbyssConfig.locate();
+            if (f == null) {
+                note = "Abyss.config NOT APPLIED -- no current.json found; every module keeps its factory state";
+                pending.add(note);
+                return note;
 }
-                try (InputStreamReader r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");){
-                    root = new JsonParser().parse((Reader)r2).getAsJsonObject();
+            JsonObject root;
+            try (InputStreamReader r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");) {
+                root = new JsonParser().parse((Reader)r2).getAsJsonObject();
 }
-                for (Map.Entry e : root.entrySet()) {
-                    if (!((JsonElement)e.getValue()).isJsonObject() || !((JsonElement)e.getValue()).getAsJsonObject().has("status")) continue;
-                    ++configured;
+            for (Map.Entry e : root.entrySet()) {
+                if (!((JsonElement)e.getValue()).isJsonObject() || !((JsonElement)e.getValue()).getAsJsonObject().has("status")) continue;
+                ++configured;
 }
-                ArrayList<String> on = new ArrayList<String>();
-                for (Module m2 : ModuleManager.S) {
-                    if (m2 == null) continue;
-                    String name = m2.b();
-                    if (name == null || name.startsWith("?")) {
-                        ++skippedPlaceholder;
-                        continue;
+            ArrayList<String> on = new ArrayList<String>();
+            for (Module m2 : ModuleManager.S) {
+                if (m2 == null) continue;
+                String name = m2.b();
+                if (name == null || name.startsWith("?")) {
+                    ++skippedPlaceholder;
+                    continue;
 }
-                    JsonElement entry = root.get(name);
-                    if (entry == null || !entry.isJsonObject()) {
-                        ++unmatched;
-                        continue;
+                JsonElement entry = root.get(name);
+                if (entry == null || !entry.isJsonObject()) {
+                    ++unmatched;
+                    continue;
 }
-                    JsonObject o2 = entry.getAsJsonObject();
-                    if (!o2.has("status")) {
-                        ++unmatched;
-                        continue;
+                JsonObject o2 = entry.getAsJsonObject();
+                Boolean statusValue = AbyssConfig.statusValue(o2);
+                if (statusValue == null) {
+                    ++unmatched;
+                    if (o2.has("status")) {
+                        ++malformedStatus;
 }
-                    ++matched;
-                    boolean status = o2.get("status").getAsBoolean();
-                    m2.I(20724619369162L, status);
-                    if (status) {
-                        ++applied;
-                        on.add(name);
+                    continue;
 }
-                    meta += AbyssConfig.writeInt(m2, "j", o2, "keyBind");
-                    meta += AbyssConfig.writeBool(m2, "w", o2, "visible");
-                    meta += AbyssConfig.writeBool(m2, "q", o2, "suffix-visible");
+                ++matched;
+                boolean status = statusValue.booleanValue();
+                m2.I(MODULE_I_CARRIER, status);
+                if (status) {
+                    ++applied;
+                    on.add(name);
 }
-                note = "Abyss.config applied from " + f.getPath() + " -- configured=" + configured + " matched=" + matched + " enabled=" + applied + " skipped_placeholder=" + skippedPlaceholder + " unmatched=" + unmatched + " meta=" + meta + " field_failures=" + fieldFailures + " on=" + on;
-                if (fieldFailures <= 0) break block17;
+                meta += AbyssConfig.writeInt(m2, "j", o2, "keyBind");
+                meta += AbyssConfig.writeBool(m2, "w", o2, "visible");
+                meta += AbyssConfig.writeBool(m2, "q", o2, "suffix-visible");
+}
+            note = "Abyss.config applied from " + f.getPath() + " -- configured=" + configured + " matched=" + matched + " enabled=" + applied + " skipped_placeholder=" + skippedPlaceholder + " unmatched=" + unmatched + " malformed_status=" + malformedStatus + " meta=" + meta + " field_failures=" + fieldFailures + " on=" + on;
+            if (fieldFailures > 0) {
                 List<String> list = fieldFailureNotes;
                 synchronized (list) {
                     for (String bad : fieldFailureNotes) {
@@ -129,38 +131,51 @@ public final class AbyssConfig {
 }
 }
 }
-            catch (Throwable t2) {
-                note = "Abyss.config FAILED (" + t2 + ") -- every module keeps its factory state";
 }
+        catch (Throwable t2) {
+            note = "Abyss.config FAILED (" + t2 + ") -- every module keeps its factory state";
 }
         pending.add(note);
         return note;
 }
     public static JsonObject read() {
-        JsonObject jsonObject;
-        File f = AbyssConfig.locate();
-        if (f == null) {
-            return null;
+        return AbyssConfig.parse(AbyssConfig.locate());
 }
-        InputStreamReader r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");
+    private static Boolean strictBoolean(JsonElement value) {
         try {
-            jsonObject = new JsonParser().parse((Reader)r2).getAsJsonObject();
-}
-        catch (Throwable throwable) {
-            try {
-                ((Reader)r2).close();
-                throw throwable;
-}
-            catch (Throwable t2) {
+            if (value == null || !value.isJsonPrimitive()) {
                 return null;
 }
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            return primitive.isBoolean() ? Boolean.valueOf(primitive.getAsBoolean()) : null;
 }
-        ((Reader)r2).close();
-        return jsonObject;
+        catch (Throwable ignored) {
+            return null;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
+}
+    private static Integer strictInteger(JsonElement value) {
+        try {
+            if (value == null || !value.isJsonPrimitive()) {
+                return null;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isNumber()) {
+                return null;
+}
+            double numeric = primitive.getAsDouble();
+            if (Double.isNaN(numeric) || Double.isInfinite(numeric) || numeric != Math.rint(numeric)
+                    || numeric < Integer.MIN_VALUE || numeric > Integer.MAX_VALUE) {
+                return null;
+}
+            return Integer.valueOf((int)numeric);
+}
+        catch (Throwable ignored) {
+            return null;
+}
+}
+    private static Boolean statusValue(JsonObject block) {
+        return block == null || !block.has("status") ? null : AbyssConfig.strictBoolean(block.get("status"));
+}
     private static void fieldFailure(String field, Class<?> want, String key, Throwable t2, String detail) {
         ++fieldFailures;
         String note = "AbyssConfig cannot persist '" + key + "': Module." + field + " (" + want.getSimpleName() + ") " + (t2 != null ? "threw " + t2 : detail) + " -- this key is silently dropped from every save AND load; if the field was renamed, Abyss/internal/restore/AbyssNameMap must be updated in the same edit";
@@ -176,14 +191,19 @@ public final class AbyssConfig {
             return 0;
 }
         try {
+            Boolean decoded = AbyssConfig.strictBoolean(o2.get(key));
+            if (decoded == null) {
+                AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "is not a JSON boolean");
+                return 0;
+}
             Field f = Module.class.getDeclaredField(field);
             if (f.getType() != Boolean.TYPE) {
                 AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "is a " + f.getType().getName() + ", not boolean");
                 return 0;
 }
             f.setAccessible(true);
-            f.setBoolean(m2, o2.get(key).getAsBoolean());
-            if (f.getBoolean(m2) != o2.get(key).getAsBoolean()) {
+            f.setBoolean(m2, decoded.booleanValue());
+            if (f.getBoolean(m2) != decoded.booleanValue()) {
                 AbyssConfig.fieldFailure(field, Boolean.TYPE, key, null, "did not keep the value written to it");
                 return 0;
 }
@@ -199,14 +219,19 @@ public final class AbyssConfig {
             return 0;
 }
         try {
+            Integer decoded = AbyssConfig.strictInteger(o2.get(key));
+            if (decoded == null) {
+                AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "is not an integral JSON number");
+                return 0;
+}
             Field f = Module.class.getDeclaredField(field);
             if (f.getType() != Integer.TYPE) {
                 AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "is a " + f.getType().getName() + ", not int");
                 return 0;
 }
             f.setAccessible(true);
-            f.setInt(m2, o2.get(key).getAsInt());
-            if (f.getInt(m2) != o2.get(key).getAsInt()) {
+            f.setInt(m2, decoded.intValue());
+            if (f.getInt(m2) != decoded.intValue()) {
                 AbyssConfig.fieldFailure(field, Integer.TYPE, key, null, "did not keep the value written to it");
                 return 0;
 }
@@ -217,10 +242,11 @@ public final class AbyssConfig {
             return 0;
 }
 }
+    // R15_SEMANTIC_RECOVERY_MARKER
     public static int snapshotBoot() {
         IdentityHashMap<Setting, String> snap = new IdentityHashMap<Setting, String>();
         try {
-            ArrayList all = ModuleManager.S == null ? new ArrayList() : ModuleManager.S;
+            List<Module> all = ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S;
             for (Module m2 : all) {
                 List<Setting> live;
                 if (m2 == null) continue;
@@ -240,15 +266,12 @@ public final class AbyssConfig {
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            AbyssClient.recordFeatureFailure("AbyssConfig", "boot-snapshot", throwable);
 }
         boot = snap;
         bootSnapshot = snap.size();
         return bootSnapshot;
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     public static SaveResult save(String name) {
         SaveResult r2 = new SaveResult();
         Object object = SAVE_LOCK;
@@ -257,19 +280,28 @@ public final class AbyssConfig {
                 File f = AbyssConfig.target(name);
                 r2.path = f.getPath();
                 JsonObject root = AbyssConfig.parse(f);
+                File backup = AbyssConfig.sibling(f, ".bak");
+                boolean recoveredFromBackup = false;
                 if (root == null) {
-                    root = AbyssConfig.parse(AbyssConfig.sibling(f, ".bak"));
+                    root = AbyssConfig.parse(backup);
+                    recoveredFromBackup = root != null;
 }
                 if (root == null) {
                     root = new JsonObject();
+}
+                if (recoveredFromBackup && f.isFile()) {
+                    if (!f.delete()) {
+                        throw new IllegalStateException("could not remove corrupt current config before backup recovery: " + f);
+}
 }
                 if (!root.has(DESCRIPTION_KEY) || !root.get(DESCRIPTION_KEY).isJsonPrimitive()) {
                     root.addProperty(DESCRIPTION_KEY, DEFAULT_DESCRIPTION);
 }
                 r2.topLevelBefore = root.entrySet().size();
-                ArrayList all = ModuleManager.S == null ? new ArrayList() : ModuleManager.S;
+                List<Module> all = ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S;
                 for (Module m2 : all) {
                     JsonObject block;
+                    boolean createdBlock = false;
                     if (m2 == null) continue;
                     ++r2.modules;
                     if (!AbyssModuleRegistry.isConfigPersistable(m2)) {
@@ -284,6 +316,7 @@ public final class AbyssConfig {
                         block = new JsonObject();
                         root.add(n2, (JsonElement)block);
                         ++r2.created;
+                        createdBlock = true;
 }
                     ++r2.blocks;
                     AbyssConfig.put(r2, block, n2, COMMON[0], 0, new JsonPrimitive(Boolean.valueOf(m2.o())));
@@ -291,7 +324,7 @@ public final class AbyssConfig {
                     AbyssConfig.put(r2, block, n2, COMMON[2], 0, new JsonPrimitive(Boolean.valueOf(m2.D())));
                     AbyssConfig.put(r2, block, n2, COMMON[3], 0, new JsonPrimitive(Boolean.valueOf(m2.r())));
                     r2.commonKeys += 4;
-                    AbyssConfig.settings(r2, block, n2, m2);
+                    AbyssConfig.settings(r2, block, n2, m2, createdBlock);
 }
                 r2.topLevelAfter = root.entrySet().size();
                 r2.ok = AbyssConfig.write(f, root);
@@ -307,7 +340,7 @@ public final class AbyssConfig {
 }
         return r2;
 }
-    private static void settings(SaveResult r2, JsonObject block, String module, Module m2) {
+    private static void settings(SaveResult r2, JsonObject block, String module, Module m2, boolean seedNewBlock) {
         List<Setting> live;
         try {
             live = m2.w();
@@ -333,6 +366,16 @@ public final class AbyssConfig {
 }
             if (label == null || label.length() == 0 || (v2 = (kind = AbyssConfig.kindOf(s)) < 0 ? null : AbyssConfig.value(s)) == null) continue;
             String string = key = block.has(label) ? label : AbyssConfig.settingKey(label);
+            if (!block.has(key) && seedNewBlock) {
+                if (!done.add(key)) {
+                    ++r2.settingsOutsideSchema;
+                    r2.outside.add(module + '.' + label + " (key " + key + " already taken)");
+                    continue;
+}
+                AbyssConfig.put(r2, block, module, key, kind, v2);
+                ++r2.settingKeys;
+                continue;
+}
             if (!block.has(key)) {
                 ++r2.settingsOutsideSchema;
                 r2.outside.add(module + '.' + label);
@@ -439,6 +482,122 @@ public final class AbyssConfig {
             return "<unreadable " + p + '>';
 }
 }
+    public static String selfTest() {
+        String name = "__openabyss_runtime_selftest__";
+        File file = AbyssConfig.target(name);
+        File bak = AbyssConfig.sibling(file, ".bak");
+        File tmp = AbyssConfig.sibling(file, ".tmp");
+        try {
+            file.delete();
+            bak.delete();
+            tmp.delete();
+            SaveResult result = AbyssConfig.save(name);
+            if (result == null || !result.ok) {
+                return "FAIL save " + String.valueOf(result);
+}
+            List<String> bad = AbyssConfig.verify(result, null);
+            if (!bad.isEmpty()) {
+                return "FAIL verify " + bad.get(0);
+}
+            if (result.modules != AbyssModuleRegistry.expectedModuleCount()) {
+                return "FAIL modules " + result.modules + "/" + AbyssModuleRegistry.expectedModuleCount();
+}
+            if (result.created != AbyssModuleRegistry.expectedModuleCount()) {
+                return "FAIL fresh-blocks " + result.created + "/" + AbyssModuleRegistry.expectedModuleCount();
+}
+            if (result.settingKeys <= 0) {
+                return "FAIL fresh-settings " + result.settingKeys;
+}
+            if (result.settingsOutsideSchema != 0) {
+                return "FAIL fresh-outside-schema " + result.settingsOutsideSchema;
+}
+
+            SaveResult second = AbyssConfig.save(name);
+            if (second == null || !second.ok) {
+                return "FAIL second-save " + String.valueOf(second);
+}
+            if (!bak.isFile() || AbyssConfig.parse(bak) == null) {
+                return "FAIL backup-not-created";
+}
+            if (AbyssConfig.parse(file) == null) {
+                return "FAIL second-current-unreadable";
+}
+
+            Writer corruptWriter = null;
+            try {
+                corruptWriter = new OutputStreamWriter((OutputStream)new FileOutputStream(file), "UTF-8");
+                corruptWriter.write("{broken");
+                corruptWriter.close();
+                corruptWriter = null;
+}
+            finally {
+                if (corruptWriter != null) {
+                    try {
+                        corruptWriter.close();
+}
+                    catch (Throwable ignored) {
+}
+}
+}
+            if (AbyssConfig.parse(file) != null) {
+                return "FAIL corruption-fixture-readable";
+}
+
+            SaveResult recovered = AbyssConfig.save(name);
+            if (recovered == null || !recovered.ok) {
+                return "FAIL backup-recovery-save " + String.valueOf(recovered);
+}
+            if (recovered.topLevelBefore <= 0) {
+                return "FAIL backup-recovery-did-not-seed";
+}
+            List<String> recoveredBad = AbyssConfig.verify(recovered, null);
+            if (!recoveredBad.isEmpty()) {
+                return "FAIL backup-recovery-verify " + recoveredBad.get(0);
+}
+            if (AbyssConfig.parse(file) == null) {
+                return "FAIL backup-recovery-current-unreadable";
+}
+            if (!bak.isFile() || AbyssConfig.parse(bak) == null) {
+                return "FAIL backup-recovery-backup-lost";
+}
+            if (tmp.exists()) {
+                return "FAIL backup-recovery-stale-tmp";
+}
+
+            JsonObject validStatus = new JsonObject();
+            validStatus.addProperty("status", Boolean.TRUE);
+            if (!Boolean.TRUE.equals(AbyssConfig.statusValue(validStatus))) {
+                return "FAIL valid-status";
+}
+            JsonObject malformedStatus = new JsonObject();
+            malformedStatus.addProperty("status", "true");
+            if (AbyssConfig.statusValue(malformedStatus) != null) {
+                return "FAIL malformed-status-accepted";
+}
+            JsonObject missingStatus = new JsonObject();
+            if (AbyssConfig.statusValue(missingStatus) != null) {
+                return "FAIL missing-status-accepted";
+}
+            if (AbyssConfig.strictBoolean(new JsonPrimitive("true")) != null) {
+                return "FAIL string-boolean-coercion";
+}
+            if (AbyssConfig.strictInteger(new JsonPrimitive(Double.valueOf(1.5d))) != null) {
+                return "FAIL fractional-integer-coercion";
+}
+            if (!Integer.valueOf(54).equals(AbyssConfig.strictInteger(new JsonPrimitive(Integer.valueOf(54))))) {
+                return "FAIL valid-integer";
+}
+            return "PASS modules=" + result.modules + " settings=" + result.settingKeys + " strict-common-metadata backup-recovery-preserved";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
+        finally {
+            file.delete();
+            bak.delete();
+            tmp.delete();
+}
+}
     public static List<String> verify(SaveResult r2, String corrupt) {
         ArrayList<String> bad = new ArrayList<String>();
         JsonObject root = AbyssConfig.parse(new File(r2.path));
@@ -486,7 +645,7 @@ public final class AbyssConfig {
 }
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable p) {
             // empty catch block
@@ -504,101 +663,85 @@ public final class AbyssConfig {
         File a = f.getAbsoluteFile();
         return new File(a.getParentFile(), a.getName() + suffix);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static JsonObject parse(File f) {
-        JsonObject jsonObject;
-        if (f == null) return null;
-        if (!f.isFile()) {
+        if (f == null || !f.isFile()) {
             return null;
 }
         Reader r2 = null;
         try {
             r2 = new InputStreamReader((InputStream)new FileInputStream(f), "UTF-8");
             JsonElement e = new JsonParser().parse(r2);
-            jsonObject = e != null && e.isJsonObject() ? e.getAsJsonObject() : null;
-            if (r2 == null) return jsonObject;
+            return e != null && e.isJsonObject() ? e.getAsJsonObject() : null;
 }
         catch (Throwable t2) {
-            try {
-                JsonObject jsonObject3 = null;
-                return jsonObject3;
+            return null;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (r2 != null) {
+                try {
+                    r2.close();
 }
-            finally {
-                if (r2 != null) {
-                    try {
-                        r2.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure does not change parse result
 }
 }
 }
-        try {
-            r2.close();
-            return jsonObject;
 }
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return jsonObject;
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static boolean write(File f, JsonObject root) {
-        boolean bak222;
         File tmp = AbyssConfig.sibling(f, ".tmp");
+        File bak = AbyssConfig.sibling(f, ".bak");
         Writer w2 = null;
+        boolean rotated = false;
         try {
+            if (tmp.isFile() && !tmp.delete()) {
+                return false;
+}
             w2 = new OutputStreamWriter((OutputStream)new FileOutputStream(tmp), "UTF-8");
             new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)root, (Appendable)w2);
             w2.close();
             w2 = null;
+
             if (f.isFile()) {
-                File bak222 = AbyssConfig.sibling(f, ".bak");
-                if (bak222.isFile()) {
-                    bak222.delete();
+                if (bak.isFile() && !bak.delete()) {
+                    tmp.delete();
+                    return false;
 }
-                f.renameTo(bak222);
+                if (!f.renameTo(bak)) {
+                    tmp.delete();
+                    return false;
 }
-            bak222 = tmp.renameTo(f);
-            if (w2 == null) return bak222;
+                rotated = true;
+}
+            if (tmp.renameTo(f)) {
+                return true;
+}
+            if (rotated && !f.exists() && bak.isFile()) {
+                bak.renameTo(f);
+}
+            tmp.delete();
+            return false;
 }
         catch (Throwable t2) {
-            try {
-                boolean bl = false;
-                return bl;
+            if (rotated && !f.exists() && bak.isFile()) {
+                try {
+                    bak.renameTo(f);
 }
-            catch (Throwable throwable) {
-                throw throwable;
-}
-            finally {
-                if (w2 != null) {
-                    try {
-                        w2.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
 }
 }
+            tmp.delete();
+            return false;
 }
-        try {
-            w2.close();
-            return bak222;
+        finally {
+            if (w2 != null) {
+                try {
+                    w2.close();
 }
-        catch (Throwable throwable) {
-            // empty catch block
+                catch (Throwable ignored) {
+                    // close failure cannot make a failed write successful
 }
-        return bak222;
+}
+}
 }
     private static File locate() {
         File[] candidates;
@@ -609,7 +752,7 @@ public final class AbyssConfig {
 }
         File dir = null;
         try {
-            dir = Minecraft.func_71410_x().field_71412_D;
+            dir = Minecraft.getMinecraft().mcDataDir;
 }
         catch (Throwable throwable) {
             // empty catch block

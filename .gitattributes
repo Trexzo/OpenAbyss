@@ -1,0 +1,21 @@
+# Preserve runnable-era resource bytes on every checkout, including Windows.
+src/main/resources/assets/abyss/asm/mcp-notch.srg text eol=lf
+src/main/resources/assets/abyss/asm/mcp-srg.srg text eol=lf
+src/main/resources/assets/minecraft/blockstates/barrier.json text eol=lf
+src/main/resources/assets/minecraft/models/block/barrier.json text eol=lf
+src/main/resources/callback.html text eol=lf
+src/main/resources/com/formdev/flatlaf/FlatDarculaLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/FlatDarkLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/FlatIntelliJLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/FlatLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/FlatLightLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/IntelliJTheme$ThemeLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/resources/Bundle.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/resources/Bundle_de.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/resources/Bundle_es.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/resources/Bundle_fr.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/themes/FlatMacDarkLaf.properties text eol=lf
+src/main/resources/com/formdev/flatlaf/themes/FlatMacLightLaf.properties text eol=lf
+src/main/resources/licenses/AccountManager-LICENSE text eol=lf
+src/main/resources/mcmod.info text eol=lf
+src/main/resources/usernames.txt text eol=lf

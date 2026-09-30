@@ -52,12 +52,12 @@ public class MinecraftHooks {
 }
     public static void changeCurrentItem(InventoryPlayer var0, int var1) {
         if (AbyssClient.w == null) {
-            var0.func_70453_c(var1);
+            var0.changeCurrentItem(var1);
         } else {
             HeldItemChangeEvent var8 = new HeldItemChangeEvent(-1, var1);
             AbyssClient.w.e(var8, 18670087776179L);
             if (!var8.a()) {
-                var0.func_70453_c(var1);
+                var0.changeCurrentItem(var1);
 }
 }
 }
@@ -72,8 +72,8 @@ public class MinecraftHooks {
 }
 }
     public static void onSetKeyBindState(int var0, boolean var1) {
-        KeyBinding.func_74510_a((int)var0, (boolean)var1);
-        if (AbyssClient.w != null && var1 && MinecraftHooks.P.field_71462_r == null) {
+        KeyBinding.setKeyBindState((int)var0, (boolean)var1);
+        if (AbyssClient.w != null && var1 && MinecraftHooks.P.currentScreen == null) {
             AbyssClient.w.e(new SetKeyBindStateEvent(var0), 18670087776179L);
 }
 }
@@ -103,7 +103,7 @@ public class MinecraftHooks {
 }
     public static boolean notAllowUserInput() {
         boolean var6;
-        boolean bl = var6 = MinecraftHooks.P.field_71462_r != null && MinecraftHooks.P.field_71462_r.field_146291_p;
+        boolean bl = var6 = MinecraftHooks.P.currentScreen != null && MinecraftHooks.P.currentScreen.allowUserInput;
         if (!var6 && AbyssClient.w != null) {
             PreMouseInputEvent var7 = new PreMouseInputEvent();
             AbyssClient.w.e(var7, 18670087776179L);
@@ -113,9 +113,9 @@ public class MinecraftHooks {
     public static IChatComponent onSaveScreenshot(File var0, int var1, int var2, Framebuffer var3) throws Throwable {
         Framebuffer var8;
         if (VisualSpoofRenderer.B() && (var8 = VisualSpoofRenderer.f(127872219919683L)) != null) {
-            return ScreenShotHelper.func_148260_a((File)var0, (int)var1, (int)var2, (Framebuffer)var8);
+            return ScreenShotHelper.saveScreenshot((File)var0, (int)var1, (int)var2, (Framebuffer)var8);
 }
-        return ScreenShotHelper.func_148260_a((File)var0, (int)var1, (int)var2, (Framebuffer)var3);
+        return ScreenShotHelper.saveScreenshot((File)var0, (int)var1, (int)var2, (Framebuffer)var3);
 }
     public static void onOptimizeWorldSwapping() {
 }

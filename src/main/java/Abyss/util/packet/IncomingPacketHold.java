@@ -63,6 +63,8 @@ import net.minecraft.world.World;
 public class IncomingPacketHold
 implements EventSubscriber {
     private static Object[] b;
+    private static String[] c;
+    private static long a;
     private static Minecraft h;
     private static List<Packet<INetHandlerPlayClient>> U;
     private static boolean g;
@@ -70,10 +72,21 @@ implements EventSubscriber {
     
     
 
-                Cipher var2 = Cipher.getInstance("DES/CBC/NoPadding");
-            var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            long var7 = a ^ 55631520864713L;
+            b = new Object[7];
+            c = new String[7];
+            a();
+            Cipher var2;
+            byte[] var10003 = new byte[]{(byte)(var7 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) {
+                var10003[var3] = (byte)(var7 << var3 * 8 >>> 56);
+            }
+            (var2 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             byte[] var6 = var2.doFinal(new byte[]{-120, -122, -114, 110, -90, 1, 17, -89});
-            long var0 = var13 = ((long)var6[0] & 0xFFL) << 56 | ((long)var6[1] & 0xFFL) << 48 | ((long)var6[2] & 0xFFL) << 40 | ((long)var6[3] & 0xFFL) << 32 | ((long)var6[4] & 0xFFL) << 24 | ((long)var6[5] & 0xFFL) << 16 | ((long)var6[6] & 0xFFL) << 8 | (long)var6[7] & 0xFFL;
+            long var13 = ((long)var6[0] & 0xFFL) << 56 | ((long)var6[1] & 0xFFL) << 48 | ((long)var6[2] & 0xFFL) << 40 | ((long)var6[3] & 0xFFL) << 32 | ((long)var6[4] & 0xFFL) << 24 | ((long)var6[5] & 0xFFL) << 16 | ((long)var6[6] & 0xFFL) << 8 | (long)var6[7] & 0xFFL;
+            long var0 = var13;
             U = new ArrayList<Packet<INetHandlerPlayClient>>();
             i = new HashMap<Integer, Vec3>();
             g = (var0 & 1L) != 0L;
@@ -83,9 +96,9 @@ implements EventSubscriber {
 }
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) {
-        if (ClientUtil.I() && !h.func_71356_B()) {
+        if (ClientUtil.I() && !h.isSingleplayer()) {
             if (g && this.K(var1.d)) {
-                U.add(var1.d);
+                U.add((Packet<INetHandlerPlayClient>)var1.d);
                 var1.I(21307, 3074332907L);
 }
         } else {
@@ -97,7 +110,7 @@ implements EventSubscriber {
         i.clear();
 }
     public void onSendPacket(SendPacketEvent var1) {
-        if (ClientUtil.I() && !h.func_71356_B()) {
+        if (ClientUtil.I() && !h.isSingleplayer()) {
             if (var1.B instanceof C00Handshake || var1.B instanceof C00PacketLoginStart || var1.B instanceof C00PacketServerQuery || var1.B instanceof C01PacketPing || var1.B instanceof C01PacketEncryptionResponse) {
                 IncomingPacketHold.m();
 }
@@ -106,7 +119,7 @@ implements EventSubscriber {
 }
 }
     public static void m() {
-        if (ClientUtil.I() && !h.func_71356_B()) {
+        if (ClientUtil.I() && !h.isSingleplayer()) {
             ArrayList<Packet<INetHandlerPlayClient>> snapshot = new ArrayList<Packet<INetHandlerPlayClient>>(U);
             U.clear();
             for (Packet packet : snapshot) {
@@ -132,8 +145,8 @@ implements EventSubscriber {
             return true;
 }
         S19PacketEntityStatus var2 = (S19PacketEntityStatus)var1;
-        Entity var3 = var2.func_149161_a((World)IncomingPacketHold.h.field_71441_e);
-        return var3 == null || var3.equals((Object)IncomingPacketHold.h.field_71439_g) && var2.func_149160_c() == 2;
+        Entity var3 = var2.getEntity((World)IncomingPacketHold.h.theWorld);
+        return var3 == null || var3.equals((Object)IncomingPacketHold.h.thePlayer) && var2.getOpCode() == 2;
 }
     public static List<Packet<INetHandlerPlayClient>> p() {
         return U;
@@ -160,6 +173,8 @@ implements EventSubscriber {
         IncomingPacketHold.b[6] = "\\F%\\\u001e\u0016GS~?\u001dh\u0005\u0011wU\u0006\u0001\u0003EhDoQ\\Ks@\u0006W\u0002T~?U\u000e\u0007Sh\u0000\u000f\u0019\u0006W\u0018\u0004\u0001\n\u0001E\"A\u0005\u0014\u0003)";
 }
     static {
+        a = 16363778365439L;
+        zkm$clinit();
         h = MinecraftRef.c((byte)0, 0L);
 }
 }

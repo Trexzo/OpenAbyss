@@ -20,7 +20,7 @@ import Abyss.event.invoker.j_2;
 import Abyss.event.invoker.oX;
 
 public final class AbyssClientBinder {
-    private static final long private AbyssClientBinder() {
+    private AbyssClientBinder() {
 }
     public static void C(EventBus var2, AbyssClient var3) {
         var2.R(var3, SetKeyBindStateEvent.class, 3, new AbyssClientSetKeyBindStateInvoker(var3));

@@ -117,8 +117,8 @@ final class AbyssColorPicker {
             this.hexFocused = false;
             return true;
 }
-        if (GuiScreen.func_175279_e((int)key)) {
-            String clip = GuiScreen.func_146277_j();
+        if (GuiScreen.isKeyComboCtrlV((int)key)) {
+            String clip = GuiScreen.getClipboardString();
             if (clip != null) {
                 this.hex = AbyssColorPicker.trim(clip);
 }
@@ -219,10 +219,10 @@ final class AbyssColorPicker {
 }
     private static void wheel(float cx, float cy) {
         AbyssColorPicker.beginRaw();
-        GlStateManager.func_179103_j((int)7425);
-        Tessellator tess = Tessellator.func_178181_a();
-        WorldRenderer wr = tess.func_178180_c();
-        wr.func_181668_a(7, DefaultVertexFormats.field_181706_f);
+        GlStateManager.shadeModel((int)7425);
+        Tessellator tess = Tessellator.getInstance();
+        WorldRenderer wr = tess.getWorldRenderer();
+        wr.begin(7, DefaultVertexFormats.POSITION_COLOR);
         for (int ring = 0; ring < 10; ++ring) {
             float r0 = 24.0f * (float)ring / 10.0f;
             float r1 = 24.0f * (float)(ring + 1) / 10.0f;
@@ -237,37 +237,37 @@ final class AbyssColorPicker {
                 AbyssColorPicker.vtx(wr, cx + COS[i + 1] * r0, cy + SIN[i + 1] * r0, Color.HSBtoRGB(h1, s0, 1.0f));
 }
 }
-        tess.func_78381_a();
-        GlStateManager.func_179103_j((int)7424);
+        tess.draw();
+        GlStateManager.shadeModel((int)7424);
         AbyssColorPicker.endRaw();
 }
     private static void gradient(float x1, float y1, float x2, float y2, int left, int right) {
         AbyssColorPicker.beginRaw();
-        GlStateManager.func_179103_j((int)7425);
-        Tessellator tess = Tessellator.func_178181_a();
-        WorldRenderer wr = tess.func_178180_c();
-        wr.func_181668_a(7, DefaultVertexFormats.field_181706_f);
+        GlStateManager.shadeModel((int)7425);
+        Tessellator tess = Tessellator.getInstance();
+        WorldRenderer wr = tess.getWorldRenderer();
+        wr.begin(7, DefaultVertexFormats.POSITION_COLOR);
         AbyssColorPicker.vtx(wr, x1, y1, left);
         AbyssColorPicker.vtx(wr, x1, y2, left);
         AbyssColorPicker.vtx(wr, x2, y2, right);
         AbyssColorPicker.vtx(wr, x2, y1, right);
-        tess.func_78381_a();
-        GlStateManager.func_179103_j((int)7424);
+        tess.draw();
+        GlStateManager.shadeModel((int)7424);
         AbyssColorPicker.endRaw();
 }
     private static void vtx(WorldRenderer wr, float x, float y, int c) {
-        wr.func_181662_b((double)x, (double)y, 0.0).func_181669_b(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF, 255).func_181675_d();
+        wr.pos((double)x, (double)y, 0.0).color(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF, 255).endVertex();
 }
     private static void beginRaw() {
-        GlStateManager.func_179090_x();
-        GlStateManager.func_179147_l();
-        GlStateManager.func_179118_c();
-        GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
 }
     private static void endRaw() {
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179117_G();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableTexture2D();
+        GlStateManager.resetColor();
 }
     static {
         for (int i = 0; i <= 48; ++i) {

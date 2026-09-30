@@ -9,7 +9,7 @@ import java.awt.Color;
 public class ColorSetting
 extends Setting {
     private String Q;
-    private static long public int x(int var3) {
+    public int x(int var3) {
         Color var4 = new Color(Integer.parseInt(this.Q, 16));
         return new Color(var4.getRed(), var4.getGreen(), var4.getBlue(), var3).getRGB();
 }

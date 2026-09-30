@@ -8,7 +8,7 @@ import java.util.HashMap;
 
 public final class EnchantmentAbbreviations
 extends HashMap<Integer, EnchantmentAbbreviation> {
-    private static long public EnchantmentAbbreviations() {
+    public EnchantmentAbbreviations() {
         this.put(0, new EnchantmentAbbreviation("Pr", 4));
         this.put(1, new EnchantmentAbbreviation("Fp", 4));
         this.put(2, new EnchantmentAbbreviation("Ff", 4));

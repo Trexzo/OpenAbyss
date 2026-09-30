@@ -15,7 +15,7 @@ import Abyss.event.invoker.LagRangeSendPacketInvoker;
 import Abyss.module.impl.combat.LagRange;
 
 public final class LagRangeBinder {
-    private static final long private LagRangeBinder() {
+    private LagRangeBinder() {
 }
     public static void D(EventBus var2, LagRange var3) {
         var2.R(var3, PreLivingUpdateEvent.class, 3, new LagRangePreLivingUpdateInvoker(var3));

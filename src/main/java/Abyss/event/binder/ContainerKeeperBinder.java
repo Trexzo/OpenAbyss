@@ -17,7 +17,7 @@ import Abyss.event.invoker.ContainerKeeperWorldLoadInvoker;
 import Abyss.module.impl.misc.ContainerKeeper;
 
 public final class ContainerKeeperBinder {
-    private static final long private ContainerKeeperBinder() {
+    private ContainerKeeperBinder() {
 }
     public static void Q(EventBus var0, int var1, ContainerKeeper var2) {
         var0.R(var2, WorldLoadEvent.class, 3, new ContainerKeeperWorldLoadInvoker(var2));

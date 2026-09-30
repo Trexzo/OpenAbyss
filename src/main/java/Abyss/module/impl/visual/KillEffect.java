@@ -47,6 +47,10 @@ import net.minecraft.util.StringUtils;
 public class KillEffect
 extends Module
 implements EventSubscriber {
+    private static long a;
+    private static String[] b;
+    private static Map e;
+    private static String[] c;
     public static BooleanSetting onlyKilledBySelf;
     
     private static Object[] g;
@@ -55,23 +59,30 @@ implements EventSubscriber {
     public static ModeSetting mode;
             
 
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private static void a() {
         KillEffect.g[0] = "ah\u001f\u0000O?I";
         KillEffect.g[1] = "B\n\u001e\u0001\u0003[u\u001d\u001a\u000bN\u007fb\u0016@\u0017";
@@ -84,7 +95,7 @@ implements EventSubscriber {
         KillEffect.g[6] = "%'\\\u000f\u0003F>+Yt072-[\b\u0005Y&~RtQP*:Z\r\u0004[u!9N\u000e^%x\u0002L\u0018Lr@\u0002M\u0001\r=1@\u000f\u0006LO";
 }
     public void onEntityJoinWorld(EntityJoinWorldEvent var1) {
-        if (var1.H.equals((Object)KillEffect.f.field_71439_g)) {
+        if (var1.H.equals((Object)KillEffect.f.thePlayer)) {
             this.F.clear();
 }
 }
@@ -109,29 +120,29 @@ implements EventSubscriber {
 }
     public void onLivingDeath(LivingDeathEvent var1, long var2) {
         boolean var6;
-        boolean bl = var6 = !onlyKilledBySelf.c() || var1.M.func_76346_g() != null && var1.M.func_76346_g().equals((Object)KillEffect.f.field_71439_g);
-        if (var6 && var1.p != KillEffect.f.field_71439_g) {
-            String var7 = var1.p.func_70005_c_();
+        boolean bl = var6 = !onlyKilledBySelf.c() || var1.M.getEntity() != null && var1.M.getEntity().equals((Object)KillEffect.f.thePlayer);
+        if (var6 && var1.p != KillEffect.f.thePlayer) {
+            String var7 = var1.p.getName();
             KillEffectDeathPos var8 = this.F.remove(var7);
             if (var8 != null) {
                 this.R(var8, 24462074121926L);
             } else {
                 EntityLivingBase var9 = var1.p;
-                this.R(new KillEffectDeathPos(var9.field_70165_t, var9.field_70163_u, var9.field_70161_v, var9.func_70047_e()), 24462074121926L);
+                this.R(new KillEffectDeathPos(var9.posX, var9.posY, var9.posZ, var9.getEyeHeight()), 24462074121926L);
 }
 }
 }
     public void onPostRender(PostRenderEvent var1) {
-        if (var1.z instanceof EntityPlayer && var1.z != KillEffect.f.field_71439_g) {
+        if (var1.z instanceof EntityPlayer && var1.z != KillEffect.f.thePlayer) {
             EntityLivingBase var2 = var1.z;
-            this.F.put(var2.func_70005_c_(), new KillEffectDeathPos(var2.field_70165_t, var2.field_70163_u, var2.field_70161_v, var2.func_70047_e()));
+            this.F.put(var2.getName(), new KillEffectDeathPos(var2.posX, var2.posY, var2.posZ, var2.getEyeHeight()));
 }
 }
     public void onHandleChat(long var1, HandleChatEvent var3) {
         String var7;
         KillEffectDeathPos var8;
-        String var6 = StringUtils.func_76338_a((String)var3.A.func_150260_c());
-        if (KillEffect.f.field_71439_g != null && !var6.contains(":") && var6.contains("by " + KillEffect.f.field_71439_g.func_70005_c_()) && (var8 = this.F.remove(var7 = var6.trim().split(" ")[0])) != null) {
+        String var6 = StringUtils.stripControlCodes((String)var3.A.getUnformattedText());
+        if (KillEffect.f.thePlayer != null && !var6.contains(":") && var6.contains("by " + KillEffect.f.thePlayer.getName()) && (var8 = this.F.remove(var7 = var6.trim().split(" ")[0])) != null) {
             this.R(var8, 24462074121926L);
 }
 }
@@ -148,7 +159,7 @@ implements EventSubscriber {
     public void t(LivingDeathEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (var1.p != null) {
             boolean var7;
-            boolean bl = var7 = var1.M.func_76346_g() != null && var1.M.func_76346_g().equals((Object)KillEffect.f.field_71439_g);
+            boolean bl = var7 = var1.M.getEntity() != null && var1.M.getEntity().equals((Object)KillEffect.f.thePlayer);
             if (!onlyKilledBySelf.c() || var7) {
                 switch (mode.Y()) {
                     case "BLOOD": {
@@ -166,7 +177,12 @@ implements EventSubscriber {
 }
 }
 }
-                Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            g = new Object[7]; h = new String[7]; a(); e = new HashMap(13); long var0 = a ^ 75590332247018L;
+            byte[] var10003 = new byte[]{(byte)(var0 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var3 = 1; var3 < 8; ++var3) { var10003[var3] = (byte)(var0 << var3 * 8 >>> 56); }
+            Cipher var2 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var2.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var9 = new String[7];
             int var7 = 0;
@@ -206,7 +222,6 @@ implements EventSubscriber {
                     var14 = var6.substring(++var13, var13 + var5);
                     var10001 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var11) {
@@ -214,6 +229,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 117327217342098L;
+        zkm$clinit();
         mode = new ModeSetting("Mode", false, "BLOOD", "NONE", "BLOOD", "LIGHTNING", "SOUL_BREAK");
         onlyKilledBySelf = new BooleanSetting("Only-killed-by-self", false);
 }

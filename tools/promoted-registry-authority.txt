@@ -1,0 +1,24 @@
+# OpenAbyss promoted registry authority
+# Runnable-era baseline: 92 live modules
+# Recovery promotions: 92 -> 97 -> 103 -> 112
+# format: stage event_backed module
+97 false CustomCape
+97 false Font
+97 false Gadgets
+97 false Language
+97 false Theme
+103 false InputFix
+103 false NoObfuscation
+103 false RawInput
+103 false VisualSpoof
+103 false CaveXray
+103 false ItemScale
+112 true AntiNick
+112 true ContainerKeeper
+112 true BindGUI
+112 true KeyStrokes
+112 true TeamInvisible
+112 true ClosestPlayerHUD
+112 true FKCounter
+112 true FallIndicator
+112 true LeapModeHUD

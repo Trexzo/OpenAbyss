@@ -78,6 +78,8 @@ import org.lwjgl.opengl.GL11;
 public class BedPlates
 extends Module
 implements EventSubscriber {
+    private static Map h;
+    private static String[] c;
     private final int d;
     private final int F;
         public static BooleanSetting outline;
@@ -101,39 +103,22 @@ implements EventSubscriber {
         BedPlatesBinder.y(var3, this);
 }
     private BlockPos O(BlockPos var1) {
-        IBlockState var2 = BedPlates.f.field_71441_e.func_180495_p(var1);
-        if (var2.func_177230_c() != Blocks.field_150324_C) {
+        IBlockState var2 = BedPlates.f.theWorld.getBlockState(var1);
+        if (var2.getBlock() != Blocks.bed) {
             return null;
 }
-        EnumFacing var3 = (EnumFacing)var2.func_177229_b((IProperty)BlockBed.field_176387_N);
-        return var1.func_177972_a(var3.func_176734_d());
+        EnumFacing var3 = (EnumFacing)var2.getValue((IProperty)BlockBed.FACING);
+        return var1.offset(var3.getOpposite());
 }
-    /*
-     * WARNING - void declaration
-     */
     public void onRender3D(Render3DEvent var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        int var40;
-        int var6_8 = 0;
         CustomFont var39 = Font.s(0L);
-        String string = color.Y();
-        int n2 = -1;
-        switch (string.hashCode()) {
-            case 79789481: {
-                if (!string.equals("THEME")) break;
-                boolean bl = false;
-                break;
-}
-            case -280494393: {
-                if (!string.equals("THEME_CUSTOM")) break;
-                boolean bl = true;
-}
-}
-        switch (var6_8) {
-            case 0: {
+        int var40;
+        switch (color.Y()) {
+            case "THEME": {
                 var40 = Theme.S(0.0, 35338930340239L);
                 break;
 }
-            case 1: {
+            case "THEME_CUSTOM": {
                 var40 = Theme.X(65301174328177L, 0.0);
                 break;
 }
@@ -151,25 +136,25 @@ implements EventSubscriber {
             Set var44 = (Set)entry.getValue();
             BlockPos var45 = this.O(var43);
             if (var45 != null) {
-                var46 = (double)(var43.func_177958_n() + var45.func_177958_n()) / 2.0 + 0.5;
-                var48 = (double)(var43.func_177956_o() + var45.func_177956_o()) / 2.0 + 1.2;
-                var50 = (double)(var43.func_177952_p() + var45.func_177952_p()) / 2.0 + 0.5;
+                var46 = (double)(var43.getX() + var45.getX()) / 2.0 + 0.5;
+                var48 = (double)(var43.getY() + var45.getY()) / 2.0 + 1.2;
+                var50 = (double)(var43.getZ() + var45.getZ()) / 2.0 + 0.5;
             } else {
-                var46 = (double)var43.func_177958_n() + 0.5;
-                var48 = (double)var43.func_177956_o() + 1.2;
-                var50 = (double)var43.func_177952_p() + 0.5;
+                var46 = (double)var43.getX() + 0.5;
+                var48 = (double)var43.getY() + 1.2;
+                var50 = (double)var43.getZ() + 0.5;
 }
-            double var52 = var46 - RenderManagerAccessor.k(0L, f.func_175598_ae());
-            double var54 = var48 - RenderManagerAccessor.y(13236, f.func_175598_ae());
-            double var56 = var50 - RenderManagerAccessor.W(0L, f.func_175598_ae());
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179137_b((double)var52, (double)var54, (double)var56);
-            GlStateManager.func_179114_b((float)(-BedPlates.f.func_175598_ae().field_78735_i), (float)0.0f, (float)1.0f, (float)0.0f);
-            GlStateManager.func_179114_b((float)BedPlates.f.func_175598_ae().field_78732_j, (float)(LunarClientDetector.q(0L) ? 1.0f : this.H()), (float)0.0f, (float)0.0f);
-            double var58 = f.func_175606_aa().func_70011_f((double)var43.func_177958_n(), (double)var43.func_177956_o(), (double)var43.func_177952_p());
+            double var52 = var46 - RenderManagerAccessor.k(0L, f.getRenderManager());
+            double var54 = var48 - RenderManagerAccessor.y(13236, f.getRenderManager());
+            double var56 = var50 - RenderManagerAccessor.W(0L, f.getRenderManager());
+            GlStateManager.pushMatrix();
+            GlStateManager.translate((double)var52, (double)var54, (double)var56);
+            GlStateManager.rotate((float)(-BedPlates.f.getRenderManager().playerViewY), (float)0.0f, (float)1.0f, (float)0.0f);
+            GlStateManager.rotate((float)BedPlates.f.getRenderManager().playerViewX, (float)(LunarClientDetector.q(0L) ? 1.0f : this.H()), (float)0.0f, (float)0.0f);
+            double var58 = f.getRenderViewEntity().getDistance((double)var43.getX(), (double)var43.getY(), (double)var43.getZ());
             double var60 = Math.pow(Math.min(Math.max(var58, 6.0), 128.0), 0.75) * 0.005;
-            GlStateManager.func_179139_a((double)(-var60), (double)(-var60), (double)var60);
-            GlStateManager.func_179097_i();
+            GlStateManager.scale((double)(-var60), (double)(-var60), (double)var60);
+            GlStateManager.disableDepth();
             String var64 = "EMPTY";
             if (var44.isEmpty()) {
                 var62 = var39.R(var64, 52019766876817L) + 10.0f;
@@ -193,13 +178,13 @@ implements EventSubscriber {
             } else {
                 float var70 = var65 + 5.0f;
                 float var71 = var66 + 5.0f;
-                for (Block var73 : var44) {
-                    this.U(new ItemStack(Item.func_150898_a((Block)var73)), (int)var70, (int)var71);
+                for (Block var73 : (Iterable<Block>)(var44)) {
+                    this.U(new ItemStack(Item.getItemFromBlock((Block)var73)), (int)var70, (int)var71);
                     var70 += 18.0f;
 }
 }
-            GlStateManager.func_179126_j();
-            GlStateManager.func_179121_F();
+            GlStateManager.enableDepth();
+            GlStateManager.popMatrix();
 }
 }
     public BedPlates(long var1) {
@@ -211,23 +196,30 @@ implements EventSubscriber {
         this.J = 2;
         this.d = 16;
 }
-                if (var5 < 224) {
-                char var6 = (char)((char)(var5 & 0x1F) << 6);
+    private static String b(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
                 byte var8 = var0[++var4];
-                var6 = (char)(var6 | (char)(var8 & 0x3F));
+                var6 = (char)(var6 | (char)(var8 & 63));
                 var3[var1++] = var6;
-                continue;
-}
-            if (var4 >= var2 - 2) continue;
-            char var12 = (char)((char)(var5 & 0xF) << 12);
-            byte var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F) << 6);
-            var9 = var0[++var4];
-            var12 = (char)(var12 | (char)(var9 & 0x3F));
-            var3[var1++] = var12;
-}
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                byte var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
         return new String(var3, 0, var1);
-}
+    }
     private static void a() {
         BedPlates.r[0] = "7=1s80\u0011";
         BedPlates.r[1] = "C\u0005z.D\u000bt\u0012~$\t/c\u0019$8";
@@ -253,11 +245,11 @@ implements EventSubscriber {
             BlockPos var6 = (BlockPos)var5.poll();
             for (EnumFacing var10 : EnumFacing.values()) {
                 Block var12;
-                BlockPos var11 = var6.func_177972_a(var10);
-                if (var4.contains(var11) || var11.func_177956_o() < var1.func_177956_o() || var11.func_177951_i((Vec3i)var1) > (double)(var2 * var2) || BlockUtil.f(var12 = BedPlates.f.field_71441_e.func_180495_p(var11).func_177230_c())) continue;
+                BlockPos var11 = var6.offset(var10);
+                if (var4.contains(var11) || var11.getY() < var1.getY() || var11.distanceSq((Vec3i)var1) > (double)(var2 * var2) || BlockUtil.f(var12 = BedPlates.f.theWorld.getBlockState(var11).getBlock())) continue;
                 var4.add(var11);
                 var5.add(var11);
-                if (var12 == Blocks.field_150324_C) continue;
+                if (var12 == Blocks.bed) continue;
                 var3.add(this.E(var12));
 }
 }
@@ -265,12 +257,12 @@ implements EventSubscriber {
         return var3;
 }
     private float H() {
-        return BedPlates.f.field_71474_y.field_74320_O == 2 ? -1.0f : 1.0f;
+        return BedPlates.f.gameSettings.thirdPersonView == 2 ? -1.0f : 1.0f;
 }
     public void onPreUpdate(PreUpdateEvent var1) {
         for (BlockPos var3 : AbyssClient.G) {
-            IBlockState var4 = BedPlates.f.field_71441_e.func_180495_p(var3);
-            if (!(var4.func_177230_c() instanceof BlockBed) || var4.func_177229_b((IProperty)BlockBed.field_176472_a) != BlockBed.EnumPartType.HEAD) continue;
+            IBlockState var4 = BedPlates.f.theWorld.getBlockState(var3);
+            if (!(var4.getBlock() instanceof BlockBed) || var4.getValue((IProperty)BlockBed.PART) != BlockBed.EnumPartType.HEAD) continue;
             LinkedHashSet<Block> var5 = new LinkedHashSet<Block>(this.Q(var3, (int)surroundingRange.L()));
             BlockPos var6 = this.O(var3);
             if (var6 != null) {
@@ -281,44 +273,50 @@ implements EventSubscriber {
         this.a.keySet().removeIf(BlockUtil::a$r1);
 }
     private Block E(Block var1) {
-        if (var1 == Blocks.field_150325_L) {
-            return Blocks.field_150325_L;
+        if (var1 == Blocks.wool) {
+            return Blocks.wool;
 }
-        return var1 != Blocks.field_150399_cn && var1 != Blocks.field_150397_co ? var1 : Blocks.field_150359_w;
+        return var1 != Blocks.stained_glass && var1 != Blocks.stained_glass_pane ? var1 : Blocks.glass;
 }
     private boolean h(Block var1) {
-        return var1 == Blocks.field_150377_bs || var1 == Blocks.field_150325_L || var1 == Blocks.field_150359_w || var1 == Blocks.field_150344_f || var1 == Blocks.field_150364_r || var1 == Blocks.field_150363_s || var1 == Blocks.field_150343_Z || var1 == Blocks.field_150435_aG || var1 == Blocks.field_150405_ch || var1 == Blocks.field_150406_ce || var1 == Blocks.field_150432_aD || var1 == Blocks.field_150403_cj;
+        return var1 == Blocks.end_stone || var1 == Blocks.wool || var1 == Blocks.glass || var1 == Blocks.planks || var1 == Blocks.log || var1 == Blocks.log2 || var1 == Blocks.obsidian || var1 == Blocks.clay || var1 == Blocks.hardened_clay || var1 == Blocks.stained_hardened_clay || var1 == Blocks.ice || var1 == Blocks.packed_ice;
 }
     @Override
     public void A(long var1) {
         this.a.clear();
 }
     private void U(ItemStack var1, int var2, int var3) {
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179132_a((boolean)true);
-        GlStateManager.func_179086_m((int)256);
-        RenderHelper.func_74520_c();
+        GlStateManager.pushMatrix();
+        GlStateManager.depthMask((boolean)true);
+        GlStateManager.clear((int)256);
+        RenderHelper.enableGUIStandardItemLighting();
         GL11.glDisable((int)2896);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)1.0f, (float)1.0f, (float)-0.01f);
-        BedPlates.f.func_175599_af().field_77023_b = -150.0f;
-        f.func_175599_af().func_180450_b(var1, var2, var3);
-        f.func_175599_af().func_175030_a(BedPlates.f.field_71466_p, var1, var2, var3);
-        BedPlates.f.func_175599_af().field_77023_b = 0.0f;
-        GlStateManager.func_179121_F();
-        RenderHelper.func_74518_a();
-        GlStateManager.func_179141_d();
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
-        GlStateManager.func_179121_F();
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179152_a((float)0.5f, (float)0.5f, (float)0.5f);
-        GlStateManager.func_179097_i();
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179152_a((float)2.0f, (float)2.0f, (float)2.0f);
-        GlStateManager.func_179121_F();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)1.0f, (float)1.0f, (float)-0.01f);
+        BedPlates.f.getRenderItem().zLevel = -150.0f;
+        f.getRenderItem().renderItemAndEffectIntoGUI(var1, var2, var3);
+        f.getRenderItem().renderItemOverlays(BedPlates.f.fontRendererObj, var1, var2, var3);
+        BedPlates.f.getRenderItem().zLevel = 0.0f;
+        GlStateManager.popMatrix();
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.enableAlpha();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+        GlStateManager.popMatrix();
+        GlStateManager.pushMatrix();
+        GlStateManager.scale((float)0.5f, (float)0.5f, (float)0.5f);
+        GlStateManager.disableDepth();
+        GlStateManager.enableDepth();
+        GlStateManager.scale((float)2.0f, (float)2.0f, (float)2.0f);
+        GlStateManager.popMatrix();
 }
-                Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void zkm$clinit() {
+        try {
+            r = new Object[9]; s = new String[9]; a(); h = new HashMap(13);
+            long var11 = b ^ 13899860389197L;
+            byte[] var10003 = new byte[]{(byte)(var11 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var14 = 1; var14 < 8; ++var14) { var10003[var14] = (byte)(var11 << var14 * 8 >>> 56); }
+            Cipher var13 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var13.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var20 = new String[3];
             int var18 = 0;
@@ -379,7 +377,6 @@ implements EventSubscriber {
                             var34 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                             var37 = 0;
 }
-                        break;
 }
 }
                 var16 = var17.charAt(var15);
@@ -391,6 +388,7 @@ implements EventSubscriber {
 }
     static {
         b = 130834582854816L;
+        zkm$clinit();
         backgroundOpacity = new PercentageSetting("Background-opacity", 40);
         customColor = new ColorSetting("Custom-color", "000000");
         outline = new BooleanSetting("Outline", true);

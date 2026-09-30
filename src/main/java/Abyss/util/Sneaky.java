@@ -7,6 +7,6 @@ public final class Sneaky {
     private Sneaky() {
 }
     public static <T extends Throwable> RuntimeException rethrow(Throwable t2) throws T {
-        throw t2;
+        throw (T)t2;
 }
 }

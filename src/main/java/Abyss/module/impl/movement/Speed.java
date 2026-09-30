@@ -19,6 +19,12 @@ import java.util.Map;
 public class Speed
 extends Module
 implements EventSubscriber {
+    private static String[] c;
+
+    private static Map d;
+
+    private static long a = 128241496468786L;
+
     public static ModeSetting mode;
     private static String[] g;
             public static NumberSetting speed;
@@ -33,29 +39,29 @@ implements EventSubscriber {
         return mode.Y();
 }
     public void onPreUpdate(long var1, PreUpdateEvent var3) {
-        if (Speed.f.field_71474_y.field_74351_w.func_151470_d() || Speed.f.field_71474_y.field_74370_x.func_151470_d() || Speed.f.field_71474_y.field_74366_z.func_151470_d() || Speed.f.field_71474_y.field_74368_y.func_151470_d()) {
+        if (Speed.f.gameSettings.keyBindForward.isKeyDown() || Speed.f.gameSettings.keyBindLeft.isKeyDown() || Speed.f.gameSettings.keyBindRight.isKeyDown() || Speed.f.gameSettings.keyBindBack.isKeyDown()) {
             switch (mode.Y()) {
                 case "GROUND_STRAFE": {
-                    if (!Speed.f.field_71439_g.field_70122_E) break;
+                    if (!Speed.f.thePlayer.onGround) break;
                     MoveUtil.r(speed.L());
-                    Speed.f.field_71439_g.func_70664_aZ();
+                    Speed.f.thePlayer.jump();
                     break;
 }
                 case "AUTO_JUMP": {
-                    if (!Speed.f.field_71439_g.field_70122_E) {
-                        Speed.f.field_71439_g.field_70159_w *= (double)speed.L();
-                        Speed.f.field_71439_g.field_70179_y *= (double)speed.L();
+                    if (!Speed.f.thePlayer.onGround) {
+                        Speed.f.thePlayer.motionX *= (double)speed.L();
+                        Speed.f.thePlayer.motionZ *= (double)speed.L();
                         break;
 }
-                    Speed.f.field_71439_g.func_70664_aZ();
+                    Speed.f.thePlayer.jump();
                     break;
 }
                 case "VANILLA": {
-                    if (!Speed.f.field_71439_g.field_70122_E) {
+                    if (!Speed.f.thePlayer.onGround) {
                         MoveUtil.r((double)(speed.L() * 4.0f) / Math.PI);
                         break;
 }
-                    Speed.f.field_71439_g.func_70664_aZ();
+                    Speed.f.thePlayer.jump();
 }
 }
 }

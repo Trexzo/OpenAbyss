@@ -31,8 +31,8 @@ public final class InjectHookRegistry {
         return BY_OWNER.keySet();
 }
     public static List<Hook> forOwner(String mcpOwner) {
-        ArrayList list = BY_OWNER.get(mcpOwner);
-        return list == null ? new ArrayList() : list;
+        List<Hook> list = BY_OWNER.get(mcpOwner);
+        return list == null ? new ArrayList<Hook>() : list;
 }
     public static int size() {
         int total = 0;

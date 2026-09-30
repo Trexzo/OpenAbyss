@@ -49,10 +49,16 @@ import net.minecraft.scoreboard.ScorePlayerTeam;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import org.lwjgl.opengl.GL11;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class ClosestPlayerHUD
 extends Module
 implements EventSubscriber {
+    private static long a = 23755569410545L;
     private static final float o = 10.0f;
     public static Color E;
     public static Color M;
@@ -98,12 +104,12 @@ implements EventSubscriber {
         long var6 = ((long)var1 << 32 | (long)var2 << 56 >>> 32 | (long)var3 << 40 >>> 40) ^ a;
         long var12 = var6 ^ 0x3977D06F0E5DL;
         float[] var14 = new float[TargetHudElement.values().length];
-        for (ClosestPlayerEntry var16 : var4) {
+        for (ClosestPlayerEntry var16 : (Iterable<ClosestPlayerEntry>)(var4)) {
             if (displayHead.c()) {
                 var14[TargetHudElement.HEAD.ordinal()] = 8.0f;
 }
             if (displayName.c()) {
-                var14[TargetHudElement.NAME.ordinal()] = Math.max(var14[TargetHudElement.NAME.ordinal()], var5.R(var16.F + var16.a.func_70005_c_(), var12));
+                var14[TargetHudElement.NAME.ordinal()] = Math.max(var14[TargetHudElement.NAME.ordinal()], var5.R(var16.F + var16.a.getName(), var12));
 }
             if (displayHealth.c()) {
                 var14[TargetHudElement.HP.ordinal()] = Math.max(var14[TargetHudElement.HP.ordinal()], var5.R(this.getHealth(var16), var12));
@@ -162,7 +168,7 @@ implements EventSubscriber {
                     break;
 }
                 case 2: {
-                    var8.T(37697014677608L, var1.F + var1.a.func_70005_c_(), (int)var21, (int)var3 + 1, -1);
+                    var8.T(37697014677608L, var1.F + var1.a.getName(), (int)var21, (int)var3 + 1, -1);
                     break;
 }
                 case 3: {
@@ -195,13 +201,13 @@ implements EventSubscriber {
         ClosestPlayerHUDBinder.k(var3, this);
 }
     private void h(EntityPlayer var1, int var2, int var3, String var6) {
-        double var7 = var1.field_70165_t - ClosestPlayerHUD.f.field_71439_g.field_70165_t;
-        double var9 = var1.field_70161_v - ClosestPlayerHUD.f.field_71439_g.field_70161_v;
+        double var7 = var1.posX - ClosestPlayerHUD.f.thePlayer.posX;
+        double var9 = var1.posZ - ClosestPlayerHUD.f.thePlayer.posZ;
         double var11 = Math.toDegrees(Math.atan2(var9, var7)) - 90.0;
-        float var13 = (float)(var11 - (double)ClosestPlayerHUD.f.field_71439_g.field_70177_z);
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179109_b((float)((float)var2 + 3.0f), (float)((float)var3 + 4.0f), (float)0.0f);
-        GlStateManager.func_179114_b((float)var13, (float)0.0f, (float)0.0f, (float)1.0f);
+        float var13 = (float)(var11 - (double)ClosestPlayerHUD.f.thePlayer.rotationYaw);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((float)((float)var2 + 3.0f), (float)((float)var3 + 4.0f), (float)0.0f);
+        GlStateManager.rotate((float)var13, (float)0.0f, (float)0.0f, (float)1.0f);
         GL11.glDisable((int)3553);
         GL11.glLineWidth((float)1.5f);
         Color var14 = this.s(var6);
@@ -212,21 +218,21 @@ implements EventSubscriber {
         GL11.glVertex2f((float)2.5f, (float)2.0f);
         GL11.glEnd();
         GL11.glEnable((int)3553);
-        GlStateManager.func_179121_F();
+        GlStateManager.popMatrix();
 }
     private List p(byte var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (ClosestPlayerHUD.f.field_71439_g != null && ClosestPlayerHUD.f.field_71441_e != null) {
+        if (ClosestPlayerHUD.f.thePlayer != null && ClosestPlayerHUD.f.theWorld != null) {
             String[] var8 = new String[]{"c", "a", "e", "9"};
             HashMap var9 = new HashMap();
             for (String string : var8) {
                 var9.put(string, new ArrayList());
 }
-            String var25 = this.Z(0L, (EntityPlayer)ClosestPlayerHUD.f.field_71439_g);
+            String var25 = this.Z(0L, (EntityPlayer)ClosestPlayerHUD.f.thePlayer);
             ClosestPlayerEntry var26 = null;
             ArrayList<ClosestPlayerEntry> var27 = new ArrayList<ClosestPlayerEntry>();
-            for (EntityPlayer var14 : ClosestPlayerHUD.f.field_71441_e.field_73010_i) {
+            for (EntityPlayer var14 : ClosestPlayerHUD.f.theWorld.playerEntities) {
                 String var15;
-                if (var14 == null || var14 == ClosestPlayerHUD.f.field_71439_g || var14.func_82150_aj() || var14.field_70128_L || (var15 = this.Z(0L, var14)) == null || !var9.containsKey(var15)) continue;
+                if (var14 == null || var14 == ClosestPlayerHUD.f.thePlayer || var14.isInvisible() || var14.isDead || (var15 = this.Z(0L, var14)) == null || !var9.containsKey(var15)) continue;
                 ((List)var9.get(var15)).add(var14);
 }
             for (String var16 : var8) {
@@ -234,8 +240,8 @@ implements EventSubscriber {
                 if (var17.isEmpty()) continue;
                 EntityPlayer var18 = null;
                 double var19 = Double.MAX_VALUE;
-                for (EntityPlayer var22 : var17) {
-                    double var23 = ClosestPlayerHUD.f.field_71439_g.func_70068_e((Entity)var22);
+                for (EntityPlayer var22 : (Iterable<EntityPlayer>)(var17)) {
+                    double var23 = ClosestPlayerHUD.f.thePlayer.getDistanceSqToEntity((Entity)var22);
                     if (!(var23 < var19)) continue;
                     var19 = var23;
                     var18 = var22;
@@ -262,13 +268,13 @@ implements EventSubscriber {
         if (var3 == null) {
             return null;
 }
-        if (!(var3.func_96124_cp() instanceof ScorePlayerTeam)) {
+        if (!(var3.getTeam() instanceof ScorePlayerTeam)) {
             return null;
 }
-        ScorePlayerTeam var4 = (ScorePlayerTeam)var3.func_96124_cp();
-        String var5 = var4.func_96668_e();
+        ScorePlayerTeam var4 = (ScorePlayerTeam)var3.getTeam();
+        String var5 = var4.getColorPrefix();
         if (var5 != null && !var5.isEmpty()) {
-            String var6 = StringUtils.func_76338_a((String)var5);
+            String var6 = StringUtils.stripControlCodes((String)var5);
             if (var6 != null) {
                 if (var6.contains("[R]")) {
                     return "c";
@@ -293,7 +299,7 @@ implements EventSubscriber {
         return null;
 }
     private String N(EntityPlayer var1) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        int var4 = (int)Math.round(var1.field_70163_u - ClosestPlayerHUD.f.field_71439_g.field_70163_u);
+        int var4 = (int)Math.round(var1.posY - ClosestPlayerHUD.f.thePlayer.posY);
         if (var4 > 0) {
             return "\u00a7a\u25b2" + var4;
 }
@@ -311,18 +317,18 @@ implements EventSubscriber {
 }
     private void L(EntityPlayer var3, int var4, int var5) {
         if (var3 != null) {
-            ResourceLocation var6 = DefaultPlayerSkin.func_177334_a((UUID)var3.func_110124_au());
-            NetworkPlayerInfo var7 = f.func_147114_u().func_175102_a(var3.func_110124_au());
+            ResourceLocation var6 = DefaultPlayerSkin.getDefaultSkin((UUID)var3.getUniqueID());
+            NetworkPlayerInfo var7 = f.getNetHandler().getPlayerInfo(var3.getUniqueID());
             if (var7 != null) {
-                var6 = var7.func_178837_g();
+                var6 = var7.getLocationSkin();
 }
-            GlStateManager.func_179098_w();
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-            GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-            f.func_110434_K().func_110577_a(var6);
-            Gui.func_152125_a((int)var4, (int)var5, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)8, (int)8, (float)64.0f, (float)64.0f);
-            Gui.func_152125_a((int)var4, (int)var5, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)8, (int)8, (float)64.0f, (float)64.0f);
+            GlStateManager.enableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+            GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+            f.getTextureManager().bindTexture(var6);
+            Gui.drawScaledCustomSizeModalRect((int)var4, (int)var5, (float)8.0f, (float)8.0f, (int)8, (int)8, (int)8, (int)8, (float)64.0f, (float)64.0f);
+            Gui.drawScaledCustomSizeModalRect((int)var4, (int)var5, (float)40.0f, (float)8.0f, (int)8, (int)8, (int)8, (int)8, (float)64.0f, (float)64.0f);
 }
 }
     private void v(long var1, EntityPlayer var3, float var4, float var5, float var6, String var7) {
@@ -330,7 +336,7 @@ implements EventSubscriber {
         this.h(var3, (int)var10, (int)var6, var7);
 }
     private String getHealth(ClosestPlayerEntry var1) {
-        int var4 = (int)Math.ceil(var1.a.func_110143_aJ());
+        int var4 = (int)Math.ceil(var1.a.getHealth());
         String var5 = var4 <= 8 ? "\u00a7c" : (var4 <= 14 ? "\u00a7e" : "\u00a7a");
         return var5 + var4;
 }
@@ -346,18 +352,18 @@ implements EventSubscriber {
             float var18 = this.p(var17, var16);
             float var19 = var18 + 2.0f;
             float var20 = (float)var11.size() * 10.0f + 2.0f;
-            GlStateManager.func_179094_E();
-            GlStateManager.func_179152_a((float)var13, (float)var13, (float)var13);
+            GlStateManager.pushMatrix();
+            GlStateManager.scale((float)var13, (float)var13, (float)var13);
             if (backgroundOpacity.k() > 0) {
                 int var21 = (int)((float)(255 * backgroundOpacity.k()) / 100.0f);
-                Gui.func_73734_a((int)((int)var14), (int)((int)var15), (int)((int)(var14 + var19)), (int)((int)(var15 + var20)), (int)new Color(0, 0, 0, var21).getRGB());
+                Gui.drawRect((int)((int)var14), (int)((int)var15), (int)((int)(var14 + var19)), (int)((int)(var15 + var20)), (int)new Color(0, 0, 0, var21).getRGB());
 }
             float var25 = var14 + 1.0f;
             float var22 = var15 + 1.0f;
             for (int var23 = 0; var23 < var11.size(); ++var23) {
                 this.ordinal(var11.get(var23), var25, var22 + (float)var23 * 10.0f, var17, 46158516820447L, var16, var12);
 }
-            GlStateManager.func_179121_F();
+            GlStateManager.popMatrix();
 }
 }
     private Color s(String var1) {

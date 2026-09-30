@@ -30,7 +30,7 @@ public class GhostHand
 extends Module {
     public static BooleanSetting blacklistEnemy;
     public static BooleanSetting playersOnly;
-    private static final long public static BooleanSetting disableWhileHoldingSword;
+    public static BooleanSetting disableWhileHoldingSword;
     private static final Minecraft N;
     public static BooleanSetting teammatesOnly;
     public static BooleanSetting toolsOnly;
@@ -44,7 +44,7 @@ extends Module {
         var1 = 0x3BB2DD1DCBC8L ^ var1;
 }
     private static boolean w(Entity var0) {
-        return !(var0 instanceof EntityLivingBase) || !blacklistEnemy.c() || (!(var0 instanceof EntityPlayer) || AntiBot.T((short)0, (EntityPlayer)var0) || Teams.g(0L, var0)) && !Teams.Y(var0) ? !(disableWhileHoldingSword.c() && GhostHand.N.field_71439_g.func_70694_bm() != null && GhostHand.N.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemSword || toolsOnly.c() && (GhostHand.N.field_71439_g.func_70694_bm() == null || !(GhostHand.N.field_71439_g.func_70694_bm().func_77973_b() instanceof ItemTool)) || playersOnly.c() && !(var0 instanceof EntityPlayer) || teammatesOnly.c() && (!(var0 instanceof EntityLivingBase) || !Teams.g(0L, var0))) : false;
+        return !(var0 instanceof EntityLivingBase) || !blacklistEnemy.c() || (!(var0 instanceof EntityPlayer) || AntiBot.T((short)0, (EntityPlayer)var0) || Teams.g(0L, var0)) && !Teams.Y(var0) ? !(disableWhileHoldingSword.c() && GhostHand.N.thePlayer.getHeldItem() != null && GhostHand.N.thePlayer.getHeldItem().getItem() instanceof ItemSword || toolsOnly.c() && (GhostHand.N.thePlayer.getHeldItem() == null || !(GhostHand.N.thePlayer.getHeldItem().getItem() instanceof ItemTool)) || playersOnly.c() && !(var0 instanceof EntityPlayer) || teammatesOnly.c() && (!(var0 instanceof EntityLivingBase) || !Teams.g(0L, var0))) : false;
 }
     static {
         boolean var2 = false;

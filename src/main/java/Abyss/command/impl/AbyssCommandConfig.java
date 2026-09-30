@@ -11,6 +11,7 @@
  */
 package Abyss.command.impl;
 
+import Abyss.AbyssClient;
 import Abyss.command.AbyssCommands;
 import Abyss.command.Command;
 import Abyss.command.impl.AbyssCommandBind;
@@ -18,7 +19,10 @@ import Abyss.internal.restore.AbyssBootstrap;
 import Abyss.internal.restore.AbyssCommandData;
 import Abyss.internal.restore.AbyssConfig;
 import Abyss.internal.restore.AbyssModuleRegistry;
+import Abyss.module.Category;
 import Abyss.module.Module;
+import Abyss.module.Modules;
+import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.ModuleManager;
 import Abyss.setting.Setting;
 import Abyss.setting.settings.BooleanSetting;
@@ -42,6 +46,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -181,7 +186,7 @@ extends Command {
         int var5 = 0;
         int var6 = 0;
         int var12 = 0;
-        for (Module var8 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var8 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var8 == null || !AbyssModuleRegistry.isConfigPersistable(var8)) {
                 ++var6;
                 continue;
@@ -192,19 +197,14 @@ extends Command {
                 continue;
 }
             JsonObject var10 = var9.getAsJsonObject();
-            if (var10.has("status")) {
-                var8.I(20724619369162L, var10.get("status").getAsBoolean());
+            if (AbyssCommandConfig.applyStatus(var8, var10)) {
                 ++var3;
 }
-            if (var10.has("keyBind") && !var8.S() && AbyssCommandConfig.gate()) {
-                try {
-                    var8.z(118276941480361L, var10.get("keyBind").getAsInt());
-                    ++var4;
+            if (AbyssCommandConfig.applyKeyBind(var8, var10)) {
+                ++var4;
 }
-                catch (Throwable throwable) {
-                    // empty catch block
-}
-}
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(var8, var10, "suffix-visible", "q");
             var12 += AbyssCommandConfig.applySettingValues(var8, var10);
 }
         AbyssBootstrap.forceEnableCommandLine();
@@ -224,7 +224,12 @@ extends Command {
 }
         File file = var3 = var2.isFile() ? var2 : new File(var2.getParentFile(), "current.json");
         if (!var3.isFile()) {
-            AbyssCommands.chat("\u00a7cNo template to merge into (neither " + var2.getName() + " nor current.json exists). Refusing to invent a config.");
+            AbyssConfig.SaveResult fresh = AbyssConfig.save(var0);
+            if (fresh != null && fresh.ok) {
+                AbyssCommands.chat("\u00a7aSaved \u00a7f" + new File(fresh.path).getName() + "\u00a7a (created fresh config)");
+            } else {
+                AbyssCommands.chat("\u00a7cFresh config save failed: " + String.valueOf(fresh));
+            }
             return;
 }
         JsonObject var4 = AbyssCommandConfig.read(var3);
@@ -236,18 +241,23 @@ extends Command {
         int var6 = 0;
         int var13 = 0;
         boolean var7 = AbyssCommandConfig.gate();
-        for (Module var9 : ModuleManager.S == null ? new ArrayList() : ModuleManager.S) {
+        for (Module var9 : ModuleManager.S == null ? new ArrayList<Module>() : ModuleManager.S) {
             if (var9 == null || !AbyssModuleRegistry.isConfigPersistable(var9)) continue;
             JsonElement var10 = var4.get(var9.b());
+            JsonObject var11;
             if (var10 == null || !var10.isJsonObject()) {
+                var11 = new JsonObject();
+                var4.add(var9.b(), (JsonElement)var11);
                 ++var6;
-                continue;
+            } else {
+                var11 = var10.getAsJsonObject();
 }
-            JsonObject var11 = var10.getAsJsonObject();
             var11.addProperty("status", Boolean.valueOf(var9.o()));
             if (var7) {
                 var11.addProperty("keyBind", (Number)var9.h());
 }
+            var11.addProperty("visible", Boolean.valueOf(var9.D()));
+            var11.addProperty("suffix-visible", Boolean.valueOf(var9.r()));
             var13 += AbyssCommandConfig.writeSettingValues(var9, var11);
             ++var5;
 }
@@ -280,7 +290,7 @@ extends Command {
 }
         try {
             File var4;
-            File var3 = Minecraft.func_71410_x().field_71412_D;
+            File var3 = Minecraft.getMinecraft().mcDataDir;
             if (var3 != null && (var4 = new File(var3, "Abyss")).isDirectory()) {
                 return var4;
 }
@@ -302,100 +312,388 @@ extends Command {
         String var2 = var0.toLowerCase().endsWith(SUFFIX) ? var0 : var0 + SUFFIX;
         return new File(var1, var2);
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static JsonObject read(File var0) {
-        JsonObject jsonObject;
         Reader var1 = null;
         try {
             var1 = new InputStreamReader((InputStream)new FileInputStream(var0), "UTF-8");
             JsonElement var2 = new JsonParser().parse(var1);
-            jsonObject = var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
-            if (var1 == null) return jsonObject;
+            return var2 != null && var2.isJsonObject() ? var2.getAsJsonObject() : null;
 }
         catch (Throwable var3) {
-            try {
-                JsonObject jsonObject3 = null;
-                return jsonObject3;
+            return null;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+        finally {
+            if (var1 != null) {
+                try {
+                    var1.close();
 }
-            finally {
-                if (var1 != null) {
-                    try {
-                        var1.close();
-}
-                    catch (Throwable throwable) {}
+                catch (Throwable ignored) {
+                    // close failure does not change the read result
 }
 }
 }
-        try {
-            var1.close();
-            return jsonObject;
 }
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return jsonObject;
-}
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Enabled aggressive block sorting
-     * Enabled unnecessary exception pruning
-     * Enabled aggressive exception aggregation
-     */
     private static boolean write(File var0, JsonObject var1) {
-        boolean var4222;
         File var2 = new File(var0.getParentFile(), var0.getName() + ".tmp");
+        File var4 = new File(var0.getParentFile(), var0.getName() + ".bak");
         Writer var3 = null;
+        boolean rotated = false;
+
         try {
-            var3 = new OutputStreamWriter((OutputStream)new FileOutputStream(var2), "UTF-8");
-            new GsonBuilder().setPrettyPrinting().create().toJson((JsonElement)var1, (Appendable)var3);
+            if (var2.isFile() && !var2.delete()) {
+                return false;
+}
+            var3 = new OutputStreamWriter(new FileOutputStream(var2), "UTF-8");
+            new GsonBuilder().setPrettyPrinting().create().toJson(var1, var3);
             var3.close();
             var3 = null;
+
             if (var0.isFile()) {
-                File var4222 = new File(var0.getParentFile(), var0.getName() + ".bak");
-                if (var4222.isFile()) {
-                    var4222.delete();
+                if (var4.isFile() && !var4.delete()) {
+                    var2.delete();
+                    return false;
 }
-                var0.renameTo(var4222);
+                if (!var0.renameTo(var4)) {
+                    var2.delete();
+                    return false;
 }
-            var4222 = var2.renameTo(var0);
-            if (var3 == null) return var4222;
+                rotated = true;
 }
-        catch (Throwable var5) {
-            try {
-                boolean bl = false;
-                return bl;
+            if (var2.renameTo(var0)) {
+                return true;
 }
-            catch (Throwable throwable) {
-                throw throwable;
+            if (rotated && !var0.exists() && var4.isFile()) {
+                var4.renameTo(var0);
 }
-            finally {
-                if (var3 != null) {
-                    try {
-                        var3.close();
-}
-                    catch (Throwable throwable) {}
-}
-}
-}
-        try {
-            var3.close();
-            return var4222;
-}
-        catch (Throwable throwable) {
-            // empty catch block
-}
-        return var4222;
-}
+            var2.delete();
+            return false;
+        } catch (Throwable var5) {
+            if (rotated && !var0.exists() && var4.isFile()) {
+                try {
+                    var4.renameTo(var0);
+                } catch (Throwable ignored) {
+                }
+            }
+            var2.delete();
+            return false;
+        } finally {
+            if (var3 != null) {
+                try {
+                    var3.close();
+                } catch (Throwable var6) {
+                }
+            }
+        }
+    }
     private static boolean gate() {
         return AbyssCommandBind.gateOk();
+}
+    private static boolean applyStatus(Module module, JsonObject block) {
+        if (module == null || block == null || !block.has("status")) {
+            return false;
+}
+        try {
+            JsonElement value = block.get("status");
+            if (value == null || !value.isJsonPrimitive()) {
+                return false;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isBoolean()) {
+                return false;
+}
+            module.I(20724619369162L, primitive.getAsBoolean());
+            return true;
+}
+        catch (Throwable throwable) {
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "status-load", throwable);
+            return false;
+}
+}
+    private static boolean applyKeyBind(Module module, JsonObject block) {
+        if (module == null || block == null || !block.has("keyBind") || module.S() || !AbyssCommandConfig.gate()) {
+            return false;
+}
+        try {
+            JsonElement value = block.get("keyBind");
+            if (value == null || !value.isJsonPrimitive()) {
+                return false;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isNumber()) {
+                return false;
+}
+            double numeric = primitive.getAsDouble();
+            if (Double.isNaN(numeric) || Double.isInfinite(numeric) || numeric != Math.rint(numeric)
+                    || numeric < Integer.MIN_VALUE || numeric > Integer.MAX_VALUE) {
+                return false;
+}
+            module.z(118276941480361L, (int)numeric);
+            return true;
+}
+        catch (Throwable throwable) {
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "keybind-load", throwable);
+            return false;
+}
+}
+    private static void applyModuleBoolean(Module module, JsonObject block, String key, String fieldName) {
+        if (module == null || block == null || !block.has(key)) {
+            return;
+}
+        try {
+            JsonElement value = block.get(key);
+            if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+                return;
+}
+            Field field = Module.class.getDeclaredField(fieldName);
+            if (field.getType() != Boolean.TYPE) {
+                return;
+}
+            field.setAccessible(true);
+            field.setBoolean(module, value.getAsBoolean());
+}
+        catch (Throwable throwable) {
+            AbyssClient.recordFeatureFailure("AbyssCommandConfig", "module-metadata-apply", throwable);
+}
+}
+    public static String selfTest() {
+        try {
+            class Probe extends Module {
+                final BooleanSetting bool = new BooleanSetting("Bool", true);
+                final PercentageSetting percent = new PercentageSetting("Percent", 75);
+                final NumberSetting number = new NumberSetting("Number", 3.5f, 0.0f, 10.0f, 0.5f);
+                final ModeSetting mode = new ModeSetting("Mode", "TWO", "ONE", "TWO");
+                final ColorSetting color = new ColorSetting("Color", "A1B2C3");
+                final TextSetting text = new TextSetting("Text", "hello world");
+
+                Probe() {
+                    super(0L);
+                    this.declare("ConfigSelfTest", Category.Misc, "Config command JSON probe",
+                            this.bool, this.percent, this.number, this.mode, this.color, this.text);
+}
+            }
+
+            Probe probe = new Probe();
+            JsonObject block = new JsonObject();
+            block.addProperty("visible", Boolean.TRUE);
+            block.addProperty("suffix-visible", Boolean.FALSE);
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "visible", "w");
+            AbyssCommandConfig.applyModuleBoolean(probe, block, "suffix-visible", "q");
+            if (!probe.D() || probe.r()) {
+                return "FAIL metadata visible=" + probe.D() + " suffix=" + probe.r();
+}
+
+            int written = AbyssCommandConfig.writeSettingValues(probe, block);
+            if (written != 6) {
+                return "FAIL setting-write count=" + written + " json=" + block;
+}
+
+            probe.bool.v(false, 0L);
+            probe.percent.d(10);
+            probe.number.o((byte)0, 0L, 1.0f);
+            probe.mode.i("ONE");
+            probe.color.e("000000");
+            probe.text.O("mutated");
+
+            int applied = AbyssCommandConfig.applySettingValues(probe, block);
+            if (applied != 6) {
+                return "FAIL setting-apply count=" + applied + " json=" + block;
+}
+            if (!probe.bool.c()) {
+                return "FAIL boolean";
+}
+            if (probe.percent.k() != 75) {
+                return "FAIL percentage " + probe.percent.k();
+}
+            if (probe.number.L() != 3.5f) {
+                return "FAIL number " + probe.number.L();
+}
+            if (!probe.mode.R("TWO")) {
+                return "FAIL mode " + probe.mode.Y();
+}
+            if (!"A1B2C3".equals(probe.color.Q())) {
+                return "FAIL color " + probe.color.Q();
+}
+            if (!"hello world".equals(probe.text.X())) {
+                return "FAIL text " + probe.text.X();
+}
+
+            JsonObject lowercaseMode = new JsonObject();
+            lowercaseMode.addProperty("Mode", "two");
+            int lowercaseApplied = AbyssCommandConfig.applySettingValues(probe, lowercaseMode);
+            if (lowercaseApplied != 1 || !"TWO".equals(probe.mode.Y())) {
+                return "FAIL mode-canonicalization applied=" + lowercaseApplied + " value=" + probe.mode.Y();
+}
+            probe.mode.i("ONE");
+
+            probe.I(20724619369162L, false);
+            probe.z(118276941480361L, 0);
+            JsonObject common = new JsonObject();
+            common.addProperty("status", Boolean.TRUE);
+            common.addProperty("keyBind", (Number)54);
+            if (!AbyssCommandConfig.applyStatus(probe, common)) {
+                return "FAIL status-apply";
+}
+            if (!probe.o()) {
+                return "FAIL status-value";
+}
+            if (AbyssCommandConfig.gate() && !AbyssCommandConfig.applyKeyBind(probe, common)) {
+                return "FAIL keybind-apply";
+}
+            if (AbyssCommandConfig.gate() && probe.h() == 0) {
+                return "FAIL keybind-value " + probe.h();
+}
+
+            boolean statusBeforeMalformed = probe.o();
+            int keyBeforeMalformed = probe.h();
+            JsonObject malformed = new JsonObject();
+            malformed.addProperty("status", "not-a-boolean");
+            malformed.addProperty("keyBind", 1.5d);
+            if (AbyssCommandConfig.applyStatus(probe, malformed)) {
+                return "FAIL malformed-status-accepted";
+}
+            if (AbyssCommandConfig.applyKeyBind(probe, malformed)) {
+                return "FAIL malformed-keybind-accepted";
+}
+            if (probe.o() != statusBeforeMalformed || probe.h() != keyBeforeMalformed) {
+                return "FAIL malformed-common-mutated status=" + probe.o() + " key=" + probe.h();
+}
+
+            boolean boolBeforeMalformed = probe.bool.c();
+            int percentBeforeMalformed = probe.percent.k();
+            float numberBeforeMalformed = probe.number.L();
+            String modeBeforeMalformed = probe.mode.Y();
+            String colorBeforeMalformed = probe.color.Q();
+            String textBeforeMalformed = probe.text.X();
+
+            JsonObject malformedSetting = new JsonObject();
+            malformedSetting.addProperty("Bool", "true");
+            malformedSetting.addProperty("Percent", 101);
+            malformedSetting.addProperty("Number", 11.0f);
+            malformedSetting.addProperty("Mode", "THREE");
+            malformedSetting.addProperty("Color", "GGGGGG");
+            malformedSetting.addProperty("Text", Boolean.TRUE);
+
+            int malformedApplied = AbyssCommandConfig.applySettingValues(probe, malformedSetting);
+            if (malformedApplied != 0) {
+                return "FAIL malformed-settings-applied count=" + malformedApplied;
+}
+            if (probe.bool.c() != boolBeforeMalformed) {
+                return "FAIL malformed-boolean-mutated";
+}
+            if (probe.percent.k() != percentBeforeMalformed) {
+                return "FAIL malformed-percentage-mutated " + probe.percent.k();
+}
+            if (probe.number.L() != numberBeforeMalformed) {
+                return "FAIL malformed-number-mutated " + probe.number.L();
+}
+            if (!modeBeforeMalformed.equals(probe.mode.Y())) {
+                return "FAIL malformed-mode-mutated " + probe.mode.Y();
+}
+            if (!colorBeforeMalformed.equals(probe.color.Q())) {
+                return "FAIL malformed-color-mutated " + probe.color.Q();
+}
+            if (!textBeforeMalformed.equals(probe.text.X())) {
+                return "FAIL malformed-text-mutated " + probe.text.X();
+}
+            if (AbyssCommandConfig.resolve("../escape") != null
+                    || AbyssCommandConfig.resolve("..\\escape") != null
+                    || AbyssCommandConfig.resolve("nested/name") != null
+                    || AbyssCommandConfig.resolve("nested\\name") != null
+                    || AbyssCommandConfig.resolve("C:escape") != null
+                    || AbyssCommandConfig.resolve("") != null) {
+                return "FAIL config-path-traversal";
+}
+            File safeConfig = AbyssCommandConfig.resolve("__openabyss_safe_name__");
+            if (safeConfig == null || !"__openabyss_safe_name__.json".equals(safeConfig.getName())) {
+                return "FAIL config-safe-name " + String.valueOf(safeConfig);
+}
+
+            File writeProbe = AbyssCommandConfig.resolve("__openabyss_command_write_selftest__");
+            if (writeProbe == null) {
+                return "FAIL command-write-probe-path";
+}
+            File writeProbeBak = new File(writeProbe.getParentFile(), writeProbe.getName() + ".bak");
+            File writeProbeTmp = new File(writeProbe.getParentFile(), writeProbe.getName() + ".tmp");
+            writeProbe.delete();
+            writeProbeBak.delete();
+            writeProbeTmp.delete();
+            try {
+                JsonObject generation1 = new JsonObject();
+                generation1.addProperty("generation", 1);
+                if (!AbyssCommandConfig.write(writeProbe, generation1)) {
+                    return "FAIL command-write-generation1";
+}
+                JsonObject generation2 = new JsonObject();
+                generation2.addProperty("generation", 2);
+                if (!AbyssCommandConfig.write(writeProbe, generation2)) {
+                    return "FAIL command-write-generation2";
+}
+                JsonObject currentGeneration = AbyssCommandConfig.read(writeProbe);
+                JsonObject backupGeneration = AbyssCommandConfig.read(writeProbeBak);
+                if (currentGeneration == null || !currentGeneration.has("generation")
+                        || currentGeneration.get("generation").getAsInt() != 2) {
+                    return "FAIL command-write-current " + String.valueOf(currentGeneration);
+}
+                if (backupGeneration == null || !backupGeneration.has("generation")
+                        || backupGeneration.get("generation").getAsInt() != 1) {
+                    return "FAIL command-write-backup " + String.valueOf(backupGeneration);
+}
+                if (writeProbeTmp.exists()) {
+                    return "FAIL command-write-stale-tmp";
+}
+}
+            finally {
+                writeProbe.delete();
+                writeProbeBak.delete();
+                writeProbeTmp.delete();
+}
+
+            ClickGUI liveClick = Modules.J(ClickGUI.class);
+            if (liveClick == null) {
+                return "FAIL clickgui-live-null";
+}
+            float clickScale = ClickGUI.scale.L();
+            String clickMode = ClickGUI.mode.Y();
+            String clickKeybind = ClickGUI.keybind.X();
+            try {
+                JsonObject clickBlock = new JsonObject();
+                int clickWritten = AbyssCommandConfig.writeSettingValues(liveClick, clickBlock);
+                if (clickWritten < 3) {
+                    return "FAIL clickgui-setting-write count=" + clickWritten + " json=" + clickBlock;
+}
+                float alternateScale = clickScale == 1.25f ? 1.5f : 1.25f;
+                String alternateMode = "RAVEN".equalsIgnoreCase(clickMode) ? "VESTIGE" : "RAVEN";
+                String alternateKeybind = "LSHIFT".equalsIgnoreCase(clickKeybind) ? "RSHIFT" : "LSHIFT";
+
+                ClickGUI.scale.o((byte)0, 0L, alternateScale);
+                ClickGUI.mode.i(alternateMode);
+                ClickGUI.keybind.O(alternateKeybind);
+
+                int clickApplied = AbyssCommandConfig.applySettingValues(liveClick, clickBlock);
+                if (clickApplied < 3) {
+                    return "FAIL clickgui-setting-apply count=" + clickApplied + " json=" + clickBlock;
+}
+                if (ClickGUI.scale.L() != clickScale) {
+                    return "FAIL clickgui-scale " + ClickGUI.scale.L() + " expected=" + clickScale;
+}
+                if (!clickMode.equals(ClickGUI.mode.Y())) {
+                    return "FAIL clickgui-mode " + ClickGUI.mode.Y() + " expected=" + clickMode;
+}
+                if (!clickKeybind.equals(ClickGUI.keybind.X())) {
+                    return "FAIL clickgui-keybind " + ClickGUI.keybind.X() + " expected=" + clickKeybind;
+}
+}
+            finally {
+                ClickGUI.scale.o((byte)0, 0L, clickScale);
+                ClickGUI.mode.i(clickMode);
+                ClickGUI.keybind.O(clickKeybind);
+}
+            return "PASS metadata setting-json-roundtrip=6 common-fields malformed-common-refused malformed-settings-refused percentage-range=0.."
+                    + 100 + " path-safety command-write-rotation clickgui-live-roundtrip=3";
+}
+        catch (Throwable throwable) {
+            return "FAIL " + throwable.getClass().getName() + ": " + throwable.getMessage();
+}
 }
     private static int writeSettingValues(Module var0, JsonObject var1) {
         List<Setting> var2;
@@ -452,7 +750,9 @@ extends Command {
                 var1.add(var7, (JsonElement)new JsonPrimitive(((TextSetting)var5).X()));
                 ++var3;
 }
-            catch (Throwable throwable) {}
+            catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommandConfig", "setting-serialize", throwable);
+}
 }
         return var3;
 }
@@ -490,7 +790,9 @@ extends Command {
 }
                 if (var5 instanceof PercentageSetting) {
                     if (!var9.isNumber()) continue;
-                    ((PercentageSetting)var5).d(var9.getAsInt());
+                    int percent = var9.getAsInt();
+                    if (percent < 0 || percent > 100) continue;
+                    ((PercentageSetting)var5).d(percent);
                     ++var3;
                     continue;
 }
@@ -514,8 +816,17 @@ extends Command {
                     ModeSetting var14 = (ModeSetting)var5;
                     List<String> var15 = var14.S();
                     String var16 = var9.getAsString();
-                    if (var15 == null || !var15.contains(var16) && !var15.contains(var16.toUpperCase())) continue;
-                    var14.i(var16);
+                    String canonicalMode = null;
+                    if (var15 != null) {
+                        for (String option : var15) {
+                            if (option != null && option.equalsIgnoreCase(var16)) {
+                                canonicalMode = option;
+                                break;
+}
+}
+}
+                    if (canonicalMode == null) continue;
+                    var14.i(canonicalMode);
                     ++var3;
                     continue;
 }
@@ -523,7 +834,9 @@ extends Command {
                 ((TextSetting)var5).O(var9.getAsString());
                 ++var3;
 }
-            catch (Throwable throwable) {}
+            catch (Throwable throwable) {
+                AbyssClient.recordFeatureFailure("AbyssCommandConfig", "setting-apply", throwable);
+}
 }
         return var3;
 }

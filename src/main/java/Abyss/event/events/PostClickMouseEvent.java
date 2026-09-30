@@ -7,5 +7,5 @@ import Abyss.event.Event;
 
 public class PostClickMouseEvent
 extends Event {
-    private static final long }
+}
 

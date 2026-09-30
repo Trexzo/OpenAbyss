@@ -21,9 +21,9 @@ public class BlockModelShapesHooks {
     private static IBakedModel p;
 
     public static IBakedModel getModelForState(IBlockState var0, IBakedModel var1) {
-        if (var0.func_177230_c() == Blocks.field_180401_cv && ModuleManager.W != null && ModuleManager.W.o()) {
+        if (var0.getBlock() == Blocks.barrier && ModuleManager.W != null && ModuleManager.W.o()) {
             if (p == null) {
-                p = g.func_175602_ab().func_175023_a().func_178125_b(Blocks.field_150399_cn.func_176223_P());
+                p = g.getBlockRendererDispatcher().getBlockModelShapes().getModelForState(Blocks.stained_glass.getDefaultState());
 }
             return p;
 }

@@ -16,6 +16,7 @@ import Abyss.module.Category;
 import Abyss.module.Module;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,11 +106,52 @@ extends Command {
         var5.add(SUFFIX);
         return var5;
 }
+    private static Boolean strictBoolean(JsonObject block, String key) {
+        if (block == null || key == null || !block.has(key)) {
+            return null;
+}
+        try {
+            JsonElement value = block.get(key);
+            if (value == null || !value.isJsonPrimitive()) {
+                return null;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            return primitive.isBoolean() ? Boolean.valueOf(primitive.getAsBoolean()) : null;
+}
+        catch (Throwable ignored) {
+            return null;
+}
+}
+    private static Integer strictInteger(JsonObject block, String key) {
+        if (block == null || key == null || !block.has(key)) {
+            return null;
+}
+        try {
+            JsonElement value = block.get(key);
+            if (value == null || !value.isJsonPrimitive()) {
+                return null;
+}
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (!primitive.isNumber()) {
+                return null;
+}
+            double numeric = primitive.getAsDouble();
+            if (Double.isNaN(numeric) || Double.isInfinite(numeric) || numeric != Math.rint(numeric)
+                    || numeric < Integer.MIN_VALUE || numeric > Integer.MAX_VALUE) {
+                return null;
+}
+            return Integer.valueOf((int)numeric);
+}
+        catch (Throwable ignored) {
+            return null;
+}
+}
     private static boolean status(Module var0, JsonObject var1) {
-        if (!var1.has("status") || !var0.I()) {
+        Boolean decoded = AbyssCommandReset.strictBoolean(var1, "status");
+        if (decoded == null || !var0.I()) {
             return false;
 }
-        boolean var2 = var1.get("status").getAsBoolean();
+        boolean var2 = decoded.booleanValue();
         if (var0.o() == var2) {
             return false;
 }
@@ -122,10 +164,11 @@ extends Command {
         return var0.o() == var2;
 }
     private static boolean keyBind(Module var0, JsonObject var1, boolean var2) {
-        if (!var1.has("keyBind") || !var2 || var0.S()) {
+        Integer decoded = AbyssCommandReset.strictInteger(var1, "keyBind");
+        if (decoded == null || !var2 || var0.S()) {
             return false;
 }
-        int var3 = var1.get("keyBind").getAsInt();
+        int var3 = decoded.intValue();
         if (var0.h() == var3) {
             return false;
 }
@@ -138,10 +181,11 @@ extends Command {
         return var0.h() == var3;
 }
     private static boolean visible(Module var0, JsonObject var1) {
-        if (!var1.has("visible") || var0.S() || var0.f() == Category.Macro) {
+        Boolean decoded = AbyssCommandReset.strictBoolean(var1, "visible");
+        if (decoded == null || var0.S() || var0.f() == Category.Macro) {
             return false;
 }
-        boolean var2 = var1.get("visible").getAsBoolean();
+        boolean var2 = decoded.booleanValue();
         if (var0.D() == var2) {
             return false;
 }
@@ -154,10 +198,11 @@ extends Command {
         return var0.D() == var2;
 }
     private static boolean suffix(Module var0, JsonObject var1) {
-        if (!var1.has("suffix-visible")) {
+        Boolean decoded = AbyssCommandReset.strictBoolean(var1, "suffix-visible");
+        if (decoded == null) {
             return false;
 }
-        boolean var2 = var1.get("suffix-visible").getAsBoolean();
+        boolean var2 = decoded.booleanValue();
         if (var0.r() == var2) {
             return false;
 }
@@ -169,4 +214,80 @@ extends Command {
 }
         return var0.r() == var2;
 }
+    public static String selfTest() {
+        try {
+            JsonObject valid = new JsonObject();
+            valid.addProperty("status", Boolean.TRUE);
+            valid.addProperty("visible", Boolean.FALSE);
+            valid.addProperty("suffix-visible", Boolean.TRUE);
+            valid.addProperty("keyBind", Integer.valueOf(54));
+            if (!Boolean.TRUE.equals(AbyssCommandReset.strictBoolean(valid, "status"))
+                    || !Boolean.FALSE.equals(AbyssCommandReset.strictBoolean(valid, "visible"))
+                    || !Boolean.TRUE.equals(AbyssCommandReset.strictBoolean(valid, "suffix-visible"))
+                    || !Integer.valueOf(54).equals(AbyssCommandReset.strictInteger(valid, "keyBind"))) {
+                return "FAIL valid-common";
+}
+            JsonObject malformed = new JsonObject();
+            malformed.addProperty("status", "true");
+            malformed.addProperty("visible", Integer.valueOf(1));
+            malformed.addProperty("suffix-visible", "false");
+            malformed.addProperty("keyBind", Double.valueOf(1.5d));
+            if (AbyssCommandReset.strictBoolean(malformed, "status") != null
+                    || AbyssCommandReset.strictBoolean(malformed, "visible") != null
+                    || AbyssCommandReset.strictBoolean(malformed, "suffix-visible") != null
+                    || AbyssCommandReset.strictInteger(malformed, "keyBind") != null) {
+                return "FAIL malformed-common-accepted";
+}
+
+            class ProbeModule extends Module {
+                ProbeModule() {
+                    super(0L);
+                    this.declare("ResetSelfTest", Category.Misc, "reset probe", new Abyss.setting.Setting[0]);
+}
+            }
+            ProbeModule probe = new ProbeModule();
+            probe.I(20724619369162L, false);
+            probe.z(118276941480361L, 48);
+            probe.Y(0L, true, (short)0);
+            probe.C(false);
+
+            JsonObject statusBlock = new JsonObject();
+            statusBlock.addProperty("status", Boolean.TRUE);
+            if (!AbyssCommandReset.status(probe, statusBlock) || !probe.o()
+                    || probe.h() != 48 || !probe.D() || probe.r()) {
+                return "FAIL status-isolation status=" + probe.o() + " key=" + probe.h()
+                        + " visible=" + probe.D() + " suffix=" + probe.r();
+}
+
+            JsonObject keyBlock = new JsonObject();
+            keyBlock.addProperty("keyBind", Integer.valueOf(54));
+            if (!AbyssCommandReset.keyBind(probe, keyBlock, AbyssCommandBind.gateOk())
+                    || probe.h() != 54 || !probe.o() || !probe.D() || probe.r()) {
+                return "FAIL keybind-isolation status=" + probe.o() + " key=" + probe.h()
+                        + " visible=" + probe.D() + " suffix=" + probe.r();
+}
+
+            JsonObject visibleBlock = new JsonObject();
+            visibleBlock.addProperty("visible", Boolean.FALSE);
+            if (!AbyssCommandReset.visible(probe, visibleBlock) || probe.D()
+                    || !probe.o() || probe.h() != 54 || probe.r()) {
+                return "FAIL visible-isolation status=" + probe.o() + " key=" + probe.h()
+                        + " visible=" + probe.D() + " suffix=" + probe.r();
+}
+
+            JsonObject suffixBlock = new JsonObject();
+            suffixBlock.addProperty("suffix-visible", Boolean.TRUE);
+            if (!AbyssCommandReset.suffix(probe, suffixBlock) || !probe.r()
+                    || !probe.o() || probe.h() != 54 || probe.D()) {
+                return "FAIL suffix-isolation status=" + probe.o() + " key=" + probe.h()
+                        + " visible=" + probe.D() + " suffix=" + probe.r();
+}
+
+            return "PASS strict-common-fields=4 isolated-writes=4";
+}
+        catch (Throwable failure) {
+            return "FAIL " + failure.getClass().getName() + ": " + failure.getMessage();
+}
+}
+
 }

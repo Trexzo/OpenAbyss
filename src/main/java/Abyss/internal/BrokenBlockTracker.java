@@ -56,7 +56,8 @@ import net.minecraft.util.MovingObjectPosition;
 
 public class BrokenBlockTracker
 implements EventSubscriber {
-    private static long private static Minecraft w;
+    private static long a;
+    private static Minecraft w;
     private final Map<BlockPos, Long> c;
     private static EnumParticleTypes Z;
     private static long[] g;
@@ -75,8 +76,10 @@ implements EventSubscriber {
     private static Integer[] k;
     private static Object[] r;
     private boolean N;
-        private static long t;
-        private static Map q;
+    private static String[] d;
+    private static long t;
+    private static String[] b;
+    private static Map q;
     private final Map<BlockPos, Block> z;
     private long B;
     private BlockPos W;
@@ -94,9 +97,9 @@ implements EventSubscriber {
         int var8 = 0;
         for (BlockPos var10 : this.e) {
             Block var11 = this.i.get(var10);
-            Block var12 = var1.field_71441_e.func_180495_p(var10).func_177230_c();
+            Block var12 = var1.theWorld.getBlockState(var10).getBlock();
             String var13 = var7[var8 % var7.length];
-            var6.append(var13).append("[").append(this.b(var10, var4)).append(", orig: ").append(var11 != null ? var11.func_149732_F() : "?").append(", now: ").append(var12.func_149732_F()).append("] ");
+            var6.append(var13).append("[").append(this.b(var10, var4)).append(", orig: ").append(var11 != null ? var11.getLocalizedName() : "?").append(", now: ").append(var12.getLocalizedName()).append("] ");
             ++var8;
 }
         return var6.toString().trim();
@@ -111,23 +114,23 @@ implements EventSubscriber {
         return this.D() ? false : this.c.containsKey(var1);
 }
     private String b(BlockPos var1, long var2) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        return var1 == null ? "null" : String.format("x:%d, y:%d, z:%d", var1.func_177958_n(), var1.func_177956_o(), var1.func_177952_p());
+        return var1 == null ? "null" : String.format("x:%d, y:%d, z:%d", var1.getX(), var1.getY(), var1.getZ());
 }
     public void onPostTick(long var1, PostTickEvent var3) {
         if (this.r()) {
             Block var12;
-            if (BrokenBlockTracker.w.field_71476_x != null && BrokenBlockTracker.w.field_71476_x.field_72313_a == MovingObjectPosition.MovingObjectType.BLOCK) {
-                BlockPos var8 = BrokenBlockTracker.w.field_71476_x.func_178782_a();
+            if (BrokenBlockTracker.w.objectMouseOver != null && BrokenBlockTracker.w.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                BlockPos var8 = BrokenBlockTracker.w.objectMouseOver.getBlockPos();
                 if (this.T == null || !this.T.equals((Object)var8)) {
                     this.T = var8;
                     this.B = System.currentTimeMillis();
-                    Block var9 = BrokenBlockTracker.w.field_71441_e.func_180495_p(var8).func_177230_c();
+                    Block var9 = BrokenBlockTracker.w.theWorld.getBlockState(var8).getBlock();
                     this.z.put(var8, var9);
 }
 }
-            if (this.T != null && BrokenBlockTracker.w.field_71441_e.func_175667_e(this.T) && (var12 = BrokenBlockTracker.w.field_71441_e.func_180495_p(this.T).func_177230_c()) == Blocks.field_150350_a) {
+            if (this.T != null && BrokenBlockTracker.w.theWorld.isBlockLoaded(this.T) && (var12 = BrokenBlockTracker.w.theWorld.getBlockState(this.T).getBlock()) == Blocks.air) {
                 this.W = this.T;
-                this.i.put(this.T, this.z.getOrDefault(this.T, Blocks.field_150350_a));
+                this.i.put(this.T, this.z.getOrDefault(this.T, Blocks.air));
                 this.z.remove(this.T);
                 this.e.addFirst(this.T);
                 if (this.e.size() > 4) {
@@ -186,7 +189,7 @@ implements EventSubscriber {
     private void c(long var1, BlockPos var3, long var4) {
         MiningState var10;
         if (!(this.D() || this.c.containsKey(var3) || (var10 = MiningEngine.uq.s()) != null && (var10.d$r1().contains(var3) || var10.g().contains(var3)))) {
-            Block var11 = BrokenBlockTracker.w.field_71441_e.func_180495_p(var3).func_177230_c();
+            Block var11 = BrokenBlockTracker.w.theWorld.getBlockState(var3).getBlock();
             BrokenBlockEntry var12 = this.H.get(var3);
             if (var12 == null) {
                 var12 = new BrokenBlockEntry(25191003644408L, null);
@@ -195,9 +198,9 @@ implements EventSubscriber {
             var12.R(var4, var11);
             if (!((float)var12.Q < MiningConstants.K) && var12.q()) {
                 for (int var13 = -2; var13 <= 2; ++var13) {
-                    this.c.put(new BlockPos(var3.func_177958_n(), var3.func_177956_o() + var13, var3.func_177952_p()), System.currentTimeMillis());
+                    this.c.put(new BlockPos(var3.getX(), var3.getY() + var13, var3.getZ()), System.currentTimeMillis());
 }
-                float var20 = this.U(MiningEngine.uq.h() ? RotationManager.r : BrokenBlockTracker.w.field_71439_g.field_70177_z);
+                float var20 = this.U(MiningEngine.uq.h() ? RotationManager.r : BrokenBlockTracker.w.thePlayer.rotationYaw);
                 int var14 = 0;
                 int var15 = 0;
                 int var16 = 0;
@@ -216,14 +219,14 @@ implements EventSubscriber {
                     var16 = -1;
 }
                 for (int var18 = -2; var18 <= 2; ++var18) {
-                    this.c.put(new BlockPos(var3.func_177958_n() + var14, var3.func_177956_o() + var18, var3.func_177952_p() + var15), System.currentTimeMillis());
-                    this.c.put(new BlockPos(var3.func_177958_n() + var16, var3.func_177956_o() + var18, var3.func_177952_p() + var17), System.currentTimeMillis());
+                    this.c.put(new BlockPos(var3.getX() + var14, var3.getY() + var18, var3.getZ() + var15), System.currentTimeMillis());
+                    this.c.put(new BlockPos(var3.getX() + var16, var3.getY() + var18, var3.getZ() + var17), System.currentTimeMillis());
 }
 }
 }
 }
     private boolean D() {
-        return w != null && w.func_71356_B();
+        return w != null && w.isSingleplayer();
 }
     private void m(long var1) {
         this.H.entrySet().removeIf(var3 -> !this.c.containsKey(var3.getKey()) && var1 - ((BrokenBlockEntry)var3.getValue()).H > 10000L);
@@ -243,27 +246,27 @@ implements EventSubscriber {
         return this.N;
 }
     private void X(BlockPos var1, EnumParticleTypes var2) {
-        WorldClient var3 = BrokenBlockTracker.w.field_71441_e;
+        WorldClient var3 = BrokenBlockTracker.w.theWorld;
         BrokenBlockAnchor var4 = this.I.get(var1);
         if (var4 == null) {
             double var15;
             double var21;
             double var13;
             double var19;
-            double var5 = BrokenBlockTracker.w.field_71439_g.field_70165_t;
-            double var7 = BrokenBlockTracker.w.field_71439_g.field_70163_u + 1.62;
-            double var9 = BrokenBlockTracker.w.field_71439_g.field_70161_v;
-            double var11 = (double)var1.func_177958_n() + 0.5;
+            double var5 = BrokenBlockTracker.w.thePlayer.posX;
+            double var7 = BrokenBlockTracker.w.thePlayer.posY + 1.62;
+            double var9 = BrokenBlockTracker.w.thePlayer.posZ;
+            double var11 = (double)var1.getX() + 0.5;
             double var17 = var11 - var5;
-            double var23 = Math.sqrt(var17 * var17 + (var19 = (var13 = (double)var1.func_177956_o() + 0.5) - var7) * var19 + (var21 = (var15 = (double)var1.func_177952_p() + 0.5) - var9) * var21);
+            double var23 = Math.sqrt(var17 * var17 + (var19 = (var13 = (double)var1.getY() + 0.5) - var7) * var19 + (var21 = (var15 = (double)var1.getZ() + 0.5) - var9) * var21);
             var4 = var23 > 0.0 ? new BrokenBlockAnchor(var11 - var17 / var23 * 0.51, var13 - var19 / var23 * 0.51, var15 - var21 / var23 * 0.51) : new BrokenBlockAnchor(var11, var13 + 0.51, var15);
             this.I.put(var1, var4);
 }
         if (var2 == l) {
-            var3.func_175688_a(var2, var4.u, var4.N, var4.C, 0.0, 0.0, 0.0, new int[0]);
+            var3.spawnParticle(var2, var4.u, var4.N, var4.C, 0.0, 0.0, 0.0, new int[0]);
         } else {
             for (int var25 = 0; var25 < 3; ++var25) {
-                var3.func_175688_a(var2, var4.u + (Math.random() - 0.5) * 0.1, var4.N + (Math.random() - 0.5) * 0.1, var4.C + (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, new int[0]);
+                var3.spawnParticle(var2, var4.u + (Math.random() - 0.5) * 0.1, var4.N + (Math.random() - 0.5) * 0.1, var4.C + (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.1, new int[0]);
 }
 }
 }
@@ -287,16 +290,16 @@ implements EventSubscriber {
         long var3 = System.currentTimeMillis();
         if (var3 - this.Y >= 200L) {
             this.Y = var3;
-            if (MiningConstants.j && this.T != null && BrokenBlockTracker.w.field_71441_e.func_175667_e(this.T) && !this.k(this.T)) {
+            if (MiningConstants.j && this.T != null && BrokenBlockTracker.w.theWorld.isBlockLoaded(this.T) && !this.k(this.T)) {
                 this.X(this.T, Z);
 }
-            if (MiningConstants.j && this.W != null && !this.W.equals((Object)this.T) && BrokenBlockTracker.w.field_71441_e.func_175667_e(this.W) && !this.k(this.W)) {
+            if (MiningConstants.j && this.W != null && !this.W.equals((Object)this.T) && BrokenBlockTracker.w.theWorld.isBlockLoaded(this.W) && !this.k(this.W)) {
                 this.X(this.W, h);
 }
             if (MiningConstants.T) {
                 for (BlockPos var6 : this.c.keySet()) {
                     Long var7;
-                    if (var6 == null || var6.equals((Object)this.T) || var6.equals((Object)this.W) || !BrokenBlockTracker.w.field_71441_e.func_175667_e(var6) || (var7 = this.C.get(var6)) != null && var3 - var7 <= 2000L) continue;
+                    if (var6 == null || var6.equals((Object)this.T) || var6.equals((Object)this.W) || !BrokenBlockTracker.w.theWorld.isBlockLoaded(var6) || (var7 = this.C.get(var6)) != null && var3 - var7 <= 2000L) continue;
                     this.X(var6, l);
                     this.C.put(var6, var3);
 }
@@ -310,7 +313,7 @@ implements EventSubscriber {
             if (this.T == null || !this.T.equals((Object)var7)) {
                 this.T = var7;
                 this.B = System.currentTimeMillis();
-                Block var8 = MinecraftRef.c((byte)0, (long)0L).field_71441_e.func_180495_p(var7).func_177230_c();
+                Block var8 = MinecraftRef.c((byte)0, (long)0L).theWorld.getBlockState(var7).getBlock();
                 this.z.put(var7, var8);
 }
 }
@@ -319,7 +322,7 @@ implements EventSubscriber {
         long var3 = 99005023413082L;
         Color var5 = new Color(0, 0, 0, 120);
         for (BlockPos var7 : this.c.keySet()) {
-            if (var7 == null || !BrokenBlockTracker.w.field_71441_e.func_175667_e(var7)) continue;
+            if (var7 == null || !BrokenBlockTracker.w.theWorld.isBlockLoaded(var7)) continue;
             BoxRenderer.p(var7, var3, var5);
 }
 }
@@ -360,7 +363,54 @@ implements EventSubscriber {
 }
         return var1;
 }
-                Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
+    private static void a() {
+        r[0] = "v\u0006\u001b\u000f\"u[";
+        r[1] = "e\u0013V\nlrR\u0004R\u0000!VE\u000f\b\u001c";
+        r[2] = "\u0019\u001b6I\u001d5=";
+        r[3] = Long.TYPE;
+        s[3] = "java/lang/Long";
+        r[4] = Void.TYPE;
+        s[4] = "java/lang/Void";
+        r[5] = "\u0019 {f\u0006\u000b\u0012/j)g\u0005\u0019$ns";
+        r[6] = "U\rf!:H\u0017J-Q%$UY63-\u001c\u0006V<hW\u001d\u0013ZbkjZ\u0010O1Qm]\u0011Id8hD\fV_j=Y\u0001_30,U\u00075";
+    }    private static String a(byte[] var0) {
+        int var1 = 0;
+        int var2;
+        char[] var3 = new char[var2 = var0.length];
+        for (int var4 = 0; var4 < var2; ++var4) {
+            int var5;
+            if ((var5 = 255 & var0[var4]) < 192) {
+                var3[var1++] = (char)var5;
+            } else if (var5 < 224) {
+                char var6 = (char)((char)(var5 & 31) << 6);
+                int var8 = var0[++var4];
+                var6 = (char)(var6 | (char)(var8 & 63));
+                var3[var1++] = var6;
+            } else if (var4 < var2 - 2) {
+                char var12 = (char)((char)(var5 & 15) << 12);
+                int var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63) << 6);
+                var9 = var0[++var4];
+                var12 = (char)(var12 | (char)(var9 & 63));
+                var3[var1++] = var12;
+            }
+        }
+        return new String(var3, 0, var1);
+    }    private static void zkm$clinit() {
+        try {
+            long var31 = a ^ 52250733743518L;
+            int var33 = (int)((var31 ^ 103359315573225L) >>> 32);
+            int var34 = (int)((var31 ^ 103359315573225L) << 32 >>> 48);
+            int var35 = (int)((var31 ^ 103359315573225L) << 48 >>> 48);
+            r = new Object[7];
+            s = new String[7];
+            a();
+            f = new HashMap(13);
+            byte[] var10003 = new byte[]{(byte)(var31 >>> 56), 0, 0, 0, 0, 0, 0, 0};
+            for (int var23 = 1; var23 < 8; ++var23) {
+                var10003[var23] = (byte)(var31 << var23 * 8 >>> 56);
+            }
+            Cipher var22 = Cipher.getInstance("DES/CBC/PKCS5Padding");
             var22.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             String[] var29 = new String[6];
             int var27 = 0;
@@ -460,7 +510,6 @@ implements EventSubscriber {
                                                         var68 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                                                         var74 = 0;
 }
-                                                    break;
 }
 }
                                             default: {
@@ -478,7 +527,6 @@ implements EventSubscriber {
                                         var65 = ((long)var18[0] & 0xFFL) << 56 | ((long)var18[1] & 0xFFL) << 48 | ((long)var18[2] & 0xFFL) << 40 | ((long)var18[3] & 0xFFL) << 32 | ((long)var18[4] & 0xFFL) << 24 | ((long)var18[5] & 0xFFL) << 16 | ((long)var18[6] & 0xFFL) << 8 | (long)var18[7] & 0xFFL;
                                         var71 = 0;
 }
-                                    break;
 }
 }
                             var25 = var26.charAt(var43);
@@ -499,7 +547,6 @@ implements EventSubscriber {
                     var44 = var26.substring(++var43, var43 + var25);
                     var50 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var39) {
@@ -507,6 +554,8 @@ implements EventSubscriber {
 }
 }
     static {
+        a = 58141217640642L;
+        zkm$clinit();
         Z = EnumParticleTypes.WATER_DROP;
         h = EnumParticleTypes.FLAME;
         l = EnumParticleTypes.BARRIER;

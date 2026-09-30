@@ -29,7 +29,7 @@ extends GuiScreen {
     private GuiButton a = null;
 
     static FontRenderer X(MainMenuStyleScreen var0) {
-        return var0.field_146289_q;
+        return var0.fontRendererObj;
 }
     static int F(MainMenuStyleScreen var0) {
         return var0.h;
@@ -37,29 +37,29 @@ extends GuiScreen {
     static GuiButton y(MainMenuStyleScreen var0) {
         return var0.N;
 }
-    public void func_73866_w_() {
+    public void initGui() {
         Keyboard.enableRepeatEvents((boolean)true);
-        this.field_146292_n.clear();
-        this.N = new GuiButton(0, this.field_146294_l / 2 - 150 - 4, this.field_146295_m - 52, 150, 20, "Select");
-        this.field_146292_n.add(this.N);
-        this.m = new GuiButton(1, this.field_146294_l / 2 + 4, this.field_146295_m - 52, 150, 20, "Cancel");
-        this.field_146292_n.add(this.m);
-        this.a = new GuiButton(2, 4, this.field_146295_m - 24, 110, 20, this.O());
-        this.field_146292_n.add(this.a);
-        this.z = new MainMenuStyleList(this, 120694520305086L, this.field_146297_k);
-        this.z.func_148134_d(4, 5);
+        this.buttonList.clear();
+        this.N = new GuiButton(0, this.width / 2 - 150 - 4, this.height - 52, 150, 20, "Select");
+        this.buttonList.add(this.N);
+        this.m = new GuiButton(1, this.width / 2 + 4, this.height - 52, 150, 20, "Cancel");
+        this.buttonList.add(this.m);
+        this.a = new GuiButton(2, 4, this.height - 24, 110, 20, this.O());
+        this.buttonList.add(this.a);
+        this.z = new MainMenuStyleList(this, 120694520305086L, this.mc);
+        this.z.registerScrollButtons(4, 5);
         this.h = this.D();
-        this.func_73876_c();
+        this.updateScreen();
 }
     /*
      * Enabled force condition propagation
      * Lifted jumps to return sites
      */
-    protected void func_146284_a(GuiButton var1) {
+    protected void actionPerformed(GuiButton var1) {
         try {
             long var2 = 94303189473383L;
             if (var1 == null) return;
-            switch (var1.field_146127_k) {
+            switch (var1.id) {
                 case 0: {
                     if (this.h < 0 || this.h >= MainMenuTheme.mode.S().size()) return;
                     String var8 = MainMenuTheme.mode.S().get(this.h);
@@ -68,18 +68,18 @@ extends GuiScreen {
                     return;
 }
                 case 1: {
-                    this.field_146297_k.func_147108_a(this.H);
+                    this.mc.displayGuiScreen(this.H);
                     return;
 }
                 case 2: {
                     MainMenuTheme.music.W(112370683098682L);
                     Modules.c(0L);
-                    this.func_73876_c();
+                    this.updateScreen();
                     return;
 }
                 default: {
                     if (this.z == null) return;
-                    this.z.func_148147_a(var1);
+                    this.z.actionPerformed(var1);
 }
 }
             return;
@@ -88,25 +88,25 @@ extends GuiScreen {
             throw Sneaky.rethrow(ex);
 }
 }
-    public void func_73863_a(int var1, int var2, float var3) {
+    public void drawScreen(int var1, int var2, float var3) {
         if (this.z != null) {
-            this.z.func_148128_a(var1, var2, var3);
+            this.z.drawScreen(var1, var2, var3);
 }
-        super.func_73863_a(var1, var2, var3);
-        this.func_73732_a(this.field_146289_q, "Main Menu style", this.field_146294_l / 2, 20, -1);
+        super.drawScreen(var1, var2, var3);
+        this.drawCenteredString(this.fontRendererObj, "Main Menu style", this.width / 2, 20, -1);
         if (this.h >= 0 && this.h < MainMenuTheme.mode.S().size()) {
             String var6 = MainMenuTheme.mode.S().get(this.h);
-            this.func_73732_a(this.field_146289_q, "Selected: " + var6, this.field_146294_l / 2, this.field_146295_m - 30, -1);
+            this.drawCenteredString(this.fontRendererObj, "Selected: " + var6, this.width / 2, this.height - 30, -1);
 }
 }
     private int D() {
         return MainMenuTheme.mode.G();
 }
-    public void func_146274_d() {
+    public void handleMouseInput() throws java.io.IOException {
         if (this.z != null) {
-            this.z.func_178039_p();
+            this.z.handleMouseInput();
 }
-        super.func_146274_d();
+        super.handleMouseInput();
 }
     public MainMenuStyleScreen(GuiScreen var1) {
         this.H = var1;
@@ -114,29 +114,29 @@ extends GuiScreen {
     private String O() {
         return "Music: " + (MainMenuTheme.music.c() ? "ON" : "OFF");
 }
-    public void func_73876_c() {
+    public void updateScreen() {
         if (this.N != null) {
-            boolean bl = this.N.field_146124_l = this.h >= 0;
+            boolean bl = this.N.enabled = this.h >= 0;
 }
         if (this.a != null) {
-            this.a.field_146126_j = this.O();
+            this.a.displayString = this.O();
 }
 }
-    public void func_146281_b() {
+    public void onGuiClosed() {
         Keyboard.enableRepeatEvents((boolean)false);
 }
     static int b(MainMenuStyleScreen var0, int var1) {
         var0.h = var1;
         return var0.h;
 }
-    protected void func_73869_a(char var1, int var2) {
+    protected void keyTyped(char var1, int var2) {
         switch (var2) {
             case 1: {
-                this.func_146284_a(this.m);
+                this.actionPerformed(this.m);
                 break;
 }
             case 28: {
-                this.func_146284_a(this.N);
+                this.actionPerformed(this.N);
                 break;
 }
             case 200: {

@@ -4,11 +4,19 @@
 package Abyss.internal.restore;
 
 import Abyss.AbyssClient;
+import Abyss.ASM.Hooks.Gui.GuiMainMenuHooks;
 import Abyss.command.AbyssCommands;
 import Abyss.event.EventBus;
 import Abyss.internal.BrokenBlockTracker;
+import Abyss.internal.CheaterDetector;
+import Abyss.internal.ChatInputHandler;
 import Abyss.internal.MiningEngine;
 import Abyss.internal.MiningRenderSubscriber;
+import Abyss.internal.auth.Account;
+import Abyss.internal.auth.AltManager;
+import Abyss.internal.auth.AuthService;
+import Abyss.internal.auth.CookieAuthService;
+import Abyss.internal.auth.SessionAccessor;
 import Abyss.internal.auth.TrustAllSslContext;
 import Abyss.internal.jnic.StockCommandRegistry;
 import Abyss.internal.restore.AbyssAzPump;
@@ -20,13 +28,25 @@ import Abyss.internal.restore.AbyssModuleRegistry;
 import Abyss.internal.restore.AbyssModuleSettings;
 import Abyss.internal.restore.AbyssSettingStatics;
 import Abyss.internal.restore.AbyssTruthNames;
+import Abyss.module.Category;
 import Abyss.module.Module;
 import Abyss.module.ModuleManager;
 import Abyss.module.Modules;
+import Abyss.module.impl.combat.Velocity;
+import Abyss.module.impl.misc.AntiNick;
 import Abyss.module.impl.configuration.ClickGUI;
 import Abyss.module.impl.configuration.CustomCape;
+import Abyss.module.impl.configuration.Notifications;
+import Abyss.module.impl.configuration.Theme;
 import Abyss.module.impl.visual.KeyStrokes;
+import Abyss.setting.Setting;
 import Abyss.ui.ModuleTagRenderer;
+import Abyss.ui.screen.AccessTokenLoginScreen;
+import Abyss.ui.screen.AccountManagerScreen;
+import Abyss.ui.screen.CookieLoginScreen;
+import Abyss.ui.screen.MainMenuTheme;
+import Abyss.ui.screen.MicrosoftLoginScreen;
+import Abyss.ui.screen.RefreshTokenLoginScreen;
 import Abyss.ui.swing.ConfigManagerWindow;
 import Abyss.util.AttackTracker;
 import Abyss.util.AutoToolService;
@@ -53,24 +73,55 @@ public final class AbyssBootstrap {
 
     private AbyssBootstrap() {
 }
+    private static boolean skipChatMenu() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipChatMenu");
+}
+    private static boolean skipCheaterDetector() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipCheaterDetector");
+}
+    private static boolean skipAltManager() {
+        return Boolean.getBoolean("abyss.referenceBootstrapCompat") || Boolean.getBoolean("abyss.skipAltManager");
+}
+    private static boolean referenceBootstrapCompat() {
+        return skipChatMenu() && skipCheaterDetector() && skipAltManager();
+}
+    private static void stage(String name) {
+        try {
+            File f = new File("abyss-bootstrap-stage.txt");
+            try (OutputStreamWriter w = new OutputStreamWriter((OutputStream)new FileOutputStream(f, true), "UTF-8");){
+                w.write(System.currentTimeMillis() + "\t" + name + "\n");
+}
+}
+        catch (Throwable ignored) {
+}
+}
     public static void forceEnableCommandLine() {
         try {
             Module cl = ModuleManager.byName("CommandLine");
-            if (cl != null && !cl.o()) {
+            if (cl == null) {
+                PENDING.add("CommandLine module missing while forcing command availability");
+                return;
+}
+            if (!cl.o()) {
                 cl.I(0L, true);
+}
+            if (!cl.o()) {
+                PENDING.add("CommandLine module remained disabled after force-enable");
 }
 }
         catch (Throwable throwable) {
-            // empty catch block
+            PENDING.add("CommandLine force-enable threw " + throwable.getClass().getName() + ": " + String.valueOf(throwable.getMessage()));
 }
 }
     public static void initClient() {
+        stage("init-entry");
         if (AbyssClient.w != null) {
             return;
 }
         SUBSCRIBED.clear();
         PENDING.clear();
         EventBus var2 = new EventBus();
+        stage("eventbus-created");
         if (ModuleManager.S == null) {
             ModuleManager.S = new ArrayList<Module>();
 }
@@ -80,6 +131,7 @@ public final class AbyssBootstrap {
         if (ConfigManagerWindow.D == null) {
             ConfigManagerWindow.D = new ArrayList<String>();
 }
+        stage("base-lists-ready");
         var2.beginBatch();
         AbyssBootstrap.sub(var2, "Abyss.internal.MiningEngine", MiningEngine.uq);
         AbyssBootstrap.sub(var2, "Abyss.util.AutoToolService", AutoToolService.K);
@@ -91,30 +143,135 @@ public final class AbyssBootstrap {
         AbyssBootstrap.sub(var2, "Abyss.util.RotationManager", new RotationManager());
         AbyssBootstrap.sub(var2, "Abyss.util.HypixelGameState", new HypixelGameState());
         AbyssBootstrap.sub(var2, "Abyss.util.packet.PacketManager", new PacketManager());
+        stage("core-subscribers-ready");
         AbyssModuleRegistry.publish();
+        stage("module-registry-published");
         AbyssAzPump.install(var2, 0L, SUBSCRIBED, PENDING);
+        stage("azpump-installed");
         PENDING.addAll(AbyssModuleRegistry.PENDING);
-        PENDING.add("Abyss.internal.ChatInputHandler    ctor (J)V   carrier live: Abyss/yT.a(IJ)I @19");
-        PENDING.add("Abyss.ui.screen.MainMenuTheme  ctor (J)V   carrier live: Abyss/on_2.a(IJ)String @19 @34 @49 @64");
+        if (skipChatMenu()) {
+            PENDING.add("Abyss.internal.ChatInputHandler reference-bootstrap compatibility: left unsubscribed");
+            PENDING.add("Abyss.ui.screen.MainMenuTheme reference-bootstrap compatibility: left unsubscribed");
+            stage("reference-bootstrap-skipped-chat-menu");
+} else {
+            AbyssBootstrap.sub(var2, "Abyss.internal.ChatInputHandler", new ChatInputHandler(0L));
+            stage("chat-input-subscribed");
+            AbyssBootstrap.sub(var2, "Abyss.ui.screen.MainMenuTheme", new MainMenuTheme(0L));
+            stage("main-menu-theme-subscribed");
+}
         AbyssSettingStatics.apply(PENDING);
         AbyssModuleSettings.apply(PENDING);
         AbyssTruthNames.apply(PENDING);
+        stage("settings-and-names-applied");
         AbyssBootstrap.runOrphanedStaticInit();
+        stage("orphaned-static-init-complete");
         AbyssClickGui.install(PENDING);
+        stage("clickgui-installed");
         AbyssCommands.install(PENDING);
+        stage("commands-installed");
         AbyssBootstrap.subscribeAlways(var2, "Abyss.module.impl.misc.Timer", "Timer");
+        stage("timer-subscribed");
+        if (skipCheaterDetector()) {
+            PENDING.add("Abyss.internal.CheaterDetector reference-bootstrap compatibility: held out of ModuleManager.S and left unsubscribed");
+            stage("reference-bootstrap-skipped-cheater-detector");
+} else if (AbyssModuleRegistry.PLAIN_LISTENER instanceof CheaterDetector) {
+            var2.s(AbyssModuleRegistry.PLAIN_LISTENER, 0L);
+            SUBSCRIBED.add("Abyss.internal.CheaterDetector (internal service; held out of ModuleManager.S)");
+            stage("cheater-detector-subscribed");
+} else {
+            PENDING.add("Abyss.internal.CheaterDetector internal listener missing from ModuleManager.o");
+}
         var2.endBatch();
+        stage("eventbus-batch-ended");
         AbyssClient.w = var2;
-        if (AbyssModuleRegistry.PLAIN_LISTENER != null) {
-            PENDING.add("Abyss.internal.CheaterDetector held out of tD.S and left unsubscribed -- /cheaters reads its R/c maps and they stay empty until a world-gated subscription exists");
+        stage("eventbus-published");
+        if (skipAltManager()) {
+            PENDING.add("Abyss.ui.screen.ReconnectHandler reference-bootstrap compatibility: AltManager.M not invoked");
+            stage("reference-bootstrap-skipped-altmanager");
+} else {
+            stage("altmanager-init-start");
+            AltManager.M(0L);
+            stage("altmanager-init-complete");
+            if (AltManager.isInitialized()) {
+                SUBSCRIBED.add("Abyss.ui.screen.ReconnectHandler");
+} else {
+                PENDING.add("Abyss.ui.screen.ReconnectHandler was not initialized by AltManager.M");
+}
 }
         AbyssConfig.apply(PENDING);
+        stage("config-applied");
+        AbyssModuleSettings.applyByName(PENDING);
+        stage("config-setting-values-applied");
+        AbyssBootstrap.verifyPersistenceProbe();
         AbyssBootstrap.forceEnableCommandLine();
+        stage("commandline-enabled");
         PENDING.add("Abyss.config boot snapshot = " + AbyssConfig.snapshotBoot() + " setting value(s); a later save preserves the file's value for any of them the load did not actually apply, instead of overwriting it");
         StallWatchdog.start();
+        stage("stall-watchdog-started");
         AbyssBootstrap.startBackgroundWarmup();
+        stage("background-warmup-started");
         AbyssBootstrap.diag$dump();
+        stage("bootstrap-complete");
 }
+    private static void verifyPersistenceProbe() {
+        String expectedRaw = System.getProperty("abyss.persistenceProbeExpectedClickGuiScale");
+        if (expectedRaw == null || expectedRaw.length() == 0) {
+            return;
+}
+        float expected;
+        try {
+            expected = Float.parseFloat(expectedRaw);
+}
+        catch (NumberFormatException failure) {
+            throw new IllegalStateException("Invalid persistence probe scale: " + expectedRaw, failure);
+}
+        float actual = ClickGUI.scale == null ? Float.NaN : ClickGUI.scale.L();
+        Module fullBright = ModuleManager.byName("FullBright");
+        boolean fullBrightEnabled = fullBright != null && fullBright.o();
+        boolean matrix = Boolean.getBoolean("abyss.persistenceProbeMatrix");
+        String mode = ClickGUI.mode == null ? null : ClickGUI.mode.Y();
+        String keybind = ClickGUI.keybind == null ? null : ClickGUI.keybind.X();
+        Boolean textShadow = Notifications.textShadow == null ? null : Boolean.valueOf(Notifications.textShadow.c());
+        Integer horizontal = Velocity.horizontal == null ? null : Integer.valueOf(Velocity.horizontal.k());
+        String color = Theme.customColor1 == null ? null : Theme.customColor1.Q();
+        Module antiNick = ModuleManager.byName("AntiNick");
+        boolean antiNickEnabled = antiNick != null && antiNick.o();
+        String antiNickSuffix = AntiNick.suffix == null ? null : AntiNick.suffix.X();
+
+        boolean matrixOk = !matrix
+                || ("RAVEN".equals(mode)
+                && "LSHIFT".equals(keybind)
+                && Boolean.FALSE.equals(textShadow)
+                && Integer.valueOf(67).equals(horizontal)
+                && "A1B2C3".equals(color)
+                && antiNickEnabled
+                && "OPENABYSS_PROMOTED_PERSIST_7E51".equals(antiNickSuffix));
+
+        if (Float.isNaN(actual) || Math.abs(expected - actual) > 0.001f || !fullBrightEnabled || !matrixOk) {
+            stage("persistence-probe-verify-fail:scale=" + actual + ",fullbright=" + fullBrightEnabled
+                    + ",mode=" + mode + ",keybind=" + keybind + ",textShadow=" + textShadow
+                    + ",horizontal=" + horizontal + ",color=" + color
+                    + ",antiNick=" + antiNickEnabled + ",antiNickSuffix=" + antiNickSuffix);
+            throw new IllegalStateException("Persisted state expected scale=" + expected
+                    + " FullBright=true"
+                    + (matrix ? " mode=RAVEN keybind=LSHIFT textShadow=false horizontal=67 color=A1B2C3 AntiNick=true AntiNick.Suffix=OPENABYSS_PROMOTED_PERSIST_7E51" : "")
+                    + " but was scale=" + actual
+                    + " FullBright=" + fullBrightEnabled
+                    + " mode=" + mode
+                    + " keybind=" + keybind
+                    + " textShadow=" + textShadow
+                    + " horizontal=" + horizontal
+                    + " color=" + color
+                    + " AntiNick=" + antiNickEnabled
+                    + " AntiNick.Suffix=" + antiNickSuffix);
+}
+        stage("persistence-probe-verify-pass:scale=" + actual + ",fullbright=true");
+        if (matrix) {
+            stage("persistence-matrix-verify-pass:boolean=false,percentage=67,number=" + actual
+                    + ",mode=RAVEN,color=A1B2C3,text=LSHIFT,module=true,promotedModule=true,promotedText=OPENABYSS_PROMOTED_PERSIST_7E51");
+}
+}
+
     private static void startBackgroundWarmup() {
         Thread warm = new Thread(new Runnable(){
 
@@ -144,9 +301,6 @@ public final class AbyssBootstrap {
         warm.setPriority(1);
         warm.start();
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     */
     private static String census() {
         StringBuilder t2 = new StringBuilder();
         TreeMap<String, Integer> perCat = new TreeMap<String, Integer>();
@@ -196,9 +350,56 @@ public final class AbyssBootstrap {
         b.append("[ABYSSDIAG] census per-cat     = ").append(perCat).append('\n');
         return b.toString();
 }
+    private static String moduleUsability() {
+        int toggleable = 0;
+        int stockDisabled = 0;
+        int invalid = 0;
+        int nullSettings = 0;
+        List<String> stockDisabledNames = new ArrayList<String>();
+        if (ModuleManager.S != null) {
+            for (Module m2 : ModuleManager.S) {
+                if (m2 == null) {
+                    ++invalid;
+                    continue;
+}
+                try {
+                    String name = m2.b();
+                    Category category = m2.f();
+                    List<Setting> settings = m2.w();
+                    if (name == null || name.trim().isEmpty() || category == null || settings == null) {
+                        ++invalid;
+                        continue;
+}
+                    for (Setting setting : settings) {
+                        if (setting != null) continue;
+                        ++nullSettings;
+}
+                    if (m2.I()) {
+                        ++toggleable;
+                    } else {
+                        ++stockDisabled;
+                        stockDisabledNames.add(name);
+}
+}
+                catch (Throwable throwable) {
+                    ++invalid;
+}
+}
+}
+        return "[ABYSSDIAG] module usability   = toggleable=" + toggleable
+                + " stockDisabled=" + stockDisabled
+                + " invalid=" + invalid
+                + " nullSettings=" + nullSettings
+                + " stockDisabledNames=" + stockDisabledNames + "\n";
+}
     private static void diag$dump() {
         try {
             StringBuilder b = new StringBuilder("\n[ABYSSDIAG] ==== bootstrap outcome ====\n");
+            b.append("[ABYSSDIAG] reference bootstrap = ").append(referenceBootstrapCompat()).append('\n');
+            b.append("[ABYSSDIAG] skip chat/menu       = ").append(skipChatMenu()).append('\n');
+            b.append("[ABYSSDIAG] skip cheater         = ").append(skipCheaterDetector()).append('\n');
+            b.append("[ABYSSDIAG] skip altmanager      = ").append(skipAltManager()).append('\n');
+            b.append("[ABYSSDIAG] registry target      = ").append(AbyssModuleRegistry.expectedModuleCount()).append('\n');
             b.append("[ABYSSDIAG] AZ.w             = ").append(AbyssClient.w == null ? "null" : "live").append('\n');
             b.append("[ABYSSDIAG] subscribed       = ").append(SUBSCRIBED.size()).append(' ').append(SUBSCRIBED).append('\n');
             b.append("[ABYSSDIAG] pending          = ").append(PENDING.size()).append('\n');
@@ -209,7 +410,30 @@ public final class AbyssBootstrap {
             b.append("[ABYSSDIAG] zu_3.F RAVEN     = ").append(ClickGUI.F == null ? "null" : "live").append('\n');
             b.append("[ABYSSDIAG] zu_3 open bind   = ").append(Modules.J(ClickGUI.class) == null ? "null" : KeyBindUtil.p(0L, '\u0000', Modules.J(ClickGUI.class).h())).append('\n');
             b.append("[ABYSSDIAG] t6.L (commands)  = ").append(StockCommandRegistry.L == null ? "null" : String.valueOf(StockCommandRegistry.L.size())).append('\n');
+            Module commandLine = ModuleManager.byName("CommandLine");
+            b.append("[ABYSSDIAG] command line      = ").append(commandLine != null && commandLine.o() ? "READY" : "NOT_READY").append('\n');
             b.append("[ABYSSDIAG] config writable   = ").append(AbyssModuleRegistry.writableNote()).append('\n');
+            b.append("[ABYSSDIAG] eventbus selftest  = ").append(EventBus.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] module selftest    = ").append(Module.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] config selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssConfig.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] setting restore selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssModuleSettings.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] session selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? SessionAccessor.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] account selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? Account.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] authservice selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AuthService.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] cookie selftest    = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieAuthService.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] accountgui selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccountManagerScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] mslogin selftest   = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? MicrosoftLoginScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] cookiegui selftest = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? CookieLoginScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] accesstoken selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AccessTokenLoginScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] refreshtoken selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? RefreshTokenLoginScreen.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] altstore selftest  = ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AltManager.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] altstore last      = ").append(AltManager.lastPersistenceNote).append('\n');
+            b.append("[ABYSSDIAG] command data load = ").append(AbyssCommandData.lastLoadNote).append('\n');
+            b.append("[ABYSSDIAG] commanddata selftest= ").append(Boolean.getBoolean("abyss.runtimeSelfTest") ? AbyssCommandData.selfTest() : "SKIPPED").append('\n');
+            b.append("[ABYSSDIAG] command selftest  = ").append(AbyssCommands.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] keybind selftest  = ").append(KeyBindUtil.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] clickgui selftest = ").append(ClickGUI.selfTest()).append('\n');
+            b.append("[ABYSSDIAG] altmenu selftest  = ").append(GuiMainMenuHooks.selfTest()).append('\n');
             b.append("[ABYSSDIAG] ctorcache        = built ").append(AbyssCtorCache.built).append(" failed ").append(AbyssCtorCache.failed).append('\n');
             b.append("[ABYSSDIAG] module count     = ").append(ModuleManager.S == null ? -1 : ModuleManager.S.size()).append(" of ").append(AbyssModuleRegistry.expectedModuleCount()).append(' ').append(AbyssModuleRegistry.countGateGreen ? "OK" : "REGRESSION").append(AbyssModuleRegistry.MISSING.isEmpty() ? "" : " missing " + AbyssModuleRegistry.MISSING).append('\n');
             for (String c : AbyssCtorCache.LOG) {
@@ -230,6 +454,7 @@ public final class AbyssBootstrap {
                 b.append("[ABYSSDIAG] modules enabled   = ").append(on).append('\n');
                 b.append("[ABYSSDIAG] first 12          = ").append((CharSequence)names).append('\n');
                 b.append(AbyssBootstrap.census());
+                b.append(AbyssBootstrap.moduleUsability());
 }
             for (String p : PENDING) {
                 if (!p.contains("ClickGui") && !p.contains("Ts_2") && !p.contains("Ad_2") && !p.contains("REFUSED") && !p.contains("threw")) continue;
@@ -239,6 +464,17 @@ public final class AbyssBootstrap {
                 b.append("[ABYSSDIAG]   degraded> ").append(d).append('\n');
 }
             b.append("[ABYSSDIAG] ==== end ====");
+            String report = b.toString();
+            System.out.println(report);
+            StringBuilder full = new StringBuilder(report);
+            full.append('\n').append("[ABYSSDIAG] ==== full pending ====\n");
+            for (String pending : PENDING) {
+                full.append("[ABYSSDIAG] pending-all> ").append(pending).append('\n');
+}
+            full.append("[ABYSSDIAG] ==== full pending end ====\n");
+            try (OutputStreamWriter diag = new OutputStreamWriter((OutputStream)new FileOutputStream(new File("abyss-bootstrap-diagnostics.txt")), "UTF-8");){
+                diag.write(full.toString());
+}
 }
         catch (Throwable throwable) {
             // empty catch block

@@ -4,7 +4,7 @@
 package Abyss.util;
 
 public class LunarClientDetector {
-    private static long private static Boolean P;
+    private static Boolean P;
 
     public static boolean q(long var0) {
         if (P == null) {

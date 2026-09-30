@@ -15,7 +15,7 @@ import Abyss.event.invoker.AutoDigPlaceSendPacketInvoker;
 import Abyss.module.impl.world.AutoDigPlace;
 
 public final class AutoDigPlaceBinder {
-    private static final long public static void n(EventBus var0, AutoDigPlace var2) {
+    public static void n(EventBus var0, AutoDigPlace var2) {
         var0.R(var2, HeldItemChangeEvent.class, 3, new AutoDigPlaceHeldItemChangeInvoker(var2));
         var0.R(var2, AttackEntityEvent.class, 3, new AutoDigPlaceAttackEntityInvoker(var2));
         var0.R(var2, PreMouseInputEvent.class, 3, new AutoDigPlacePreMouseInputInvoker(var2));

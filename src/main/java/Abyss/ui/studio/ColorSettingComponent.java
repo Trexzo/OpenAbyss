@@ -21,8 +21,10 @@ import org.lwjgl.input.Mouse;
 
 public class ColorSettingComponent
 extends AbstractSettingComponent<ColorSetting> {
+    private static long a;
+
     private final Animation r;
-    private static long private boolean i;
+    private boolean i;
     private boolean G;
     private boolean K;
     private final Animation c;
@@ -253,4 +255,7 @@ extends AbstractSettingComponent<ColorSetting> {
         float var10 = MathUtil.q((var1 - var2) / var3, 0.0f, 1.0f);
         ((ColorSetting)this.O).e(String.format("%06X", Color.HSBtoRGB(var10, Math.max(var9[1], 0.01f), Math.max(var9[2], 0.01f)) & 0xFFFFFF));
 }
+    static {
+        a = 25808236507165L;
+    }
 }

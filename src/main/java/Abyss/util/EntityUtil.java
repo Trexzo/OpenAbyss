@@ -39,6 +39,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 
 public class EntityUtil {
+    private static long a;
+
     private static String b;
         private static Minecraft z;
 
@@ -76,14 +78,14 @@ public class EntityUtil {
 }
     private static char I(Entity var0, long var1) {
         int var5 = (int)(((var1 = a ^ var1) ^ 0x2EF5CA600EAL) << 48 >>> 48);
-        String var6 = ScoreboardUtil.Z((short)var5, var0.func_70005_c_(), b);
+        String var6 = ScoreboardUtil.Z((short)var5, var0.getName(), b);
         return var6.isEmpty() ? (char)'\u0000' : Character.toLowerCase(var6.charAt(0));
 }
     public static List F(double var0, long var2, double var4) {
         var2 = a ^ var2;
         long var6 = var2 ^ 0x724C8CE0BEEEL;
         long var10 = var2 ^ 0x2D320D19E682L;
-        List var12 = EntityUtil.z.field_71441_e.field_72996_f;
+        List var12 = EntityUtil.z.theWorld.loadedEntityList;
         ArrayList<EntityLivingBase> var13 = new ArrayList<EntityLivingBase>(var12.size());
         int var15 = var12.size();
         for (int var14 = 0; var14 < var15; ++var14) {
@@ -97,7 +99,7 @@ public class EntityUtil {
         var2 = a ^ var2;
         long var10 = var2 ^ 0x724C8CE0BEEEL;
         long var12 = var2 ^ 0x2D320D19E682L;
-        List var14 = EntityUtil.z.field_71441_e.field_72996_f;
+        List var14 = EntityUtil.z.theWorld.loadedEntityList;
         ArrayList<EntityLivingBase> var15 = new ArrayList<EntityLivingBase>(var14.size());
         int var17 = var14.size();
         for (int var16 = 0; var16 < var17; ++var16) {
@@ -116,7 +118,7 @@ public class EntityUtil {
         var4 = a ^ var4;
         long var6 = var4 ^ 0x72A92D32B075L;
         long var8 = var4 ^ 0x2DD7ACCBE819L;
-        List var12 = EntityUtil.z.field_71441_e.field_73010_i;
+        List var12 = EntityUtil.z.theWorld.playerEntities;
         ArrayList<EntityPlayer> var13 = new ArrayList<EntityPlayer>(var12.size());
         int var15 = var12.size();
         for (int var14 = 0; var14 < var15; ++var14) {
@@ -138,11 +140,11 @@ public class EntityUtil {
         return !(var2 && var15 || var4 && var17 || var1 && var14 || var3 && var16) ? !(!var4 && var17 || !var1 && var14 || !var3 && var16 || !var2 && var15) : true;
 }
     private static char W(EntityPlayer var0) {
-        ScorePlayerTeam var5 = EntityUtil.z.field_71441_e.func_96441_U().func_96509_i(var0.func_70005_c_());
+        ScorePlayerTeam var5 = EntityUtil.z.theWorld.getScoreboard().getPlayersTeam(var0.getName());
         if (var5 == null) {
             return '\u0000';
 }
-        String var6 = ScoreboardUtil.h(var5.func_96668_e(), 0L);
+        String var6 = ScoreboardUtil.h(var5.getColorPrefix(), 0L);
         return var6.isEmpty() ? (char)'\u0000' : Character.toLowerCase(var6.charAt(0));
 }
     public static List M(long var0) {
@@ -189,7 +191,7 @@ public class EntityUtil {
     public static List o(int var0, char var1, short var2, double var3) {
         long var5 = ((long)var0 << 32 | (long)var1 << 48 >>> 32 | (long)var2 << 48 >>> 48) ^ a;
         long var7 = var5 ^ 0x7C98F22F2B28L;
-        List var11 = EntityUtil.z.field_71441_e.field_73010_i;
+        List var11 = EntityUtil.z.theWorld.playerEntities;
         ArrayList<EntityPlayer> var12 = new ArrayList<EntityPlayer>(var11.size());
         int var14 = var11.size();
         for (int var13 = 0; var13 < var14; ++var13) {
@@ -200,7 +202,7 @@ public class EntityUtil {
         return var12;
 }
     public static List U(boolean var2) {
-        List var7 = EntityUtil.z.field_71441_e.field_73010_i;
+        List var7 = EntityUtil.z.theWorld.playerEntities;
         ArrayList<EntityLivingBase> var8 = new ArrayList<EntityLivingBase>(var7.size());
         if (var2) {
             int var15 = var7.size();
@@ -211,7 +213,7 @@ public class EntityUtil {
 }
             return var8;
 }
-        List var9 = EntityUtil.z.field_71441_e.field_72996_f;
+        List var9 = EntityUtil.z.theWorld.loadedEntityList;
         int var11 = var9.size();
         for (int var10 = 0; var10 < var11; ++var10) {
             Entity var12 = (Entity)var9.get(var10);
@@ -222,7 +224,7 @@ public class EntityUtil {
 }
     public static List h(double var0, long var2) {
         long var4 = var2 ^ 0x1DC52E1BA725L;
-        List var8 = EntityUtil.z.field_71441_e.field_72996_f;
+        List var8 = EntityUtil.z.theWorld.loadedEntityList;
         ArrayList<EntityLivingBase> var9 = new ArrayList<EntityLivingBase>(var8.size());
         int var11 = var8.size();
         for (int var10 = 0; var10 < var11; ++var10) {
@@ -233,16 +235,16 @@ public class EntityUtil {
         return var9;
 }
     private static boolean G(EntityLivingBase var0) {
-        return var0 != EntityUtil.z.field_71439_g && !var0.field_70128_L && var0.field_70725_aQ <= 0 && var0.func_110143_aJ() > 0.0f;
+        return var0 != EntityUtil.z.thePlayer && !var0.isDead && var0.deathTime <= 0 && var0.getHealth() > 0.0f;
 }
     private static boolean G(long var0, Entity var2) {
-        if (EntityUtil.z.field_71439_g == null || EntityUtil.z.field_71441_e == null || var2 == null) {
+        if (EntityUtil.z.thePlayer == null || EntityUtil.z.theWorld == null || var2 == null) {
             return false;
 }
         if (!HypixelGameState.p() && !HypixelGameState.d()) {
             return false;
 }
-        char var9 = EntityUtil.W((EntityPlayer)EntityUtil.z.field_71439_g);
+        char var9 = EntityUtil.W((EntityPlayer)EntityUtil.z.thePlayer);
         if (var9 == '\u0000') {
             return false;
 }
@@ -251,7 +253,7 @@ public class EntityUtil {
             return var13 != '\u0000' && var13 == var9;
 }
         if (var2 instanceof EntityPlayer) {
-            MegaWallsClass var10 = MegaWallsClass.s(var2.func_70005_c_(), 126433336288858L);
+            MegaWallsClass var10 = MegaWallsClass.s(var2.getName(), 126433336288858L);
             if (var10 != MegaWallsClass.SHEEP && var10 != MegaWallsClass.ANGEL) {
                 return false;
 }
@@ -261,7 +263,7 @@ public class EntityUtil {
         return false;
 }
     public static List u(int var0, int var1, char var2) {
-        List var7 = EntityUtil.z.field_71441_e.field_73010_i;
+        List var7 = EntityUtil.z.theWorld.playerEntities;
         ArrayList<EntityPlayer> var8 = new ArrayList<EntityPlayer>(var7.size());
         int var10 = var7.size();
         for (int var9 = 0; var9 < var10; ++var9) {
@@ -272,6 +274,7 @@ public class EntityUtil {
         return var8;
 }
     static {
+        a = 20782887609681L;
         z = MinecraftRef.c((byte)0, 0L);
         b = "Wither";
 }

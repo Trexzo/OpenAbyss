@@ -141,9 +141,6 @@ extends BasicInternalFrameTitlePane {
 }
     protected class FlatPropertyChangeHandler
     extends BasicInternalFrameTitlePane.PropertyChangeHandler {
-        protected FlatPropertyChangeHandler() {
-            super(FlatInternalFrameTitlePane.this);
-}
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             switch (e.getPropertyName()) {

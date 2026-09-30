@@ -80,15 +80,15 @@ public enum Category {
         a = new ResourceLocation("minecraft", "icons/player.png");
         L = new ResourceLocation("minecraft", "icons/configuration.png");
         o = new ResourceLocation("minecraft", "icons/misc.png");
-        Category[] var10000 = new Category[3655614568782102537L];
+        Category[] var10000 = new Category[(int)3655614568782102537L];
         var10000[0] = Combat;
         var10000[1] = Movement;
         var10000[2] = Player;
         var10000[3] = World;
         var10000[4] = Visual;
         var10000[5] = Visual_utility;
-        var10000[6162584402476924934L] = Misc;
-        var10000[-5414625232382066681L] = Configuration;
-        var10000[37596606110892040L] = Macro;
+        var10000[(int)6162584402476924934L] = Misc;
+        var10000[(int)-5414625232382066681L] = Configuration;
+        var10000[(int)37596606110892040L] = Macro;
 }
 }

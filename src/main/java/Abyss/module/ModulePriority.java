@@ -55,8 +55,14 @@ public class ModulePriority {
             ModulePriorityEntry.z(var2, var1);
 }
 }
-                Cipher var1 = Cipher.getInstance("DES/CBC/NoPadding");
-            var1.init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
+    private static void zkm$clinit() {
+        try {
+            Cipher var1;
+            byte[] var10003 = new byte[]{(byte)0L, 0, 0, 0, 0, 0, 0, 0};
+            for (int var2 = 1; var2 < 8; ++var2) {
+                var10003[var2] = (byte)(132284884015632L << var2 * 8 >>> 56);
+            }
+            (var1 = Cipher.getInstance("DES/CBC/NoPadding")).init(2, (Key)SecretKeyFactory.getInstance("DES").generateSecret(new DESKeySpec(var10003)), new IvParameterSpec(new byte[8]));
             long[] var0 = new long[9];
             int var4 = 0;
             String var5 = "H\u00dc\f/\u001fYh\u009e\u00da\u008e\u00d0~\u00aeL\u009a\u0080{0A~;\u0087\u00c5m\u0004\"\u00dd\u00a0|\u00a6\u00cc[\u001e\u00bd\u00ff\u00c9\u00e7\u00a2\b\u00c9\u00eb\u0011\u00d0\u0093jC\u00f7\u00cd\u0002l\u008a\u00b4\u00ad\u00d6+\u00bb";
@@ -110,7 +116,6 @@ public class ModulePriority {
                     var23 = ((long)var7[0] & 0xFFL) << 56 | ((long)var7[1] & 0xFFL) << 48 | ((long)var7[2] & 0xFFL) << 40 | ((long)var7[3] & 0xFFL) << 32 | ((long)var7[4] & 0xFFL) << 24 | ((long)var7[5] & 0xFFL) << 16 | ((long)var7[6] & 0xFFL) << 8 | (long)var7[7] & 0xFFL;
                     var25 = 0;
 }
-                break;
 }
 }
         catch (UnsupportedEncodingException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException var17) {
@@ -118,5 +123,6 @@ public class ModulePriority {
 }
 }
     static {
+        zkm$clinit();
 }
 }

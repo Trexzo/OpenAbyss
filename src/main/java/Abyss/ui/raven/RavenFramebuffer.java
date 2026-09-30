@@ -191,16 +191,16 @@ public class RavenFramebuffer {
         GL11.glPixelStorei((int)3333, (int)1);
         GL11.glPixelStorei((int)3317, (int)1);
         int var10 = 1;
-        int var11 = RavenFramebuffer.j.field_71474_y.field_74335_Z;
+        int var11 = RavenFramebuffer.j.gameSettings.guiScale;
         if (var11 == 0) {
             var11 = 255;
 }
-        while (var10 < var11 && RavenFramebuffer.j.field_71443_c / (var10 + 1) >= 3317 && RavenFramebuffer.j.field_71440_d / (var10 + 1) >= 3333) {
+        while (var10 < var11 && RavenFramebuffer.j.displayWidth / (var10 + 1) >= 3317 && RavenFramebuffer.j.displayHeight / (var10 + 1) >= 3333) {
             ++var10;
 }
-        GL11.glReadPixels((int)(var1 * var10), (int)(RavenFramebuffer.j.field_71440_d - (var2 + 1) * var10), (int)var3, (int)var4, (int)32993, (int)33639, (IntBuffer)var9);
+        GL11.glReadPixels((int)(var1 * var10), (int)(RavenFramebuffer.j.displayHeight - (var2 + 1) * var10), (int)var3, (int)var4, (int)32993, (int)33639, (IntBuffer)var9);
         var9.get(var7);
-        TextureUtil.func_147953_a((int[])var7, (int)var3, (int)var4);
+        TextureUtil.processPixelValues((int[])var7, (int)var3, (int)var4);
         return var7;
 }
     public int S() {

@@ -35,6 +35,8 @@ import net.minecraft.world.World;
 public class WTap
 extends Module
 implements EventSubscriber {
+    private static long a = 9433001507230L;
+
     private static String[] o;
         public static NumberSetting interval;
     public static BooleanSetting useBlockInstead;
@@ -80,7 +82,7 @@ implements EventSubscriber {
 }
     public void onReceivePacket(ReceivePacketEvent var1, long var2) {
         S19PacketEntityStatus var6;
-        if (requireTargetDamage.c() && var1.d instanceof S19PacketEntityStatus && !((var6 = (S19PacketEntityStatus)var1.d).func_149161_a((World)WTap.f.field_71441_e) instanceof EntityPlayerSP) && var6.func_149161_a((World)WTap.f.field_71441_e) instanceof EntityPlayer && var6.func_149160_c() == 2 && MathUtil.Q(chance.k(), 0L) && this.r.L((long)interval.L(), true)) {
+        if (requireTargetDamage.c() && var1.d instanceof S19PacketEntityStatus && !((var6 = (S19PacketEntityStatus)var1.d).getEntity((World)WTap.f.theWorld) instanceof EntityPlayerSP) && var6.getEntity((World)WTap.f.theWorld) instanceof EntityPlayer && var6.getOpCode() == 2 && MathUtil.Q(chance.k(), 0L) && this.r.L((long)interval.L(), true)) {
             this.G = (int)MathUtil.h(minPauseTick.L(), maxPauseTick.L());
             this.J = false;
 }
@@ -106,7 +108,7 @@ implements EventSubscriber {
                 this.G = (int)MathUtil.h(minPauseTick.L(), maxPauseTick.L());
                 this.J = false;
 }
-            if ((!requireOnGround.c() || WTap.f.field_71439_g.field_70122_E) && this.G > 0) {
+            if ((!requireOnGround.c() || WTap.f.thePlayer.onGround) && this.G > 0) {
                 if (useBlockInstead.c()) {
                     this.u = true;
                 } else {
@@ -118,11 +120,11 @@ implements EventSubscriber {
             --this.G;
 }
         if (!this.u && this.p) {
-            KeyBindUtil.o(99363263780575L, WTap.f.field_71474_y.field_74313_G.func_151463_i());
+            KeyBindUtil.o(99363263780575L, WTap.f.gameSettings.keyBindUseItem.getKeyCode());
             this.p = false;
 }
         if (this.u) {
-            KeyBindUtil.A(82009306480869L, WTap.f.field_71474_y.field_74313_G.func_151463_i(), true);
+            KeyBindUtil.A(82009306480869L, WTap.f.gameSettings.keyBindUseItem.getKeyCode(), true);
             this.u = false;
             this.p = true;
 }
@@ -150,7 +152,7 @@ implements EventSubscriber {
         this.h = null;
         this.J = false;
         if (this.p) {
-            KeyBindUtil.o(var3, WTap.f.field_71474_y.field_74313_G.func_151463_i());
+            KeyBindUtil.o(var3, WTap.f.gameSettings.keyBindUseItem.getKeyCode());
             this.p = false;
 }
 }

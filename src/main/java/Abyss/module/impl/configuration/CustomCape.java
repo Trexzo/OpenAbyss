@@ -16,6 +16,8 @@ import net.minecraft.util.ResourceLocation;
 
 public class CustomCape
 extends Module {
+    private static long a;
+
     
         
     public static HashMap<String, String> O;
@@ -29,7 +31,31 @@ extends Module {
         this.declare("CustomCape", Category.Configuration, "Get a fake better cape", new Setting[0]);
 }
     static {
+        a = 38052850158322L;
         O = new HashMap();
+        O.put("2011", "2011");
+        O.put("2012", "2012");
+        O.put("2013", "2013");
+        O.put("2015", "2015");
+        O.put("2016", "2016");
+        O.put("MJ", "mojang");
+        O.put("MJ_STUDIOS", "mojang_studios");
+        O.put("MJ_CLASSIC", "mojang_classic");
+        O.put("REALMS", "realms");
+        O.put("TRANSLATOR", "translator");
+        O.put("MOJIRA", "mojira");
+        O.put("COBALT", "cobalt");
+        O.put("SCROLLS", "scrolls");
+        O.put("BIRTHDAY", "birthday");
+        O.put("MILLIONTH", "millionth");
+        O.put("DB", "db");
+        O.put("OXEYE", "oxeye");
+        O.put("PRISMARINE", "prismarine");
+        O.put("SIZE_M", "size-m");
+        O.put("SNOWMAN", "snowman");
+        O.put("SPADE", "spade");
+        O.put("TURTLE", "turtle");
+        O.put("VALENTINE", "valentine");
         cape = new ModeSetting("Cape", "NONE", "2011", "2012", "2013", "2015", "2016", "MJ", "MJ_STUDIOS", "MJ_CLASSIC", "REALMS", "TRANSLATOR", "MOJIRA", "COBALT", "SCROLLS", "BIRTHDAY", "MILLIONTH", "DB", "OXEYE", "PRISMARINE", "SIZE_M", "SNOWMAN", "SPADE", "TURTLE", "VALENTINE");
 }
 }

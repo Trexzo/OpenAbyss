@@ -1,47 +1,31 @@
-plugins {
-    id 'java'
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'forge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+    }
+
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT'
+    }
 }
+
+apply plugin: 'net.minecraftforge.gradle.forge'
 
 group = 'abyss'
 version = '1.0.0'
+archivesBaseName = 'OpenAbyss'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-repositories {
-    mavenCentral()
-    maven {
-        name = 'MinecraftForge'
-        url = 'https://maven.minecraftforge.net/'
-    }
-    maven {
-        name = 'SpongePowered'
-        url = 'https://repo.spongepowered.org/maven/'
-    }
-    maven {
-        name = 'Mojang'
-        url = 'https://libraries.minecraft.net/'
-    }
-}
-
-dependencies {
-    // Compile-time references against local Minecraft Forge libraries if present
-    compileOnly fileTree(dir: 'E:/minecraft/libraries', include: ['**/*.jar'])
-    compileOnly fileTree(dir: 'E:/minecraft/versions/1.8.9', include: ['**/*.jar'])
-    
-    // Core dependencies
-    compileOnly 'net.minecraft:launchwrapper:1.12'
-    compileOnly 'org.ow2.asm:asm-all:5.0.3'
-    compileOnly 'com.google.code.gson:gson:2.2.4'
-    compileOnly 'com.google.guava:guava:17.0'
-    compileOnly 'org.lwjgl.lwjgl:lwjgl:2.9.4-nightly-20150209'
-    compileOnly 'org.lwjgl.lwjgl:lwjgl_util:2.9.4-nightly-20150209'
-    compileOnly 'io.netty:netty-all:4.0.23.Final'
-    compileOnly 'org.apache.logging.log4j:log4j-api:2.0-beta9'
-    compileOnly 'org.apache.logging.log4j:log4j-core:2.0-beta9'
-    compileOnly 'commons-io:commons-io:2.4'
-    compileOnly 'org.apache.commons:commons-lang3:3.3.2'
-    compileOnly 'net.sf.jopt-simple:jopt-simple:4.6'
+minecraft {
+    version = '1.8.9-11.15.1.2318-1.8.9'
+    runDir = 'run'
+    mappings = 'stable_22'
+    makeObfSourceJar = false
 }
 
 tasks.withType(JavaCompile) {
@@ -53,7 +37,6 @@ jar {
     manifest {
         attributes(
             'Manifest-Version': '1.0',
-            'Main-Class': 'net.minecraft.launchwrapper.Launch',
             'FMLCorePlugin': 'Abyss.ASM.CoreMod',
             'FMLCorePluginContainsFMLMod': 'true',
             'ModSide': 'CLIENT',
@@ -61,3 +44,254 @@ jar {
         )
     }
 }
+
+def abyssReobfJar = tasks.getByName('reobfJar')
+def abyssRunClient = tasks.getByName('runClient')
+def abyssBaseJvmArgs = ['-Xmx2G']
+if (!project.hasProperty('abyssModsFolder')) {
+    abyssBaseJvmArgs += '-Dfml.coreMods.load=Abyss.ASM.CoreMod'
+}
+abyssRunClient.jvmArgs(abyssBaseJvmArgs)
+
+String abyssRunClientJvmArgFile = System.getenv('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')
+if (abyssRunClientJvmArgFile) {
+    File jvmArgFile = file(abyssRunClientJvmArgFile)
+    if (!jvmArgFile.isFile()) {
+        throw new GradleException("OPENABYSS_RUNCLIENT_JVM_ARG_FILE does not exist: " + jvmArgFile)
+    }
+
+    List<String> explicitJvmArgs = jvmArgFile.readLines('UTF-8')
+        .collect { it.trim() }
+        .findAll { it }
+    if (explicitJvmArgs.isEmpty()) {
+        throw new GradleException("OPENABYSS_RUNCLIENT_JVM_ARG_FILE contains no JVM arguments: " + jvmArgFile)
+    }
+
+    explicitJvmArgs.each { String arg ->
+        if (!(arg ==~ /-Dabyss\.[A-Za-z0-9_.-]+=[A-Za-z0-9_.:-]+/)) {
+            throw new GradleException("Rejected non-Abyss or malformed explicit runClient JVM argument: " + arg)
+        }
+    }
+
+    abyssRunClient.jvmArgs(explicitJvmArgs)
+    println "ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=" + explicitJvmArgs.size()
+    println "ABYSS_RUNCLIENT_JVM_ARG_FILE=" + jvmArgFile.canonicalPath
+}
+
+if (project.hasProperty('abyssWorldSmoke')) {
+    String worldSmokeHost = project.hasProperty('abyssWorldSmokeHost') ? project.property('abyssWorldSmokeHost').toString() : '127.0.0.1'
+    String worldSmokePort = project.hasProperty('abyssWorldSmokePort') ? project.property('abyssWorldSmokePort').toString() : '25565'
+    abyssRunClient.args('--server', worldSmokeHost, '--port', worldSmokePort)
+    println "ABYSS_WORLD_SMOKE_AUTOCONNECT=" + worldSmokeHost + ":" + worldSmokePort
+}
+
+if (project.hasProperty('abyssPackaged') && project.hasProperty('abyssModsFolder')) {
+    throw new GradleException('Choose only one packaged runtime mode: abyssPackaged or abyssModsFolder.')
+}
+
+// ForgeGradle runClient is a deobfuscated MCP runtime. These two smoke modes
+// intentionally exercise the development jar; production distribution is gated
+// separately through reobfJar below.
+if (project.hasProperty('abyssPackaged')) {
+    abyssRunClient.dependsOn jar
+    abyssRunClient.doFirst {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        Set<String> devOutputs = sourceSets.main.output.files.collect { it.canonicalPath } as Set
+        def filtered = abyssRunClient.classpath.files.findAll { !devOutputs.contains(it.canonicalPath) }
+        abyssRunClient.classpath = files(filtered) + files(packagedJar)
+
+        def leaked = abyssRunClient.classpath.files.findAll { devOutputs.contains(it.canonicalPath) }
+        if (!leaked.isEmpty()) {
+            throw new GradleException("Packaged runtime still contains dev source-set output: " + leaked)
+        }
+        if (!abyssRunClient.classpath.files.any { it.canonicalPath == packagedJar.canonicalPath }) {
+            throw new GradleException("Packaged runtime classpath does not contain " + packagedJar)
+        }
+
+        println "ABYSS_PACKAGED_RUNTIME_JAR=" + packagedJar.canonicalPath
+        println "ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0"
+    }
+}
+
+
+
+if (project.hasProperty('abyssModsFolder')) {
+    abyssRunClient.dependsOn jar
+    abyssRunClient.doFirst {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        Set<String> devOutputs = sourceSets.main.output.files.collect { it.canonicalPath } as Set
+        def filtered = abyssRunClient.classpath.files.findAll {
+            !devOutputs.contains(it.canonicalPath) && it.canonicalPath != packagedJar.canonicalPath
+        }
+        abyssRunClient.classpath = files(filtered)
+
+        def leaked = abyssRunClient.classpath.files.findAll {
+            devOutputs.contains(it.canonicalPath) || it.canonicalPath == packagedJar.canonicalPath
+        }
+        if (!leaked.isEmpty()) {
+            throw new GradleException("Mods-folder runtime classpath still contains OpenAbyss dev/JAR output: " + leaked)
+        }
+
+        File modsDir = file("$minecraft.runDir/mods")
+        modsDir.mkdirs()
+        fileTree(modsDir) {
+            include 'abyss.jar'
+            include 'OpenAbyss-*.jar'
+        }.files.each { File stale ->
+            if (!stale.delete()) {
+                throw new GradleException("Could not remove stale OpenAbyss mods-folder JAR: " + stale)
+            }
+        }
+
+        project.copy {
+            from packagedJar
+            into modsDir
+            rename { String ignored -> 'abyss.jar' }
+        }
+        File installedJar = new File(modsDir, 'abyss.jar')
+        if (!installedJar.isFile()) {
+            throw new GradleException("Mods-folder runtime did not install " + installedJar)
+        }
+
+        def digest = { File file ->
+            def md = java.security.MessageDigest.getInstance('SHA-256')
+            file.withInputStream { input ->
+                byte[] buffer = new byte[65536]
+                int read
+                while ((read = input.read(buffer)) > 0) {
+                    md.update(buffer, 0, read)
+                }
+            }
+            md.digest().collect { String.format('%02X', it & 0xff) }.join()
+        }
+        String sourceHash = digest(packagedJar)
+        String installedHash = digest(installedJar)
+        if (sourceHash != installedHash) {
+            throw new GradleException("Mods-folder JAR hash mismatch: source=" + sourceHash + " installed=" + installedHash)
+        }
+
+        println "ABYSS_MODS_FOLDER_RUNTIME_JAR=" + installedJar.canonicalPath
+        println "ABYSS_MODS_FOLDER_RUNTIME_JAR_SHA256=" + installedHash
+        println "ABYSS_MODS_FOLDER_RUNTIME_CLASSPATH_OPENABYSS_PRESENT=0"
+        println "ABYSS_MODS_FOLDER_RUNTIME_EXPLICIT_COREMOD_PROPERTY=0"
+    }
+}
+
+task writeLauncherBuildInfo(dependsOn: abyssReobfJar) {
+    description = 'Writes provenance for the standalone Windows launcher package.'
+    group = 'distribution'
+    outputs.file file("$buildDir/distributions/BUILD-INFO.txt")
+
+    doLast {
+        File packagedJar = jar.archivePath
+        if (!packagedJar.isFile()) {
+            throw new GradleException("Packaged OpenAbyss JAR is missing: " + packagedJar)
+        }
+
+        def md = java.security.MessageDigest.getInstance('SHA-256')
+        packagedJar.withInputStream { input ->
+            byte[] buffer = new byte[65536]
+            int read
+            while ((read = input.read(buffer)) > 0) {
+                md.update(buffer, 0, read)
+            }
+        }
+        String jarHash = md.digest().collect { String.format('%02X', it & 0xff) }.join()
+
+        def contentMd = java.security.MessageDigest.getInstance('SHA-256')
+        def zip = new java.util.zip.ZipFile(packagedJar)
+        try {
+            def entries = java.util.Collections.list(zip.entries()).findAll { !it.isDirectory() }.sort { a, b -> a.name <=> b.name }
+            entries.each { entry ->
+                byte[] nameBytes = entry.name.getBytes('UTF-8')
+                java.nio.ByteBuffer nameLen = java.nio.ByteBuffer.allocate(4)
+                nameLen.putInt(nameBytes.length)
+                contentMd.update(nameLen.array())
+                contentMd.update(nameBytes)
+
+                long size = entry.size
+                java.nio.ByteBuffer dataLen = java.nio.ByteBuffer.allocate(8)
+                dataLen.putLong(size)
+                contentMd.update(dataLen.array())
+
+                InputStream input = zip.getInputStream(entry)
+                try {
+                    byte[] buffer = new byte[65536]
+                    int read
+                    while ((read = input.read(buffer)) > 0) {
+                        contentMd.update(buffer, 0, read)
+                    }
+                }
+                finally {
+                    input.close()
+                }
+            }
+        }
+        finally {
+            zip.close()
+        }
+        String jarContentHash = contentMd.digest().collect { String.format('%02X', it & 0xff) }.join()
+
+        String head = 'UNKNOWN'
+        try {
+            def stdout = new ByteArrayOutputStream()
+            exec {
+                commandLine 'git', 'rev-parse', 'HEAD'
+                standardOutput = stdout
+                errorOutput = new ByteArrayOutputStream()
+                ignoreExitValue = true
+            }
+            String resolved = stdout.toString('UTF-8').trim()
+            if (resolved) {
+                head = resolved
+            }
+        }
+        catch (Throwable ignored) {
+        }
+
+        File info = file("$buildDir/distributions/BUILD-INFO.txt")
+        info.parentFile.mkdirs()
+        info.text = [
+            'OPENABYSS_WINDOWS_LAUNCHER_BUILD=1',
+            'SOURCE_HEAD=' + head,
+            'JAR_FILE=abyss.jar',
+            'JAR_BYTES=' + packagedJar.length(),
+            'JAR_SHA256=' + jarHash,
+            'JAR_CONTENT_SHA256=' + jarContentHash,
+            'MC_VERSION=1.8.9',
+            'FORGE_VERSION=11.15.1.2318-1.8.9'
+        ].join(System.lineSeparator()) + System.lineSeparator()
+    }
+}
+
+task packageWindowsLauncher(type: Zip, dependsOn: [abyssReobfJar, writeLauncherBuildInfo]) {
+    description = 'Builds the standalone Windows OpenAbyss launcher package.'
+    group = 'distribution'
+    destinationDir = file("$buildDir/distributions")
+    archiveName = 'OpenAbyss-Windows-Launcher.zip'
+
+    from(jar.archivePath) {
+        rename { String fileName -> 'abyss.jar' }
+    }
+    from("$buildDir/distributions/BUILD-INFO.txt") {
+        rename { String ignored -> 'BUILD-INFO.txt' }
+    }
+    from('launcher') {
+        include 'Launcher.bat'
+        include 'launch_abyss.ps1'
+        include 'Prepare-Official-Launcher.bat'
+        include 'Prepare-Official-Launcher.ps1'
+        include 'Check-Official-Launcher.bat'
+        include 'Check-Official-Launcher.ps1'
+        include 'README.txt'
+    }
+}
+// Certification trigger only: no build behavior change.

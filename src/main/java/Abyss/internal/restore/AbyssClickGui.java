@@ -117,9 +117,6 @@ public final class AbyssClickGui {
         AbyssClickGui.installStudio(pending);
         AbyssRavenGui.installRaven(pending);
         DEGRADED.addAll(AbyssRavenGui.degraded());
-        DEGRADED.add("Abyss.module.impl.configuration.ClickGUI.U retired: the Legacy-route mode setting is gone, so zu_3.O always shows the Abyss panel and this screen (VESTIGE) is never the one shown");
-        DEGRADED.add("Abyss.module.impl.configuration.ClickGUI.I default: config says Scale=1.0; a 0.0 placeholder is a division by zero at ClickGuiScreen.mouseClicked@127");
-        DEGRADED.add("Abyss.module.impl.configuration.ClickGUI.K retired: the Keybind text setting is gone; the panel opens off the module's native bind, seeded to RSHIFT");
         AbyssClickGui.note(pending, "Abyss.ui.vestige.VestigeClickGuiScreen published into zu_3.B (D/M/O/Y = " + screen.D + "/" + screen.M + "/" + screen.O + "/" + screen.Y + "); zu_3.Y=" + (ClickGUI.Y == null ? "null" : "Ts_2") + " zu_3.F=" + (ClickGUI.F == null ? "null" : "Ad_2") + " -- see AbyssClickGui.DEGRADED");
         return screen;
 }

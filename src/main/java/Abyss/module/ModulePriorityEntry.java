@@ -7,6 +7,8 @@ import Abyss.internal.synthetic.ModulePriorityCtorMarker;
 import Abyss.module.PriorityModule;
 
 public class ModulePriorityEntry {
+    private static long a;
+
     public final Class<? extends PriorityModule> P;
     private static long b;
     public final int L;
@@ -34,5 +36,6 @@ public class ModulePriorityEntry {
         return var0.j;
 }
     static {
+        a = 45265588781549L;
 }
 }

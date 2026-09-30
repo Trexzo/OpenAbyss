@@ -12,14 +12,14 @@ import Abyss.util.render.VisualSpoofRenderer;
 import net.minecraft.entity.Entity;
 
 public class EntityRenderStateHooks {
-    private static final long public static void onRenderPre(Entity var0) {
+    public static void onRenderPre(Entity var0) {
         if (!VisualSpoofRenderer.H()) {
-            AbyssClient.w.e(new EntityRenderStateEvent(0, '\u65f0', 2592973, var0), 18670087776179L);
+            AbyssClient.w.e(new EntityRenderStateEvent((short)0, (char)26096, 2592973, var0), 18670087776179L);
 }
 }
     public static void onRenderPost(Entity var0) {
         if (!VisualSpoofRenderer.H()) {
-            AbyssClient.w.e(new EntityRenderStateEvent(0, '\u65f0', 2592973, var0), 18670087776179L);
+            AbyssClient.w.e(new EntityRenderStateEvent((short)0, (char)26096, 2592973, var0), 18670087776179L);
 }
 }
 }

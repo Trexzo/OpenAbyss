@@ -86,7 +86,9 @@ public final class StallWatchdog {
         long gcTimeAtStart = 0L;
         ArrayList<String> samples = new ArrayList<String>();
         while (true) {
-            StallWatchdog.sleep(100L);
+            if (!StallWatchdog.sleep(100L)) {
+                return;
+            }
             long beat = heartbeat;
             long now = System.nanoTime();
             if (beat != lastBeat) {
@@ -144,14 +146,14 @@ public final class StallWatchdog {
             return false;
 }
         try {
-            Minecraft mc = Minecraft.func_71410_x();
-            if (mc.field_71441_e == null || mc.field_71439_g == null) {
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.theWorld == null || mc.thePlayer == null) {
                 return false;
 }
-            if (mc.field_71462_r instanceof GuiDownloadTerrain) {
+            if (mc.currentScreen instanceof GuiDownloadTerrain) {
                 return false;
 }
-            if (mc.func_147113_T()) {
+            if (mc.isGamePaused()) {
                 return false;
 }
 }
@@ -162,7 +164,7 @@ public final class StallWatchdog {
 }
     private static String screenName() {
         try {
-            GuiScreen s = Minecraft.func_71410_x().field_71462_r;
+            GuiScreen s = Minecraft.getMinecraft().currentScreen;
             return s == null ? "none" : s.getClass().getSimpleName();
 }
         catch (Throwable t2) {
@@ -209,79 +211,57 @@ public final class StallWatchdog {
             QUEUE.offer(line);
 }
 }
-    /*
-     * WARNING - Removed try catching itself - possible behaviour change.
-     * Loose catch block
-     */
     private static void runDrainer() {
-        block11: while (true) {
+        while (true) {
             try {
-                while (true) {
-                    String line;
-                    if ((line = QUEUE.poll()) == null) {
-                        StallWatchdog.sleep(500L);
-                        continue;
+                String line = QUEUE.poll();
+                if (line == null) {
+                    if (!StallWatchdog.sleep(500L)) {
+                        return;
+                    }
+                    continue;
 }
-                    Writer writer = null;
-                    File f = StallWatchdog.logFile();
-                    if (f != null) {
-                        if (f.length() > 0x400000L) {
-                            File rotated = new File(f.getParentFile(), "stall.old.log");
-                            if (rotated.exists()) {
-                                rotated.delete();
+                File f = StallWatchdog.logFile();
+                if (f == null) {
+                    continue;
 }
-                            f.renameTo(rotated);
+                if (f.length() > 0x400000L) {
+                    File rotated = new File(f.getParentFile(), "stall.old.log");
+                    if (rotated.exists()) {
+                        rotated.delete();
 }
-                        writer = new OutputStreamWriter((OutputStream)new FileOutputStream(f, true), "UTF-8");
-                        do {
-                            writer.write(line);
-                            writer.write(10);
-                        } while ((line = QUEUE.poll()) != null);
+                    f.renameTo(rotated);
 }
-                    if (writer == null) continue;
-                    try {
-                        writer.close();
-                        continue block11;
+                Writer writer = null;
+                try {
+                    writer = new OutputStreamWriter((OutputStream)new FileOutputStream(f, true), "UTF-8");
+                    do {
+                        writer.write(line);
+                        writer.write(10);
+                    } while ((line = QUEUE.poll()) != null);
 }
-                    catch (Throwable throwable) {
-                        continue;
-}
-                    catch (Throwable throwable) {
-                        if (writer == null) continue;
+                finally {
+                    if (writer != null) {
                         try {
                             writer.close();
-                            continue block11;
 }
-                        catch (Throwable throwable2) {
-                            continue;
+                        catch (Throwable ignored) {
 }
 }
-                    catch (Throwable throwable) {
-                        if (writer != null) {
-                            try {
-                                writer.close();
-}
-                            catch (Throwable throwable3) {
-                                // empty catch block
-}
-}
-                        throw throwable;
-}
-                    break;
 }
 }
             catch (Throwable ignored) {
-                StallWatchdog.sleep(1000L);
-                continue;
+                if (!StallWatchdog.sleep(1000L)) {
+                    return;
+                }
 }
-            break;
 }
 }
     private static File logFile() {
         try {
             File dir;
-            Minecraft mc = Minecraft.func_71410_x();
-            File base = mc.field_71412_D;
+            Minecraft mc = Minecraft.getMinecraft();
+            File base = mc.mcDataDir;
             if (base == null) {
                 base = new File(".");
 }
@@ -297,12 +277,14 @@ public final class StallWatchdog {
             return null;
 }
 }
-    private static void sleep(long ms) {
+    private static boolean sleep(long ms) {
         try {
             Thread.sleep(ms);
+            return true;
 }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return false;
 }
 }
 }

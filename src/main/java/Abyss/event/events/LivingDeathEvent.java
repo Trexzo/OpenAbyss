@@ -15,7 +15,7 @@ public class LivingDeathEvent
 extends Event {
     public final EntityLivingBase p;
     public final DamageSource M;
-    private static final long public LivingDeathEvent(int var1, DamageSource var2, char var3, short var4, EntityLivingBase var5) {
+    public LivingDeathEvent(int var1, DamageSource var2, char var3, short var4, EntityLivingBase var5) {
         this.M = var2;
         this.p = var5;
 }

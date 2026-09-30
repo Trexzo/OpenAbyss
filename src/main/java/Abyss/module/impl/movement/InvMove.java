@@ -53,10 +53,17 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.C0DPacketCloseWindow;
 import net.minecraft.network.play.client.C0EPacketClickWindow;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class InvMove
 extends Module
 implements EventSubscriber {
+    private static long a = 71119880394628L;
+
     public static ModeSetting containerMode;
         private boolean c;
     public static ModeSetting inventoryMode;
@@ -65,42 +72,42 @@ implements EventSubscriber {
 
     public static void c(long var0) {
         KeyBinding[] var9;
-        KeyBinding[] var10000 = new KeyBinding[]{MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74351_w, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74368_y, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74370_x, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74366_z, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74314_A, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_151444_V, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74314_A};
+        KeyBinding[] var10000 = new KeyBinding[]{MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindForward, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindBack, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindLeft, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindRight, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindJump, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindSprint, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindJump};
         for (KeyBinding var13 : var9 = var10000) {
-            KeyBindUtil.o(99363263780575L, var13.func_151463_i());
+            KeyBindUtil.o(99363263780575L, var13.getKeyCode());
 }
         if (Modules.J(Sprint.class).o()) {
-            KeyBindUtil.A(82009306480869L, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_151444_V.func_151463_i(), true);
+            KeyBindUtil.A(82009306480869L, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindSprint.getKeyCode(), true);
 }
 }
     public void onCloseScreen(CloseScreenEvent var1) {
         InvMove.c(0L);
-        InvMove.f.field_71415_G = true;
+        InvMove.f.inGameHasFocus = true;
 }
     private boolean w$r3() {
-        for (Slot var2 : InvMove.f.field_71439_g.field_71070_bA.field_75151_b) {
+        for (Slot var2 : InvMove.f.thePlayer.openContainer.inventorySlots) {
             ItemStack var3;
-            if (!(var2 instanceof SlotCrafting) || (var3 = var2.func_75211_c()) == null) continue;
+            if (!(var2 instanceof SlotCrafting) || (var3 = var2.getStack()) == null) continue;
             return false;
 }
-        return InvMove.f.field_71439_g.field_71071_by.func_70445_o() == null;
+        return InvMove.f.thePlayer.inventory.getItemStack() == null;
 }
     public void onSendPacket(SendPacketEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
         if (var3.B instanceof C0EPacketClickWindow) {
             C0EPacketClickWindow var13 = (C0EPacketClickWindow)var3.B;
-            if (this.Z(var13.func_149544_d()) || !this.isGetItemStack()) {
+            if (this.Z(var13.getSlotId()) || !this.isGetItemStack()) {
                 this.remove(false);
                 InvMove.Q(0L);
                 return;
 }
             if (ScoreboardReader.v(0L)) {
-                if (InvMove.f.field_71462_r instanceof GuiContainer && !(InvMove.f.field_71462_r instanceof GuiInventory)) {
+                if (InvMove.f.currentScreen instanceof GuiContainer && !(InvMove.f.currentScreen instanceof GuiInventory)) {
                     if (containerMode.R("HYPIXEL")) {
                         this.Y.add((Packet<?>)var13);
                         var3.I(21307, 3074332907L);
                         return;
 }
-                } else if (InvMove.f.field_71462_r instanceof GuiInventory && inventoryMode.R("HYPIXEL")) {
+                } else if (InvMove.f.currentScreen instanceof GuiInventory && inventoryMode.R("HYPIXEL")) {
                     this.Y.add((Packet<?>)var13);
                     var3.I(21307, 3074332907L);
                     return;
@@ -111,22 +118,22 @@ implements EventSubscriber {
 }
     private void remove(boolean var3) {
         if (!this.Y.isEmpty()) {
-            ArrayList var6 = new ArrayList(this.Y);
+            ArrayList<Packet<?>> var6 = new ArrayList<Packet<?>>(this.Y);
             this.Y.clear();
             for (Packet packet : var6) {
                 PacketManager.X(packet);
 }
 }
         if (var3) {
-            PacketManager.b(new C0DPacketCloseWindow(InvMove.f.field_71439_g.field_71069_bz.field_75152_c));
+            PacketManager.b(new C0DPacketCloseWindow(InvMove.f.thePlayer.inventoryContainer.windowId));
 }
 }
     private boolean d$r2() {
-        if (InvMove.f.field_71439_g != null && InvMove.f.field_71439_g.field_71070_bA != null) {
-            for (Slot var2 : InvMove.f.field_71439_g.field_71070_bA.field_75151_b) {
+        if (InvMove.f.thePlayer != null && InvMove.f.thePlayer.openContainer != null) {
+            for (Slot var2 : InvMove.f.thePlayer.openContainer.inventorySlots) {
                 ItemStack var4;
                 IInventory var3;
-                if (var2 == null || !((var3 = var2.field_75224_c) instanceof InventoryCrafting) && !(var3 instanceof InventoryCraftResult) && !(var2 instanceof SlotCrafting) || (var4 = var2.func_75211_c()) == null) continue;
+                if (var2 == null || !((var3 = var2.inventory) instanceof InventoryCrafting) && !(var3 instanceof InventoryCraftResult) && !(var2 instanceof SlotCrafting) || (var4 = var2.getStack()) == null) continue;
                 return true;
 }
             return false;
@@ -139,15 +146,15 @@ implements EventSubscriber {
 }
 }
     private boolean Z(int var1) {
-        if (InvMove.f.field_71439_g.field_71070_bA == null) {
+        if (InvMove.f.thePlayer.openContainer == null) {
             return false;
 }
-        if (var1 >= 0 && var1 < InvMove.f.field_71439_g.field_71070_bA.field_75151_b.size()) {
-            Slot var2 = (Slot)InvMove.f.field_71439_g.field_71070_bA.field_75151_b.get(var1);
+        if (var1 >= 0 && var1 < InvMove.f.thePlayer.openContainer.inventorySlots.size()) {
+            Slot var2 = (Slot)InvMove.f.thePlayer.openContainer.inventorySlots.get(var1);
             if (var2 == null) {
                 return false;
 }
-            IInventory var3 = var2.field_75224_c;
+            IInventory var3 = var2.inventory;
             return var3 instanceof InventoryCrafting || var3 instanceof InventoryCraftResult;
 }
         return false;
@@ -157,12 +164,12 @@ implements EventSubscriber {
      * Lifted jumps to return sites
      */
     public void onPreUpdate(PreUpdateEvent var3) throws UnsupportedEncodingException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (InvMove.f.field_71462_r == null) {
+        if (InvMove.f.currentScreen == null) {
             this.c = false;
 }
-        if (!clickgui.c() || !(InvMove.f.field_71462_r instanceof RavenClickGuiScreen) && !(InvMove.f.field_71462_r instanceof StudioClickGuiScreen)) {
-            if (InvMove.f.field_71462_r == null) return;
-            if (InvMove.f.field_71462_r instanceof GuiContainer && !(InvMove.f.field_71462_r instanceof GuiInventory)) {
+        if (!clickgui.c() || !(InvMove.f.currentScreen instanceof RavenClickGuiScreen) && !(InvMove.f.currentScreen instanceof StudioClickGuiScreen)) {
+            if (InvMove.f.currentScreen == null) return;
+            if (InvMove.f.currentScreen instanceof GuiContainer && !(InvMove.f.currentScreen instanceof GuiInventory)) {
                 switch (containerMode.Y()) {
                     case "LEGIT": {
                         if (this.w$r3() && !this.c) {
@@ -191,7 +198,7 @@ implements EventSubscriber {
 }
 }
             } else {
-                if (!(InvMove.f.field_71462_r instanceof GuiInventory)) return;
+                if (!(InvMove.f.currentScreen instanceof GuiInventory)) return;
                 switch (inventoryMode.Y()) {
                     case "LEGIT": {
                         if (this.w$r3() && !this.c) {
@@ -237,9 +244,9 @@ implements EventSubscriber {
 }
     public static void Q(long var0) {
         KeyBinding[] var7;
-        KeyBinding[] var10000 = new KeyBinding[]{MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74351_w, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74368_y, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74370_x, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74366_z, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74314_A, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_151444_V, MinecraftRef.c((byte)0, (long)0L).field_71474_y.field_74314_A};
+        KeyBinding[] var10000 = new KeyBinding[]{MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindForward, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindBack, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindLeft, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindRight, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindJump, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindSprint, MinecraftRef.c((byte)0, (long)0L).gameSettings.keyBindJump};
         for (KeyBinding var11 : var7 = var10000) {
-            KeyBindUtil.A(82009306480869L, var11.func_151463_i(), false);
+            KeyBindUtil.A(82009306480869L, var11.getKeyCode(), false);
 }
 }
     @Override
@@ -247,7 +254,7 @@ implements EventSubscriber {
         this.c = false;
 }
     private boolean isGetItemStack() {
-        return InvMove.f.field_71439_g != null && InvMove.f.field_71439_g.field_71070_bA != null && InvMove.f.field_71439_g.field_71071_by.func_70445_o() == null && !this.d$r2();
+        return InvMove.f.thePlayer != null && InvMove.f.thePlayer.openContainer != null && InvMove.f.thePlayer.inventory.getItemStack() == null && !this.d$r2();
 }
     static {
         clickgui = new BooleanSetting("ClickGUI", true);

@@ -32,6 +32,11 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class TabGUI
 extends Module
@@ -129,20 +134,20 @@ implements EventSubscriber {
             boolean active = i == selected;
             Object identity = identities[i];
             float current = this.selectionOffsets.containsKey(identity) ? this.selectionOffsets.get(identity).floatValue() : 0.0f;
-            float step = 39.0f / (float)Math.max(1, Minecraft.func_175610_ah());
+            float step = 39.0f / (float)Math.max(1, Minecraft.getDebugFPS());
             current = active ? Math.min(3.0f, current + step) : Math.max(0.0f, current - step);
             this.selectionOffsets.put(identity, Float.valueOf(current));
-            GlStateManager.func_179090_x();
-            GlStateManager.func_179147_l();
-            GlStateManager.func_179118_c();
-            GlStateManager.func_179120_a((int)770, (int)771, (int)1, (int)0);
-            Gui.func_73734_a((int)x, (int)rowY, (int)(x + width), (int)(rowY + 12), (int)-1441524716);
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.disableAlpha();
+            GlStateManager.tryBlendFuncSeparate((int)770, (int)771, (int)1, (int)0);
+            Gui.drawRect((int)x, (int)rowY, (int)(x + width), (int)(rowY + 12), (int)-1441524716);
             if (active) {
-                Gui.func_73734_a((int)x, (int)rowY, (int)(x + width), (int)(rowY + 12), (int)accent);
+                Gui.drawRect((int)x, (int)rowY, (int)(x + width), (int)(rowY + 12), (int)accent);
 }
-            GlStateManager.func_179141_d();
-            GlStateManager.func_179098_w();
-            GlStateManager.func_179117_G();
+            GlStateManager.enableAlpha();
+            GlStateManager.enableTexture2D();
+            GlStateManager.resetColor();
             int textColor = -1;
             if (modules != null && !modules.get(i).o()) {
                 textColor = -6052957;
@@ -248,7 +253,7 @@ implements EventSubscriber {
         return (int)var1;
 }
     public void onSetKeyBindState(SetKeyBindStateEvent event, long var2) throws UnsupportedEncodingException, Throwable, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, BadPaddingException, IllegalBlockSizeException {
-        if (TabGUI.f.field_71462_r != null) {
+        if (TabGUI.f.currentScreen != null) {
             return;
 }
         int key = event.R;

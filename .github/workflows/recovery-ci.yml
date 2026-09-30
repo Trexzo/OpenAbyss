@@ -1,0 +1,1047 @@
+name: OpenAbyss Recovery CI
+
+on:
+  push:
+    branches:
+      - recovery/r38-compile-pass
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openabyss-recovery-ci
+  cancel-in-progress: true
+
+jobs:
+  recovery-build:
+    name: JDK8 / Gradle 2.14.1 / ForgeGradle 2.1
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout recovery source
+        uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Show Java environment
+        shell: powershell
+        run: |
+          java -version
+          Write-Host "JAVA_HOME=$env:JAVA_HOME"
+          Write-Host "RUNNER_TEMP=$env:RUNNER_TEMP"
+
+      - name: Install Gradle 2.14.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1-bin.zip'
+          $gradleHome = Join-Path $env:RUNNER_TEMP 'gradle-2.14.1'
+          $gradleUserHome = Join-Path $env:RUNNER_TEMP 'gradle-user-home'
+          $url = 'https://services.gradle.org/distributions/gradle-2.14.1-bin.zip'
+          & curl.exe -L --fail --silent --show-error $url -o $zip
+          if ($LASTEXITCODE -ne 0) { throw "curl failed with exit code $LASTEXITCODE" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $env:RUNNER_TEMP -Force
+          $gradle = Join-Path $gradleHome 'bin\gradle.bat'
+          if (-not (Test-Path -LiteralPath $gradle)) { throw "Gradle executable missing: $gradle" }
+          "OPENABYSS_GRADLE=$gradle" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "GRADLE_USER_HOME=$gradleUserHome" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & $gradle --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate physical smoke PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($relative in @('.\tools\physical-smoke.ps1','.\tools\physical-menu-bisect.ps1','.\tools\physical-usability.ps1','.\tools\prepare-production-forge-profile.ps1','.\launcher\launch_abyss.ps1','.\launcher\Prepare-Official-Launcher.ps1','.\launcher\Check-Official-Launcher.ps1')) {
+            $path = (Resolve-Path $relative).Path
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -ne 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              throw "$relative has $($errors.Count) PowerShell parse error(s)."
+            }
+
+            # $HOME is a read-only automatic variable in Windows PowerShell.
+            # Parameter names are case-insensitive, so param($Home) fails at
+            # runtime even though the script parses successfully.
+            $homeParameterCollisions = @(
+              $ast.FindAll({
+                param($node)
+                $node -is [System.Management.Automation.Language.ParameterAst] -and
+                $node.Name.VariablePath.UserPath -ieq 'Home'
+              }, $true)
+            )
+            if ($homeParameterCollisions.Count -ne 0) {
+              throw "$relative declares a parameter named Home, which collides with the read-only PowerShell HOME automatic variable."
+            }
+
+            Write-Host "POWERSHELL_PARSE_PASS file=$relative tokens=$($tokens.Count)"
+            Write-Host "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION_PASS file=$relative"
+          }
+
+          $physicalSmokeText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-smoke.ps1'))
+          $physicalUsabilityText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-usability.ps1'))
+
+          if (-not $physicalSmokeText.Contains('RedirectStandardError = $true') -or
+              -not $physicalSmokeText.Contains('RedirectStandardOutput = $true') -or
+              $physicalSmokeText.Contains('(& $Exe -version 2>&1 | Out-String)')) {
+            throw 'Physical smoke Java 8 detector is not stderr-safe for Windows PowerShell 5.1.'
+          }
+          if (-not $physicalSmokeText.Contains('OPENABYSS_PHYSICAL_JDK8_GUARD=PASS')) {
+            throw 'Physical smoke does not expose the JDK 8 detector regression guard.'
+          }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-smoke.ps1' -JdkGuardOnly
+          if ($LASTEXITCODE -ne 0) {
+            throw "Physical JDK 8 detector guard failed: $LASTEXITCODE"
+          }
+          Write-Host 'PHYSICAL_JDK8_DETECTOR_GUARD=PASS'
+          $probeMatches = [regex]::Matches($physicalSmokeText, 'high-risk-functional-probe(\d+)-pass:')
+          if ($probeMatches.Count -eq 0) { throw 'Physical smoke exposes no high-risk functional probe pass markers.' }
+          $probeMax = ($probeMatches | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Maximum).Maximum
+          $chainName = "ExtendedHighRiskChain$probeMax"
+          $probePassMarker = "high-risk-functional-probe$probeMax-pass:"
+          $probeFailMarker = "high-risk-functional-probe$probeMax-fail:"
+          if (-not $physicalUsabilityText.Contains("$chainName =")) {
+            throw "Physical usability checker does not define $chainName for smoke probe max $probeMax."
+          }
+          if (-not $physicalUsabilityText.Contains('$checks.' + $chainName)) {
+            throw "Physical usability final verdict does not consume $chainName."
+          }
+          if (-not $physicalUsabilityText.Contains($probePassMarker) -or
+              -not $physicalUsabilityText.Contains($probeFailMarker)) {
+            throw "Physical usability checker does not gate probe $probeMax pass/fail markers."
+          }
+          Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
+
+          if ($physicalSmokeText.Contains('EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 76 } else { 0 })')) {
+            throw 'Physical smoke still reports stale EXTENDED_PROBE_MAX=76.'
+          }
+          if (-not $physicalSmokeText.Contains('EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 93 } else { 0 })')) {
+            throw 'Physical smoke does not report the current extended probe max 93.'
+          }
+          if (-not $physicalSmokeText.Contains('ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=$($ExplicitJvmArgs.Count)')) {
+            throw 'Physical smoke does not verify the exact runClient explicit JVM argument count.'
+          }
+
+          foreach ($physicalContract in @(
+            @{
+              Property = '-Dabyss.physicalInputFunctionalProbe=true'
+              Check = 'ExtendedPhysicalInput ='
+              Consume = '$checks.ExtendedPhysicalInput'
+              PassMarker = 'physical-input-functional-probe-pass:2'
+              FailMarker = 'physical-input-functional-probe-fail:'
+            },
+            @{
+              Property = '-Dabyss.invMovePhysicalProbe=true'
+              Check = 'ExtendedInvMovePhysical ='
+              Consume = '$checks.ExtendedInvMovePhysical'
+              PassMarker = 'invmove-physical-probe-pass:1'
+              FailMarker = 'invmove-physical-probe-fail:'
+            }
+          )) {
+            if (-not $physicalSmokeText.Contains($physicalContract.Property)) {
+              throw "Physical smoke does not enable $($physicalContract.Property) under ExtendedProbes."
+            }
+            if (-not $physicalSmokeText.Contains($physicalContract.PassMarker) -or
+                -not $physicalSmokeText.Contains($physicalContract.FailMarker)) {
+              throw "Standalone physical smoke does not gate $($physicalContract.Property) pass/fail markers."
+            }
+            if (-not $physicalUsabilityText.Contains($physicalContract.Check) -or
+                -not $physicalUsabilityText.Contains($physicalContract.Consume) -or
+                -not $physicalUsabilityText.Contains($physicalContract.PassMarker) -or
+                -not $physicalUsabilityText.Contains($physicalContract.FailMarker)) {
+              throw "Physical usability does not fully gate $($physicalContract.Property)."
+            }
+          }
+          Write-Host 'PHYSICAL_REAL_INPUT_CONTRACTS=PASS probes=AutoClicker,FastFall,InvMove'
+
+          if (-not $physicalSmokeText.Contains('$env:JAVA_TOOL_OPTIONS = $null')) {
+            throw 'Physical smoke does not explicitly clear JAVA_TOOL_OPTIONS.'
+          }
+          if (-not $physicalSmokeText.Contains('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')) {
+            throw 'Physical smoke does not publish the explicit runClient JVM argument file.'
+          }
+          $buildGradleText = [IO.File]::ReadAllText((Resolve-Path '.\build.gradle'))
+          if (-not $buildGradleText.Contains("System.getenv('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')")) {
+            throw 'build.gradle does not consume the physical explicit JVM argument file.'
+          }
+
+          $jvmArgFixture = Join-Path $env:RUNNER_TEMP 'openabyss-runclient-jvm-args.txt'
+          @(
+            '-Dabyss.runtimeSelfTest=true'
+            '-Dabyss.highRiskFunctionalProbe93=true'
+            '-Dabyss.commandRuntimeProbe=true'
+          ) | Set-Content -LiteralPath $jvmArgFixture -Encoding ascii
+          $env:OPENABYSS_RUNCLIENT_JVM_ARG_FILE = $jvmArgFixture
+          try {
+            $jvmArgStdout = Join-Path $env:RUNNER_TEMP 'openabyss-jvm-arg-fixture.stdout.log'
+            $jvmArgStderr = Join-Path $env:RUNNER_TEMP 'openabyss-jvm-arg-fixture.stderr.log'
+            $jvmArgProcess = Start-Process -FilePath $env:OPENABYSS_GRADLE -ArgumentList @('--no-daemon','--stacktrace','help') -WorkingDirectory $env:GITHUB_WORKSPACE -RedirectStandardOutput $jvmArgStdout -RedirectStandardError $jvmArgStderr -Wait -PassThru
+            $jvmArgOutput = ((Get-Content -LiteralPath $jvmArgStdout -Raw -ErrorAction SilentlyContinue) + [Environment]::NewLine + (Get-Content -LiteralPath $jvmArgStderr -Raw -ErrorAction SilentlyContinue))
+            if ($jvmArgProcess.ExitCode -ne 0) {
+              Write-Host $jvmArgOutput
+              throw "Explicit runClient JVM argument Gradle fixture failed: $($jvmArgProcess.ExitCode)"
+            }
+            if (-not $jvmArgOutput.Contains('ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=3')) {
+              Write-Host $jvmArgOutput
+              throw 'Gradle did not attach all explicit runClient JVM arguments from the fixture.'
+            }
+            Write-Host 'PHYSICAL_EXPLICIT_JVM_ARG_FILE_CONTRACT=PASS count=3'
+          }
+          finally {
+            Remove-Item Env:\OPENABYSS_RUNCLIENT_JVM_ARG_FILE -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $jvmArgFixture -Force -ErrorAction SilentlyContinue
+          }
+
+          $currentHead = (& git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not $currentHead) { throw 'Could not resolve CI checkout HEAD.' }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $currentHead -SourceGuardOnly
+          if ($LASTEXITCODE -ne 0) { throw "Physical source guard rejected the exact clean CI HEAD: $LASTEXITCODE" }
+
+          $wrongHead = '0000000000000000000000000000000000000000'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $wrongHead -SourceGuardOnly
+          if ($LASTEXITCODE -eq 0) { throw 'Physical source guard accepted an intentionally wrong HEAD.' }
+          Write-Host 'PHYSICAL_SOURCE_GUARD_WRONG_HEAD_REJECT=PASS'
+
+          Add-Content -LiteralPath '.\README.md' -Value '<!-- physical-source-guard-dirty-fixture -->'
+          try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-usability.ps1' -ExpectedHead $currentHead -SourceGuardOnly
+            if ($LASTEXITCODE -eq 0) { throw 'Physical source guard accepted an intentionally dirty tracked tree.' }
+            Write-Host 'PHYSICAL_SOURCE_GUARD_DIRTY_REJECT=PASS'
+          }
+          finally {
+            & git checkout -- '.\README.md'
+            if ($LASTEXITCODE -ne 0) { throw 'Could not restore README.md after dirty-tree source-guard fixture.' }
+          }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\launcher\launch_abyss.ps1' -ResolverSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Standalone launcher resolver self-test failed: $LASTEXITCODE" }
+
+          $checkerFixture = Join-Path $env:RUNNER_TEMP 'openabyss-official-checker-selftest'
+          New-Item -ItemType Directory -Force -Path $checkerFixture | Out-Null
+          Copy-Item -LiteralPath '.\launcher\Check-Official-Launcher.ps1' -Destination $checkerFixture -Force
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $checkerFixture 'Check-Official-Launcher.ps1') -PackageDir $checkerFixture -FixtureSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Official usability checker self-test failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $checkerFixture -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify recovered account state contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_account_state_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Recovered account state contract failed: $LASTEXITCODE" }
+
+      - name: Verify bed scan scheduler lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_bed_scan_scheduler.py'
+          if ($LASTEXITCODE -ne 0) { throw "Bed scan scheduler contract failed: $LASTEXITCODE" }
+
+      - name: Inventory executor lifecycle surface
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\audit_executor_lifecycle.py'
+          if ($LASTEXITCODE -ne 0) { throw "Executor lifecycle census failed: $LASTEXITCODE" }
+
+      - name: Verify per-module dispatch isolation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_module_dispatch_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Per-module dispatch contract failed: $LASTEXITCODE" }
+
+      - name: Verify transactional RawInput lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_raw_input_lifecycle.py'
+          if ($LASTEXITCODE -ne 0) { throw "RawInput lifecycle contract failed: $LASTEXITCODE" }
+
+      - name: Verify audio resource lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_audio_lifecycle.py'
+          if ($LASTEXITCODE -ne 0) { throw "Audio lifecycle contract failed: $LASTEXITCODE" }
+
+      - name: Forbid silent catches in gameplay modules
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_module_impl_empty_catches.py'
+          if ($LASTEXITCODE -ne 0) { throw "Gameplay module silent-catch gate failed: $LASTEXITCODE" }
+
+      - name: Forbid empty gameplay handlers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\audit_module_empty_handlers.py'
+          if ($LASTEXITCODE -ne 0) { throw "Gameplay empty-handler gate failed: $LASTEXITCODE" }
+
+      - name: Inventory silent catch blocks
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\audit_empty_catches.py'
+          if ($LASTEXITCODE -ne 0) { throw "Silent catch census failed: $LASTEXITCODE" }
+
+      - name: Verify live feature failure observability
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_feature_failure_observability.py'
+          if ($LASTEXITCODE -ne 0) { throw "Feature failure observability gate failed: $LASTEXITCODE" }
+
+      - name: Verify bounded renderer reload recovery
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_renderer_reload_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Renderer reload contract failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era command registry
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_command_registry.py'
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era command registry gate failed: $LASTEXITCODE" }
+
+      - name: Verify main menu state and persistence contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_main_menu_state_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Main-menu state/persistence gate failed: $LASTEXITCODE" }
+
+      - name: Verify complete production functional probe coverage
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\report_production_probe_coverage.py'
+          if ($LASTEXITCODE -ne 0) { throw "Production functional coverage gate failed: $LASTEXITCODE" }
+
+      - name: Compile recovered source
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon clean compileJava
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { exit $code }
+
+      - name: Verify Minecraft session swap contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_session_swap_contract.py'
+          if ($LASTEXITCODE -ne 0) { throw "Minecraft session swap contract failed: $LASTEXITCODE" }
+
+      - name: Verify auth HTTP response ownership
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python '.\tools\check_auth_http_resources.py'
+          if ($LASTEXITCODE -ne 0) { throw "Auth HTTP resource gate failed: $LASTEXITCODE" }
+
+      - name: Clean full build
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon clean build
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { exit $code }
+
+      - name: Verify production Forge reobfuscation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for production reobf gate.' }
+          python '.\tools\check_production_reobf.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Production Forge reobfuscation gate failed: $LASTEXITCODE" }
+
+      - name: Exhaustively verify Minecraft override reobfuscation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for exhaustive reobf gate.' }
+          python '.\tools\check_production_reobf_exhaustive.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Exhaustive production reobf gate failed: $LASTEXITCODE" }
+
+      - name: Exhaustively verify production Minecraft member references
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for production member-ref gate.' }
+          python '.\tools\check_production_member_refs.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Production Minecraft member-ref gate failed: $LASTEXITCODE" }
+
+      - name: Verify production runtime dependency closure
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for dependency-closure gate.' }
+          python '.\tools\check_dependency_closure.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Production dependency-closure gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era module registry order
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module registry-order gate.' }
+          python '.\tools\check_module_registry_order.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module registry-order gate failed: $LASTEXITCODE" }
+
+      - name: Verify executable event wiring semantics
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for executable event-wiring gate.' }
+          python '.\tools\check_event_wiring_semantics.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Executable event-wiring semantics gate failed: $LASTEXITCODE" }
+
+      - name: Verify module subscriber binder coverage
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module subscriber coverage gate.' }
+          python '.\tools\check_module_subscriber_coverage.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Module subscriber binder coverage gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era generated event wiring
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for event-wiring gate.' }
+          python '.\tools\check_event_wiring.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era event-wiring gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era module event API
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module event-API gate.' }
+          python '.\tools\check_module_event_api.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module event-API gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era event core
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for event-core gate.' }
+          python '.\tools\check_event_core.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era event-core gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era Setting framework
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for Setting framework gate.' }
+          python '.\tools\check_setting_framework.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era Setting framework gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era Setting constructor recipes
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for Setting recipe gate.' }
+          python '.\tools\check_module_setting_recipes.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era Setting recipe gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era Setting initialization dependencies
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for Setting initializer gate.' }
+          python '.\tools\check_module_setting_initializers.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era Setting initializer gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era semantic static module state
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for semantic-static module state gate.' }
+          python '.\tools\check_module_semantic_static_state.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era semantic-static module state gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era StorageESP remains orphaned
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for StorageESP orphan gate.' }
+          python '.\tools\check_storageesp_orphan.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era StorageESP orphan gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era module declaration metadata
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module declaration gate.' }
+          python '.\tools\check_module_declarations.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module declaration gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era module constructors
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module constructor gate.' }
+          python '.\tools\check_module_constructors.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module constructor gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era module instance state
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module instance-state gate.' }
+          python '.\tools\check_module_instance_state.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era module instance-state gate failed: $LASTEXITCODE" }
+
+      - name: Audit module handler bytecode body shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for module body-shape audit.' }
+          python '.\tools\audit_module_body_shape.py' $jar.FullName --top 80
+          if ($LASTEXITCODE -ne 0) { throw "Module body-shape audit failed to execute: $LASTEXITCODE" }
+
+      - name: Audit runnable-era main menu body shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for main-menu body-shape gate.' }
+          python '.\tools\audit_main_menu_body_shape.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era main-menu body-shape gate failed: $LASTEXITCODE" }
+
+      - name: Verify external native call graph
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for external-native call graph gate.' }
+          python '.\tools\check_external_native_call_graph.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "External-native call graph gate failed: $LASTEXITCODE" }
+
+      - name: Verify native retransform path remains dormant
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for native retransform dormancy gate.' }
+          python '.\tools\check_inject_retransform_dormancy.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Native retransform dormancy gate failed: $LASTEXITCODE" }
+
+      - name: Verify loader_forgemod isolation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for loader_forgemod isolation gate.' }
+          python '.\tools\check_loader_forgemod_isolation.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "loader_forgemod isolation gate failed: $LASTEXITCODE" }
+
+      - name: Verify stock config native boundary
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for stock-config native boundary gate.' }
+          python '.\tools\check_stock_config_native_boundary.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Stock-config native boundary gate failed: $LASTEXITCODE" }
+
+      - name: Verify legacy native module bootstrap remains dormant
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for legacy module bootstrap gate.' }
+          python '.\tools\check_legacy_module_bootstrap_reachability.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Legacy native module bootstrap reachability gate failed: $LASTEXITCODE" }
+
+      - name: Verify dormant native config manager
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for config-manager reachability gate.' }
+          python '.\tools\check_config_manager_reachability.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Config-manager reachability gate failed: $LASTEXITCODE" }
+
+      - name: Audit runnable-era ClickGUI body shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for ClickGUI body-shape gate.' }
+          python '.\tools\audit_clickgui_body_shape.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era ClickGUI body-shape gate failed: $LASTEXITCODE" }
+
+      - name: Audit runnable-era config persistence shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for config body-shape gate.' }
+          python '.\tools\audit_config_body_shape.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era config body-shape gate failed: $LASTEXITCODE" }
+
+      - name: Audit runnable-era command body shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for command body-shape gate.' }
+          python '.\tools\audit_command_body_shape.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era command body-shape gate failed: $LASTEXITCODE" }
+
+      - name: Verify exact runnable-era compiled class inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for exact compiled-class gate.' }
+          python '.\tools\check_reference_compiled_classes.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Exact runnable-era compiled class inventory gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era public API compatibility
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for public API gate.' }
+          python '.\tools\check_reference_public_api.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era public API compatibility gate failed: $LASTEXITCODE" }
+
+      - name: Verify exact runnable-era top-level class set
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for exact class-set gate.' }
+          python '.\tools\check_reference_classset.py' --jar $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Exact runnable-era class-set gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era class package shape
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for class-shape gate.' }
+          python '.\tools\check_reference_class_shape.py' --jar $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era class package shape gate failed: $LASTEXITCODE" }
+
+      - name: Verify packaged Java 8 bytecode
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for Java 8 bytecode gate.' }
+          python '.\tools\check_jar_bytecode.py' $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Java 8 bytecode gate failed: $LASTEXITCODE" }
+
+      - name: Verify runnable-era resource parity
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jar = Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File |
+            Sort-Object LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+          if (-not $jar) { throw 'Built OpenAbyss JAR not found for resource parity gate.' }
+          python '.\tools\check_reference_resources.py' --jar $jar.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Runnable-era resource parity gate failed: $LASTEXITCODE" }
+
+      - name: Build standalone Windows launcher package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          & $env:OPENABYSS_GRADLE --no-daemon packageWindowsLauncher
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { exit $code }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $package = Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip'
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($package)
+          try {
+            $names = @($zip.Entries | ForEach-Object { $_.FullName })
+            foreach ($required in @('abyss.jar','BUILD-INFO.txt','Launcher.bat','launch_abyss.ps1','Prepare-Official-Launcher.bat','Prepare-Official-Launcher.ps1','Check-Official-Launcher.bat','Check-Official-Launcher.ps1','README.txt')) {
+              if ($names -notcontains $required) { throw "Standalone launcher package missing: $required" }
+            }
+            $jar = $zip.GetEntry('abyss.jar')
+            if ($jar.Length -lt 10000000) { throw "Packaged abyss.jar unexpectedly small: $($jar.Length)" }
+
+            $sha = [System.Security.Cryptography.SHA256]::Create()
+            try {
+              $jarStream = $jar.Open()
+              try {
+                $jarHashBytes = $sha.ComputeHash($jarStream)
+              }
+              finally {
+                $jarStream.Dispose()
+              }
+            }
+            finally {
+              $sha.Dispose()
+            }
+            $jarHash = ([BitConverter]::ToString($jarHashBytes)).Replace('-','')
+
+            $infoEntry = $zip.GetEntry('BUILD-INFO.txt')
+            if ($null -eq $infoEntry) { throw 'BUILD-INFO.txt is missing from launcher package.' }
+            $reader = New-Object System.IO.StreamReader($infoEntry.Open())
+            try { $infoText = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            $info = @{}
+            foreach ($line in ($infoText -split "`r?`n")) {
+              if ($line -match '^([^=]+)=(.*)$') {
+                $info[$matches[1]] = $matches[2]
+              }
+            }
+            if ($info['SOURCE_HEAD'] -ne $env:GITHUB_SHA) {
+              throw "BUILD-INFO SOURCE_HEAD mismatch: $($info['SOURCE_HEAD']) != $env:GITHUB_SHA"
+            }
+            if ($info['JAR_SHA256'] -ne $jarHash) {
+              throw "BUILD-INFO JAR_SHA256 mismatch: $($info['JAR_SHA256']) != $jarHash"
+            }
+            if ([int64]$info['JAR_BYTES'] -ne $jar.Length) {
+              throw "BUILD-INFO JAR_BYTES mismatch: $($info['JAR_BYTES']) != $($jar.Length)"
+            }
+            Write-Host "WINDOWS_LAUNCHER_PACKAGE_CONTRACT=PASS entries=$($zip.Entries.Count) jar_bytes=$($jar.Length) jar_sha256=$jarHash"
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+      - name: Verify canonical shipped JAR content digest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-content-digest-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          $jar = Join-Path $out 'abyss.jar'
+          $infoPath = Join-Path $out 'BUILD-INFO.txt'
+          $info = @{}
+          foreach ($infoLine in @(Get-Content -LiteralPath $infoPath)) {
+            $parts = $infoLine -split '=', 2
+            if ($parts.Count -eq 2) {
+              $info[$parts[0]] = $parts[1]
+            }
+          }
+          if (-not $info.ContainsKey('JAR_CONTENT_SHA256')) {
+            throw 'BUILD-INFO.txt is missing JAR_CONTENT_SHA256.'
+          }
+
+          $digestOutput = @(& python '.\tools\jar_content_digest.py' $jar)
+          if ($LASTEXITCODE -ne 0) {
+            $digestOutput | ForEach-Object { Write-Host $_ }
+            throw "Canonical JAR content digest tool failed: $LASTEXITCODE"
+          }
+          $digestOutput | ForEach-Object { Write-Host $_ }
+          $digestLine = $digestOutput | Where-Object { $_.StartsWith('JAR_CONTENT_SHA256=') } | Select-Object -First 1
+          if (-not $digestLine) { throw 'Canonical JAR content digest output is missing.' }
+          $actual = ($digestLine -split '=',2)[1].Trim().ToUpperInvariant()
+          $expected = ([string]$info['JAR_CONTENT_SHA256']).Trim().ToUpperInvariant()
+          if ($actual -ne $expected) {
+            throw "BUILD-INFO JAR_CONTENT_SHA256 mismatch: $expected != $actual"
+          }
+          Write-Host "WINDOWS_LAUNCHER_CONTENT_DIGEST_CONTRACT=PASS content_sha256=$actual"
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped launcher JAR reobfuscation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-reobf-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_reobf.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped launcher JAR reobfuscation gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exhaustively verify shipped launcher JAR reobfuscation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-reobf-exhaustive-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_reobf_exhaustive.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped exhaustive production reobf gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exhaustively verify shipped Minecraft member references
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-member-ref-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_production_member_refs.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped production member-ref gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped runtime dependency closure
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-dependency-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_dependency_closure.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped dependency-closure gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Verify shipped compiled class inventory
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-class-inventory-package-check'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+          $jar = Join-Path $out 'abyss.jar'
+          python '.\tools\check_reference_compiled_classes.py' $jar
+          if ($LASTEXITCODE -ne 0) { throw "Shipped compiled class inventory gate failed: $LASTEXITCODE" }
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Exercise shipped Windows launcher package helpers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = (Resolve-Path '.\build\distributions\OpenAbyss-Windows-Launcher.zip').Path
+          $out = Join-Path $env:RUNNER_TEMP 'openabyss-launcher-package-test'
+          Remove-Item -LiteralPath $out -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $package -DestinationPath $out -Force
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'launch_abyss.ps1') -LauncherDir $out -ResolverSelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Packaged launcher resolver self-test failed: $LASTEXITCODE" }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'Prepare-Official-Launcher.ps1') -PackageDir $out
+          if ($LASTEXITCODE -ne 0) { throw "Packaged official-launcher setup helper failed: $LASTEXITCODE" }
+
+          $sourceJar = Join-Path $out 'abyss.jar'
+          $installedJar = Join-Path $out 'official-game\mods\abyss.jar'
+          if (-not (Test-Path -LiteralPath $installedJar -PathType Leaf)) {
+            throw "Official-launcher setup did not create: $installedJar"
+          }
+          $sourceHash = (Get-FileHash -LiteralPath $sourceJar -Algorithm SHA256).Hash
+          $installedHash = (Get-FileHash -LiteralPath $installedJar -Algorithm SHA256).Hash
+          if ($sourceHash -ne $installedHash) {
+            throw "Official-launcher installed JAR hash mismatch: $installedHash != $sourceHash"
+          }
+          $setupRecord = Join-Path $out 'official-launcher-setup.txt'
+          if (-not (Test-Path -LiteralPath $setupRecord -PathType Leaf)) {
+            throw 'Official-launcher setup record was not produced.'
+          }
+          Write-Host "SHIPPED_LAUNCHER_HELPERS_CONTRACT=PASS jar_sha256=$sourceHash"
+
+      - name: Validate JAR contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $jars = @(Get-ChildItem -LiteralPath '.\build\libs' -Filter 'OpenAbyss-*.jar' -File)
+          if ($jars.Count -ne 1) { throw "Expected exactly one OpenAbyss JAR, found $($jars.Count)." }
+          $jar = $jars[0]
+          $jarHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            $entries = @($zip.Entries)
+            $names = @($entries | ForEach-Object { $_.FullName })
+            $classCount = @($names | Where-Object { $_ -like '*.class' }).Count
+            $javaCount = @($names | Where-Object { $_ -like '*.java' }).Count
+            if ($classCount -lt 1300) { throw "Unexpectedly low class count: $classCount" }
+            if ($javaCount -ne 0) { throw "Source .java files leaked into JAR: $javaCount" }
+            foreach ($required in @(
+              'META-INF/MANIFEST.MF',
+              'Abyss/ASM/CoreMod.class',
+              'mcmod.info',
+              'assets/abyss/asm/mcp-notch.srg',
+              'assets/abyss/asm/mcp-srg.srg',
+              'ssl.jks',
+              'accountmanager-ssl.jks'
+            )) {
+              if ($names -notcontains $required) { throw "Missing required JAR entry: $required" }
+            }
+            function Read-ZipText([string]$name) {
+              $entry = $zip.GetEntry($name)
+              $reader = New-Object System.IO.StreamReader($entry.Open())
+              try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+            $manifest = Read-ZipText 'META-INF/MANIFEST.MF'
+            foreach ($line in @(
+              'ModSide: CLIENT',
+              'FMLCorePluginContainsFMLMod: true',
+              'ForceLoadAsMod: true',
+              'FMLCorePlugin: Abyss.ASM.CoreMod'
+            )) {
+              if ($manifest.IndexOf($line, [System.StringComparison]::Ordinal) -lt 0) {
+                throw "Manifest contract missing: $line"
+              }
+            }
+            $mcmod = (Read-ZipText 'mcmod.info') | ConvertFrom-Json
+            if ($mcmod[0].modid -ne 'abyss') { throw "Unexpected mcmod modid: $($mcmod[0].modid)" }
+            if ($mcmod[0].mcversion -ne '1.8.9') { throw "Unexpected mcmod mcversion: $($mcmod[0].mcversion)" }
+            $notch = $zip.GetEntry('assets/abyss/asm/mcp-notch.srg')
+            $srg = $zip.GetEntry('assets/abyss/asm/mcp-srg.srg')
+            if ($notch.Length -lt 1000000) { throw "mcp-notch.srg unexpectedly small: $($notch.Length)" }
+            if ($srg.Length -lt 2000000) { throw "mcp-srg.srg unexpectedly small: $($srg.Length)" }
+            Write-Host "JAR_CONTRACT_PASS classes=$classCount entries=$($entries.Count) sha256=$jarHash"
+          }
+          finally {
+            $zip.Dispose()
+          }
+
+          $ksDir = Join-Path $env:RUNNER_TEMP 'openabyss-keystores'
+          New-Item -ItemType Directory -Force -Path $ksDir | Out-Null
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+          try {
+            foreach ($name in @('ssl.jks','accountmanager-ssl.jks')) {
+              $entry = $zip.GetEntry($name)
+              $out = Join-Path $ksDir $name
+              [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $out, $true)
+            }
+          }
+          finally { $zip.Dispose() }
+          $sslHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'ssl.jks')).Hash
+          $acctHash = (Get-FileHash -Algorithm SHA256 (Join-Path $ksDir 'accountmanager-ssl.jks')).Hash
+          if ($sslHash -ne $acctHash) { throw 'Bundled truststores differ unexpectedly.' }
+          $keytoolOut = @(& keytool -list -v -keystore (Join-Path $ksDir 'ssl.jks') -storepass changeit 2>&1)
+          if ($LASTEXITCODE -ne 0) { throw 'keytool could not read bundled truststore.' }
+          $trusted = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: trustedCertEntry' }).Count
+          $private = @($keytoolOut | Where-Object { $_.ToString() -match '^Entry type: PrivateKeyEntry' }).Count
+          if ($trusted -ne 152) { throw "Unexpected truststore certificate count: $trusted" }
+          if ($private -ne 0) { throw "Private-key entries found in bundled truststore: $private" }
+          Write-Host "TRUSTSTORE_CONTRACT_PASS trustedCertEntry=$trusted privateKeyEntry=$private sha256=$sslHash"
+
+      - name: Inspect built JARs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = '.\build\libs'
+          $jars = @(Get-ChildItem -LiteralPath $dir -Filter '*.jar' -File -ErrorAction Stop)
+          if ($jars.Count -eq 0) { throw 'No JAR artifacts found in build\libs.' }
+          Write-Host '=== BUILD ARTIFACTS ==='
+          $report = Join-Path $dir 'openabyss-artifacts.txt'
+          $lines = @()
+          foreach ($jar in $jars) {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $jar.FullName).Hash
+            Write-Host ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+            $lines += ($jar.Name + ' SHA256=' + $hash + ' BYTES=' + $jar.Length)
+          }
+          [System.IO.File]::WriteAllLines($report, $lines)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenAbyss-R38-build
+          path: |
+            build/libs/*.jar
+            build/libs/openabyss-artifacts.txt
+            build/distributions/OpenAbyss-Windows-Launcher.zip
+          if-no-files-found: error
+          retention-days: 14

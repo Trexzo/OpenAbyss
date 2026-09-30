@@ -152,7 +152,7 @@ implements FontRenderer {
 }
 }
         buffer.flip();
-        GlStateManager.func_179144_i((int)textureId);
+        GlStateManager.bindTexture((int)textureId);
         GL11.glTexParameteri((int)3553, (int)10241, (int)9729);
         GL11.glTexParameteri((int)3553, (int)10240, (int)9729);
         GL11.glTexImage2D((int)3553, (int)0, (int)6408, (int)image.getWidth(), (int)image.getHeight(), (int)0, (int)6408, (int)5121, (ByteBuffer)buffer);
@@ -184,7 +184,7 @@ implements FontRenderer {
         float g = (float)(color >> 8 & 0xFF) / 255.0f;
         float b = (float)(color & 0xFF) / 255.0f;
         OGLUtils.enableBlending();
-        GlStateManager.func_179131_c((float)(r2 / multiplier), (float)(g / multiplier), (float)(b / multiplier), (float)a);
+        GlStateManager.color((float)(r2 / multiplier), (float)(g / multiplier), (float)(b / multiplier), (float)a);
         for (int i = 0; i < length; ++i) {
             CharacterData charData;
             int previous;
@@ -206,7 +206,7 @@ implements FontRenderer {
                         index += 16;
 }
                     int textColor = this.colorCodes[index];
-                    GlStateManager.func_179131_c((float)((float)(textColor >> 16) / 255.0f), (float)((float)(textColor >> 8 & 0xFF) / 255.0f), (float)((float)(textColor & 0xFF) / 255.0f), (float)a);
+                    GlStateManager.color((float)((float)(textColor >> 16) / 255.0f), (float)((float)(textColor >> 8 & 0xFF) / 255.0f), (float)((float)(textColor & 0xFF) / 255.0f), (float)a);
                     continue;
 }
                 if (index == 16) {
@@ -225,7 +225,7 @@ implements FontRenderer {
                 strikethrough = false;
                 underlined = false;
                 characterData = this.charData;
-                GlStateManager.func_179131_c((float)(1.0f / multiplier), (float)(1.0f / multiplier), (float)(1.0f / multiplier), (float)a);
+                GlStateManager.color((float)(1.0f / multiplier), (float)(1.0f / multiplier), (float)(1.0f / multiplier), (float)a);
                 continue;
 }
             if (!this.isValid(character)) continue;
@@ -242,10 +242,10 @@ implements FontRenderer {
 }
             x += charData.width - (float)(2 * this.margin);
 }
-        GlStateManager.func_179144_i((int)0);
-        GlStateManager.func_179131_c((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
-        GlStateManager.func_179084_k();
-        GlStateManager.func_179098_w();
+        GlStateManager.bindTexture((int)0);
+        GlStateManager.color((float)1.0f, (float)1.0f, (float)1.0f, (float)1.0f);
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
         GL11.glPopMatrix();
 }
     private boolean isValid(char c) {
@@ -265,13 +265,13 @@ implements FontRenderer {
         GL11.glEnd();
 }
     private void drawLine(float x, float y, float x2, float y2, float width) {
-        GlStateManager.func_179090_x();
+        GlStateManager.disableTexture2D();
         GL11.glLineWidth((float)width);
         GL11.glBegin((int)1);
         GL11.glVertex2f((float)x, (float)y);
         GL11.glVertex2f((float)x2, (float)y2);
         GL11.glEnd();
-        GlStateManager.func_179098_w();
+        GlStateManager.enableTexture2D();
 }
     private void generateColors() {
         for (int i = 0; i < 32; ++i) {
@@ -301,7 +301,7 @@ implements FontRenderer {
             this.textureId = textureId;
 }
         public void bind() {
-            GlStateManager.func_179144_i((int)this.textureId);
+            GlStateManager.bindTexture((int)this.textureId);
 }
 }
 }

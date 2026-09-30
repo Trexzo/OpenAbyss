@@ -30,20 +30,20 @@ public class ScoreboardReader {
         return !BuildInfo.W.equalsIgnoreCase("Development") && !BuildInfo.W.equalsIgnoreCase("NoHackClient") ? !X.get() : true;
 }
     public static ArrayList<String> l() {
-        if (ScoreboardReader.U.field_71441_e == null) {
+        if (ScoreboardReader.U.theWorld == null) {
             return new ArrayList<String>();
 }
-        Scoreboard var0 = ScoreboardReader.U.field_71441_e.func_96441_U();
+        Scoreboard var0 = ScoreboardReader.U.theWorld.getScoreboard();
         if (var0 == null) {
             return new ArrayList<String>();
 }
-        ScoreObjective var1 = var0.func_96539_a(1);
+        ScoreObjective var1 = var0.getObjectiveInDisplaySlot(1);
         if (var1 == null) {
             return new ArrayList<String>();
 }
         ArrayList<String> var2 = new ArrayList<String>();
-        for (Score var4 : var0.func_96534_i(var1)) {
-            String var5 = ScorePlayerTeam.func_96667_a((Team)var0.func_96509_i(var4.func_96653_e()), (String)var4.func_96653_e());
+        for (Score var4 : var0.getSortedScores(var1)) {
+            String var5 = ScorePlayerTeam.formatPlayerName((Team)var0.getPlayersTeam(var4.getPlayerName()), (String)var4.getPlayerName());
             var2.add(var5);
 }
         return var2;

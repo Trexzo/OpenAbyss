@@ -47,6 +47,13 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class ItemESP
 extends Module
@@ -62,9 +69,9 @@ implements EventSubscriber {
     public static BooleanSetting diamonds;
 
     private boolean Q(int var1) {
-        Item var2 = Item.func_150899_d((int)var1);
-        Block var3 = Block.func_149634_a((Item)var2);
-        return var2 == Items.field_151042_j || var3 == Blocks.field_150339_S || var3 == Blocks.field_150366_p;
+        Item var2 = Item.getItemById((int)var1);
+        Block var3 = Block.getBlockFromItem((Item)var2);
+        return var2 == Items.iron_ingot || var3 == Blocks.iron_block || var3 == Blocks.iron_ore;
 }
     private void W(AxisAlignedBB var1, Color var2, char var3) {
         RenderUtil.L();
@@ -74,7 +81,7 @@ implements EventSubscriber {
         if (outline.c()) {
             RenderUtil.X(var1, var2.getRed(), var2.getGreen(), var2.getBlue(), 255, 1.5f);
 }
-        GlStateManager.func_179117_G();
+        GlStateManager.resetColor();
         RenderUtil.w();
 }
     private double h(double var1) {
@@ -84,7 +91,7 @@ implements EventSubscriber {
         return (0.5 + 0.375 * var1) * (double)scale.L();
 }
     private float q() {
-        return ItemESP.f.field_71474_y.field_74320_O == 2 ? -1.0f : 1.0f;
+        return ItemESP.f.gameSettings.thirdPersonView == 2 ? -1.0f : 1.0f;
 }
     private Color f(int var3) {
         if (this.i(var3)) {
@@ -100,13 +107,13 @@ implements EventSubscriber {
 }
     public void onPostTick(PostTickEvent var1) {
         this.t.clear();
-        List var2 = ItemESP.f.field_71441_e.field_72996_f;
+        List var2 = ItemESP.f.theWorld.loadedEntityList;
         for (int var3 = 0; var3 < var2.size(); ++var3) {
             int var7;
             EntityItem var5;
             ItemStack var6;
             Entity var4 = (Entity)var2.get(var3);
-            if (!this.D(var4) || !this.b(var6 = (var5 = (EntityItem)var4).func_92059_d()) || !this.q(var7 = Item.func_150891_b((Item)var6.func_77973_b()))) continue;
+            if (!this.D(var4) || !this.b(var6 = (var5 = (EntityItem)var4).getEntityItem()) || !this.q(var7 = Item.getIdFromItem((Item)var6.getItem()))) continue;
             this.t.add(new ItemESPEntry(var5, var7, null));
 }
 }
@@ -115,29 +122,29 @@ implements EventSubscriber {
         long var20 = var14 ^ 0x4D3D565F8A9BL;
         long var22 = var14 ^ 0x6BFC6F85E18FL;
         long var24 = var14 ^ 0x554ADA7374A6L;
-        GlStateManager.func_179094_E();
-        GlStateManager.func_179137_b((double)var4, (double)(var6 + var10 * 0.5), (double)var8);
-        GlStateManager.func_179114_b((float)(-var16), (float)0.0f, (float)1.0f, (float)0.0f);
-        GlStateManager.func_179114_b((float)var17, (float)(LunarClientDetector.q(0L) ? 1.0f : this.q()), (float)0.0f, (float)0.0f);
-        GlStateManager.func_179139_a((double)var12, (double)var12, (double)1.0);
-        GlStateManager.func_179097_i();
+        GlStateManager.pushMatrix();
+        GlStateManager.translate((double)var4, (double)(var6 + var10 * 0.5), (double)var8);
+        GlStateManager.rotate((float)(-var16), (float)0.0f, (float)1.0f, (float)0.0f);
+        GlStateManager.rotate((float)var17, (float)(LunarClientDetector.q(0L) ? 1.0f : this.q()), (float)0.0f, (float)0.0f);
+        GlStateManager.scale((double)var12, (double)var12, (double)1.0);
+        GlStateManager.disableDepth();
         float var26 = -(var1.R(var2, var24) / 2.0f) + 0.5f;
         float var27 = -(var1.o(var20) / 2.0f) + 0.5f;
         RenderUtil.K(var1, var2, var22, var26, var27, var3.getRGB());
-        GlStateManager.func_179126_j();
-        GlStateManager.func_179117_G();
-        GlStateManager.func_179121_F();
+        GlStateManager.enableDepth();
+        GlStateManager.resetColor();
+        GlStateManager.popMatrix();
 }
     private void q(Map<ItemESPStackKey, Integer> var1, ItemESPStackKey var2, int var3) {
         var1.merge(var2, var3, Integer::sum);
 }
     private boolean D(Entity var1) {
-        return var1 instanceof EntityItem && var1.field_70173_aa >= 3;
+        return var1 instanceof EntityItem && var1.ticksExisted >= 3;
 }
     private boolean Y(int var1) {
-        Item var2 = Item.func_150899_d((int)var1);
-        Block var3 = Block.func_149634_a((Item)var2);
-        return var2 == Items.field_151045_i || var2 == Items.field_151048_u || var2 == Items.field_151046_w || var2 == Items.field_151047_v || var2 == Items.field_151056_x || var2 == Items.field_151012_L || var2 == Items.field_151161_ac || var2 == Items.field_151163_ad || var2 == Items.field_151173_ae || var2 == Items.field_151175_af || var3 == Blocks.field_150484_ah || var3 == Blocks.field_150482_ag;
+        Item var2 = Item.getItemById((int)var1);
+        Block var3 = Block.getBlockFromItem((Item)var2);
+        return var2 == Items.diamond || var2 == Items.diamond_sword || var2 == Items.diamond_pickaxe || var2 == Items.diamond_shovel || var2 == Items.diamond_axe || var2 == Items.diamond_hoe || var2 == Items.diamond_helmet || var2 == Items.diamond_chestplate || var2 == Items.diamond_leggings || var2 == Items.diamond_boots || var3 == Blocks.diamond_block || var3 == Blocks.diamond_ore;
 }
     public ItemESP(short var1, char var2, int var3) {
         super(((long)var1 << 48 | (long)var2 << 48 >>> 16 | (long)var3 << 32 >>> 32) ^ b ^ 0x665A869572A0L);
@@ -160,7 +167,7 @@ implements EventSubscriber {
         double var26 = var23.p - var4;
         double var28 = var23.d - var7;
         double var30 = var23.l - var9;
-        double var32 = f.func_175606_aa().func_70011_f(var23.p, var23.d, var23.l);
+        double var32 = f.getRenderViewEntity().getDistance(var23.p, var23.d, var23.l);
         double var34 = this.h(var32);
         double var36 = this.q(var34);
         double var38 = this.Y(var34);
@@ -178,7 +185,7 @@ implements EventSubscriber {
         ArrayList<Map.Entry<ItemESPStackKey, Integer>> var18 = new ArrayList<Map.Entry<ItemESPStackKey, Integer>>(var17.entrySet());
         this.G(var18);
         for (int var19 = 0; var19 < var18.size(); ++var19) {
-            this.x(var16, var18.get(var19), 18589, RenderManagerAccessor.k(0L, f.func_175598_ae()), '\uf09d', RenderManagerAccessor.y(13236, f.func_175598_ae()), RenderManagerAccessor.W(0L, f.func_175598_ae()), ItemESP.f.func_175598_ae().field_78735_i, ItemESP.f.func_175598_ae().field_78732_j, 6069);
+            this.x(var16, var18.get(var19), 18589, RenderManagerAccessor.k(0L, f.getRenderManager()), '\uf09d', RenderManagerAccessor.y(13236, f.getRenderManager()), RenderManagerAccessor.W(0L, f.getRenderManager()), ItemESP.f.getRenderManager().playerViewY, ItemESP.f.getRenderManager().playerViewX, 6069);
 }
 }
     private LinkedHashMap<ItemESPStackKey, Integer> q(float var1) {
@@ -187,12 +194,12 @@ implements EventSubscriber {
             ItemStack var6;
             ItemESPEntry var4 = this.t.get(var3);
             EntityItem var5 = ItemESPEntry.w(var4);
-            if (!this.isGetEntityBoundingBox(var5) || !this.b(var6 = var5.func_92059_d())) continue;
-            double var7 = this.m(var5.field_70142_S, var5.field_70165_t, var1);
-            double var9 = this.m(var5.field_70137_T, var5.field_70163_u, var1);
-            double var11 = this.m(var5.field_70136_U, var5.field_70161_v, var1);
+            if (!this.isGetEntityBoundingBox(var5) || !this.b(var6 = var5.getEntityItem())) continue;
+            double var7 = this.m(var5.lastTickPosX, var5.posX, var1);
+            double var9 = this.m(var5.lastTickPosY, var5.posY, var1);
+            double var11 = this.m(var5.lastTickPosZ, var5.posZ, var1);
             ItemESPStackKey var13 = new ItemESPStackKey(ItemESPEntry.r(var4), var7, var9, var11);
-            this.q(var2, var13, var6.field_77994_a);
+            this.q(var2, var13, var6.stackSize);
 }
         return var2;
 }
@@ -203,12 +210,12 @@ implements EventSubscriber {
         var1.sort((var1x, var2) -> Integer.compare(this.D(((ItemESPStackKey)var1x.getKey()).Z), this.D(((ItemESPStackKey)var2.getKey()).Z)));
 }
     private boolean isGetEntityBoundingBox(EntityItem var1) {
-        return var1 != null && !var1.field_70128_L && RenderUtil.p(var1.func_174813_aQ(), 0.125);
+        return var1 != null && !var1.isDead && RenderUtil.p(var1.getEntityBoundingBox(), 0.125);
 }
     private boolean i(int var1) {
-        Item var2 = Item.func_150899_d((int)var1);
-        Block var3 = Block.func_149634_a((Item)var2);
-        return var2 == Items.field_151166_bC || var3 == Blocks.field_150475_bE || var3 == Blocks.field_150412_bA;
+        Item var2 = Item.getItemById((int)var1);
+        Block var3 = Block.getBlockFromItem((Item)var2);
+        return var2 == Items.emerald || var3 == Blocks.emerald_block || var3 == Blocks.emerald_ore;
 }
     @Override
     public void A(long var1) {
@@ -219,7 +226,7 @@ implements EventSubscriber {
         return new AxisAlignedBB(var1 - var9, var3, var5 - var9, var1 + var9, var3 + var7, var5 + var9);
 }
     private boolean b(ItemStack var1) {
-        return var1 != null && var1.field_77994_a > 0;
+        return var1 != null && var1.stackSize > 0;
 }
     private int D(int var1) {
         if (this.i(var1)) {
@@ -237,9 +244,9 @@ implements EventSubscriber {
         return (double)var5 * (var3 - var1) + var1;
 }
     private boolean J(int var1) {
-        Item var2 = Item.func_150899_d((int)var1);
-        Block var3 = Block.func_149634_a((Item)var2);
-        return var2 == Items.field_151043_k || var2 == Items.field_151074_bl || var2 == Items.field_151153_ao || var3 == Blocks.field_150340_R || var3 == Blocks.field_150352_o;
+        Item var2 = Item.getItemById((int)var1);
+        Block var3 = Block.getBlockFromItem((Item)var2);
+        return var2 == Items.gold_ingot || var2 == Items.gold_nugget || var2 == Items.golden_apple || var3 == Blocks.gold_block || var3 == Blocks.gold_ore;
 }
     static {
         try {

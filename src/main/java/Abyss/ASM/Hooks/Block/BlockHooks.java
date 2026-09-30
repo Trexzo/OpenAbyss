@@ -45,12 +45,12 @@ public class BlockHooks {
         if (ModuleManager.m != null && ModuleManager.m.o()) {
             var2.setReturnValue((int)b);
         } else {
-            Block var5 = var0.func_180495_p(var1).func_177230_c();
-            int var6 = var0.func_175626_b(var1, var5.func_149750_m());
+            Block var5 = var0.getBlockState(var1).getBlock();
+            int var6 = var0.getCombinedLight(var1, var5.getLightValue());
             if (var6 == 0 && var5 instanceof BlockSlab) {
-                var1 = var1.func_177977_b();
-                var5 = var0.func_180495_p(var1).func_177230_c();
-                var2.setReturnValue(var0.func_175626_b(var1, var5.func_149750_m()));
+                var1 = var1.down();
+                var5 = var0.getBlockState(var1).getBlock();
+                var2.setReturnValue(var0.getCombinedLight(var1, var5.getLightValue()));
             } else {
                 var2.setReturnValue(var6);
 }
@@ -59,13 +59,13 @@ public class BlockHooks {
 }
     public static void addCollisionBoxesToList(World var0, BlockPos var1, IBlockState var2, AxisAlignedBB var3, List<AxisAlignedBB> var4, Entity var5, BlockState var6, Block var7, CallbackInfo var8) {
         AxisAlignedBB var15;
-        if (AbyssClient.w != null && var3 != null && (var15 = var7.func_180640_a(var0, var1, var2)) != null) {
-            AddCollisionBoxesToListEvent var16 = new AddCollisionBoxesToListEvent(var6.func_177622_c(), var1);
+        if (AbyssClient.w != null && var3 != null && (var15 = var7.getCollisionBoundingBox(var0, var1, var2)) != null) {
+            AddCollisionBoxesToListEvent var16 = new AddCollisionBoxesToListEvent(var6.getBlock(), var1);
             AbyssClient.w.e(var16, 18670087776179L);
             if (var16.a()) {
                 var8.cancel();
             } else {
-                if (var3.func_72326_a(var15)) {
+                if (var3.intersectsWith(var15)) {
                     var4.add(var15);
 }
                 var8.cancel();
@@ -74,13 +74,13 @@ public class BlockHooks {
 }
     public static void shouldSideBeRendered(Block var0, IBlockAccess var1, BlockPos var2, EnumFacing var3, CallbackInfoReturnable<Boolean> var4) {
         if (var0 instanceof BlockBarrier) {
-            var4.setReturnValue(var1.func_180495_p(var2).func_177230_c() != var0);
+            var4.setReturnValue(var1.getBlockState(var2).getBlock() != var0);
             var4.cancel();
 }
 }
     public static void getBlockLayer(Block var0, CallbackInfoReturnable<EnumWorldBlockLayer> var1) {
         if (ModuleManager.m != null) {
-            if (!ModuleManager.m.o() && var0 != Blocks.field_180401_cv) {
+            if (!ModuleManager.m.o() && var0 != Blocks.barrier) {
                 var1.setReturnValue(EnumWorldBlockLayer.SOLID);
             } else {
                 var1.setReturnValue(EnumWorldBlockLayer.TRANSLUCENT);

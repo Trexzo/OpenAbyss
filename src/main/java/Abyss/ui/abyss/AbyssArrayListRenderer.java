@@ -93,8 +93,8 @@ public final class AbyssArrayListRenderer {
         boolean alphabetical = ArrayList.abyssSort.R("ALPHABETICAL");
         cachedFont = font;
         Collections.sort(SORT_BUF, alphabetical ? CMP_ALPHA : CMP_WIDTH);
-        int screenX = resolution.func_78326_a();
-        int screenY = resolution.func_78328_b();
+        int screenX = resolution.getScaledWidth();
+        int screenY = resolution.getScaledHeight();
         boolean top = ArrayList.mode.R("TOP");
         boolean background = ArrayList.abyssBackground.c();
         boolean line = ArrayList.abyssLine.c();
@@ -122,19 +122,19 @@ public final class AbyssArrayListRenderer {
             float topY = y - 2;
             float bottomY = y + 10;
             if (background) {
-                Gui.func_73734_a((int)((int)(x - 1.0f)), (int)((int)topY), (int)screenX, (int)((int)bottomY), (int)2014121229);
+                Gui.drawRect((int)((int)(x - 1.0f)), (int)((int)topY), (int)screenX, (int)((int)bottomY), (int)2014121229);
 }
             font.drawStringWithShadow(name, x, (float)y - (ArrayList.abyssCustomFont.c() ? 1.0f : 0.0f), color);
             if (outline) {
                 float seam;
-                Gui.func_73734_a((int)((int)(x - 2.0f)), (int)((int)topY), (int)((int)(x - 1.0f)), (int)((int)bottomY), (int)color);
+                Gui.drawRect((int)((int)(x - 2.0f)), (int)((int)topY), (int)((int)(x - 1.0f)), (int)((int)bottomY), (int)color);
                 float f = seam = top ? topY - 1.0f : bottomY;
                 if (previous != null && width > previousWidth) {
-                    Gui.func_73734_a((int)((int)(x - 2.0f)), (int)((int)seam), (int)((int)((float)screenX - previousWidth - 3.0f)), (int)((int)(seam + 1.0f)), (int)color);
+                    Gui.drawRect((int)((int)(x - 2.0f)), (int)((int)seam), (int)((int)((float)screenX - previousWidth - 3.0f)), (int)((int)(seam + 1.0f)), (int)color);
 }
 }
             if (line) {
-                Gui.func_73734_a((int)(screenX - 1), (int)((int)topY), (int)screenX, (int)((int)bottomY), (int)color);
+                Gui.drawRect((int)(screenX - 1), (int)((int)topY), (int)screenX, (int)((int)bottomY), (int)color);
 }
             previous = entry;
             previousWidth = width;
@@ -143,7 +143,7 @@ public final class AbyssArrayListRenderer {
 }
         if (outline && previous != null) {
             float edge = top ? (float)(y - 12) + 10.0f : (float)(y + 12) - 3.0f;
-            Gui.func_73734_a((int)((int)((float)screenX - previousWidth - 4.0f)), (int)((int)edge), (int)screenX, (int)((int)(edge + 1.0f)), (int)AbyssArrayListRenderer.color(now, period, Math.max(0, visibleIndex - 1)));
+            Gui.drawRect((int)((int)((float)screenX - previousWidth - 4.0f)), (int)((int)edge), (int)screenX, (int)((int)(edge + 1.0f)), (int)AbyssArrayListRenderer.color(now, period, Math.max(0, visibleIndex - 1)));
 }
 }
     private static int color(long now, long period, int index) {

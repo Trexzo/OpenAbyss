@@ -12,7 +12,7 @@ import net.minecraft.util.BlockPos;
 public class TryHarvestBlockHeadEvent
 extends Event {
     public final BlockPos n;
-    private static final long public TryHarvestBlockHeadEvent(BlockPos var1) {
+    public TryHarvestBlockHeadEvent(BlockPos var1) {
         this.n = var1;
 }
 }

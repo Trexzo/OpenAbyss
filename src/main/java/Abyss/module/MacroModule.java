@@ -21,7 +21,9 @@ import net.minecraft.item.ItemStack;
 
 public class MacroModule
 extends Module {
-    private static long private boolean Y = false;
+    private static long k = 100029549804245L;
+
+    private boolean Y = false;
     private boolean J = false;
     private int U = -1;
     private boolean M = false;
@@ -39,7 +41,13 @@ extends Module {
 }
 }
     public MacroModule(long var1) {
-        super();
+        super(k ^ var1 ^ 68044894831310L);
+        this.g = 0;
+        this.D = 0;
+        this.U = -1;
+        this.M = false;
+        this.J = false;
+        this.Y = false;
 }
     private boolean h(long var1, ModeSetting var3, NumberSetting var4) {
         int var11 = 61899;
@@ -57,7 +65,7 @@ extends Module {
             case "POT": {
                 ItemStack var23;
                 this.U = ItemUtil.M(69180515578808L);
-                if (this.U == -1 || (var23 = MacroModule.f.field_71439_g.field_71071_by.field_70462_a[this.U]) == null || !(var23.func_77973_b() instanceof ItemPotion) || !ItemPotion.func_77831_g((int)MethodAccessors.f(var23.func_77973_b(), var23)) || !ItemUtil.y(var23) || !(MacroModule.f.field_71439_g.func_110143_aJ() <= var4.L())) break;
+                if (this.U == -1 || (var23 = MacroModule.f.thePlayer.inventory.mainInventory[this.U]) == null || !(var23.getItem() instanceof ItemPotion) || !ItemPotion.isSplash((int)MethodAccessors.f(var23.getItem(), var23)) || !ItemUtil.y(var23) || !(MacroModule.f.thePlayer.getHealth() <= var4.L())) break;
                 return false;
 }
             case "GOLDEN_HEAD": {
@@ -99,10 +107,10 @@ extends Module {
         if (var1.R("CHAT")) {
             this.I(20724619369162L, false);
             if (!Objects.equals(var7.X(), "")) {
-                MacroModule.f.field_71439_g.func_71165_d(var7.X());
+                MacroModule.f.thePlayer.sendChatMessage(var7.X());
 }
         } else if (!this.M) {
-            this.g = MacroModule.f.field_71439_g.field_71071_by.field_70461_c;
+            this.g = MacroModule.f.thePlayer.inventory.currentItem;
             if (!this.h(122956549676365L, var1, var5)) {
                 this.N(false);
                 this.I(20724619369162L, false);

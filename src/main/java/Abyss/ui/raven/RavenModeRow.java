@@ -91,7 +91,7 @@ extends AbstractRavenSettingRow {
         int var16 = (int)((var7 ^ 0x61B8866443BFL) >>> 56);
         long var19 = var7 ^ 0x1292EA83DAD1L;
         if (this.D(var14, var2, var3) && this.O.k) {
-            this.q(var4, KeyBindUtil.V(MinecraftRef.c((byte)((byte)var16), (long)0L).field_71474_y.field_74311_E.func_151463_i(), var19), var12);
+            this.q(var4, KeyBindUtil.V(MinecraftRef.c((byte)((byte)var16), (long)0L).gameSettings.keyBindSneak.getKeyCode(), var19), var12);
             this.O.O.M(var9, (char)var11);
 }
 }

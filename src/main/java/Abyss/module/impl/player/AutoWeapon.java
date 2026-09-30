@@ -32,7 +32,7 @@ import net.minecraft.item.ItemSword;
 public class AutoWeapon
 extends Module
 implements EventSubscriber {
-    private static final long private static final String[] c = new String[10];
+    private static final String[] c = new String[10];
     public static BooleanSetting fishingrodIsWeapon;
     private static final Minecraft E;
     private static final Object[] b;
@@ -49,21 +49,21 @@ implements EventSubscriber {
         int var3 = (int)((var0 ^ 0x5725CC3CEFBBL) << 16 >>> 48);
         int var5 = 0;
         double var6 = 0.0;
-        for (int var8 = 0; var8 < InventoryPlayer.func_70451_h(); ++var8) {
-            ItemStack var9 = AutoWeapon.E.field_71439_g.field_71071_by.func_70301_a(var8);
+        for (int var8 = 0; var8 < InventoryPlayer.getHotbarSize(); ++var8) {
+            ItemStack var9 = AutoWeapon.E.thePlayer.inventory.getStackInSlot(var8);
             if (var9 == null) continue;
             double var10 = 0.0;
             double var12 = 0.0;
-            if (var9.func_77973_b() instanceof ItemSword) {
+            if (var9.getItem() instanceof ItemSword) {
                 var10 = ItemUtil.p((short)var2, var9, (char)var3);
                 var12 = 0.4;
-            } else if (axeIsWeapon.c() && var9.func_77973_b() instanceof ItemAxe) {
+            } else if (axeIsWeapon.c() && var9.getItem() instanceof ItemAxe) {
                 var10 = ItemUtil.p((short)var2, var9, (char)var3);
                 var12 = 0.3;
-            } else if (stickIsWeapon.c() && var9.func_77973_b() == Items.field_151055_y) {
+            } else if (stickIsWeapon.c() && var9.getItem() == Items.stick) {
                 var10 = ItemUtil.p((short)var2, var9, (char)var3);
                 var12 = 0.2;
-            } else if (fishingrodIsWeapon.c() && var9.func_77973_b() == Items.field_151112_aM) {
+            } else if (fishingrodIsWeapon.c() && var9.getItem() == Items.fishing_rod) {
                 var10 = ItemUtil.p((short)var2, var9, (char)var3);
                 var12 = 0.1;
 }
@@ -90,7 +90,7 @@ implements EventSubscriber {
         AutoWeapon.b[9] = "\u000bP=/UJR\u000b\u0001\u00054V_\u0002?7\t\u0014\u0006\u001e\u0001dF\u001dCP~&ISVa;lS]_\u001ep2\u0005];";
 }
     public void onPreUpdate(PreUpdateEvent var3) {
-        if (AutoWeapon.E.field_71476_x.field_72308_g != null && KeyBindUtil.V(AutoWeapon.E.field_71474_y.field_74312_F.func_151463_i(), 64165991731362L)) {
+        if (AutoWeapon.E.objectMouseOver.entityHit != null && KeyBindUtil.V(AutoWeapon.E.gameSettings.keyBindAttack.getKeyCode(), 64165991731362L)) {
             ItemUtil.P(AutoWeapon.M(93384294372710L));
 }
 }
