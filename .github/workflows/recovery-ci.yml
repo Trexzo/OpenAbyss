@@ -90,6 +90,41 @@ jobs:
           }
           Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
 
+          if (-not $physicalSmokeText.Contains('$env:JAVA_TOOL_OPTIONS = $null')) {
+            throw 'Physical smoke does not explicitly clear JAVA_TOOL_OPTIONS.'
+          }
+          if (-not $physicalSmokeText.Contains('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')) {
+            throw 'Physical smoke does not publish the explicit runClient JVM argument file.'
+          }
+          $buildGradleText = [IO.File]::ReadAllText((Resolve-Path '.\build.gradle'))
+          if (-not $buildGradleText.Contains("System.getenv('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')")) {
+            throw 'build.gradle does not consume the physical explicit JVM argument file.'
+          }
+
+          $jvmArgFixture = Join-Path $env:RUNNER_TEMP 'openabyss-runclient-jvm-args.txt'
+          @(
+            '-Dabyss.runtimeSelfTest=true'
+            '-Dabyss.highRiskFunctionalProbe93=true'
+            '-Dabyss.commandRuntimeProbe=true'
+          ) | Set-Content -LiteralPath $jvmArgFixture -Encoding ascii
+          $env:OPENABYSS_RUNCLIENT_JVM_ARG_FILE = $jvmArgFixture
+          try {
+            $jvmArgOutput = (& $env:OPENABYSS_GRADLE --offline --no-daemon help 2>&1 | Out-String)
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host $jvmArgOutput
+              throw "Explicit runClient JVM argument Gradle fixture failed: $LASTEXITCODE"
+            }
+            if (-not $jvmArgOutput.Contains('ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=3')) {
+              Write-Host $jvmArgOutput
+              throw 'Gradle did not attach all explicit runClient JVM arguments from the fixture.'
+            }
+            Write-Host 'PHYSICAL_EXPLICIT_JVM_ARG_FILE_CONTRACT=PASS count=3'
+          }
+          finally {
+            Remove-Item Env:\OPENABYSS_RUNCLIENT_JVM_ARG_FILE -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $jvmArgFixture -Force -ErrorAction SilentlyContinue
+          }
+
           $currentHead = (& git rev-parse HEAD).Trim()
           if ($LASTEXITCODE -ne 0 -or -not $currentHead) { throw 'Could not resolve CI checkout HEAD.' }
 

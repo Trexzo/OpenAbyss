@@ -53,6 +53,31 @@ if (!project.hasProperty('abyssModsFolder')) {
 }
 abyssRunClient.jvmArgs(abyssBaseJvmArgs)
 
+String abyssRunClientJvmArgFile = System.getenv('OPENABYSS_RUNCLIENT_JVM_ARG_FILE')
+if (abyssRunClientJvmArgFile) {
+    File jvmArgFile = file(abyssRunClientJvmArgFile)
+    if (!jvmArgFile.isFile()) {
+        throw new GradleException("OPENABYSS_RUNCLIENT_JVM_ARG_FILE does not exist: " + jvmArgFile)
+    }
+
+    List<String> explicitJvmArgs = jvmArgFile.readLines('UTF-8')
+        .collect { it.trim() }
+        .findAll { it }
+    if (explicitJvmArgs.isEmpty()) {
+        throw new GradleException("OPENABYSS_RUNCLIENT_JVM_ARG_FILE contains no JVM arguments: " + jvmArgFile)
+    }
+
+    explicitJvmArgs.each { String arg ->
+        if (!(arg ==~ /-Dabyss\.[A-Za-z0-9_.-]+=[A-Za-z0-9_.:-]+/)) {
+            throw new GradleException("Rejected non-Abyss or malformed explicit runClient JVM argument: " + arg)
+        }
+    }
+
+    abyssRunClient.jvmArgs(explicitJvmArgs)
+    println "ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=" + explicitJvmArgs.size()
+    println "ABYSS_RUNCLIENT_JVM_ARG_FILE=" + jvmArgFile.canonicalPath
+}
+
 if (project.hasProperty('abyssWorldSmoke')) {
     String worldSmokeHost = project.hasProperty('abyssWorldSmokeHost') ? project.property('abyssWorldSmokeHost').toString() : '127.0.0.1'
     String worldSmokePort = project.hasProperty('abyssWorldSmokePort') ? project.property('abyssWorldSmokePort').toString() : '25565'

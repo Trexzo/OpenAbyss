@@ -132,9 +132,16 @@ try {
     $env:ACTIONS_ID_TOKEN_REQUEST_TOKEN = $null
     $env:ACTIONS_ID_TOKEN_REQUEST_URL = $null
     $env:ABYSS_PAYLOAD_KEY = $null
-    $ExtendedProbeOptions = ''
+
+    # Do not carry the probe chain through JAVA_TOOL_OPTIONS. Java 8 stops
+    # consuming that environment variable reliably once the full probe set
+    # grows past roughly 1 KiB. Instead, write one explicit JVM argument per
+    # line and let build.gradle attach the list directly to runClient.
+    $env:JAVA_TOOL_OPTIONS = $null
+    $ExplicitJvmArgs = New-Object System.Collections.Generic.List[string]
+    $ExplicitJvmArgs.Add('-Dabyss.runtimeSelfTest=true')
     if ($ExtendedProbes) {
-        $ExtendedProbeArgs = @(
+        foreach ($Arg in @(
             '-Dabyss.worldFunctionalProbe=true'
             '-Dabyss.categoryLifecycleProbe=true'
             '-Dabyss.promotedRegistryProbe=true'
@@ -146,21 +153,21 @@ try {
             '-Dabyss.macroFunctionalProbe=true'
             '-Dabyss.visualUtilityFunctionalProbe=true'
             '-Dabyss.highRiskFunctionalProbe=true'
-        )
-        foreach ($ProbeIndex in 2..93) {
-            $ExtendedProbeArgs += "-Dabyss.highRiskFunctionalProbe${ProbeIndex}=true"
+        )) {
+            $ExplicitJvmArgs.Add($Arg)
         }
-        $ExtendedProbeArgs += '-Dabyss.commandRuntimeProbe=true'
-        $ExtendedProbeOptions = ' ' + ($ExtendedProbeArgs -join ' ')
+        foreach ($ProbeIndex in 2..93) {
+            $ExplicitJvmArgs.Add("-Dabyss.highRiskFunctionalProbe${ProbeIndex}=true")
+        }
+        $ExplicitJvmArgs.Add('-Dabyss.commandRuntimeProbe=true')
     }
+    if ($UseSkipChatMenu) { $ExplicitJvmArgs.Add('-Dabyss.skipChatMenu=true') }
+    if ($UseSkipCheaterDetector) { $ExplicitJvmArgs.Add('-Dabyss.skipCheaterDetector=true') }
+    if ($UseSkipAltManager) { $ExplicitJvmArgs.Add('-Dabyss.skipAltManager=true') }
+    if ($RegistryTarget -ne 112) { $ExplicitJvmArgs.Add("-Dabyss.referenceRegistryCount=$RegistryTarget") }
 
-    $env:JAVA_TOOL_OPTIONS = '-Dabyss.runtimeSelfTest=true' +
-        $ExtendedProbeOptions +
-        $(if ($UseSkipChatMenu) { ' -Dabyss.skipChatMenu=true' } else { '' }) +
-        $(if ($UseSkipCheaterDetector) { ' -Dabyss.skipCheaterDetector=true' } else { '' }) +
-        $(if ($UseSkipAltManager) { ' -Dabyss.skipAltManager=true' } else { '' }) +
-        $(if ($RegistryTarget -ne 112) { " -Dabyss.referenceRegistryCount=$RegistryTarget" } else { '' })
-
+    $JvmArgFile = Join-Path $Evidence 'runclient-jvm-args.txt'
+    $ExplicitJvmArgs | Set-Content -LiteralPath $JvmArgFile -Encoding ASCII
 
     $Meta = @(
         "timestamp=$(Get-Date -Format o)"
@@ -173,6 +180,8 @@ try {
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "extended_probes=$ExtendedProbes"
         "extended_probe_max=$(if ($ExtendedProbes) { 93 } else { 0 })"
+        "explicit_jvm_arg_count=$($ExplicitJvmArgs.Count)"
+        "jvm_arg_file=$JvmArgFile"
         "reference_bootstrap=$UseReferenceBootstrap"
         "skip_chat_menu=$UseSkipChatMenu"
         "skip_cheater_detector=$UseSkipCheaterDetector"
@@ -228,6 +237,7 @@ try {
     if (-not $DevRuntime) {
         $RunArgs += '-PabyssPackaged=true'
     }
+    $env:OPENABYSS_RUNCLIENT_JVM_ARG_FILE = $JvmArgFile
     $RunArgs += 'runClient'
 
     if ($KeepOpen) {
