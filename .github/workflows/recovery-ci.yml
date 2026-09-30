@@ -90,6 +90,16 @@ jobs:
           }
           Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
 
+          if ($physicalSmokeText.Contains('EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 76 } else { 0 })')) {
+            throw 'Physical smoke still reports stale EXTENDED_PROBE_MAX=76.'
+          }
+          if (-not $physicalSmokeText.Contains('EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 93 } else { 0 })')) {
+            throw 'Physical smoke does not report the current extended probe max 93.'
+          }
+          if (-not $physicalSmokeText.Contains('ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=$($ExplicitJvmArgs.Count)')) {
+            throw 'Physical smoke does not verify the exact runClient explicit JVM argument count.'
+          }
+
           foreach ($physicalContract in @(
             @{
               Property = '-Dabyss.physicalInputFunctionalProbe=true'
@@ -108,6 +118,10 @@ jobs:
           )) {
             if (-not $physicalSmokeText.Contains($physicalContract.Property)) {
               throw "Physical smoke does not enable $($physicalContract.Property) under ExtendedProbes."
+            }
+            if (-not $physicalSmokeText.Contains($physicalContract.PassMarker) -or
+                -not $physicalSmokeText.Contains($physicalContract.FailMarker)) {
+              throw "Standalone physical smoke does not gate $($physicalContract.Property) pass/fail markers."
             }
             if (-not $physicalUsabilityText.Contains($physicalContract.Check) -or
                 -not $physicalUsabilityText.Contains($physicalContract.Consume) -or

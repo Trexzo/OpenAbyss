@@ -343,6 +343,10 @@ try {
             $Combined += [Environment]::NewLine + [IO.File]::ReadAllText($LogPath)
         }
     }
+    $ExpectedJvmArgMarker = "ABYSS_RUNCLIENT_EXPLICIT_JVM_ARGS=$($ExplicitJvmArgs.Count)"
+    Require ($Combined.Contains($ExpectedJvmArgMarker)) ("runClient did not confirm the exact explicit JVM argument count: " + $ExpectedJvmArgMarker)
+    Require ($Combined.Contains('ABYSS_RUNCLIENT_JVM_ARG_FILE=')) 'runClient did not confirm the explicit JVM argument file.'
+
     if (-not $DevRuntime) {
         Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_JAR=')) 'Packaged runtime marker was not observed.'
         Require ($Combined.Contains('ABYSS_PACKAGED_RUNTIME_DEV_OUTPUTS_PRESENT=0')) 'Packaged runtime dev-output isolation marker is missing.'
@@ -430,6 +434,11 @@ try {
                 'high-risk-functional-probe2-module-pass:BackTrack',
                 'high-risk-functional-probe2-module-pass:NoInteract',
                 'high-risk-functional-probe2-pass:3',
+                'physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true',
+                'physical-input-functional-probe-effect-pass:FastFall:motionY=',
+                'physical-input-functional-probe-restore-pass:AutoClicker',
+                'physical-input-functional-probe-restore-pass:FastFall',
+                'physical-input-functional-probe-pass:2',
                 'high-risk-functional-probe3-effect-pass:WTap:forward=0.0:strafe=0.0',
                 'high-risk-functional-probe3-restore-pass:WTap',
                 'high-risk-functional-probe3-pass:1',
@@ -437,6 +446,13 @@ try {
                 'high-risk-functional-probe4-effect-pass:ChestESP:ignoreOpened=true:hidden=true',
                 'high-risk-functional-probe4-restore-pass:ChestESP',
                 'high-risk-functional-probe4-pass:1',
+                'invmove-physical-probe-input-seen:inventory=true',
+                'invmove-physical-probe-container-open:',
+                'invmove-physical-probe-input-seen:forward=true',
+                'invmove-physical-probe-effect-pass:forwardBinding=true:screen=',
+                'invmove-physical-probe-close-effect-pass:forwardBinding=false',
+                'invmove-physical-probe-restore-pass:',
+                'invmove-physical-probe-pass:1',
                 'high-risk-functional-probe5-effect-pass:AntiDebuff:disabled:blindnessVisible=true:confusionVisible=true',
                 'high-risk-functional-probe5-effect-pass:AntiDebuff:enabled:blindnessVisible=false:confusionVisible=false',
                 'high-risk-functional-probe5-restore-pass:AntiDebuff:',
@@ -542,6 +558,8 @@ try {
                 'high-risk-functional-probe10-fail:',
                 'high-risk-functional-probe11-fail:',
                 'high-risk-functional-probe12-fail:',
+                'physical-input-functional-probe-fail:',
+                'invmove-physical-probe-fail:',
                 'promoted-registry-probe-fail:'
             )) {
                 if ($RuntimeEvidenceText.Contains($FailurePrefix)) {
@@ -658,7 +676,7 @@ try {
         "JAR_SHA256=$JarHash"
         "RUNTIME_MODE=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "EXTENDED_PROBES=$ExtendedProbes"
-        "EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 76 } else { 0 })"
+        "EXTENDED_PROBE_MAX=$(if ($ExtendedProbes) { 93 } else { 0 })"
         "REFERENCE_BOOTSTRAP=$UseReferenceBootstrap"
         "SKIP_CHAT_MENU=$UseSkipChatMenu"
         "SKIP_CHEATER_DETECTOR=$UseSkipCheaterDetector"
