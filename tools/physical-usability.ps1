@@ -1,5 +1,6 @@
 param(
     [string]$Jdk8,
+    [string]$ExpectedHead,
     [switch]$ExtendedProbes,
     [switch]$ReferenceBootstrap,
     [switch]$ReferenceRegistry,
@@ -22,6 +23,26 @@ $Verdict = Join-Path $Evidence 'PHYSICAL-USABILITY-RESULT.txt'
 
 if (-not (Test-Path -LiteralPath $Smoke -PathType Leaf)) {
     throw "physical-smoke.ps1 not found: $Smoke"
+}
+
+$preflightHead = (& git -C $Root rev-parse HEAD 2>$null | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($preflightHead)) {
+    throw 'Could not resolve the OpenAbyss source HEAD for physical certification.'
+}
+$preflightTracked = @(& git -C $Root status --porcelain --untracked-files=no)
+if ($LASTEXITCODE -ne 0) {
+    throw 'Could not inspect the OpenAbyss tracked working tree for physical certification.'
+}
+if ($ExpectedHead) {
+    if ($ExpectedHead -notmatch '^[0-9A-Fa-f]{40}$') {
+        throw "ExpectedHead must be a full 40-character Git commit SHA: $ExpectedHead"
+    }
+    if ($preflightHead -ne $ExpectedHead) {
+        throw "Physical certification source mismatch. Expected $ExpectedHead but checkout is $preflightHead."
+    }
+    if ($preflightTracked.Count -ne 0) {
+        throw 'Physical certification requires a clean tracked working tree when -ExpectedHead is supplied.'
+    }
 }
 
 Write-Host ''
@@ -129,7 +150,16 @@ $diagCandidates = @(
 $diagFile = $diagCandidates | Select-Object -First 1
 $diagText = if ($diagFile) { [IO.File]::ReadAllText($diagFile) } else { '' }
 
+$postflightHead = (& git -C $Root rev-parse HEAD 2>$null | Out-String).Trim()
+$postflightTracked = @(& git -C $Root status --porcelain --untracked-files=no)
+$sourceStable = ($LASTEXITCODE -eq 0 -and $postflightHead -eq $preflightHead)
+$sourceHeadMatch = (-not $ExpectedHead) -or ($postflightHead -eq $ExpectedHead)
+$sourceClean = (-not $ExpectedHead) -or ($postflightTracked.Count -eq 0)
+
 $checks = [ordered]@{
+    SourceStable = $sourceStable
+    SourceHeadMatch = $sourceHeadMatch
+    SourceClean = $sourceClean
     BootstrapComplete = $bootstrapText.Contains("bootstrap-complete")
     MenuTick = $runtimeText.Contains("menu-no-world-tick")
     MenuCleanup = $runtimeText.Contains("menu-cleanup-complete:packetBuffer=false:u=0:v=0:a=0")
@@ -204,7 +234,10 @@ $checks = [ordered]@{
     )
 }
 
-$pass = $checks.BootstrapComplete -and
+$pass = $checks.SourceStable -and
+        $checks.SourceHeadMatch -and
+        $checks.SourceClean -and
+        $checks.BootstrapComplete -and
         $checks.MenuTick -and
         $checks.MenuCleanup -and
         $checks.ClickGuiRequest -and
@@ -245,6 +278,11 @@ $pass = $checks.BootstrapComplete -and
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add("OPENABYSS_PHYSICAL_USABILITY=" + $(if ($pass) { 'PASS' } else { 'FAIL' }))
 $lines.Add("EXTENDED_PROBES=$ExtendedProbes")
+$lines.Add("EXPECTED_HEAD=" + $(if ($ExpectedHead) { $ExpectedHead } else { '<not-pinned>' }))
+$lines.Add("PREFLIGHT_HEAD=$preflightHead")
+$lines.Add("POSTFLIGHT_HEAD=$postflightHead")
+$lines.Add("PREFLIGHT_TRACKED_DIRTY=" + ($preflightTracked.Count -ne 0))
+$lines.Add("POSTFLIGHT_TRACKED_DIRTY=" + ($postflightTracked.Count -ne 0))
 foreach ($entry in $checks.GetEnumerator()) {
     $lines.Add(($entry.Key.ToUpperInvariant()) + "=" + $entry.Value)
 }
