@@ -88,6 +88,21 @@ jobs:
 
           $physicalSmokeText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-smoke.ps1'))
           $physicalUsabilityText = [IO.File]::ReadAllText((Resolve-Path '.\tools\physical-usability.ps1'))
+
+          if (-not $physicalSmokeText.Contains('RedirectStandardError = $true') -or
+              -not $physicalSmokeText.Contains('RedirectStandardOutput = $true') -or
+              $physicalSmokeText.Contains('(& $Exe -version 2>&1 | Out-String)')) {
+            throw 'Physical smoke Java 8 detector is not stderr-safe for Windows PowerShell 5.1.'
+          }
+          if (-not $physicalSmokeText.Contains('OPENABYSS_PHYSICAL_JDK8_GUARD=PASS')) {
+            throw 'Physical smoke does not expose the JDK 8 detector regression guard.'
+          }
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\tools\physical-smoke.ps1' -JdkGuardOnly
+          if ($LASTEXITCODE -ne 0) {
+            throw "Physical JDK 8 detector guard failed: $LASTEXITCODE"
+          }
+          Write-Host 'PHYSICAL_JDK8_DETECTOR_GUARD=PASS'
           $probeMatches = [regex]::Matches($physicalSmokeText, 'high-risk-functional-probe(\d+)-pass:')
           if ($probeMatches.Count -eq 0) { throw 'Physical smoke exposes no high-risk functional probe pass markers.' }
           $probeMax = ($probeMatches | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Maximum).Maximum

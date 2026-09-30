@@ -1,5 +1,6 @@
 param(
     [string]$Jdk8,
+    [switch]$JdkGuardOnly,
     [int]$RunSeconds = 180,
     [switch]$SkipBuild,
     [switch]$KeepOpen,
@@ -73,11 +74,36 @@ try {
         if (-not $JavaHome) { return $null }
         $Exe = Join-Path $JavaHome 'bin\java.exe'
         if (-not (Test-Path -LiteralPath $Exe -PathType Leaf)) { return $null }
+
+        # java -version writes to stderr. Windows PowerShell 5.1 can turn
+        # native stderr into a terminating NativeCommandError when the caller
+        # uses ErrorActionPreference=Stop, so capture both streams directly.
+        $Process = $null
         try {
-            $Version = (& $Exe -version 2>&1 | Out-String)
-            if ($Version -match 'version "1\.8\.0_') { return $Version }
+            $Info = New-Object System.Diagnostics.ProcessStartInfo
+            $Info.FileName = $Exe
+            $Info.Arguments = '-version'
+            $Info.UseShellExecute = $false
+            $Info.RedirectStandardOutput = $true
+            $Info.RedirectStandardError = $true
+            $Info.CreateNoWindow = $true
+
+            $Process = New-Object System.Diagnostics.Process
+            $Process.StartInfo = $Info
+            [void]$Process.Start()
+            $Stdout = $Process.StandardOutput.ReadToEnd()
+            $Stderr = $Process.StandardError.ReadToEnd()
+            $Process.WaitForExit()
+
+            $Version = ($Stdout + [Environment]::NewLine + $Stderr).Trim()
+            if ($Process.ExitCode -eq 0 -and $Version -match 'version "1\.8\.0_') {
+                return $Version
+            }
         }
         catch {
+        }
+        finally {
+            if ($Process) { $Process.Dispose() }
         }
         return $null
     }
@@ -115,6 +141,11 @@ try {
     $JavaVersion = Get-Java8Version $Jdk8
     Require ($null -ne $JavaVersion) ("Expected Java 8 under " + $Jdk8)
     Write-Host "JDK8=$Jdk8"
+
+    if ($JdkGuardOnly) {
+        Write-Host "OPENABYSS_PHYSICAL_JDK8_GUARD=PASS home=$Jdk8" -ForegroundColor Green
+        return
+    }
 
     if (-not (Test-Path -LiteralPath $Gradle)) {
         Write-Host 'Downloading Gradle 2.14.1...'
