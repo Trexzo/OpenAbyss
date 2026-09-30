@@ -153,6 +153,8 @@ try {
             '-Dabyss.macroFunctionalProbe=true'
             '-Dabyss.visualUtilityFunctionalProbe=true'
             '-Dabyss.highRiskFunctionalProbe=true'
+            '-Dabyss.physicalInputFunctionalProbe=true'
+            '-Dabyss.invMovePhysicalProbe=true'
         )) {
             $ExplicitJvmArgs.Add($Arg)
         }
@@ -180,6 +182,7 @@ try {
         "runtime_mode=$(if ($DevRuntime) { 'dev-source' } else { 'packaged-jar' })"
         "extended_probes=$ExtendedProbes"
         "extended_probe_max=$(if ($ExtendedProbes) { 93 } else { 0 })"
+        "physical_input_probes=$(if ($ExtendedProbes) { 'AutoClicker+FastFall+InvMove' } else { '<disabled>' })"
         "explicit_jvm_arg_count=$($ExplicitJvmArgs.Count)"
         "jvm_arg_file=$JvmArgFile"
         "reference_bootstrap=$UseReferenceBootstrap"

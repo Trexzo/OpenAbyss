@@ -90,6 +90,34 @@ jobs:
           }
           Write-Host "PHYSICAL_PROBE_CHAIN_CONSISTENCY_PASS max=$probeMax chain=$chainName"
 
+          foreach ($physicalContract in @(
+            @{
+              Property = '-Dabyss.physicalInputFunctionalProbe=true'
+              Check = 'ExtendedPhysicalInput ='
+              Consume = '$checks.ExtendedPhysicalInput'
+              PassMarker = 'physical-input-functional-probe-pass:2'
+              FailMarker = 'physical-input-functional-probe-fail:'
+            },
+            @{
+              Property = '-Dabyss.invMovePhysicalProbe=true'
+              Check = 'ExtendedInvMovePhysical ='
+              Consume = '$checks.ExtendedInvMovePhysical'
+              PassMarker = 'invmove-physical-probe-pass:1'
+              FailMarker = 'invmove-physical-probe-fail:'
+            }
+          )) {
+            if (-not $physicalSmokeText.Contains($physicalContract.Property)) {
+              throw "Physical smoke does not enable $($physicalContract.Property) under ExtendedProbes."
+            }
+            if (-not $physicalUsabilityText.Contains($physicalContract.Check) -or
+                -not $physicalUsabilityText.Contains($physicalContract.Consume) -or
+                -not $physicalUsabilityText.Contains($physicalContract.PassMarker) -or
+                -not $physicalUsabilityText.Contains($physicalContract.FailMarker)) {
+              throw "Physical usability does not fully gate $($physicalContract.Property)."
+            }
+          }
+          Write-Host 'PHYSICAL_REAL_INPUT_CONTRACTS=PASS probes=AutoClicker,FastFall,InvMove'
+
           if (-not $physicalSmokeText.Contains('$env:JAVA_TOOL_OPTIONS = $null')) {
             throw 'Physical smoke does not explicitly clear JAVA_TOOL_OPTIONS.'
           }

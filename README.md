@@ -53,7 +53,7 @@ $Head = (git rev-parse HEAD).Trim()
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\physical-usability.ps1 -ExtendedProbes -ExpectedHead $Head
 ```
 
-With `-ExpectedHead`, the wrapper refuses a different source HEAD or a dirty tracked working tree, and verifies the HEAD remains unchanged until the run finishes. The final verdict is written to `physical-smoke-evidence/PHYSICAL-USABILITY-RESULT.txt`.
+With `-ExpectedHead`, the wrapper refuses a different source HEAD or a dirty tracked working tree, and verifies the HEAD remains unchanged until the run finishes. In extended mode the physical verdict also requires real input evidence: left mouse for the AutoClicker probe, Space for FastFall, then E plus W/release/close for InvMove, followed by the visible RSHIFT ClickGUI check. The final verdict is written to `physical-smoke-evidence/PHYSICAL-USABILITY-RESULT.txt`.
 
 For a lower-level interactive smoke without exact-head certification:
 

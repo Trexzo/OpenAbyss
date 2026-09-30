@@ -57,10 +57,12 @@ Write-Host 'During this run:' -ForegroundColor Yellow
 Write-Host '  1. Wait for the Minecraft main menu.'
 Write-Host '  2. Enter a singleplayer world or a server.'
 if ($ExtendedProbes) {
-    Write-Host '  3. Stay in-world while the full extended functional chain (through probe93) settles.'
-    Write-Host '  4. Press RSHIFT to open the ClickGUI; confirm its labels/text are visibly rendered, then close it.'
-    Write-Host '  5. Remain in-world until the deep probe chain has had time to complete.'
-    Write-Host '  6. Close Minecraft normally.'
+    Write-Host '  3. In-world, repeatedly left-click until the AutoClicker physical-input probe registers.'
+    Write-Host '  4. Then press/hold SPACE until the FastFall physical-input probe registers.'
+    Write-Host '  5. Then open inventory with E, hold W briefly while it is open, release W, and close the inventory.'
+    Write-Host '  6. Press RSHIFT to open the ClickGUI; confirm its labels/text are visibly rendered, then close it.'
+    Write-Host '  7. Remain in-world while the rest of the full functional chain (through probe93) settles.'
+    Write-Host '  8. Close Minecraft normally.'
 } else {
     Write-Host '  3. Once in-world, press RSHIFT to open the ClickGUI.'
     Write-Host '  4. Confirm the GUI appears with visible labels/text, close it, remain in-world for ~10 seconds.'
@@ -234,6 +236,24 @@ $checks = [ordered]@{
         $runtimeText.Contains('category-lifecycle-probe-pass:9') -and
         $runtimeText.Contains('command-runtime-probe-pass:commands=7:')
     )
+    ExtendedPhysicalInput = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('physical-input-functional-probe-effect-pass:AutoClicker:physicalAttack=true') -and
+        $runtimeText.Contains('physical-input-functional-probe-effect-pass:FastFall:motionY=') -and
+        $runtimeText.Contains('physical-input-functional-probe-restore-pass:AutoClicker') -and
+        $runtimeText.Contains('physical-input-functional-probe-restore-pass:FastFall') -and
+        $runtimeText.Contains('physical-input-functional-probe-pass:2') -and
+        -not $runtimeText.Contains('physical-input-functional-probe-fail:')
+    )
+    ExtendedInvMovePhysical = (-not $ExtendedProbes) -or (
+        $runtimeText.Contains('invmove-physical-probe-input-seen:inventory=true') -and
+        $runtimeText.Contains('invmove-physical-probe-container-open:') -and
+        $runtimeText.Contains('invmove-physical-probe-input-seen:forward=true') -and
+        $runtimeText.Contains('invmove-physical-probe-effect-pass:forwardBinding=true:screen=') -and
+        $runtimeText.Contains('invmove-physical-probe-close-effect-pass:forwardBinding=false') -and
+        $runtimeText.Contains('invmove-physical-probe-restore-pass:') -and
+        $runtimeText.Contains('invmove-physical-probe-pass:1') -and
+        -not $runtimeText.Contains('invmove-physical-probe-fail:')
+    )
     ExtendedHighRiskChain93 = (-not $ExtendedProbes) -or (
         $runtimeText.Contains('high-risk-functional-probe93-pass:1') -and
         -not $runtimeText.Contains('high-risk-functional-probe93-fail:')
@@ -278,6 +298,8 @@ $pass = $checks.SourceStable -and
         $checks.ExtendedInventoryHudEffect -and
         $checks.ExtendedCommandRuntime -and
         $checks.ExtendedEventBusOwnership -and
+        $checks.ExtendedPhysicalInput -and
+        $checks.ExtendedInvMovePhysical -and
         $checks.ExtendedHighRiskChain93 -and
         ($null -eq $smokeError)
 
